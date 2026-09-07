@@ -20,7 +20,15 @@ public sealed class GeminiSuggestionProvider(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        var key = await credentialVault.RetrieveAsync(credentialReference, cancellationToken).ConfigureAwait(false);
+        string? key;
+        try
+        {
+            key = await credentialVault.RetrieveAsync(credentialReference, cancellationToken).ConfigureAwait(false);
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            return Failure(AiProviderStatus.AuthenticationFailed, "Windows could not retrieve the Gemini credential.");
+        }
         if (string.IsNullOrWhiteSpace(key))
         {
             return Failure(AiProviderStatus.AuthenticationFailed, "Add your Gemini API key in Privacy & AI settings.");

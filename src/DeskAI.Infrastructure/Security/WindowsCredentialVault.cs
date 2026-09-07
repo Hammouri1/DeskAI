@@ -50,6 +50,10 @@ public sealed class WindowsCredentialVault : ICredentialVault
         finally
         {
             CryptographicOperations.ZeroMemory(secretBytes);
+            if (secretBytes.Length > 0)
+            {
+                Marshal.Copy(secretBytes, 0, blobPointer, secretBytes.Length);
+            }
             Marshal.FreeCoTaskMem(blobPointer);
             Marshal.ZeroFreeCoTaskMemUnicode(targetPointer);
             Marshal.ZeroFreeCoTaskMemUnicode(userPointer);

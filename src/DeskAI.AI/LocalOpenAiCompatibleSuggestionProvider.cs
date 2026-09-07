@@ -63,7 +63,7 @@ public sealed class LocalOpenAiCompatibleSuggestionProvider : IOrganizationSugge
                     outputTokens = ReadInt(usage, "completion_tokens");
                 }
             }
-            catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException)
+            catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException)
             {
                 return Failure(AiProviderStatus.MalformedResponse, "The local AI returned an unreadable response.");
             }

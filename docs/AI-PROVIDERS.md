@@ -18,7 +18,7 @@ Inference runs on the user's computer, potentially through a local runtime with 
 
 The desktop app connects directly to the provider selected by the user. DeskAI has no required proxy and does not pay for usage. The UI must show that provider pricing, retention, and availability belong to that provider. Keys use Windows-protected storage and data sharing is opt-in and minimized.
 
-Planned adapters may include OpenAI, Anthropic, Google Gemini, Groq, OpenRouter, and custom OpenAI-compatible endpoints. This list is direction, not a promise that they are implemented.
+V0.3 implements two adapters: an explicit OpenAI-compatible loopback endpoint for a separately installed local runtime, and Google Gemini using the user's key. Other provider names remain future possibilities, not implemented capabilities.
 
 ## Provider-Neutral Contract
 
@@ -92,3 +92,15 @@ Use deterministic fakes for unit/integration tests. Contract tests cover success
 ## Provider Settings
 
 Store provider ID, endpoint (where allowed), model ID, capability cache, timeout, disclosure policy, and credential reference. Never store the secret itself in SQLite. Validate custom endpoints, require HTTPS except an explicitly local loopback runtime, and guard against server-side request forgery-style access to sensitive local network endpoints.
+
+## V0.3 Implemented Behavior
+
+- Rule Engine Only is the default and needs no provider.
+- Local mode accepts only loopback HTTP(S); DeskAI neither installs nor launches the runtime.
+- Gemini uses `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent` and the `x-goog-api-key` header, following Google's official API reference.
+- Cloud mode requires a consent switch and a second disclosure summary confirmation.
+- The request builder includes only allowed metadata fields and excludes protected file IDs.
+- JSON output is versioned, byte/count bounded, duplicate-property checked, unknown-field rejecting, and limited to requested IDs and known categories.
+- Requests have a user-configurable timeout and daily cloud-request cap. There are no automatic retries or provider fallbacks.
+- Provider-reported token counts are displayed when available. DeskAI does not guess dollar cost; the user checks provider billing/pricing.
+- The Organize AI preview currently uses only six generated sample records and cannot modify the deterministic plan.

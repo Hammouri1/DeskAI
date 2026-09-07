@@ -61,6 +61,8 @@ Platform-specific cases may require Windows and privileges. Skip only with an ex
 
 Cover valid structured responses plus malformed/truncated/oversized JSON, unknown schema/enums, invented or duplicate file IDs, absolute/escaping paths, raw commands, prompt injection in names/content, misleading confidence, timeouts, cancellation, authentication/rate limits, and a provider attempting to return more operations than allowed. Verify disclosure filtering before the fake transport and verify logs contain no secret or payload.
 
+V0.3 provider tests use fake transports, fake settings, fake clocks, and fake credential vaults. No automated test contacts Gemini/local endpoints or writes the developer's credential store. The corpus covers hostile names, extra command fields, duplicate JSON properties/IDs, invented IDs, bad enums/confidence, oversized output, loopback refusal, offline, timeout, cancellation, rate-limit, missing key, disclosure expansion, and daily-cap refusal.
+
 ## Database Tests
 
 Test fresh schema, every supported migration path, foreign keys, transaction rollback, concurrent access policy, enum/version compatibility, retention deletion, interrupted execution records, and that credentials are never stored in tables. Each test uses an isolated database.

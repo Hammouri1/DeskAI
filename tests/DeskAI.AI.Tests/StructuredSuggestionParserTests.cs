@@ -68,4 +68,14 @@ public sealed class StructuredSuggestionParserTests
 
         Assert.Equal(StructuredOutputFailure.ResponseTooLarge, result.Failure);
     }
+
+    [Fact]
+    public void Parse_RejectsDuplicateJsonProperties()
+    {
+        var json = "{\"schemaVersion\":\"1\",\"schemaVersion\":\"1\",\"suggestions\":[]}";
+
+        var result = StructuredSuggestionParser.Parse(json, RequestedIds, 4096, AiSuggestionProvenance.CloudAi);
+
+        Assert.Equal(StructuredOutputFailure.MalformedJson, result.Failure);
+    }
 }

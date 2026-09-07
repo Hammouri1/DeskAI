@@ -7,7 +7,9 @@ namespace DeskAI.AI;
 public sealed class ConfiguredSuggestionProvider(
     IAiSettingsRepository settingsRepository,
     ICredentialVault credentialVault,
-    IAiHttpTransport transport) : IOrganizationSuggestionProvider
+    IAiHttpTransport transport,
+    IAiUsageBudget usageBudget,
+    IClock clock) : IOrganizationSuggestionProvider
 {
     public async Task<OrganizationSuggestionResponse> SuggestAsync(
         OrganizationSuggestionRequest request,
@@ -22,6 +24,21 @@ public sealed class ConfiguredSuggestionProvider(
                 "AI unavailable",
                 [],
                 "The request asks for data outside your saved cloud-sharing choices.");
+        }
+
+        if (settings.Mode == AiMode.Cloud && settings.CloudConsentGranted &&
+            settings.ProviderId == "gemini" && settings.CredentialReference is not null &&
+            !await usageBudget.TryReserveRequestAsync(
+                settings.ProviderId,
+                Math.Clamp(settings.DailyRequestLimit, 1, 1000),
+                DateOnly.FromDateTime(clock.UtcNow.UtcDateTime),
+                cancellationToken).ConfigureAwait(false))
+        {
+            return new OrganizationSuggestionResponse(
+                AiProviderStatus.CostLimitReached,
+                "AI unavailable",
+                [],
+                "Your daily cloud-request limit has been reached. No provider request was sent.");
         }
 
         return settings.Mode switch

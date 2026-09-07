@@ -25,6 +25,8 @@ public sealed class SettingsViewModel(
     private string _geminiModel = string.Empty;
     private bool _cloudConsent;
     private string _providerStatus = "Choose Rule Engine Only, local AI, or Gemini.";
+    private double _timeoutSeconds = 30;
+    private double _dailyRequestLimit = 20;
 
     public bool ShareExtension { get => _shareExtension; set => SetProperty(ref _shareExtension, value); }
     public bool ShareMetadata { get => _shareMetadata; set => SetProperty(ref _shareMetadata, value); }
@@ -49,6 +51,8 @@ public sealed class SettingsViewModel(
     public string GeminiModel { get => _geminiModel; set => SetProperty(ref _geminiModel, value); }
     public bool CloudConsent { get => _cloudConsent; set => SetProperty(ref _cloudConsent, value); }
     public string ProviderStatus => _providerStatus;
+    public double TimeoutSeconds { get => _timeoutSeconds; set => SetProperty(ref _timeoutSeconds, value); }
+    public double DailyRequestLimit { get => _dailyRequestLimit; set => SetProperty(ref _dailyRequestLimit, value); }
 
     public async Task InitializeAsync()
     {
@@ -59,6 +63,8 @@ public sealed class SettingsViewModel(
         _localModel = _loaded.Mode == AiMode.Local ? _loaded.ModelId : string.Empty;
         _geminiModel = _loaded.ProviderId == "gemini" ? _loaded.ModelId : string.Empty;
         _cloudConsent = _loaded.CloudConsentGranted;
+        _timeoutSeconds = _loaded.TimeoutSeconds;
+        _dailyRequestLimit = _loaded.DailyRequestLimit;
         _authorizedFolderCount = (await rootRepository.ListAsync()).Count.ToString(System.Globalization.CultureInfo.CurrentCulture);
         NotifyAll();
     }
@@ -95,6 +101,12 @@ public sealed class SettingsViewModel(
                 },
                 AiMode.Cloud when CloudConsent => await CreateGeminiSettingsAsync(apiKey),
                 _ => throw new InvalidOperationException("Confirm cloud sharing before enabling Gemini."),
+            };
+
+            updated = updated with
+            {
+                TimeoutSeconds = Math.Clamp((int)TimeoutSeconds, 5, 120),
+                DailyRequestLimit = Math.Clamp((int)DailyRequestLimit, 1, 1000),
             };
 
             await settingsRepository.SaveAsync(updated);
@@ -223,6 +235,8 @@ public sealed class SettingsViewModel(
         OnPropertyChanged(nameof(GeminiModel));
         OnPropertyChanged(nameof(CloudConsent));
         OnPropertyChanged(nameof(ProviderStatus));
+        OnPropertyChanged(nameof(TimeoutSeconds));
+        OnPropertyChanged(nameof(DailyRequestLimit));
     }
 
     private static string FormatCategories(IEnumerable<DisclosureCategory> categories) =>

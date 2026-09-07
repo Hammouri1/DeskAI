@@ -19,7 +19,7 @@ public sealed class ConfiguredSuggestionProviderTests
         };
         var transport = new FakeAiHttpTransport(HttpStatusCode.OK, "{}");
         var provider = new ConfiguredSuggestionProvider(
-            new FakeAiSettingsRepository(settings), new FakeCredentialVault("key"), transport);
+            new FakeAiSettingsRepository(settings), new FakeCredentialVault("key"), transport, new FakeAiUsageBudget(), new FakeClock());
 
         var response = await provider.SuggestAsync(CreateRequest(), TestContext.Current.CancellationToken);
 
@@ -41,7 +41,7 @@ public sealed class ConfiguredSuggestionProviderTests
         };
         var transport = new FakeAiHttpTransport(HttpStatusCode.OK, "{}");
         var provider = new ConfiguredSuggestionProvider(
-            new FakeAiSettingsRepository(settings), new FakeCredentialVault("key"), transport);
+            new FakeAiSettingsRepository(settings), new FakeCredentialVault("key"), transport, new FakeAiUsageBudget(), new FakeClock());
         var request = CreateRequest() with
         {
             Disclosure = new DisclosureSummary(
@@ -66,4 +66,23 @@ internal sealed class FakeAiSettingsRepository(AiSettings settings) : IAiSetting
     public Task<AiSettings> LoadAsync(CancellationToken cancellationToken = default) => Task.FromResult(settings);
 
     public Task SaveAsync(AiSettings updated, CancellationToken cancellationToken = default) => Task.CompletedTask;
+}
+
+internal sealed class FakeAiUsageBudget(bool allow = true) : IAiUsageBudget
+{
+    public Task<bool> TryReserveRequestAsync(
+        string providerId,
+        int dailyLimit,
+        DateOnly utcDate,
+        CancellationToken cancellationToken = default) => Task.FromResult(allow);
+
+    public Task<int> GetRequestCountAsync(
+        string providerId,
+        DateOnly utcDate,
+        CancellationToken cancellationToken = default) => Task.FromResult(0);
+}
+
+internal sealed class FakeClock : IClock
+{
+    public DateTimeOffset UtcNow => new(2026, 9, 8, 0, 0, 0, TimeSpan.Zero);
 }

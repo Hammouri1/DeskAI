@@ -11,7 +11,7 @@ using DeskAI.Infrastructure.Execution;
 
 namespace DeskAI.App.ViewModels;
 
-public sealed class OrganizeViewModel : ObservableObject
+public sealed class OrganizeViewModel : ObservableObject, IDisposable
 {
     private readonly DemoOrganizationPlanFactory _demoPlanFactory;
     private readonly TemporaryDemoPlanExecutor _executor;
@@ -41,6 +41,8 @@ public sealed class OrganizeViewModel : ObservableObject
     private bool _isAiBusy;
     private string _aiPreviewMessage = "AI is optional. Suggestions appear here and never run automatically.";
     private string _aiDisclosureSummary = "No request has been prepared.";
+    private string _aiUsageSummary = "No provider usage yet.";
+    private CancellationTokenSource? _aiCancellation;
 
     public OrganizeViewModel(
         DemoOrganizationPlanFactory demoPlanFactory,
@@ -63,6 +65,7 @@ public sealed class OrganizeViewModel : ObservableObject
         UndoDemoCommand = new AsyncRelayCommand(UndoDemoAsync, CanUndoDemo);
         RevokeFolderCommand = new AsyncRelayCommand(RevokeFolderAsync, CanRevokeFolder);
         GetAiSuggestionsCommand = new AsyncRelayCommand(GetAiSuggestionsAsync, () => !_isAiBusy);
+        CancelAiCommand = new RelayCommand(CancelAi, () => _isAiBusy);
         RebuildPreview();
     }
 
@@ -78,6 +81,7 @@ public sealed class OrganizeViewModel : ObservableObject
     public IAsyncRelayCommand UndoDemoCommand { get; }
     public IAsyncRelayCommand RevokeFolderCommand { get; }
     public IAsyncRelayCommand GetAiSuggestionsCommand { get; }
+    public IRelayCommand CancelAiCommand { get; }
 
     public string DemoRoot => _demoRoot;
     public string RevisionLabel => $"Plan revision {_revision}";
@@ -103,6 +107,7 @@ public sealed class OrganizeViewModel : ObservableObject
     public bool IsAiBusy => _isAiBusy;
     public string AiPreviewMessage => _aiPreviewMessage;
     public string AiDisclosureSummary => _aiDisclosureSummary;
+    public string AiUsageSummary => _aiUsageSummary;
 
     public async Task InitializeAsync()
     {
@@ -152,6 +157,7 @@ public sealed class OrganizeViewModel : ObservableObject
         }
 
         _isAiBusy = true;
+        _aiCancellation = new CancellationTokenSource();
         AiSuggestions.Clear();
         _aiPreviewMessage = "Waiting for optional AI advice…";
         NotifyAiStateChanged();
@@ -170,7 +176,7 @@ public sealed class OrganizeViewModel : ObservableObject
                 new HashSet<Guid>(),
                 settings.CloudDisclosures,
                 limits);
-            var response = await _aiProvider.SuggestAsync(request);
+            var response = await _aiProvider.SuggestAsync(request, _aiCancellation.Token);
             var names = _demoFiles.ToDictionary(file => file.Id, file => Path.GetFileName(file.RelativePath));
             foreach (var suggestion in response.Suggestions)
             {
@@ -179,6 +185,11 @@ public sealed class OrganizeViewModel : ObservableObject
             }
 
             _aiPreviewMessage = response.Message;
+            _aiUsageSummary = response.Usage is null
+                ? "No billable usage was reported."
+                : response.Usage.EstimatedCostUsd is decimal cost
+                    ? $"Reported usage: {response.Usage.InputTokens ?? 0} input + {response.Usage.OutputTokens ?? 0} output tokens · estimated {cost:C}."
+                    : $"Reported usage: {response.Usage.InputTokens ?? 0} input + {response.Usage.OutputTokens ?? 0} output tokens. Check provider billing for cost.";
             await RefreshAiDisclosureSummaryAsync();
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.Data.Common.DbException)
@@ -187,16 +198,22 @@ public sealed class OrganizeViewModel : ObservableObject
         }
         finally
         {
+            _aiCancellation?.Dispose();
+            _aiCancellation = null;
             _isAiBusy = false;
             NotifyAiStateChanged();
         }
     }
 
+    private void CancelAi() => _aiCancellation?.Cancel();
+
     private void NotifyAiStateChanged()
     {
         OnPropertyChanged(nameof(IsAiBusy));
         OnPropertyChanged(nameof(AiPreviewMessage));
+        OnPropertyChanged(nameof(AiUsageSummary));
         GetAiSuggestionsCommand.NotifyCanExecuteChanged();
+        CancelAiCommand.NotifyCanExecuteChanged();
     }
 
     private static string FriendlyCategories(IEnumerable<DisclosureCategory> categories)
@@ -506,5 +523,12 @@ public sealed class OrganizeViewModel : ObservableObject
         {
             operation.SetInteractionEnabled(enabled);
         }
+    }
+
+    public void Dispose()
+    {
+        _aiCancellation?.Cancel();
+        _aiCancellation?.Dispose();
+        _aiCancellation = null;
     }
 }

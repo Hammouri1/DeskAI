@@ -4,7 +4,7 @@
 
 DeskAI is a planned open-source Windows desktop application. It will scan only folders a user selects, generate understandable organization proposals, validate every proposed action using deterministic safety rules, show a preview, and execute only approved operations with history and undo support.
 
-**Current status:** milestones V0.1 and V0.2 are implemented. DeskAI can preview and execute a deterministic organization plan only inside its generated Windows Temp practice workspace, with SQLite history, conservative recovery, and same-session undo. A native picker can connect an explicitly selected folder for a bounded metadata-only preview of names, sizes, and dates. This permission is revocable and cannot authorize moving, renaming, deleting, or reading file contents. SQLite schema version 4 records the permission scope.
+**Current status:** milestones V0.1–V0.3 are implemented. The safe local organizer remains available in Rule Engine Only mode. Optional AI can advise on generated sample metadata through a loopback local endpoint or consent-gated Google Gemini connection. Disclosure categories are filtered before provider code, Gemini keys stay in Windows Credential Manager, structured responses are treated as untrusted, and AI advice cannot edit or execute a plan. SQLite schema version 6 stores non-secret AI settings and daily request counts.
 
 ## Why DeskAI
 
@@ -78,7 +78,7 @@ DeskAI/
 1. Open this `DeskAI` folder in Codex on Windows.
 2. Ask Codex to read `AGENTS.md` and all files under `docs/`.
 3. Restore, build, and test using the commands in `docs/DEVELOPMENT.md`.
-4. Continue with V0.3's provider-neutral AI contract and privacy controls as the next work cycle.
+4. Continue with V0.4's local metadata index and constrained search as the next work cycle.
 5. Review every filesystem feature against `docs/SECURITY.md` before enabling real-folder use.
 
 Do not point development tools or tests at real personal folders. Current development uses generated in-memory or temporary test data only.

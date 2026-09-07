@@ -121,7 +121,7 @@ SQLite is local application state, not a source of authority over the current fi
 
 Use migrations, foreign keys, transactions, indexes, UTC timestamps, and an explicit retention strategy. Repositories are justified when they separate Core use cases from SQLite—not as one generic repository for every table. API keys stay in a Windows-protected credential store and SQLite holds only a credential reference.
 
-Schema version 1 introduced migration tracking, local settings, and authorized roots. Schema version 2 added composite-keyed plan revisions, plan operations, and execution-transaction headers. Schema version 3 added plan issues, per-operation journal intent/outcomes, and undo links. Schema version 4 adds an explicit authorization scope so metadata preview cannot be mistaken for mutation authority. Focused SQLite repositories round-trip roots, exact plan revisions, and journal entries using parameters, transactions, foreign keys, invariant UTC parsing, and bounded recent-history queries.
+Schema version 1 introduced migration tracking, local settings, and authorized roots. Versions 2–3 added plans, operations, journal outcomes, and undo links. Version 4 added authorization scope. Version 5 adds non-secret AI mode, endpoint/model, disclosure flags, limits, consent, and a credential reference. Version 6 adds an atomic per-provider daily request counter. API-key bytes never enter SQLite.
 
 ## Scanning and Indexing
 
@@ -150,6 +150,10 @@ The AI layer receives a minimized DTO, not a filesystem service. Its response pa
 5. deterministic Safety validation.
 
 Prompt text is usability guidance, never enforcement. See `AI-PROVIDERS.md`.
+
+V0.3 implements this boundary as `AiRequestBuilder → ConfiguredSuggestionProvider → local/Gemini adapter → StructuredSuggestionParser`. The builder excludes protected IDs and emits only fields permitted by the saved category set. Providers receive no filesystem, shell, executor, plan, root repository, or credential-enumeration capability. Responses can express only `{fileId, category, confidence, reason}` and remain advisory in the sample preview.
+
+Local endpoints must be explicit HTTP(S) loopback URLs without embedded credentials, query strings, or fragments. Cloud routing supports only the fixed Google Gemini HTTPS host. Redirects and automatic retries are disabled, and one provider failure never triggers another provider. Windows Credential Manager stores Gemini keys; SQLite holds the opaque `DeskAI/Gemini` reference. Daily request reservations are atomic and happen before cloud transport.
 
 ## Dependency Injection and Configuration
 

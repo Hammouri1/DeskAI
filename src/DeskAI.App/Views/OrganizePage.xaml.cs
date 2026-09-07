@@ -17,6 +17,13 @@ public sealed partial class OrganizePage : Page
         _folderPicker = folderPicker;
         DataContext = _viewModel;
         Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        Unloaded -= OnUnloaded;
+        _viewModel.Dispose();
     }
 
     private async void OnLoaded(object sender, RoutedEventArgs e)

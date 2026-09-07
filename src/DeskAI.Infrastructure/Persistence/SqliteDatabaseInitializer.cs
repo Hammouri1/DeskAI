@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 5;
+    public const int CurrentSchemaVersion = 6;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -38,8 +38,31 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplyJournalMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyAuthorizationScopeMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyAiSettingsMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplyAiUsageMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
+    }
+
+    private static async Task ApplyAiUsageMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = """
+            CREATE TABLE IF NOT EXISTS ai_daily_usage (
+                provider_id TEXT NOT NULL,
+                utc_date TEXT NOT NULL,
+                request_count INTEGER NOT NULL CHECK (request_count >= 0),
+                PRIMARY KEY(provider_id, utc_date)
+            );
+            INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (6, $appliedAtUtc);
+            """;
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task ApplyAiSettingsMigrationAsync(

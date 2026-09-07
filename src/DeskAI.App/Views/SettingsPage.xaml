@@ -60,6 +60,14 @@
                         <ComboBoxItem Content="Local AI endpoint" />
                         <ComboBoxItem Content="Google Gemini (your API key)" />
                     </ComboBox>
+                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
+                        <NumberBox Header="Timeout (seconds)" Minimum="5" Maximum="120" SpinButtonPlacementMode="Compact"
+                                   Value="{Binding TimeoutSeconds, Mode=TwoWay}" />
+                        <NumberBox Grid.Column="1" Header="Maximum cloud requests per day" Minimum="1" Maximum="1000"
+                                   SpinButtonPlacementMode="Compact" Value="{Binding DailyRequestLimit, Mode=TwoWay}" />
+                    </Grid>
+                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
+                               Text="DeskAI never retries automatically. The daily cap limits requests, while exact pricing remains with the selected provider." />
                     <Expander Header="Local AI setup">
                         <StackPanel Padding="0,10,0,0" Spacing="10">
                             <TextBox Header="Loopback endpoint" PlaceholderText="http://127.0.0.1:11434/v1/chat/completions"

@@ -99,3 +99,16 @@ There is no scanner UI yet. Run the full test suite and review the `WindowsMetad
 8. Choose Disconnect. Confirm the preview clears and both dummy files remain unchanged on disk.
 9. Restart DeskAI. The disconnected folder must not appear as connected. If you leave it connected instead, startup may remember the permission label but does not rescan until you choose the folder again.
 10. Run `ReadOnlyFolderServiceTests` and `PlanValidatorTests`; review the locked-file metadata test, protected-root refusal, non-mutating revocation, and metadata-only plan refusal.
+
+## V0.3 — Optional AI and Privacy
+
+1. Build Release and run the full suite. Expected: 129 tests pass, none skipped, with zero warnings/errors. Automated tests make no network call and do not write Windows Credential Manager.
+2. Launch DeskAI and open Settings. Confirm “Privacy & AI” starts in Rule Engine Only, internet use Off, cloud sharing None, and telemetry Off.
+3. Enable File name, choose Save privacy choices, and confirm the expansion dialog names that category. Disable it again if you do not want it available to cloud requests.
+4. Open Organize and choose Ask for suggestions while Rule Engine Only is active. Confirm it says AI is off and the deterministic practice organizer remains usable.
+5. Optional local test: run a trusted OpenAI-compatible server yourself, select Local AI endpoint, enter its loopback URL and exact model ID, set timeout, then save. DeskAI must reject a non-loopback URL. Do not use personal files; the AI card sends generated sample records only.
+6. Optional Gemini test: in Settings choose Google Gemini, enter a model ID available to your account and your key, enable the consent switch, and save. Read the second confirmation carefully. The key is stored in Windows Credential Manager, not the repository/database.
+7. In Organize, read the destination/category summary, choose Ask for suggestions once, and verify each result shows provider, category, confidence, and reason. It must not change selected moves or enable blocked operations.
+8. Test Cancel by starting a request and selecting Cancel. Lower the timeout to exercise the timeout message. Do not repeatedly call a paid provider; the daily request cap counts attempted cloud calls.
+9. Return to Settings and choose Remove Gemini key. Confirm Rule Engine Only becomes active. Never paste the key into logs, screenshots, issues, chat, source files, or test configuration.
+10. Review provider billing directly for exact cost. DeskAI reports token usage when Gemini supplies it but deliberately does not guess pricing.

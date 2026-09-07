@@ -37,18 +37,18 @@ Goal: the complete local, preview-first organizer loop for one explicitly select
 
 Exit criteria: a user-controlled demo can scan, preview, approve, execute, inspect history, and undo safely; collision/traversal/link/stale-plan tests pass; rule-only mode works.
 
-## V0.3 — AI Integration and Privacy (**Planned**)
+## V0.3 — AI Integration and Privacy (**Complete — 2026-09-08**)
 
 Goal: optional AI improves ambiguous suggestions without changing the safety model.
 
-- Provider-neutral contracts and deterministic fake provider.
-- Privacy dashboard and per-data-category disclosure policy.
-- Strict structured-output schema, validation, and prompt-injection test corpus.
-- Windows-protected credential storage.
-- One local runtime adapter or documented local-compatible endpoint.
-- One BYO cloud adapter behind clear consent; no silent fallback.
-- AI provenance/confidence/explanations in preview.
-- Cost, timeout, cancellation, offline, malformed-response, and rate-limit UX.
+- ✅ Provider-neutral contracts and deterministic fake provider.
+- ✅ Privacy dashboard and per-data-category disclosure policy.
+- ✅ Strict structured-output schema, validation, and prompt-injection test corpus.
+- ✅ Windows Credential Manager storage with SQLite references only.
+- ✅ Constrained OpenAI-compatible local adapter for explicit loopback endpoints.
+- ✅ Google Gemini BYO-key adapter behind disclosure consent; no silent fallback.
+- ✅ AI provider, confidence, category, and explanations in the sample preview.
+- ✅ Daily cloud-request cap, timeout, cancellation, bounded payloads, no retries, usage reporting, and distinct failure UX.
 
 Exit criteria: disabling AI preserves the organizer; protected/unapproved data never enters requests; malformed/malicious output cannot cause execution; credentials do not appear in database/logs.
 

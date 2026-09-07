@@ -26,7 +26,7 @@ public sealed class SqliteDatabaseInitializerTests
         command.CommandText = "SELECT MAX(version) FROM schema_migrations;";
         var version = await command.ExecuteScalarAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(5L, version);
+        Assert.Equal(6L, version);
 
         command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('app_settings', 'authorized_roots', 'organization_plans', 'plan_operations', 'execution_transactions');";
         Assert.Equal(5L, await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
@@ -60,7 +60,7 @@ public sealed class SqliteDatabaseInitializerTests
         await upgraded.OpenAsync(TestContext.Current.CancellationToken);
         await using var verify = upgraded.CreateCommand();
         verify.CommandText = "SELECT MAX(version) FROM schema_migrations;";
-        Assert.Equal(5L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(6L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
         verify.CommandText = "SELECT COUNT(*) FROM pragma_table_info('authorized_roots') WHERE name = 'authorization_scope';";
         Assert.Equal(1L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
         verify.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'execution_transactions';";

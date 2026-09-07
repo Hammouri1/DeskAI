@@ -38,6 +38,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IDatabaseInitializer, SqliteDatabaseInitializer>();
         services.AddSingleton<IAuthorizedRootRepository, SqliteAuthorizedRootRepository>();
         services.AddSingleton<IAiSettingsRepository, SqliteAiSettingsRepository>();
+        services.AddSingleton<IAiUsageBudget, SqliteAiUsageBudget>();
         services.AddSingleton<IPlanRepository, SqlitePlanRepository>();
         services.AddSingleton<IOperationJournal, SqliteOperationJournal>();
         services.AddSingleton<TemporaryDemoPlanExecutor>();

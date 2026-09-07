@@ -31,6 +31,12 @@ public static class StructuredSuggestionParser
         SuggestionEnvelope? envelope;
         try
         {
+            using var document = JsonDocument.Parse(json);
+            if (ContainsDuplicateProperty(document.RootElement))
+            {
+                return StructuredSuggestionParseResult.Invalid(StructuredOutputFailure.MalformedJson);
+            }
+
             envelope = JsonSerializer.Deserialize<SuggestionEnvelope>(json, SerializerOptions);
         }
         catch (JsonException)
@@ -85,6 +91,27 @@ public static class StructuredSuggestionParser
         }
 
         return StructuredSuggestionParseResult.Valid(suggestions.AsReadOnly());
+    }
+
+    private static bool ContainsDuplicateProperty(JsonElement element)
+    {
+        if (element.ValueKind == JsonValueKind.Object)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var property in element.EnumerateObject())
+            {
+                if (!names.Add(property.Name) || ContainsDuplicateProperty(property.Value))
+                {
+                    return true;
+                }
+            }
+        }
+        else if (element.ValueKind == JsonValueKind.Array)
+        {
+            return element.EnumerateArray().Any(ContainsDuplicateProperty);
+        }
+
+        return false;
     }
 
     private sealed record SuggestionEnvelope(

@@ -55,10 +55,13 @@
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                             <ProgressRing Width="22" Height="22" IsActive="{Binding IsAiBusy}" />
                             <Button Command="{Binding GetAiSuggestionsCommand}" Content="Ask for suggestions" />
+                            <Button Command="{Binding CancelAiCommand}" Content="Cancel" />
                         </StackPanel>
                     </Grid>
                     <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                Text="{Binding AiPreviewMessage}" TextWrapping="Wrap" />
+                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="{Binding AiUsageSummary}" TextWrapping="Wrap" />
                     <ItemsControl ItemsSource="{Binding AiSuggestions}">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate>

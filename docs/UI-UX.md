@@ -131,3 +131,9 @@ The implemented Organize page uses progressive disclosure. Its main surface show
 The sample uses the controlled temporary executor introduced in V0.2 step 5. Practice mode is named prominently and explains in one sentence that personal files are not used. Conflicts use calm language and remain unselected; technical safety terminology is not required to complete the demo.
 
 Step 8 adds a separate, optional “Preview a folder” card below the practice flow. Its short description says exactly what is read and that moving/deleting remain off. Choosing a folder opens the native Windows picker and then a confirmation dialog showing the path and metadata scope. Results stay collapsed behind a file count by default, and Disconnect revokes permission without changing files.
+
+## V0.3 AI and Privacy UI
+
+Settings is renamed visually to “Privacy & AI” and starts with a glanceable status card. Sharing controls use plain category names and require confirmation when expanding permission. Provider setup groups Rule Engine Only, local loopback, and Gemini without presenting every technical option at once. Cloud activation repeats the exact category summary and reminds the user that pricing/retention belong to Google.
+
+Organize shows AI in a separate optional advice card for generated samples. The card identifies where data would go, exposes Cancel, reports token usage when provided, and displays category/confidence/reason/provider per suggestion. It explicitly states that advice cannot change or execute the plan.

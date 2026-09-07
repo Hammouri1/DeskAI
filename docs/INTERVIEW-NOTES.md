@@ -221,6 +221,19 @@ What is deliberately not built: real-folder move/rename/delete, content extracti
 Next work cycle: V0.3 tasks 1–2—a provider-neutral structured AI contract with deterministic fake, then a privacy/disclosure policy and simple dashboard. Gemini/OpenRouter integration remains later and optional.
 ```
 
+## V0.3 Learning Log — 2026-09-08
+
+```text
+What became usable: Optional classification advice for generated samples through Rule Engine Only, an explicit loopback local endpoint, or consent-gated Google Gemini, with privacy settings and Windows-protected credentials.
+Main data flow: FileItem → disclosure-filtered AiFileCandidate → configured provider → bounded HTTP transport → strict structured parser → advisory preview row. No provider result reaches the plan/executor.
+Classes/interfaces I can explain: IOrganizationSuggestionProvider, AiRequestBuilder, AiSettings, IAiSettingsRepository, ICredentialVault, WindowsCredentialVault, IAiHttpTransport, ConfiguredSuggestionProvider, StructuredSuggestionParser, and IAiUsageBudget.
+New concept and my own explanation: A DTO is a deliberately small data shape crossing a boundary. By constructing it before provider code and omitting disallowed fields, privacy does not depend on asking the model to ignore data it should never receive.
+Security cases tested: prompt injection, unknown/duplicate JSON fields and IDs, invented IDs, invalid enums/confidence, oversized responses, non-loopback endpoints, missing credentials, disclosure expansion, offline/timeout/cancellation/rate limits, secret redaction, and daily request caps.
+Build/test evidence: Release build completed with zero warnings/errors; all 129 tests passed without live network or personal credential-store writes.
+What is deliberately not built: AI processing of user-selected folders/content/images, AI-generated executable operations, OpenRouter, background AI, automatic fallback/retry, exact price calculation, or V0.4 search/index features.
+Next work cycle: V0.4 begins with an incremental local metadata index and constrained structured search, still limited to authorized metadata-only roots and generated test directories.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

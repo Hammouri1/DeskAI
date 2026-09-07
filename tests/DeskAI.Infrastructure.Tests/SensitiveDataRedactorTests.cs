@@ -16,4 +16,15 @@ public sealed class SensitiveDataRedactorTests
         Assert.Contains("[REDACTED]", redacted, StringComparison.Ordinal);
         Assert.Contains("[REDACTED_PATH]", redacted, StringComparison.Ordinal);
     }
+
+    [Theory]
+    [InlineData("x-goog-api-key: obvious-gemini-secret")]
+    [InlineData("api_key=obvious-provider-secret")]
+    public void Redact_RemovesProviderKeyHeaders(string message)
+    {
+        var redacted = SensitiveDataRedactor.Redact(message);
+
+        Assert.DoesNotContain("obvious-", redacted, StringComparison.Ordinal);
+        Assert.Contains("[REDACTED]", redacted, StringComparison.Ordinal);
+    }
 }
