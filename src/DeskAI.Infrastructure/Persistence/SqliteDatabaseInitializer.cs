@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 4;
+    public const int CurrentSchemaVersion = 5;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -37,8 +37,38 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplyPlanningMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyJournalMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyAuthorizationScopeMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplyAiSettingsMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
+    }
+
+    private static async Task ApplyAiSettingsMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = """
+            CREATE TABLE IF NOT EXISTS ai_settings (
+                singleton_id INTEGER NOT NULL PRIMARY KEY CHECK (singleton_id = 1),
+                mode INTEGER NOT NULL,
+                provider_id TEXT NOT NULL,
+                model_id TEXT NOT NULL,
+                endpoint TEXT NULL,
+                disclosures INTEGER NOT NULL,
+                credential_reference TEXT NULL,
+                timeout_seconds INTEGER NOT NULL,
+                daily_request_limit INTEGER NOT NULL,
+                max_estimated_cost_usd TEXT NULL,
+                cloud_consent INTEGER NOT NULL
+            );
+            INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (5, $appliedAtUtc);
+            """;
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task ApplyAuthorizationScopeMigrationAsync(

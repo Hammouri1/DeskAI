@@ -73,6 +73,7 @@ public partial class App : Application
                 services.AddSingleton<IFolderPickerService, WindowsFolderPickerService>();
                 services.AddTransient<ShellViewModel>();
                 services.AddTransient<OrganizeViewModel>();
+                services.AddTransient<SettingsViewModel>();
                 services.AddTransient<DashboardPage>();
                 services.AddTransient<OrganizePage>();
                 services.AddTransient<SearchPage>();

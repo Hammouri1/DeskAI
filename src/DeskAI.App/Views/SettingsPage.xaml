@@ -2,20 +2,51 @@
     x:Class="DeskAI.App.Views.SettingsPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <StackPanel Margin="32" Spacing="12">
-        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Settings" />
-        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Privacy status" />
-        <Grid ColumnDefinitions="180,*" RowDefinitions="Auto,Auto,Auto,Auto" RowSpacing="8">
-            <TextBlock Grid.Row="0" Grid.Column="0" Text="AI processing" />
-            <TextBlock Grid.Row="0" Grid.Column="1" Text="Rule Engine Only" />
-            <TextBlock Grid.Row="1" Grid.Column="0" Text="Cloud data shared" />
-            <TextBlock Grid.Row="1" Grid.Column="1" Text="None" />
-            <TextBlock Grid.Row="2" Grid.Column="0" Text="Authorized folders" />
-            <TextBlock Grid.Row="2" Grid.Column="1" Text="0" />
-            <TextBlock Grid.Row="3" Grid.Column="0" Text="Telemetry" />
-            <TextBlock Grid.Row="3" Grid.Column="1" Text="Off" />
-        </Grid>
-        <TextBlock Margin="0,16,0,0" MaxWidth="680" HorizontalAlignment="Left" TextWrapping="Wrap"
-                   Text="Provider setup, disclosure controls, and folder authorization will be added only in their roadmap milestones." />
-    </StackPanel>
+    <ScrollViewer>
+        <StackPanel Margin="32" MaxWidth="760" HorizontalAlignment="Left" Spacing="18">
+            <StackPanel Spacing="5">
+                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Privacy &amp; AI" />
+                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
+                           Text="AI is optional. DeskAI works normally with the rule engine when AI is off." />
+            </StackPanel>
+
+            <Border Padding="18" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="10">
+                <StackPanel Spacing="12">
+                    <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Your privacy at a glance" />
+                    <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="9">
+                        <TextBlock Grid.Row="0" Text="Internet/provider use" />
+                        <TextBlock Grid.Row="0" Grid.Column="1" FontWeight="SemiBold" Text="{Binding InternetUse}" />
+                        <TextBlock Grid.Row="1" Text="AI processing" />
+                        <TextBlock Grid.Row="1" Grid.Column="1" FontWeight="SemiBold" Text="{Binding AiProcessing}" />
+                        <TextBlock Grid.Row="2" Text="Cloud data shared" />
+                        <TextBlock Grid.Row="2" Grid.Column="1" FontWeight="SemiBold" Text="{Binding CloudDataShared}" TextWrapping="Wrap" />
+                        <TextBlock Grid.Row="3" Text="Authorized folders" />
+                        <TextBlock Grid.Row="3" Grid.Column="1" FontWeight="SemiBold" Text="{Binding AuthorizedFolderCount}" />
+                        <TextBlock Grid.Row="4" Text="Telemetry" />
+                        <TextBlock Grid.Row="4" Grid.Column="1" FontWeight="SemiBold" Text="Off" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Padding="18" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="10">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Cloud sharing limits" />
+                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
+                                   Text="These are maximum permissions, not automatic sharing. Protected files are always excluded." />
+                    </StackPanel>
+                    <ToggleSwitch Header="File extension" OffContent="Not allowed" OnContent="Allowed" IsOn="{Binding ShareExtension, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Size and modified date" OffContent="Not allowed" OnContent="Allowed" IsOn="{Binding ShareMetadata, Mode=TwoWay}" />
+                    <ToggleSwitch Header="File name" OffContent="Not allowed" OnContent="Allowed" IsOn="{Binding ShareFileName, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Folder names" OffContent="Not allowed" OnContent="Allowed" IsOn="{Binding ShareFolderNames, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Full path (usually unnecessary)" OffContent="Not allowed" OnContent="Allowed" IsOn="{Binding ShareFullPath, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Document contents — not available yet" IsEnabled="False" IsOn="False" />
+                    <ToggleSwitch Header="Image contents — not available yet" IsEnabled="False" IsOn="False" />
+                    <Button HorizontalAlignment="Left" Click="OnSavePrivacyClick" Content="Save privacy choices"
+                            Style="{StaticResource AccentButtonStyle}" />
+                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding SaveStatus}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
 </Page>
