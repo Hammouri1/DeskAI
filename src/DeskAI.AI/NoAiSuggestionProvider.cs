@@ -12,8 +12,9 @@ public sealed class NoAiSuggestionProvider : IOrganizationSuggestionProvider
         cancellationToken.ThrowIfCancellationRequested();
 
         return Task.FromResult(new OrganizationSuggestionResponse(
-            IsAvailable: false,
-            Suggestions: [],
-            UnavailableReason: "DeskAI is running in Rule Engine Only mode."));
+            AiProviderStatus.Disabled,
+            "Rule Engine Only",
+            [],
+            "AI is off. DeskAI continues using deterministic rules."));
     }
 }

@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -22,6 +22,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeskAI.Safety.Tests", "tests\DeskAI.Safety.Tests\DeskAI.Safety.Tests.csproj", "{81A620EE-11DF-4B49-BCEE-172DBA9FC28C}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeskAI.Infrastructure.Tests", "tests\DeskAI.Infrastructure.Tests\DeskAI.Infrastructure.Tests.csproj", "{B204C6CE-8535-47C4-BFF3-C648BC31F691}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeskAI.AI.Tests", "tests\DeskAI.AI.Tests\DeskAI.AI.Tests.csproj", "{AFA02CCB-9B8B-4255-A463-EC6E4125C240}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -129,6 +131,18 @@ Global
 		{B204C6CE-8535-47C4-BFF3-C648BC31F691}.Release|x64.Build.0 = Release|Any CPU
 		{B204C6CE-8535-47C4-BFF3-C648BC31F691}.Release|x86.ActiveCfg = Release|Any CPU
 		{B204C6CE-8535-47C4-BFF3-C648BC31F691}.Release|x86.Build.0 = Release|Any CPU
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240}.Debug|x64.Build.0 = Debug|Any CPU
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240}.Debug|x86.Build.0 = Debug|Any CPU
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240}.Release|x64.ActiveCfg = Release|Any CPU
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240}.Release|x64.Build.0 = Release|Any CPU
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240}.Release|x86.ActiveCfg = Release|Any CPU
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -142,5 +156,6 @@ Global
 		{6CC215FC-F4F0-428C-A8D1-160AD5EA3BA3} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{81A620EE-11DF-4B49-BCEE-172DBA9FC28C} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 		{B204C6CE-8535-47C4-BFF3-C648BC31F691} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
+		{AFA02CCB-9B8B-4255-A463-EC6E4125C240} = {0AB3BF05-4346-4AA6-1389-037BE0695223}
 	EndGlobalSection
 EndGlobal
