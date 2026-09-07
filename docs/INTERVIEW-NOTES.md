@@ -195,6 +195,19 @@ What is deliberately not built: real-folder picker/access, automatic demo deleti
 Next work cycle: V0.2 steps 7–8—journal/recovery/undo first, then a separate real-folder authorization review and picker only if every gate passes.
 ```
 
+## V0.2 Step 7 Learning Log — 2026-09-07
+
+```text
+What became usable: Every demo operation is journaled before mutation; outcomes and recent activity persist; unchanged sample files can be safely undone in the same session.
+Main data flow: root/plan persistence → Prepared journal → InProgress operation → filesystem call → exact outcome → transaction summary → reverse validated undo transaction.
+Classes/interfaces I can explain: IOperationJournal, ExecutionJournalEntry, OperationJournalEntry, SqliteOperationJournal, SqlitePlanRepository, SqliteAuthorizedRootRepository, IUndoService, and journal state enums.
+New concept and my own explanation: Write-ahead journaling records what is about to happen before it happens, so a crash does not erase intent. Undo is a compensating transaction with new validation, not time travel.
+Security cases tested: journal failure before mutation, changed destination before undo, empty created-directory removal, outside-root refusal, interrupted move reconciliation, and conservative old-session recovery state.
+Build/test evidence: Release build completed with zero warnings/errors; all 90 tests passed.
+What is deliberately not built: cross-restart undo, real-folder mutation, protected durable marker storage, or automatic cleanup.
+Next small task: V0.2 step 8, a native picker and revocable read-only authorization flow tested only with a generated temporary folder.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

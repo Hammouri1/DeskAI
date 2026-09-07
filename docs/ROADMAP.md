@@ -32,7 +32,7 @@ Goal: the complete local, preview-first organizer loop for one explicitly select
 4. ✅ Preview UI with per-operation selection, issues, blocked reasons, and plan revisioning. Completed 2026-09-07 using generated in-memory sample data; execution is visibly disabled.
 5. ✅ Safety review gate and narrow move/rename/create-folder executor restricted to a generated, marker-protected temporary demo root. Completed 2026-09-07 with explicit plan-revision approval, live containment/link/collision checks, and dummy data only.
 6. ✅ SQLite schema v2 migrations for settings, authorized roots, versioned plans/operations, and execution transactions. Completed 2026-09-07 with fresh-schema, v1-upgrade, and foreign-key tests; repositories/journaling remain step 7.
-7. Operation journal, partial-failure reporting, recovery state, and validated undo.
+7. ✅ SQLite write-ahead operation journal, per-operation/partial outcomes, conservative recovery state, recent activity, and validated same-session undo. Completed 2026-09-07 for the controlled temporary demo only.
 8. User folder picker and real-folder use only after sandbox demonstrations and explicit confirmation.
 
 Exit criteria: a user-controlled demo can scan, preview, approve, execute, inspect history, and undo safely; collision/traversal/link/stale-plan tests pass; rule-only mode works.

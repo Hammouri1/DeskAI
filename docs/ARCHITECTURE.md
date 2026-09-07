@@ -104,6 +104,10 @@ Undo is a compensating transaction, not time travel. It verifies that the destin
 
 The V0.2 step-5 implementation is intentionally narrower than the future production executor. `TemporaryDemoPlanExecutor` generates its own unique root beneath a configured base that must itself be contained by the Windows temporary directory. It seeds only known dummy files and requires an unpredictable ownership marker. Before every selected operation it rechecks root identity, containment, existing path components for reparse points, current Safety results, approval identity/revision/policy, source existence, destination availability, and parent existence. It never overwrites. No API accepts an arbitrary execution root, and the App exposes no folder picker.
 
+Step 7 places `IOperationJournal.CreateAsync` before the first mutation, after persisting the exact root and plan revision. Each operation transitions from Pending to InProgress and then Completed, Failed, or Cancelled. Transaction summaries distinguish completed, partially completed, failed, and cancelled outcomes. Recovery checks an InProgress operation against live size/timestamp/path facts only when the current executor still owns the same marked demo root. Records from an older process remain `RecoveryRequired`; the new process does not touch an old temporary workspace it cannot authenticate.
+
+Undo reads completed journal operations in reverse order. A moved file returns only if its current size and modification time still match the recorded pre-move facts and its original path is free. A created directory is removed only if it was recorded, remains inside the owned root, is not a link, and is empty after file reversals. Undo creates its own journal transaction. In this demo implementation, undo is offered only during the same application session; durable cross-restart ownership is deliberately unresolved.
+
 ## Persistence
 
 SQLite is local application state, not a source of authority over the current filesystem. Suggested logical areas:
@@ -117,7 +121,7 @@ SQLite is local application state, not a source of authority over the current fi
 
 Use migrations, foreign keys, transactions, indexes, UTC timestamps, and an explicit retention strategy. Repositories are justified when they separate Core use cases from SQLite—not as one generic repository for every table. API keys stay in a Windows-protected credential store and SQLite holds only a credential reference.
 
-Schema version 1 introduced migration tracking, local settings, and authorized roots. Schema version 2 adds composite-keyed plan revisions, plan operations, and execution-transaction headers with foreign keys and lookup indexes. These tables establish storage shape only; step 7 will add repositories, per-operation journal outcomes, recovery, and undo state.
+Schema version 1 introduced migration tracking, local settings, and authorized roots. Schema version 2 added composite-keyed plan revisions, plan operations, and execution-transaction headers. Schema version 3 adds plan issues, per-operation journal intent/outcomes, and undo links. Focused SQLite repositories round-trip roots, exact plan revisions, and journal entries using parameters, transactions, foreign keys, invariant UTC parsing, and bounded recent-history queries.
 
 ## Scanning and Indexing
 

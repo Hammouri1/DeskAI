@@ -31,8 +31,12 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(DefaultFolderRecipe.Create());
         services.AddSingleton<IFileScanner, WindowsMetadataScanner>();
         services.AddSingleton<IDatabaseInitializer, SqliteDatabaseInitializer>();
+        services.AddSingleton<IAuthorizedRootRepository, SqliteAuthorizedRootRepository>();
+        services.AddSingleton<IPlanRepository, SqlitePlanRepository>();
+        services.AddSingleton<IOperationJournal, SqliteOperationJournal>();
         services.AddSingleton<TemporaryDemoPlanExecutor>();
         services.AddSingleton<IPlanExecutor>(provider => provider.GetRequiredService<TemporaryDemoPlanExecutor>());
+        services.AddSingleton<IUndoService>(provider => provider.GetRequiredService<TemporaryDemoPlanExecutor>());
         return services;
     }
 }

@@ -104,9 +104,21 @@
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="8">
                         <ProgressRing Width="24" Height="24" HorizontalAlignment="Center" IsActive="{Binding IsBusy}" />
                         <Button AutomationProperties.HelpText="Organizes only generated sample files."
-                                Command="{Binding ExecuteDemoCommand}" Content="{Binding ExecuteButtonText}" />
+                                Command="{Binding ExecuteDemoCommand}" Content="{Binding ExecuteButtonText}"
+                                Style="{StaticResource AccentButtonStyle}" />
+                        <Button AutomationProperties.HelpText="Returns unchanged sample files to their original demo locations."
+                                Command="{Binding UndoDemoCommand}" Content="{Binding UndoButtonText}" />
                     </StackPanel>
                 </Grid>
+            </Border>
+
+            <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="8">
+                <StackPanel Spacing="5">
+                    <TextBlock FontWeight="SemiBold" Text="Recent activity" />
+                    <TextBlock Text="{Binding ActivityTitle}" />
+                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="{Binding ActivityMessage}" />
+                </StackPanel>
             </Border>
 
             <Expander Margin="0,0,0,32" Header="Technical details">

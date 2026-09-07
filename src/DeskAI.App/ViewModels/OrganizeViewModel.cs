@@ -2,6 +2,8 @@ using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DeskAI.App.Preview;
+using DeskAI.Core.Abstractions;
+using DeskAI.Core.Execution;
 using DeskAI.Core.Plans;
 using DeskAI.Infrastructure.Execution;
 
@@ -11,6 +13,7 @@ public sealed class OrganizeViewModel : ObservableObject
 {
     private readonly DemoOrganizationPlanFactory _demoPlanFactory;
     private readonly TemporaryDemoPlanExecutor _executor;
+    private readonly IOperationJournal _journal;
     private OrganizationPlan? _plan;
     private string _demoRoot = "Not created — DeskAI will generate a unique folder under Windows Temp";
     private string _resultMessage = "Nothing has run yet. Review the selected demo actions below.";
@@ -19,17 +22,25 @@ public sealed class OrganizeViewModel : ObservableObject
     private int _revision;
     private Guid[] _supportingOperationIds = [];
     private int _unchangedFileCount;
+    private Guid? _lastTransactionId;
+    private Guid[] _executedFileOperationIds = [];
+    private bool _hasUndone;
+    private string _activityTitle = "No activity yet";
+    private string _activityMessage = "Your completed demo and undo will appear here.";
 
     public OrganizeViewModel(
         DemoOrganizationPlanFactory demoPlanFactory,
-        TemporaryDemoPlanExecutor executor)
+        TemporaryDemoPlanExecutor executor,
+        IOperationJournal journal)
     {
         _demoPlanFactory = demoPlanFactory ?? throw new ArgumentNullException(nameof(demoPlanFactory));
         _executor = executor ?? throw new ArgumentNullException(nameof(executor));
+        _journal = journal ?? throw new ArgumentNullException(nameof(journal));
         RebuildPreviewCommand = new RelayCommand(RebuildPreview, CanEditPreview);
         SelectAllSafeCommand = new RelayCommand(SelectAllSafe, CanEditPreview);
         ClearSelectionCommand = new RelayCommand(ClearSelection, CanEditPreview);
         ExecuteDemoCommand = new AsyncRelayCommand(ExecuteDemoAsync, CanExecuteDemo);
+        UndoDemoCommand = new AsyncRelayCommand(UndoDemoAsync, CanUndoDemo);
         RebuildPreview();
     }
 
@@ -40,6 +51,7 @@ public sealed class OrganizeViewModel : ObservableObject
     public IRelayCommand SelectAllSafeCommand { get; }
     public IRelayCommand ClearSelectionCommand { get; }
     public IAsyncRelayCommand ExecuteDemoCommand { get; }
+    public IAsyncRelayCommand UndoDemoCommand { get; }
 
     public string DemoRoot => _demoRoot;
     public string RevisionLabel => $"Plan revision {_revision}";
@@ -55,6 +67,25 @@ public sealed class OrganizeViewModel : ObservableObject
     public string ResultMessage => _resultMessage;
     public string ExecuteButtonText => _hasExecuted ? "Finished" : $"Organize {SelectedOperationCount} sample file(s)";
     public bool IsBusy => _isBusy;
+    public string ActivityTitle => _activityTitle;
+    public string ActivityMessage => _activityMessage;
+    public string UndoButtonText => _hasUndone ? "Undone" : "Undo demo";
+
+    public async Task InitializeAsync()
+    {
+        try
+        {
+            await _executor.RecoverIncompleteAsync();
+            await RefreshActivityAsync();
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or System.Data.Common.DbException)
+        {
+            _activityTitle = "History unavailable";
+            _activityMessage = "DeskAI could not read activity history. No file action was started.";
+            OnPropertyChanged(nameof(ActivityTitle));
+            OnPropertyChanged(nameof(ActivityMessage));
+        }
+    }
 
     private void RebuildPreview()
     {
@@ -159,9 +190,12 @@ public sealed class OrganizeViewModel : ObservableObject
             _resultMessage = failed == 0
                 ? $"Done — {completed} sample file(s) were organized. Your personal files were not used."
                 : $"Organized {completed} sample file(s). {failed} stayed in place because it could not be moved safely.";
+            _lastTransactionId = result.TransactionId;
+            _executedFileOperationIds = selectedFileIds;
             _hasExecuted = true;
+            await RefreshActivityAsync();
         }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or System.Data.Common.DbException)
         {
             _resultMessage = $"The demo stopped safely: {exception.Message}";
         }
@@ -179,9 +213,75 @@ public sealed class OrganizeViewModel : ObservableObject
         OnPropertyChanged(nameof(ExecuteButtonText));
         OnPropertyChanged(nameof(IsBusy));
         ExecuteDemoCommand.NotifyCanExecuteChanged();
+        UndoDemoCommand.NotifyCanExecuteChanged();
         RebuildPreviewCommand.NotifyCanExecuteChanged();
         SelectAllSafeCommand.NotifyCanExecuteChanged();
         ClearSelectionCommand.NotifyCanExecuteChanged();
+    }
+
+    private bool CanUndoDemo() =>
+        _lastTransactionId is not null && _hasExecuted && !_hasUndone && !_isBusy;
+
+    private async Task UndoDemoAsync()
+    {
+        if (_lastTransactionId is not Guid transactionId || !CanUndoDemo())
+        {
+            return;
+        }
+
+        _isBusy = true;
+        _resultMessage = "Checking that the sample files have not changed…";
+        NotifyExecutionStateChanged();
+        try
+        {
+            var result = await _executor.UndoAsync(transactionId);
+            var restored = result.Operations.Count(item =>
+                _executedFileOperationIds.Contains(item.OperationId) &&
+                item.Outcome == DeskAI.Core.Execution.ExecutionOutcome.Completed);
+            var failed = result.Operations.Count(item =>
+                _executedFileOperationIds.Contains(item.OperationId) &&
+                item.Outcome == DeskAI.Core.Execution.ExecutionOutcome.Failed);
+            _resultMessage = failed == 0
+                ? $"Undo complete — {restored} sample file(s) returned to their original places."
+                : $"Undo restored {restored} sample file(s); {failed} stayed where they were because they changed.";
+            _hasUndone = true;
+            await RefreshActivityAsync();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or System.Data.Common.DbException)
+        {
+            _resultMessage = $"Undo stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            _isBusy = false;
+            NotifyExecutionStateChanged();
+        }
+    }
+
+    private async Task RefreshActivityAsync()
+    {
+        var recent = await _journal.ListRecentAsync(1);
+        if (recent.Count == 0)
+        {
+            return;
+        }
+
+        var latest = recent[0];
+
+        var changed = latest.Operations.Count(item => item.State == JournalOperationState.Completed && item.Kind is not PlanOperationKind.CreateDirectory);
+        _activityTitle = latest.Kind == ExecutionTransactionKind.Undo ? "Undo" : "Sample organization";
+        _activityMessage = latest.State switch
+        {
+            ExecutionTransactionState.Completed => $"Completed · {changed} file(s)",
+            ExecutionTransactionState.Undone => "Completed, then undone",
+            ExecutionTransactionState.PartiallyCompleted => $"Partly completed · {changed} file(s)",
+            ExecutionTransactionState.RecoveryRequired => "Needs review after an interrupted run",
+            ExecutionTransactionState.Failed => "Stopped safely",
+            _ => "Not finished",
+        };
+        OnPropertyChanged(nameof(ActivityTitle));
+        OnPropertyChanged(nameof(ActivityMessage));
+        OnPropertyChanged(nameof(UndoButtonText));
     }
 
     private void SetOperationInteraction(bool enabled)

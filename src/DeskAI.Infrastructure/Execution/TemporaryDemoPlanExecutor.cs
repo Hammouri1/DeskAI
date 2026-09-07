@@ -11,7 +11,7 @@ namespace DeskAI.Infrastructure.Execution;
 /// Executes only inside a generated, marker-protected directory below the system temp root.
 /// It deliberately has no API for accepting an arbitrary user path.
 /// </summary>
-public sealed class TemporaryDemoPlanExecutor : IPlanExecutor
+public sealed class TemporaryDemoPlanExecutor : IPlanExecutor, IUndoService
 {
     private const string MarkerName = ".deskai-demo-root";
     private const string OwnedPrefix = "DeskAI.Demo.";
@@ -20,16 +20,25 @@ public sealed class TemporaryDemoPlanExecutor : IPlanExecutor
     private readonly string _markerToken = Guid.NewGuid().ToString("N");
     private readonly PlanValidator _validator;
     private readonly IClock _clock;
+    private readonly IOperationJournal _journal;
+    private readonly IAuthorizedRootRepository _rootRepository;
+    private readonly IPlanRepository _planRepository;
     private bool _prepared;
 
     public TemporaryDemoPlanExecutor(
         IOptions<DemoWorkspaceOptions> options,
         PlanValidator validator,
-        IClock clock)
+        IClock clock,
+        IOperationJournal journal,
+        IAuthorizedRootRepository rootRepository,
+        IPlanRepository planRepository)
     {
         ArgumentNullException.ThrowIfNull(options);
         _validator = validator ?? throw new ArgumentNullException(nameof(validator));
         _clock = clock ?? throw new ArgumentNullException(nameof(clock));
+        _journal = journal ?? throw new ArgumentNullException(nameof(journal));
+        _rootRepository = rootRepository ?? throw new ArgumentNullException(nameof(rootRepository));
+        _planRepository = planRepository ?? throw new ArgumentNullException(nameof(planRepository));
         _canonicalTempRoot = Normalize(Path.GetTempPath());
         _basePath = Normalize(options.Value.BasePath);
         EnsureContained(_canonicalTempRoot, _basePath, "Demo base must stay inside the system temporary directory.");
@@ -87,32 +96,203 @@ public sealed class TemporaryDemoPlanExecutor : IPlanExecutor
         if (refusal is not null)
         {
             results.AddRange(selected.Select(operation => Failed(operation.Id, refusal)));
-            return Finish(plan.Id, started, results);
+            return new ExecutionResult(Guid.NewGuid(), plan.Id, results, started, _clock.UtcNow);
         }
+
+        try
+        {
+            VerifyOwnedRoot();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            results.AddRange(selected.Select(operation => Failed(operation.Id, exception.Message)));
+            return new ExecutionResult(Guid.NewGuid(), plan.Id, results, started, _clock.UtcNow);
+        }
+
+        await _rootRepository.SaveAsync(Root, cancellationToken).ConfigureAwait(false);
+        await _planRepository.SaveAsync(plan, cancellationToken).ConfigureAwait(false);
+        var transactionId = Guid.NewGuid();
+        var journalOperations = selected
+            .Select((operation, index) => CaptureIntent(index, operation))
+            .ToArray();
+        await _journal.CreateAsync(new ExecutionJournalEntry(
+            transactionId,
+            plan.Id,
+            plan.Revision,
+            approval.Id,
+            ExecutionTransactionKind.Execute,
+            null,
+            ExecutionTransactionState.Prepared,
+            started,
+            null,
+            journalOperations), cancellationToken).ConfigureAwait(false);
+        await _journal.UpdateTransactionAsync(
+            transactionId, ExecutionTransactionState.Executing, null, cancellationToken).ConfigureAwait(false);
 
         foreach (var operation in selected)
         {
             if (cancellationToken.IsCancellationRequested)
             {
                 results.Add(new OperationExecutionResult(operation.Id, ExecutionOutcome.Cancelled, "Cancelled before this operation started."));
+                await _journal.UpdateOperationAsync(
+                    transactionId, operation.Id, JournalOperationState.Cancelled,
+                    "Cancelled before this operation started.", CancellationToken.None).ConfigureAwait(false);
                 break;
             }
 
             try
             {
+                await _journal.UpdateOperationAsync(
+                    transactionId, operation.Id, JournalOperationState.InProgress, null, cancellationToken).ConfigureAwait(false);
                 VerifyOwnedRoot();
                 ExecuteOperation(operation);
                 results.Add(new OperationExecutionResult(operation.Id, ExecutionOutcome.Completed, null));
+                await _journal.UpdateOperationAsync(
+                    transactionId, operation.Id, JournalOperationState.Completed, null, CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
             {
                 results.Add(Failed(operation.Id, exception.Message));
+                await _journal.UpdateOperationAsync(
+                    transactionId, operation.Id, JournalOperationState.Failed, exception.Message, CancellationToken.None).ConfigureAwait(false);
             }
 
             await Task.Yield();
         }
 
-        return Finish(plan.Id, started, results);
+        var finished = _clock.UtcNow;
+        var transactionState = DetermineState(results, selected.Length);
+        await _journal.UpdateTransactionAsync(transactionId, transactionState, finished, CancellationToken.None).ConfigureAwait(false);
+        return new ExecutionResult(transactionId, plan.Id, results, started, finished);
+    }
+
+    public async Task<UndoResult> UndoAsync(Guid transactionId, CancellationToken cancellationToken = default)
+    {
+        var original = await _journal.FindAsync(transactionId, cancellationToken).ConfigureAwait(false)
+            ?? throw new InvalidOperationException("The activity record could not be found.");
+        if (original.Kind != ExecutionTransactionKind.Execute ||
+            original.State is not (ExecutionTransactionState.Completed or ExecutionTransactionState.PartiallyCompleted))
+        {
+            throw new InvalidOperationException("This activity is not eligible for undo.");
+        }
+
+        var recent = await _journal.ListRecentAsync(100, cancellationToken).ConfigureAwait(false);
+        if (recent.Any(item => item.Kind == ExecutionTransactionKind.Undo &&
+                               item.OriginalTransactionId == transactionId &&
+                               item.State is ExecutionTransactionState.Completed or ExecutionTransactionState.PartiallyCompleted))
+        {
+            throw new InvalidOperationException("This activity has already been undone.");
+        }
+
+        VerifyOwnedRoot();
+        var started = _clock.UtcNow;
+        var undoId = Guid.NewGuid();
+        var reversible = original.Operations
+            .Where(operation => operation.State == JournalOperationState.Completed)
+            .Reverse()
+            .Select((operation, index) => operation with
+            {
+                Sequence = index,
+                State = JournalOperationState.Pending,
+                Error = null,
+            })
+            .ToArray();
+        await _journal.CreateAsync(new ExecutionJournalEntry(
+            undoId, original.PlanId, original.PlanRevision, Guid.Empty,
+            ExecutionTransactionKind.Undo, transactionId,
+            ExecutionTransactionState.Prepared, started, null, reversible), cancellationToken).ConfigureAwait(false);
+        await _journal.UpdateTransactionAsync(
+            undoId, ExecutionTransactionState.Executing, null, cancellationToken).ConfigureAwait(false);
+
+        var results = new List<OperationExecutionResult>();
+        foreach (var operation in reversible)
+        {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                results.Add(new OperationExecutionResult(operation.OperationId, ExecutionOutcome.Cancelled, "Undo was cancelled before this item."));
+                await _journal.UpdateOperationAsync(
+                    undoId, operation.OperationId, JournalOperationState.Cancelled,
+                    "Undo was cancelled before this item.", CancellationToken.None).ConfigureAwait(false);
+                break;
+            }
+
+            try
+            {
+                await _journal.UpdateOperationAsync(
+                    undoId, operation.OperationId, JournalOperationState.InProgress, null, cancellationToken).ConfigureAwait(false);
+                VerifyOwnedRoot();
+                UndoOperation(operation);
+                results.Add(new OperationExecutionResult(operation.OperationId, ExecutionOutcome.Completed, null));
+                await _journal.UpdateOperationAsync(
+                    undoId, operation.OperationId, JournalOperationState.Completed, null, CancellationToken.None).ConfigureAwait(false);
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+            {
+                results.Add(Failed(operation.OperationId, exception.Message));
+                await _journal.UpdateOperationAsync(
+                    undoId, operation.OperationId, JournalOperationState.Failed, exception.Message, CancellationToken.None).ConfigureAwait(false);
+            }
+        }
+
+        var finished = _clock.UtcNow;
+        var state = DetermineState(results, reversible.Length);
+        await _journal.UpdateTransactionAsync(undoId, state, finished, CancellationToken.None).ConfigureAwait(false);
+        if (state == ExecutionTransactionState.Completed)
+        {
+            await _journal.UpdateTransactionAsync(
+                original.Id, ExecutionTransactionState.Undone, original.FinishedAtUtc, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        return new UndoResult(undoId, transactionId, results, started, finished);
+    }
+
+    public async Task<int> RecoverIncompleteAsync(CancellationToken cancellationToken = default)
+    {
+        var incomplete = await _journal.ListIncompleteAsync(cancellationToken).ConfigureAwait(false);
+        foreach (var transaction in incomplete)
+        {
+            var storedPlan = await _planRepository.FindAsync(
+                transaction.PlanId, transaction.PlanRevision, cancellationToken).ConfigureAwait(false);
+            if (storedPlan is not null && storedPlan.RootId != Root.Id)
+            {
+                await _journal.UpdateTransactionAsync(
+                    transaction.Id, ExecutionTransactionState.RecoveryRequired, null, cancellationToken).ConfigureAwait(false);
+                continue;
+            }
+
+            foreach (var operation in transaction.Operations)
+            {
+                if (operation.State == JournalOperationState.Pending)
+                {
+                    await _journal.UpdateOperationAsync(
+                        transaction.Id, operation.OperationId, JournalOperationState.Cancelled,
+                        "Recovered before the operation began.", cancellationToken).ConfigureAwait(false);
+                }
+                else if (operation.State == JournalOperationState.InProgress)
+                {
+                    var recoveredState = transaction.Kind == ExecutionTransactionKind.Execute && DidOperationFinish(operation)
+                        ? JournalOperationState.Completed
+                        : JournalOperationState.Failed;
+                    var explanation = recoveredState == JournalOperationState.Completed
+                        ? "Recovered by verifying the resulting filesystem state."
+                        : "Could not prove that the interrupted operation completed; manual review is required.";
+                    await _journal.UpdateOperationAsync(
+                        transaction.Id, operation.OperationId, recoveredState, explanation, cancellationToken).ConfigureAwait(false);
+                }
+            }
+
+            var refreshed = await _journal.FindAsync(transaction.Id, cancellationToken).ConfigureAwait(false)
+                ?? throw new InvalidOperationException("The recovery journal disappeared.");
+            var completed = refreshed.Operations.Count(item => item.State == JournalOperationState.Completed);
+            var state = completed == refreshed.Operations.Count
+                ? ExecutionTransactionState.Completed
+                : completed > 0
+                    ? ExecutionTransactionState.PartiallyCompleted
+                    : ExecutionTransactionState.Failed;
+            await _journal.UpdateTransactionAsync(transaction.Id, state, _clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        }
+
+        return incomplete.Count;
     }
 
     private string? ValidateEnvelope(
@@ -170,6 +350,137 @@ public sealed class TemporaryDemoPlanExecutor : IPlanExecutor
             default:
                 throw new InvalidOperationException("The operation type is not supported by the demo executor.");
         }
+    }
+
+    private OperationJournalEntry CaptureIntent(int sequence, PlanOperation operation)
+    {
+        VerifyOwnedRoot();
+        var source = operation switch
+        {
+            MoveFileOperation move => move.SourceRelativePath,
+            RenameFileOperation rename => rename.SourceRelativePath,
+            _ => null,
+        };
+        var destination = operation switch
+        {
+            CreateDirectoryOperation create => create.DestinationRelativePath,
+            MoveFileOperation move => move.DestinationRelativePath,
+            RenameFileOperation rename => rename.DestinationRelativePath,
+            _ => throw new InvalidOperationException("The operation type is not journalable."),
+        };
+        long? size = null;
+        DateTimeOffset? modified = null;
+        if (source is not null)
+        {
+            var sourcePath = Resolve(source);
+            RejectReparsePointsInExistingPath(Root.CanonicalPath, sourcePath);
+            if (File.Exists(sourcePath))
+            {
+                var info = new FileInfo(sourcePath);
+                size = info.Length;
+                modified = info.LastWriteTimeUtc;
+            }
+        }
+
+        return new OperationJournalEntry(
+            sequence, operation.Id, operation.Kind, source, destination,
+            size, modified, JournalOperationState.Pending, null);
+    }
+
+    private void UndoOperation(OperationJournalEntry operation)
+    {
+        if (operation.Kind == PlanOperationKind.CreateDirectory)
+        {
+            var directory = Resolve(operation.DestinationRelativePath);
+            RejectReparsePointsInExistingPath(Root.CanonicalPath, directory);
+            if (!Directory.Exists(directory))
+            {
+                return;
+            }
+
+            if (Directory.EnumerateFileSystemEntries(directory).Any())
+            {
+                throw new IOException("The folder is no longer empty, so DeskAI left it in place.");
+            }
+
+            Directory.Delete(directory, recursive: false);
+            return;
+        }
+
+        if (operation.SourceRelativePath is null)
+        {
+            throw new InvalidOperationException("The journal is missing the original source path.");
+        }
+
+        var originalSource = Resolve(operation.SourceRelativePath);
+        var currentDestination = Resolve(operation.DestinationRelativePath);
+        RejectReparsePointsInExistingPath(Root.CanonicalPath, currentDestination);
+        var sourceParent = Path.GetDirectoryName(originalSource)
+            ?? throw new InvalidOperationException("The original source has no parent folder.");
+        RejectReparsePointsInExistingPath(Root.CanonicalPath, sourceParent);
+        if (File.Exists(originalSource) || Directory.Exists(originalSource))
+        {
+            throw new IOException("The original location is occupied, so undo was refused.");
+        }
+
+        if (!MatchesRecordedFile(currentDestination, operation))
+        {
+            throw new IOException("The moved file changed after organization, so undo was refused.");
+        }
+
+        File.Move(currentDestination, originalSource);
+    }
+
+    private bool DidOperationFinish(OperationJournalEntry operation)
+    {
+        try
+        {
+            VerifyOwnedRoot();
+            if (operation.Kind == PlanOperationKind.CreateDirectory)
+            {
+                return Directory.Exists(Resolve(operation.DestinationRelativePath));
+            }
+
+            return operation.SourceRelativePath is not null &&
+                   !File.Exists(Resolve(operation.SourceRelativePath)) &&
+                   MatchesRecordedFile(Resolve(operation.DestinationRelativePath), operation);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            return false;
+        }
+    }
+
+    private static bool MatchesRecordedFile(string path, OperationJournalEntry operation)
+    {
+        if (!File.Exists(path) || Directory.Exists(path) || operation.BeforeSizeBytes is null || operation.BeforeModifiedAtUtc is null)
+        {
+            return false;
+        }
+
+        var info = new FileInfo(path);
+        return info.Length == operation.BeforeSizeBytes &&
+               info.LastWriteTimeUtc == operation.BeforeModifiedAtUtc.Value.UtcDateTime;
+    }
+
+    private static ExecutionTransactionState DetermineState(
+        IReadOnlyCollection<OperationExecutionResult> results,
+        int expectedCount)
+    {
+        var completed = results.Count(item => item.Outcome == ExecutionOutcome.Completed);
+        if (completed == expectedCount)
+        {
+            return ExecutionTransactionState.Completed;
+        }
+
+        if (completed > 0)
+        {
+            return ExecutionTransactionState.PartiallyCompleted;
+        }
+
+        return results.Any(item => item.Outcome == ExecutionOutcome.Cancelled)
+            ? ExecutionTransactionState.Cancelled
+            : ExecutionTransactionState.Failed;
     }
 
     private void CreateDirectory(string relativePath)
@@ -293,9 +604,6 @@ public sealed class TemporaryDemoPlanExecutor : IPlanExecutor
             throw new InvalidOperationException(message);
         }
     }
-
-    private ExecutionResult Finish(Guid planId, DateTimeOffset started, IReadOnlyList<OperationExecutionResult> results) =>
-        new(Guid.NewGuid(), planId, results, started, _clock.UtcNow);
 
     private static OperationExecutionResult Failed(Guid operationId, string error) =>
         new(operationId, ExecutionOutcome.Failed, error);

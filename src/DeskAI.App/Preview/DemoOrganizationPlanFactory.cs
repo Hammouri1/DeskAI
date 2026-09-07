@@ -19,8 +19,8 @@ public sealed class DemoOrganizationPlanFactory(
     PlanValidator validator,
     TemporaryDemoPlanExecutor demoWorkspace)
 {
-    private static readonly Guid PlanId = Guid.Parse("2feee7a1-3a35-4cd4-8a37-62c66caf34e1");
     private static readonly DateTimeOffset DemoTimestamp = new(2026, 9, 7, 12, 0, 0, TimeSpan.Zero);
+    private readonly Guid _planId = Guid.NewGuid();
 
     public DemoPlanSnapshot Create(int revision)
     {
@@ -31,7 +31,7 @@ public sealed class DemoOrganizationPlanFactory(
             .ToArray();
 
         var request = new OrganizationPlanningRequest(
-            PlanId,
+            _planId,
             root.Id,
             revision,
             DemoTimestamp.AddMinutes(revision - 1),

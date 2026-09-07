@@ -136,14 +136,128 @@ public sealed class TemporaryDemoPlanExecutorTests
         Assert.Throws<InvalidOperationException>(() => new TemporaryDemoPlanExecutor(
             Options.Create(new DemoWorkspaceOptions { BasePath = driveRoot }),
             new PlanValidator(new WindowsPathPolicy()),
-            new SystemClock()));
+            new SystemClock(),
+            new InMemoryOperationJournal(),
+            new InMemoryAuthorizedRootRepository(),
+            new InMemoryPlanRepository()));
     }
 
-    private static TemporaryDemoPlanExecutor CreateExecutor(TemporaryDirectory sandbox) =>
+    [Fact]
+    public async Task ExecuteAsync_WritesIntentAndOutcomeToJournal()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var journal = new InMemoryOperationJournal();
+        var executor = CreateExecutor(sandbox, journal);
+        await executor.PrepareAsync(TestContext.Current.CancellationToken);
+        Directory.CreateDirectory(Path.Combine(executor.Root.CanonicalPath, "Sorted"));
+        var move = new MoveFileOperation(Guid.NewGuid(), "semester-budget.xlsx", @"Sorted\semester-budget.xlsx", "Demo move", OperationProvenance.Rule);
+        var plan = Plan(executor, move);
+
+        var result = await executor.ExecuteAsync(plan, Approve(plan, move.Id), TestContext.Current.CancellationToken);
+        var entry = await journal.FindAsync(result.TransactionId, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(entry);
+        Assert.Equal(ExecutionTransactionState.Completed, entry.State);
+        var recorded = Assert.Single(entry.Operations);
+        Assert.Equal(JournalOperationState.Completed, recorded.State);
+        Assert.NotNull(recorded.BeforeSizeBytes);
+        Assert.NotNull(recorded.BeforeModifiedAtUtc);
+    }
+
+    [Fact]
+    public async Task UndoAsync_RestoresMovedFileAndRemovesEmptyCreatedFolder()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var executor = CreateExecutor(sandbox);
+        await executor.PrepareAsync(TestContext.Current.CancellationToken);
+        var create = new CreateDirectoryOperation(Guid.NewGuid(), "Sorted", "Demo folder", OperationProvenance.Rule);
+        var move = new MoveFileOperation(Guid.NewGuid(), "semester-budget.xlsx", @"Sorted\semester-budget.xlsx", "Demo move", OperationProvenance.Rule);
+        var plan = Plan(executor, create, move);
+        var execution = await executor.ExecuteAsync(plan, Approve(plan, create.Id, move.Id), TestContext.Current.CancellationToken);
+
+        var undo = await executor.UndoAsync(execution.TransactionId, TestContext.Current.CancellationToken);
+
+        Assert.All(undo.Operations, item => Assert.Equal(ExecutionOutcome.Completed, item.Outcome));
+        Assert.True(File.Exists(Path.Combine(executor.Root.CanonicalPath, "semester-budget.xlsx")));
+        Assert.False(Directory.Exists(Path.Combine(executor.Root.CanonicalPath, "Sorted")));
+    }
+
+    [Fact]
+    public async Task UndoAsync_RefusesFileChangedAfterExecution()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var executor = CreateExecutor(sandbox);
+        await executor.PrepareAsync(TestContext.Current.CancellationToken);
+        Directory.CreateDirectory(Path.Combine(executor.Root.CanonicalPath, "Sorted"));
+        var move = new MoveFileOperation(Guid.NewGuid(), "semester-budget.xlsx", @"Sorted\semester-budget.xlsx", "Demo move", OperationProvenance.Rule);
+        var plan = Plan(executor, move);
+        var execution = await executor.ExecuteAsync(plan, Approve(plan, move.Id), TestContext.Current.CancellationToken);
+        var movedPath = Path.Combine(executor.Root.CanonicalPath, "Sorted", "semester-budget.xlsx");
+        await File.AppendAllTextAsync(movedPath, "changed", TestContext.Current.CancellationToken);
+
+        var undo = await executor.UndoAsync(execution.TransactionId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(ExecutionOutcome.Failed, Assert.Single(undo.Operations).Outcome);
+        Assert.True(File.Exists(movedPath));
+        Assert.False(File.Exists(Path.Combine(executor.Root.CanonicalPath, "semester-budget.xlsx")));
+    }
+
+    [Fact]
+    public async Task RecoverIncompleteAsync_VerifiesCompletedMoveAndRepairsJournalState()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var journal = new InMemoryOperationJournal();
+        var executor = CreateExecutor(sandbox, journal);
+        await executor.PrepareAsync(TestContext.Current.CancellationToken);
+        Directory.CreateDirectory(Path.Combine(executor.Root.CanonicalPath, "Sorted"));
+        var source = Path.Combine(executor.Root.CanonicalPath, "semester-budget.xlsx");
+        var destination = Path.Combine(executor.Root.CanonicalPath, "Sorted", "semester-budget.xlsx");
+        var info = new FileInfo(source);
+        var operationId = Guid.NewGuid();
+        var transactionId = Guid.NewGuid();
+        await journal.CreateAsync(new ExecutionJournalEntry(
+            transactionId, Guid.NewGuid(), 1, Guid.NewGuid(), ExecutionTransactionKind.Execute, null,
+            ExecutionTransactionState.Executing, DateTimeOffset.UtcNow, null,
+            [new OperationJournalEntry(0, operationId, PlanOperationKind.MoveFile,
+                "semester-budget.xlsx", @"Sorted\semester-budget.xlsx", info.Length, info.LastWriteTimeUtc,
+                JournalOperationState.InProgress, null)]), TestContext.Current.CancellationToken);
+        File.Move(source, destination);
+
+        var recovered = await executor.RecoverIncompleteAsync(TestContext.Current.CancellationToken);
+        var entry = await journal.FindAsync(transactionId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, recovered);
+        Assert.Equal(ExecutionTransactionState.Completed, entry!.State);
+        Assert.Equal(JournalOperationState.Completed, Assert.Single(entry.Operations).State);
+    }
+
+    [Fact]
+    public async Task ExecuteAsync_WhenWriteAheadJournalFails_MakesNoFileChange()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var executor = CreateExecutor(sandbox, new FailingCreateOperationJournal());
+        await executor.PrepareAsync(TestContext.Current.CancellationToken);
+        Directory.CreateDirectory(Path.Combine(executor.Root.CanonicalPath, "Sorted"));
+        var move = new MoveFileOperation(Guid.NewGuid(), "semester-budget.xlsx", @"Sorted\semester-budget.xlsx", "Demo move", OperationProvenance.Rule);
+        var plan = Plan(executor, move);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            executor.ExecuteAsync(plan, Approve(plan, move.Id), TestContext.Current.CancellationToken));
+
+        Assert.True(File.Exists(Path.Combine(executor.Root.CanonicalPath, "semester-budget.xlsx")));
+        Assert.False(File.Exists(Path.Combine(executor.Root.CanonicalPath, "Sorted", "semester-budget.xlsx")));
+    }
+
+    private static TemporaryDemoPlanExecutor CreateExecutor(
+        TemporaryDirectory sandbox,
+        InMemoryOperationJournal? journal = null) =>
         new(
             Options.Create(new DemoWorkspaceOptions { BasePath = Path.Combine(sandbox.Path, "DeskAI-Demos") }),
             new PlanValidator(new WindowsPathPolicy()),
-            new SystemClock());
+            new SystemClock(),
+            journal ?? new InMemoryOperationJournal(),
+            new InMemoryAuthorizedRootRepository(),
+            new InMemoryPlanRepository());
 
     private static OrganizationPlan Plan(TemporaryDemoPlanExecutor executor, params PlanOperation[] operations) =>
         OrganizationPlan.CreateDraft(
