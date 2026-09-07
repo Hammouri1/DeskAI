@@ -8,6 +8,7 @@ internal sealed class FakeAiHttpTransport(HttpStatusCode statusCode, string resp
     public Uri? Endpoint { get; private set; }
     public string? RequestBody { get; private set; }
     public IReadOnlyDictionary<string, string>? Headers { get; private set; }
+    public int CallCount { get; private set; }
 
     public Task<AiHttpResponse> PostJsonAsync(
         Uri endpoint,
@@ -17,6 +18,7 @@ internal sealed class FakeAiHttpTransport(HttpStatusCode statusCode, string resp
         CancellationToken cancellationToken)
     {
         cancellationToken.ThrowIfCancellationRequested();
+        CallCount++;
         Endpoint = endpoint;
         RequestBody = json;
         Headers = headers;

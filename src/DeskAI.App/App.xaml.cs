@@ -1,4 +1,5 @@
 using DeskAI.AI;
+using DeskAI.AI.Transport;
 using DeskAI.App.Navigation;
 using DeskAI.App.Preview;
 using DeskAI.App.Services;
@@ -65,7 +66,12 @@ public partial class App : Application
 
                 services.AddDeskAiInfrastructure(options =>
                     options.DatabasePath = Path.Combine(appStateDirectory, "deskai.db"));
-                services.AddSingleton<IOrganizationSuggestionProvider, NoAiSuggestionProvider>();
+                services.AddSingleton<IAiHttpTransport>(_ => new HttpClientAiTransport(
+                    new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
+                    {
+                        Timeout = Timeout.InfiniteTimeSpan,
+                    }));
+                services.AddSingleton<IOrganizationSuggestionProvider, ConfiguredSuggestionProvider>();
                 services.AddSingleton<IPathPolicy>(_ => new WindowsPathPolicy(protectedPaths));
                 services.AddSingleton<PlanValidator>();
                 services.AddSingleton<DemoOrganizationPlanFactory>();

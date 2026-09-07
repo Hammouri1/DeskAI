@@ -47,6 +47,35 @@ public sealed partial class SettingsPage : Page
         await _viewModel.SavePrivacyAsync();
     }
 
+    private async void OnSaveProviderClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedModeIndex == (int)AiMode.Cloud)
+        {
+            var confirmation = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = "Enable Google Gemini?",
+                Content = _viewModel.CloudConsentSummary(),
+                PrimaryButtonText = "Enable Gemini",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+            };
+            if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
+            {
+                return;
+            }
+        }
+
+        await _viewModel.SaveProviderAsync(GeminiKeyBox.Password);
+        GeminiKeyBox.Password = string.Empty;
+    }
+
+    private async void OnRemoveGeminiKeyClick(object sender, RoutedEventArgs e)
+    {
+        await _viewModel.RemoveGeminiKeyAsync();
+        GeminiKeyBox.Password = string.Empty;
+    }
+
     private static string DisplayName(DisclosureCategory category) => category switch
     {
         DisclosureCategory.Extension => "file extension",

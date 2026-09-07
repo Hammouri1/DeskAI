@@ -3,7 +3,7 @@ using System.Text;
 
 namespace DeskAI.AI.Transport;
 
-public sealed class HttpClientAiTransport(HttpClient httpClient) : IAiHttpTransport
+public sealed class HttpClientAiTransport(HttpClient httpClient) : IAiHttpTransport, IDisposable
 {
     public async Task<AiHttpResponse> PostJsonAsync(
         Uri endpoint,
@@ -47,4 +47,6 @@ public sealed class HttpClientAiTransport(HttpClient httpClient) : IAiHttpTransp
 
         return new AiHttpResponse(response.StatusCode, Encoding.UTF8.GetString(buffer.ToArray()));
     }
+
+    public void Dispose() => httpClient.Dispose();
 }

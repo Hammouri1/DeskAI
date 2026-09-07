@@ -47,6 +47,45 @@
                     <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding SaveStatus}" TextWrapping="Wrap" />
                 </StackPanel>
             </Border>
+
+            <Border Padding="18" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="10">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="AI mode" />
+                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
+                                   Text="DeskAI never switches providers automatically. Local endpoints must stay on this computer." />
+                    </StackPanel>
+                    <ComboBox Header="Processing mode" SelectedIndex="{Binding SelectedModeIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="Rule Engine Only" />
+                        <ComboBoxItem Content="Local AI endpoint" />
+                        <ComboBoxItem Content="Google Gemini (your API key)" />
+                    </ComboBox>
+                    <Expander Header="Local AI setup">
+                        <StackPanel Padding="0,10,0,0" Spacing="10">
+                            <TextBox Header="Loopback endpoint" PlaceholderText="http://127.0.0.1:11434/v1/chat/completions"
+                                     Text="{Binding LocalEndpoint, Mode=TwoWay}" />
+                            <TextBox Header="Model ID" PlaceholderText="Enter the model exposed by your local runtime"
+                                     Text="{Binding LocalModel, Mode=TwoWay}" />
+                        </StackPanel>
+                    </Expander>
+                    <Expander Header="Gemini setup">
+                        <StackPanel Padding="0,10,0,0" Spacing="10">
+                            <TextBox Header="Gemini model ID" PlaceholderText="Enter a model available to your Gemini account"
+                                     Text="{Binding GeminiModel, Mode=TwoWay}" />
+                            <PasswordBox x:Name="GeminiKeyBox" Header="Gemini API key" PasswordRevealMode="Peek"
+                                         PlaceholderText="Stored in Windows Credential Manager" />
+                            <ToggleSwitch Header="I agree to send the allowed categories above directly to Google Gemini"
+                                          IsOn="{Binding CloudConsent, Mode=TwoWay}" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
+                                       Text="Provider pricing, retention, and availability belong to Google. DeskAI does not add a backend." />
+                            <Button HorizontalAlignment="Left" Click="OnRemoveGeminiKeyClick" Content="Remove Gemini key" />
+                        </StackPanel>
+                    </Expander>
+                    <Button HorizontalAlignment="Left" Click="OnSaveProviderClick" Content="Save AI mode"
+                            Style="{StaticResource AccentButtonStyle}" />
+                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding ProviderStatus}" TextWrapping="Wrap" />
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </Page>
