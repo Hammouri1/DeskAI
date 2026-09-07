@@ -26,7 +26,8 @@ public sealed class DemoOrganizationPlanFactory(
     {
         var root = demoWorkspace.Root;
 
-        var files = CreateDemoFiles()
+        var demoFiles = CreateDemoFiles();
+        var files = demoFiles
             .Select(file => new ClassifiedFile(file, classifier.Classify(file)))
             .ToArray();
 
@@ -40,7 +41,7 @@ public sealed class DemoOrganizationPlanFactory(
             files);
 
         var plan = planner.CreatePlan(request);
-        return new DemoPlanSnapshot(plan, validator.Validate(plan, root), root);
+        return new DemoPlanSnapshot(plan, validator.Validate(plan, root), root, demoFiles);
     }
 
     private static FileItem[] CreateDemoFiles() =>

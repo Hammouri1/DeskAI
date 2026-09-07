@@ -44,6 +44,47 @@
                 <Button Grid.Column="2" Command="{Binding ClearSelectionCommand}" Content="Clear" />
             </Grid>
 
+            <Border Padding="18" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="10">
+                <StackPanel Spacing="10">
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                        <StackPanel Spacing="3">
+                            <TextBlock FontWeight="SemiBold" Text="Optional AI advice for sample files" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                       Text="{Binding AiDisclosureSummary}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                            <ProgressRing Width="22" Height="22" IsActive="{Binding IsAiBusy}" />
+                            <Button Command="{Binding GetAiSuggestionsCommand}" Content="Ask for suggestions" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                               Text="{Binding AiPreviewMessage}" TextWrapping="Wrap" />
+                    <ItemsControl ItemsSource="{Binding AiSuggestions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Margin="0,0,0,6" Padding="12"
+                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="8">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                        <StackPanel Spacing="3">
+                                            <TextBlock FontWeight="SemiBold" Text="{Binding FileName}" />
+                                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                                       Text="{Binding Reason}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="2">
+                                            <TextBlock FontWeight="SemiBold" Text="{Binding Category}" />
+                                            <TextBlock FontSize="12" Text="{Binding Confidence}" />
+                                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding Provider}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
+                               Text="Advice only: these results cannot change the plan or run file operations." />
+                </StackPanel>
+            </Border>
+
             <ItemsControl ItemsSource="{Binding Operations}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>

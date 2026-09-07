@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using DeskAI.App.Preview;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Execution;
+using DeskAI.Core.Ai;
 using DeskAI.Core.Files;
 using DeskAI.Core.Plans;
 using DeskAI.Infrastructure.Execution;
@@ -16,6 +17,8 @@ public sealed class OrganizeViewModel : ObservableObject
     private readonly TemporaryDemoPlanExecutor _executor;
     private readonly IOperationJournal _journal;
     private readonly IReadOnlyFolderService _readOnlyFolderService;
+    private readonly IAiSettingsRepository _aiSettingsRepository;
+    private readonly IOrganizationSuggestionProvider _aiProvider;
     private OrganizationPlan? _plan;
     private string _demoRoot = "Not created — DeskAI will generate a unique folder under Windows Temp";
     private string _resultMessage = "Nothing has run yet. Review the selected demo actions below.";
@@ -33,29 +36,40 @@ public sealed class OrganizeViewModel : ObservableObject
     private bool _isFolderBusy;
     private string _folderPreviewTitle = "No folder connected";
     private string _folderPreviewMessage = "Choose a test folder to preview names, sizes, and dates.";
+    private IReadOnlyList<FileItem> _demoFiles = [];
+    private DeskAI.Core.Roots.AuthorizedRoot? _demoAiRoot;
+    private bool _isAiBusy;
+    private string _aiPreviewMessage = "AI is optional. Suggestions appear here and never run automatically.";
+    private string _aiDisclosureSummary = "No request has been prepared.";
 
     public OrganizeViewModel(
         DemoOrganizationPlanFactory demoPlanFactory,
         TemporaryDemoPlanExecutor executor,
         IOperationJournal journal,
-        IReadOnlyFolderService readOnlyFolderService)
+        IReadOnlyFolderService readOnlyFolderService,
+        IAiSettingsRepository aiSettingsRepository,
+        IOrganizationSuggestionProvider aiProvider)
     {
         _demoPlanFactory = demoPlanFactory ?? throw new ArgumentNullException(nameof(demoPlanFactory));
         _executor = executor ?? throw new ArgumentNullException(nameof(executor));
         _journal = journal ?? throw new ArgumentNullException(nameof(journal));
         _readOnlyFolderService = readOnlyFolderService ?? throw new ArgumentNullException(nameof(readOnlyFolderService));
+        _aiSettingsRepository = aiSettingsRepository ?? throw new ArgumentNullException(nameof(aiSettingsRepository));
+        _aiProvider = aiProvider ?? throw new ArgumentNullException(nameof(aiProvider));
         RebuildPreviewCommand = new RelayCommand(RebuildPreview, CanEditPreview);
         SelectAllSafeCommand = new RelayCommand(SelectAllSafe, CanEditPreview);
         ClearSelectionCommand = new RelayCommand(ClearSelection, CanEditPreview);
         ExecuteDemoCommand = new AsyncRelayCommand(ExecuteDemoAsync, CanExecuteDemo);
         UndoDemoCommand = new AsyncRelayCommand(UndoDemoAsync, CanUndoDemo);
         RevokeFolderCommand = new AsyncRelayCommand(RevokeFolderAsync, CanRevokeFolder);
+        GetAiSuggestionsCommand = new AsyncRelayCommand(GetAiSuggestionsAsync, () => !_isAiBusy);
         RebuildPreview();
     }
 
     public ObservableCollection<PreviewOperationViewModel> Operations { get; } = [];
     public ObservableCollection<PreviewIssueViewModel> Issues { get; } = [];
     public ObservableCollection<ReadOnlyFileItemViewModel> FolderFiles { get; } = [];
+    public ObservableCollection<AiSuggestionViewModel> AiSuggestions { get; } = [];
 
     public IRelayCommand RebuildPreviewCommand { get; }
     public IRelayCommand SelectAllSafeCommand { get; }
@@ -63,6 +77,7 @@ public sealed class OrganizeViewModel : ObservableObject
     public IAsyncRelayCommand ExecuteDemoCommand { get; }
     public IAsyncRelayCommand UndoDemoCommand { get; }
     public IAsyncRelayCommand RevokeFolderCommand { get; }
+    public IAsyncRelayCommand GetAiSuggestionsCommand { get; }
 
     public string DemoRoot => _demoRoot;
     public string RevisionLabel => $"Plan revision {_revision}";
@@ -85,6 +100,9 @@ public sealed class OrganizeViewModel : ObservableObject
     public string FolderPreviewMessage => _folderPreviewMessage;
     public string FolderFileCount => FolderFiles.Count == 1 ? "1 file found" : $"{FolderFiles.Count} files found";
     public bool IsFolderBusy => _isFolderBusy;
+    public bool IsAiBusy => _isAiBusy;
+    public string AiPreviewMessage => _aiPreviewMessage;
+    public string AiDisclosureSummary => _aiDisclosureSummary;
 
     public async Task InitializeAsync()
     {
@@ -101,14 +119,98 @@ public sealed class OrganizeViewModel : ObservableObject
                 _folderPreviewMessage = "Connected for read-only preview. Choose it again to refresh the file list.";
                 NotifyFolderStateChanged();
             }
+
+            await RefreshAiDisclosureSummaryAsync();
         }
-        catch (Exception exception) when (exception is InvalidOperationException or System.Data.Common.DbException)
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.Data.Common.DbException)
         {
             _activityTitle = "History unavailable";
             _activityMessage = "DeskAI could not read activity history. No file action was started.";
             OnPropertyChanged(nameof(ActivityTitle));
             OnPropertyChanged(nameof(ActivityMessage));
         }
+    }
+
+    private async Task RefreshAiDisclosureSummaryAsync()
+    {
+        var settings = await _aiSettingsRepository.LoadAsync();
+        _aiDisclosureSummary = settings.Mode switch
+        {
+            AiMode.RuleEngineOnly => "Rule Engine Only · nothing will be sent",
+            AiMode.Local => $"Local endpoint · {FriendlyCategories(settings.CloudDisclosures)}",
+            AiMode.Cloud => $"Google Gemini · {FriendlyCategories(settings.CloudDisclosures)}",
+            _ => "AI configuration unavailable",
+        };
+        OnPropertyChanged(nameof(AiDisclosureSummary));
+    }
+
+    private async Task GetAiSuggestionsAsync()
+    {
+        if (_isAiBusy || _demoAiRoot is null)
+        {
+            return;
+        }
+
+        _isAiBusy = true;
+        AiSuggestions.Clear();
+        _aiPreviewMessage = "Waiting for optional AI advice…";
+        NotifyAiStateChanged();
+        try
+        {
+            var settings = await _aiSettingsRepository.LoadAsync();
+            var limits = new AiRequestLimits(
+                TimeSpan.FromSeconds(Math.Clamp(settings.TimeoutSeconds, 5, 120)),
+                Math.Clamp(_demoFiles.Count, 1, 100),
+                64 * 1024,
+                128 * 1024,
+                settings.MaximumEstimatedCostUsd);
+            var request = AiRequestBuilder.Build(
+                _demoAiRoot,
+                _demoFiles,
+                new HashSet<Guid>(),
+                settings.CloudDisclosures,
+                limits);
+            var response = await _aiProvider.SuggestAsync(request);
+            var names = _demoFiles.ToDictionary(file => file.Id, file => Path.GetFileName(file.RelativePath));
+            foreach (var suggestion in response.Suggestions)
+            {
+                AiSuggestions.Add(AiSuggestionViewModel.FromSuggestion(
+                    suggestion, names.GetValueOrDefault(suggestion.FileId, "Unknown sample"), response.ProviderDisplayName));
+            }
+
+            _aiPreviewMessage = response.Message;
+            await RefreshAiDisclosureSummaryAsync();
+        }
+        catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.Data.Common.DbException)
+        {
+            _aiPreviewMessage = $"AI advice stayed off: {exception.Message}";
+        }
+        finally
+        {
+            _isAiBusy = false;
+            NotifyAiStateChanged();
+        }
+    }
+
+    private void NotifyAiStateChanged()
+    {
+        OnPropertyChanged(nameof(IsAiBusy));
+        OnPropertyChanged(nameof(AiPreviewMessage));
+        GetAiSuggestionsCommand.NotifyCanExecuteChanged();
+    }
+
+    private static string FriendlyCategories(IEnumerable<DisclosureCategory> categories)
+    {
+        var names = categories.Select(category => category switch
+        {
+            DisclosureCategory.Extension => "extensions",
+            DisclosureCategory.Metadata => "sizes/dates",
+            DisclosureCategory.FileName => "file names",
+            DisclosureCategory.FolderNames => "folder names",
+            DisclosureCategory.FullPath => "full paths",
+            _ => category.ToString(),
+        }).ToArray();
+        return names.Length == 0 ? "no file data allowed" : string.Join(", ", names);
     }
 
     public async Task PreviewFolderAsync(string path)
@@ -204,6 +306,8 @@ public sealed class OrganizeViewModel : ObservableObject
         _revision++;
         var snapshot = _demoPlanFactory.Create(_revision);
         _plan = snapshot.Plan;
+        _demoFiles = snapshot.Files;
+        _demoAiRoot = snapshot.Root;
         var validations = snapshot.Validation.Operations
             .GroupBy(item => item.OperationId)
             .ToDictionary(
