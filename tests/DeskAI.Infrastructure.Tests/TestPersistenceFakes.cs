@@ -96,6 +96,19 @@ internal sealed class InMemoryAuthorizedRootRepository : IAuthorizedRootReposito
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(_roots.GetValueOrDefault(rootId));
     }
+
+    public Task<IReadOnlyList<AuthorizedRoot>> ListAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult<IReadOnlyList<AuthorizedRoot>>(_roots.Values.ToArray());
+    }
+
+    public Task RemoveAsync(Guid rootId, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        _roots.Remove(rootId);
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class InMemoryPlanRepository : IPlanRepository

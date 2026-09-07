@@ -86,3 +86,16 @@ There is no scanner UI yet. Run the full test suite and review the `WindowsMetad
 7. Run `TemporaryDemoPlanExecutorTests`; review write-ahead failure, journal outcome, successful undo, changed-file refusal, recovery, traversal, overwrite, and ownership tests.
 8. Run `SqlitePlanningPersistenceTests`; confirm roots, plan operations/issues, and journal outcomes round-trip through schema version 3.
 9. Restart recovery is conservative: an old interrupted session may show Needs review, but the new process does not access that old demo folder and cannot offer undo for it yet.
+
+## V0.2 Step 8 — Read-Only Folder Preview
+
+1. Build Release and run the complete suite. Expected result: 94 passing tests, none skipped, and zero build warnings/errors.
+2. Create a new dummy folder under Windows Temp. Do not select Desktop, Downloads, Documents, Pictures, a cloud-sync folder, or any folder containing personal data.
+3. Put two harmless dummy files in that temporary folder, including one inside a subfolder.
+4. Launch DeskAI, open Organize, scroll to Preview a folder, and choose the dummy folder with the native Windows picker.
+5. Read the confirmation. It must say DeskAI reads names, sizes, and dates only and cannot move, rename, delete, or read contents. Choose Allow read-only preview.
+6. Expand the file count and confirm both dummy names appear with root-relative folder labels, sizes, and local dates. The UI is capped at depth 3 and 250 entries.
+7. Confirm the practice organizer above still uses only its own generated sample files. The real selected folder has no organize/rename/delete button.
+8. Choose Disconnect. Confirm the preview clears and both dummy files remain unchanged on disk.
+9. Restart DeskAI. The disconnected folder must not appear as connected. If you leave it connected instead, startup may remember the permission label but does not rescan until you choose the folder again.
+10. Run `ReadOnlyFolderServiceTests` and `PlanValidatorTests`; review the locked-file metadata test, protected-root refusal, non-mutating revocation, and metadata-only plan refusal.

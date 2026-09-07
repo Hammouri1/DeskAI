@@ -36,6 +36,8 @@ Every mutation test must:
 
 Tests must never enumerate or mutate personal known folders. Do not depend on developer usernames, drive letters, locale, clock, network, or installed cloud-sync clients.
 
+Native picker behavior is verified manually only with a newly generated Windows Temp folder containing dummy data. Automated read-only authorization tests use the same owned-temp helper, lock a dummy file to prove contents are not opened, verify protected-root refusal and scan bounds, and confirm revocation changes only persisted permission.
+
 ## Required Safety Matrix
 
 - Allowed source and destination inside the same authorized root.

@@ -208,6 +208,19 @@ What is deliberately not built: cross-restart undo, real-folder mutation, protec
 Next small task: V0.2 step 8, a native picker and revocable read-only authorization flow tested only with a generated temporary folder.
 ```
 
+## V0.2 Step 8 Learning Log — 2026-09-07
+
+```text
+What became usable: A user can choose a folder through the native Windows picker, explicitly approve a bounded read-only metadata preview, inspect names/sizes/dates, and revoke that permission.
+Main data flow: native picker → disclosure confirmation → IReadOnlyFolderService → canonical/protected/link checks → MetadataOnly root persistence → bounded IFileScanner events → friendly view-model rows.
+Classes/interfaces I can explain: RootAuthorizationScope, IReadOnlyFolderService, ReadOnlyFolderService, IFolderPickerService, WindowsFolderPickerService, and ReadOnlyFileItemViewModel.
+New concept and my own explanation: Least privilege means a permission grants only what the current feature needs. MetadataOnly is stored as data and enforced by Safety, so UI consent to preview cannot silently become consent to move files.
+Security cases tested: locked dummy file proves no content opening, protected-root ancestor refusal, bounded scanning, revocation without file change, metadata-only plan rejection, reparse protection, and schema-v4 migration.
+Build/test evidence: Release build completed with zero warnings/errors; all 94 tests passed.
+What is deliberately not built: real-folder move/rename/delete, content extraction, cross-restart undo, AI provider calls, API-key storage, search index, or automation.
+Next work cycle: V0.3 tasks 1–2—a provider-neutral structured AI contract with deterministic fake, then a privacy/disclosure policy and simple dashboard. Gemini/OpenRouter integration remains later and optional.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

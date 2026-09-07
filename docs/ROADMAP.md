@@ -22,7 +22,7 @@ Goal: a minimal WinUI application and testable domain/safety skeleton with no re
 
 Exit criteria: the solution builds in the supported Windows environment; tests run; navigation works; dependency boundaries are checked manually or automatically; Safety negative tests exist; no code accesses personal folders.
 
-## V0.2 — Scanner, Planner, Preview, Executor, Undo (**Now**)
+## V0.2 — Scanner, Planner, Preview, Executor, Undo (**Complete — 2026-09-07**)
 
 Goal: the complete local, preview-first organizer loop for one explicitly selected folder.
 
@@ -33,7 +33,7 @@ Goal: the complete local, preview-first organizer loop for one explicitly select
 5. ✅ Safety review gate and narrow move/rename/create-folder executor restricted to a generated, marker-protected temporary demo root. Completed 2026-09-07 with explicit plan-revision approval, live containment/link/collision checks, and dummy data only.
 6. ✅ SQLite schema v2 migrations for settings, authorized roots, versioned plans/operations, and execution transactions. Completed 2026-09-07 with fresh-schema, v1-upgrade, and foreign-key tests; repositories/journaling remain step 7.
 7. ✅ SQLite write-ahead operation journal, per-operation/partial outcomes, conservative recovery state, recent activity, and validated same-session undo. Completed 2026-09-07 for the controlled temporary demo only.
-8. User folder picker and real-folder use only after sandbox demonstrations and explicit confirmation.
+8. ✅ Native folder picker with explicit confirmation, revocable metadata-only authorization, bounded read-only preview, and deterministic refusal of every mutation plan for that scope. Completed 2026-09-07; real-folder execution remains disabled.
 
 Exit criteria: a user-controlled demo can scan, preview, approve, execute, inspect history, and undo safely; collision/traversal/link/stale-plan tests pass; rule-only mode works.
 

@@ -66,6 +66,8 @@ Later actions such as tagging or sending an item to the Recycle Bin require thei
 
 Access begins through a user selection flow. Store a stable authorization record and canonical root; do not infer consent from a typed string or a model request. Permission is scoped and revocable.
 
+In V0.2, a picker grant is `MetadataOnly`: after a second plain-language confirmation, DeskAI may enumerate bounded names, sizes, dates, and attributes. It may not open content or authorize mutation. The Safety validator rejects an entire organization plan bound to this scope. Disconnect removes the authorization record without touching the selected folder. Only the separately owned Windows Temp practice root has `ControlledDemo` mutation scope.
+
 ### Path validation
 
 - Reject empty, relative-to-current-directory, malformed, device, UNC/network, alternate data stream, or other unsupported path forms unless later explicitly designed.

@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using DeskAI.App.Preview;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Execution;
+using DeskAI.Core.Files;
 using DeskAI.Core.Plans;
 using DeskAI.Infrastructure.Execution;
 
@@ -14,6 +15,7 @@ public sealed class OrganizeViewModel : ObservableObject
     private readonly DemoOrganizationPlanFactory _demoPlanFactory;
     private readonly TemporaryDemoPlanExecutor _executor;
     private readonly IOperationJournal _journal;
+    private readonly IReadOnlyFolderService _readOnlyFolderService;
     private OrganizationPlan? _plan;
     private string _demoRoot = "Not created — DeskAI will generate a unique folder under Windows Temp";
     private string _resultMessage = "Nothing has run yet. Review the selected demo actions below.";
@@ -27,31 +29,40 @@ public sealed class OrganizeViewModel : ObservableObject
     private bool _hasUndone;
     private string _activityTitle = "No activity yet";
     private string _activityMessage = "Your completed demo and undo will appear here.";
+    private Guid? _readOnlyRootId;
+    private bool _isFolderBusy;
+    private string _folderPreviewTitle = "No folder connected";
+    private string _folderPreviewMessage = "Choose a test folder to preview names, sizes, and dates.";
 
     public OrganizeViewModel(
         DemoOrganizationPlanFactory demoPlanFactory,
         TemporaryDemoPlanExecutor executor,
-        IOperationJournal journal)
+        IOperationJournal journal,
+        IReadOnlyFolderService readOnlyFolderService)
     {
         _demoPlanFactory = demoPlanFactory ?? throw new ArgumentNullException(nameof(demoPlanFactory));
         _executor = executor ?? throw new ArgumentNullException(nameof(executor));
         _journal = journal ?? throw new ArgumentNullException(nameof(journal));
+        _readOnlyFolderService = readOnlyFolderService ?? throw new ArgumentNullException(nameof(readOnlyFolderService));
         RebuildPreviewCommand = new RelayCommand(RebuildPreview, CanEditPreview);
         SelectAllSafeCommand = new RelayCommand(SelectAllSafe, CanEditPreview);
         ClearSelectionCommand = new RelayCommand(ClearSelection, CanEditPreview);
         ExecuteDemoCommand = new AsyncRelayCommand(ExecuteDemoAsync, CanExecuteDemo);
         UndoDemoCommand = new AsyncRelayCommand(UndoDemoAsync, CanUndoDemo);
+        RevokeFolderCommand = new AsyncRelayCommand(RevokeFolderAsync, CanRevokeFolder);
         RebuildPreview();
     }
 
     public ObservableCollection<PreviewOperationViewModel> Operations { get; } = [];
     public ObservableCollection<PreviewIssueViewModel> Issues { get; } = [];
+    public ObservableCollection<ReadOnlyFileItemViewModel> FolderFiles { get; } = [];
 
     public IRelayCommand RebuildPreviewCommand { get; }
     public IRelayCommand SelectAllSafeCommand { get; }
     public IRelayCommand ClearSelectionCommand { get; }
     public IAsyncRelayCommand ExecuteDemoCommand { get; }
     public IAsyncRelayCommand UndoDemoCommand { get; }
+    public IAsyncRelayCommand RevokeFolderCommand { get; }
 
     public string DemoRoot => _demoRoot;
     public string RevisionLabel => $"Plan revision {_revision}";
@@ -70,6 +81,10 @@ public sealed class OrganizeViewModel : ObservableObject
     public string ActivityTitle => _activityTitle;
     public string ActivityMessage => _activityMessage;
     public string UndoButtonText => _hasUndone ? "Undone" : "Undo demo";
+    public string FolderPreviewTitle => _folderPreviewTitle;
+    public string FolderPreviewMessage => _folderPreviewMessage;
+    public string FolderFileCount => FolderFiles.Count == 1 ? "1 file found" : $"{FolderFiles.Count} files found";
+    public bool IsFolderBusy => _isFolderBusy;
 
     public async Task InitializeAsync()
     {
@@ -77,6 +92,15 @@ public sealed class OrganizeViewModel : ObservableObject
         {
             await _executor.RecoverIncompleteAsync();
             await RefreshActivityAsync();
+            var authorized = await _readOnlyFolderService.ListAuthorizedAsync();
+            var latest = authorized.Count == 0 ? null : authorized[^1];
+            if (latest is not null)
+            {
+                _readOnlyRootId = latest.Id;
+                _folderPreviewTitle = latest.DisplayName;
+                _folderPreviewMessage = "Connected for read-only preview. Choose it again to refresh the file list.";
+                NotifyFolderStateChanged();
+            }
         }
         catch (Exception exception) when (exception is InvalidOperationException or System.Data.Common.DbException)
         {
@@ -85,6 +109,94 @@ public sealed class OrganizeViewModel : ObservableObject
             OnPropertyChanged(nameof(ActivityTitle));
             OnPropertyChanged(nameof(ActivityMessage));
         }
+    }
+
+    public async Task PreviewFolderAsync(string path)
+    {
+        if (_isFolderBusy)
+        {
+            return;
+        }
+
+        _isFolderBusy = true;
+        _folderPreviewTitle = "Checking this folder…";
+        _folderPreviewMessage = "Reading names, sizes, and dates only.";
+        FolderFiles.Clear();
+        NotifyFolderStateChanged();
+
+        try
+        {
+            var result = await _readOnlyFolderService.AuthorizeAndPreviewAsync(
+                path,
+                new MetadataScanOptions(maxDepth: 3, maxEntries: 250));
+            if (!result.IsAllowed || result.Root is null)
+            {
+                _readOnlyRootId = null;
+                _folderPreviewTitle = "Folder not connected";
+                _folderPreviewMessage = result.Explanation;
+                return;
+            }
+
+            _readOnlyRootId = result.Root.Id;
+            _folderPreviewTitle = result.Root.DisplayName;
+            _folderPreviewMessage = result.Issues.Count == 0
+                ? result.Explanation
+                : $"{result.Explanation} {result.Issues.Count} item(s) were skipped safely.";
+            foreach (var file in result.Files.OrderBy(file => file.RelativePath))
+            {
+                FolderFiles.Add(ReadOnlyFileItemViewModel.FromFile(file));
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException or System.Data.Common.DbException)
+        {
+            _readOnlyRootId = null;
+            _folderPreviewTitle = "Preview unavailable";
+            _folderPreviewMessage = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            _isFolderBusy = false;
+            NotifyFolderStateChanged();
+        }
+    }
+
+    private bool CanRevokeFolder() => _readOnlyRootId is not null && !_isFolderBusy;
+
+    private async Task RevokeFolderAsync()
+    {
+        if (_readOnlyRootId is not Guid rootId || !CanRevokeFolder())
+        {
+            return;
+        }
+
+        _isFolderBusy = true;
+        NotifyFolderStateChanged();
+        try
+        {
+            await _readOnlyFolderService.RevokeAsync(rootId);
+            _readOnlyRootId = null;
+            FolderFiles.Clear();
+            _folderPreviewTitle = "Folder disconnected";
+            _folderPreviewMessage = "DeskAI no longer remembers permission for this folder.";
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or System.Data.Common.DbException)
+        {
+            _folderPreviewMessage = $"DeskAI could not disconnect it: {exception.Message}";
+        }
+        finally
+        {
+            _isFolderBusy = false;
+            NotifyFolderStateChanged();
+        }
+    }
+
+    private void NotifyFolderStateChanged()
+    {
+        OnPropertyChanged(nameof(FolderPreviewTitle));
+        OnPropertyChanged(nameof(FolderPreviewMessage));
+        OnPropertyChanged(nameof(FolderFileCount));
+        OnPropertyChanged(nameof(IsFolderBusy));
+        RevokeFolderCommand.NotifyCanExecuteChanged();
     }
 
     private void RebuildPreview()

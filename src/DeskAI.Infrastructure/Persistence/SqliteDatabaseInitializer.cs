@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 3;
+    public const int CurrentSchemaVersion = 4;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -36,8 +36,47 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplyInitialMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyPlanningMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyJournalMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplyAuthorizationScopeMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
+    }
+
+    private static async Task ApplyAuthorizationScopeMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        var hasColumn = false;
+        await using (var inspect = connection.CreateCommand())
+        {
+            inspect.CommandText = "PRAGMA table_info(authorized_roots);";
+            await using var reader = await inspect.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                if (string.Equals(reader.GetString(1), "authorization_scope", StringComparison.OrdinalIgnoreCase))
+                {
+                    hasColumn = true;
+                    break;
+                }
+            }
+        }
+
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        if (!hasColumn)
+        {
+            await using var alter = connection.CreateCommand();
+            alter.Transaction = (SqliteTransaction)transaction;
+            alter.CommandText = "ALTER TABLE authorized_roots ADD COLUMN authorization_scope INTEGER NOT NULL DEFAULT 2;";
+            await alter.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = "INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES ($version, $appliedAtUtc);";
+        command.Parameters.AddWithValue("$version", CurrentSchemaVersion);
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task ApplyJournalMigrationAsync(
@@ -90,7 +129,7 @@ public sealed partial class SqliteDatabaseInitializer(
         await using var command = connection.CreateCommand();
         command.Transaction = (SqliteTransaction)transaction;
         command.CommandText = sql;
-        command.Parameters.AddWithValue("$version", CurrentSchemaVersion);
+        command.Parameters.AddWithValue("$version", 3);
         command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
@@ -154,7 +193,7 @@ public sealed partial class SqliteDatabaseInitializer(
         await using var command = connection.CreateCommand();
         command.Transaction = (SqliteTransaction)transaction;
         command.CommandText = sql;
-        command.Parameters.AddWithValue("$version", CurrentSchemaVersion);
+        command.Parameters.AddWithValue("$version", 2);
         command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
@@ -183,7 +222,8 @@ public sealed partial class SqliteDatabaseInitializer(
                 canonical_path TEXT NOT NULL,
                 display_name TEXT NOT NULL,
                 permission INTEGER NOT NULL,
-                created_at_utc TEXT NOT NULL
+                created_at_utc TEXT NOT NULL,
+                authorization_scope INTEGER NOT NULL DEFAULT 2
             );
 
             INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc)
@@ -193,7 +233,7 @@ public sealed partial class SqliteDatabaseInitializer(
         await using var command = connection.CreateCommand();
         command.Transaction = (SqliteTransaction)transaction;
         command.CommandText = sql;
-        command.Parameters.AddWithValue("$version", CurrentSchemaVersion);
+        command.Parameters.AddWithValue("$version", 1);
         command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);

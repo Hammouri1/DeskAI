@@ -4,7 +4,7 @@
 
 DeskAI is a planned open-source Windows desktop application. It will scan only folders a user selects, generate understandable organization proposals, validate every proposed action using deterministic safety rules, show a preview, and execute only approved operations with history and undo support.
 
-**Current status:** milestone V0.1 Safe Foundation plus V0.2 steps 1–7 are implemented. DeskAI can preview a deterministic plan and execute explicitly selected, allowed operations only inside a uniquely generated and marker-protected Windows temporary demo folder containing dummy files. SQLite schema version 3 stores roots, plans, issues, transaction intent, and per-operation outcomes. Same-session validated undo and conservative interrupted-run recovery are available. Personal-folder selection remains deliberately unimplemented.
+**Current status:** milestones V0.1 and V0.2 are implemented. DeskAI can preview and execute a deterministic organization plan only inside its generated Windows Temp practice workspace, with SQLite history, conservative recovery, and same-session undo. A native picker can connect an explicitly selected folder for a bounded metadata-only preview of names, sizes, and dates. This permission is revocable and cannot authorize moving, renaming, deleting, or reading file contents. SQLite schema version 4 records the permission scope.
 
 ## Why DeskAI
 
@@ -78,7 +78,7 @@ DeskAI/
 1. Open this `DeskAI` folder in Codex on Windows.
 2. Ask Codex to read `AGENTS.md` and all files under `docs/`.
 3. Restore, build, and test using the commands in `docs/DEVELOPMENT.md`.
-4. Continue with the V0.2 user folder permission flow and read-only scan preview as the next task.
+4. Continue with V0.3's provider-neutral AI contract and privacy controls as the next work cycle.
 5. Review every filesystem feature against `docs/SECURITY.md` before enabling real-folder use.
 
 Do not point development tools or tests at real personal folders. Current development uses generated in-memory or temporary test data only.

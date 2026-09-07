@@ -30,6 +30,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IOrganizationPlanner, OrganizationPlanner>();
         services.AddSingleton(DefaultFolderRecipe.Create());
         services.AddSingleton<IFileScanner, WindowsMetadataScanner>();
+        services.AddSingleton<IReadOnlyFolderService, ReadOnlyFolderService>();
         services.AddSingleton<IDatabaseInitializer, SqliteDatabaseInitializer>();
         services.AddSingleton<IAuthorizedRootRepository, SqliteAuthorizedRootRepository>();
         services.AddSingleton<IPlanRepository, SqlitePlanRepository>();

@@ -75,4 +75,32 @@ public sealed class PlanValidatorTests
         Assert.False(result.CanBeApproved);
         Assert.Contains(result.Operations, item => item.Result.ReasonCode == ValidationReasonCode.Collision);
     }
+
+    [Fact]
+    public void Validate_BlocksEveryMutationForMetadataOnlyRoot()
+    {
+        var root = AuthorizedRoot.Create(
+            Guid.NewGuid(),
+            @"C:\DeskAITests\ReadOnly",
+            "Read-only test root",
+            RootAccessLevel.Allowed,
+            RootAuthorizationScope.MetadataOnly);
+        var plan = OrganizationPlan.CreateDraft(
+            Guid.NewGuid(),
+            root.Id,
+            1,
+            DateTimeOffset.UtcNow,
+            PlanValidator.CurrentPolicyVersion,
+            [new MoveFileOperation(
+                Guid.NewGuid(),
+                "source.txt",
+                @"Documents\source.txt",
+                "Generated test operation",
+                OperationProvenance.Rule)]);
+
+        var result = new PlanValidator(new WindowsPathPolicy()).Validate(plan, root);
+
+        Assert.False(result.CanBeApproved);
+        Assert.Equal(ValidationReasonCode.InvalidOperation, Assert.Single(result.Operations).Result.ReasonCode);
+    }
 }

@@ -44,7 +44,9 @@ public sealed class TemporaryDemoPlanExecutor : IPlanExecutor, IUndoService
         EnsureContained(_canonicalTempRoot, _basePath, "Demo base must stay inside the system temporary directory.");
 
         var rootPath = Path.Combine(_basePath, OwnedPrefix + Guid.NewGuid().ToString("N"));
-        Root = AuthorizedRoot.Create(Guid.NewGuid(), rootPath, "Safe temporary demo", RootAccessLevel.Allowed);
+        Root = AuthorizedRoot.Create(
+            Guid.NewGuid(), rootPath, "Safe temporary demo", RootAccessLevel.Allowed,
+            RootAuthorizationScope.ControlledDemo);
     }
 
     public AuthorizedRoot Root { get; }

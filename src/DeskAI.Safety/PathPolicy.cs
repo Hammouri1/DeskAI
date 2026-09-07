@@ -5,6 +5,8 @@ namespace DeskAI.Safety;
 
 public interface IPathPolicy
 {
+    ValidationResult ValidateRoot(AuthorizedRoot root);
+
     ValidationResult ValidateRelativePath(AuthorizedRoot root, string relativePath);
 }
 
@@ -101,6 +103,31 @@ public sealed class WindowsPathPolicy : IPathPolicy
         }
 
         return ValidationResult.Allowed();
+    }
+
+    public ValidationResult ValidateRoot(AuthorizedRoot root)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        if (root.Permission == RootAccessLevel.Protected)
+        {
+            return ValidationResult.Blocked(
+                ValidationReasonCode.ProtectedRoot,
+                "The selected root is protected and cannot be accessed.");
+        }
+
+        string canonicalRoot;
+        try
+        {
+            canonicalRoot = Normalize(root.CanonicalPath);
+        }
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return ValidationResult.Blocked(ValidationReasonCode.UnsupportedPath, "The root path is malformed or unsupported.");
+        }
+
+        return _permanentlyProtectedRoots.Any(path => PathsOverlap(path, canonicalRoot))
+            ? ValidationResult.Blocked(ValidationReasonCode.ProtectedRoot, "The root overlaps a permanently protected location.")
+            : ValidationResult.Allowed();
     }
 
     private static string[] CanonicalizeConfiguredPaths(IEnumerable<string>? paths) =>

@@ -21,6 +21,15 @@ public sealed class PlanValidator(IPathPolicy pathPolicy)
                     "The plan is not bound to this authorized root."));
         }
 
+        if (root.AuthorizationScope == RootAuthorizationScope.MetadataOnly)
+        {
+            return PlanValidationReport.ForWholePlan(
+                plan.Id,
+                ValidationResult.Blocked(
+                    ValidationReasonCode.InvalidOperation,
+                    "This folder grants metadata-only access and cannot be changed."));
+        }
+
         if (!string.Equals(plan.PolicyVersion, CurrentPolicyVersion, StringComparison.Ordinal))
         {
             return PlanValidationReport.ForWholePlan(

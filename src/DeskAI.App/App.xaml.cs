@@ -1,6 +1,7 @@
 using DeskAI.AI;
 using DeskAI.App.Navigation;
 using DeskAI.App.Preview;
+using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.App.Views;
 using DeskAI.Core.Ai;
@@ -20,6 +21,8 @@ public partial class App : Application
     private readonly IHost _host;
     private Window? _window;
 
+    internal Window? MainAppWindow => _window;
+
     public App()
     {
         InitializeComponent();
@@ -37,6 +40,9 @@ public partial class App : Application
             })
             .ConfigureServices(services =>
             {
+                var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                var roamingAppData = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                var userProfile = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
                 var protectedPaths = new[]
                 {
                     Environment.GetFolderPath(Environment.SpecialFolder.Windows),
@@ -45,6 +51,16 @@ public partial class App : Application
                     Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86),
                     Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
                     appStateDirectory,
+                    AppContext.BaseDirectory,
+                    Path.Combine(userProfile, ".ssh"),
+                    Path.Combine(userProfile, ".aws"),
+                    Path.Combine(userProfile, ".azure"),
+                    Path.Combine(userProfile, ".kube"),
+                    Path.Combine(roamingAppData, "gnupg"),
+                    Path.Combine(roamingAppData, "Microsoft", "Credentials"),
+                    Path.Combine(localAppData, "Microsoft", "Credentials"),
+                    Path.Combine(localAppData, "Google", "Chrome", "User Data"),
+                    Path.Combine(localAppData, "Microsoft", "Edge", "User Data"),
                 }.Where(path => !string.IsNullOrWhiteSpace(path));
 
                 services.AddDeskAiInfrastructure(options =>
@@ -54,6 +70,7 @@ public partial class App : Application
                 services.AddSingleton<PlanValidator>();
                 services.AddSingleton<DemoOrganizationPlanFactory>();
                 services.AddSingleton<INavigationService, NavigationService>();
+                services.AddSingleton<IFolderPickerService, WindowsFolderPickerService>();
                 services.AddTransient<ShellViewModel>();
                 services.AddTransient<OrganizeViewModel>();
                 services.AddTransient<DashboardPage>();

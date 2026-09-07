@@ -11,8 +11,6 @@ namespace DeskAI.Infrastructure.Scanning;
 
 public sealed class WindowsMetadataScanner(IPathPolicy pathPolicy) : IFileScanner
 {
-    private const string SafetyProbeName = ".deskai-metadata-scan-probe";
-
     public async IAsyncEnumerable<ScanEvent> ScanAsync(
         AuthorizedRoot root,
         MetadataScanOptions options,
@@ -42,7 +40,7 @@ public sealed class WindowsMetadataScanner(IPathPolicy pathPolicy) : IFileScanne
             yield break;
         }
 
-        var rootSafety = pathPolicy.ValidateRelativePath(root, SafetyProbeName);
+        var rootSafety = pathPolicy.ValidateRoot(root);
         if (rootSafety.Status == ValidationStatus.Blocked)
         {
             yield return Issue(".", ScanIssueCode.RootProtected, "The authorized root overlaps a protected location.");

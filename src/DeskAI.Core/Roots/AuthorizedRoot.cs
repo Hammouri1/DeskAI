@@ -2,12 +2,18 @@ namespace DeskAI.Core.Roots;
 
 public sealed record AuthorizedRoot
 {
-    private AuthorizedRoot(Guid id, string canonicalPath, string displayName, RootAccessLevel permission)
+    private AuthorizedRoot(
+        Guid id,
+        string canonicalPath,
+        string displayName,
+        RootAccessLevel permission,
+        RootAuthorizationScope authorizationScope)
     {
         Id = id;
         CanonicalPath = canonicalPath;
         DisplayName = displayName;
         Permission = permission;
+        AuthorizationScope = authorizationScope;
     }
 
     public Guid Id { get; }
@@ -17,12 +23,14 @@ public sealed record AuthorizedRoot
     public string DisplayName { get; }
 
     public RootAccessLevel Permission { get; }
+    public RootAuthorizationScope AuthorizationScope { get; }
 
     public static AuthorizedRoot Create(
         Guid id,
         string canonicalPath,
         string displayName,
-        RootAccessLevel permission)
+        RootAccessLevel permission,
+        RootAuthorizationScope authorizationScope = RootAuthorizationScope.Organize)
     {
         if (id == Guid.Empty)
         {
@@ -37,8 +45,15 @@ public sealed record AuthorizedRoot
             throw new ArgumentException("An authorized root must be an absolute path.", nameof(canonicalPath));
         }
 
-        return new AuthorizedRoot(id, canonicalPath, displayName, permission);
+        return new AuthorizedRoot(id, canonicalPath, displayName, permission, authorizationScope);
     }
+}
+
+public enum RootAuthorizationScope
+{
+    MetadataOnly,
+    ControlledDemo,
+    Organize,
 }
 
 public enum RootAccessLevel

@@ -19,7 +19,12 @@ public sealed class SqlitePlanningPersistenceTests
         await new SqliteDatabaseInitializer(options, new SystemClock(), NullLogger<SqliteDatabaseInitializer>.Instance)
             .InitializeAsync(TestContext.Current.CancellationToken);
 
-        var root = AuthorizedRoot.Create(Guid.NewGuid(), sandbox.Path, "Generated test root", RootAccessLevel.Allowed);
+        var root = AuthorizedRoot.Create(
+            Guid.NewGuid(),
+            sandbox.Path,
+            "Generated test root",
+            RootAccessLevel.Allowed,
+            RootAuthorizationScope.MetadataOnly);
         var rootRepository = new SqliteAuthorizedRootRepository(options, new SystemClock());
         await rootRepository.SaveAsync(root, TestContext.Current.CancellationToken);
         var operation = new MoveFileOperation(
