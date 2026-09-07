@@ -1,0 +1,10 @@
+<Page
+    x:Class="DeskAI.App.Views.AutomationPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Margin="32" Spacing="12">
+        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Automation" />
+        <TextBlock MaxWidth="680" HorizontalAlignment="Left" TextWrapping="Wrap"
+                   Text="Deterministic rules and schedules are not implemented in V0.1. DeskAI performs no background file activity." />
+    </StackPanel>
+</Page>

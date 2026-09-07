@@ -1,0 +1,15 @@
+bin/
+obj/
+.vs/
+.idea/
+*.user
+*.suo
+*.db
+*.db-shm
+*.db-wal
+*.log
+TestResults/
+.dotnet-cli-home/
+.nuget-packages/
+artifacts/
+test-sandboxes/

@@ -1,0 +1,10 @@
+<Page
+    x:Class="DeskAI.App.Views.SearchPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Margin="32" Spacing="12">
+        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Search" />
+        <TextBlock MaxWidth="680" HorizontalAlignment="Left" TextWrapping="Wrap"
+                   Text="Local indexing, filters, and Smart Collections are planned for a later milestone. No search index exists yet." />
+    </StackPanel>
+</Page>

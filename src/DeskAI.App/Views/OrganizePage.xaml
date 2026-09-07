@@ -1,0 +1,125 @@
+<Page
+    x:Class="DeskAI.App.Views.OrganizePage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer>
+        <StackPanel Margin="32" MaxWidth="900" HorizontalAlignment="Left" Spacing="20">
+            <StackPanel Spacing="6">
+                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Try organizing sample files" />
+                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                           Text="See how DeskAI works before using any of your own folders." />
+            </StackPanel>
+
+            <InfoBar IsClosable="False" IsOpen="True" Severity="Success"
+                     Title="Practice mode"
+                     Message="Only sample files are used. Your personal files are not opened or changed." />
+
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
+                <Border Padding="14" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
+                    <StackPanel Spacing="4">
+                        <TextBlock Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" FontWeight="SemiBold" Text="1  Review" />
+                        <TextBlock FontSize="12" Text="See the suggested moves" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Padding="14" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
+                    <StackPanel Spacing="4">
+                        <TextBlock FontWeight="SemiBold" Text="2  Choose" />
+                        <TextBlock FontSize="12" Text="Uncheck anything you do not want" />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Padding="14" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
+                    <StackPanel Spacing="4">
+                        <TextBlock FontWeight="SemiBold" Text="3  Try it" />
+                        <TextBlock FontSize="12" Text="Run safely with sample files" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
+                <StackPanel Spacing="3">
+                    <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Suggested moves" />
+                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding ReadySummary}" />
+                </StackPanel>
+                <Button Grid.Column="1" Command="{Binding SelectAllSafeCommand}" Content="Select all" />
+                <Button Grid.Column="2" Command="{Binding ClearSelectionCommand}" Content="Clear" />
+            </Grid>
+
+            <ItemsControl ItemsSource="{Binding Operations}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <Border Margin="0,0,0,8" Padding="16"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
+                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                                <CheckBox VerticalAlignment="Center"
+                                          AutomationProperties.Name="Include this sample file"
+                                          IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                          IsEnabled="{Binding IsSelectable}" />
+                                <StackPanel Grid.Column="1" Spacing="5">
+                                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap">
+                                        <Run Text="{Binding FromFolder}" />
+                                        <Run Text="  →  " />
+                                        <Run Text="{Binding ToFolder}" />
+                                    </TextBlock>
+                                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding FileType}" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="2" Width="190" VerticalAlignment="Center" Spacing="3">
+                                    <TextBlock FontWeight="SemiBold" Text="{Binding StatusText}" />
+                                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding StatusDetail}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <StackPanel Spacing="8">
+                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Needs attention" />
+                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding AttentionSummary}" />
+                <ItemsControl ItemsSource="{Binding Issues}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Margin="0,0,0,8" Padding="16"
+                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="8">
+                                <StackPanel Spacing="5">
+                                    <TextBlock FontWeight="SemiBold" Text="{Binding Title}" />
+                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding Explanation}" TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding UnchangedSummary}" />
+            </StackPanel>
+
+            <Border Padding="18" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
+                    <StackPanel Spacing="5">
+                        <TextBlock FontWeight="SemiBold" Text="Ready to try it?" />
+                        <TextBlock MaxWidth="570" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Text="{Binding ResultMessage}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="8">
+                        <ProgressRing Width="24" Height="24" HorizontalAlignment="Center" IsActive="{Binding IsBusy}" />
+                        <Button AutomationProperties.HelpText="Organizes only generated sample files."
+                                Command="{Binding ExecuteDemoCommand}" Content="{Binding ExecuteButtonText}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Expander Margin="0,0,0,32" Header="Technical details">
+                <StackPanel Padding="12" Spacing="6">
+                    <TextBlock FontWeight="SemiBold" Text="Temporary demo location" />
+                    <TextBlock Text="{Binding DemoRoot}" TextWrapping="Wrap" />
+                    <TextBlock Text="{Binding RevisionLabel}" />
+                    <TextBlock Text="{Binding SupportingFolderSummary}" />
+                    <Button Margin="0,6,0,0" HorizontalAlignment="Left"
+                            AutomationProperties.Name="Create a fresh plan revision"
+                            Command="{Binding RebuildPreviewCommand}" Content="Refresh suggestions" />
+                </StackPanel>
+            </Expander>
+        </StackPanel>
+    </ScrollViewer>
+</Page>

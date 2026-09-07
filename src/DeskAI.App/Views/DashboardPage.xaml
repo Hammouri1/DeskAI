@@ -1,0 +1,12 @@
+<Page
+    x:Class="DeskAI.App.Views.DashboardPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <StackPanel Margin="32" Spacing="12">
+        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Dashboard" />
+        <TextBlock MaxWidth="680" HorizontalAlignment="Left" TextWrapping="Wrap"
+                   Text="DeskAI is ready in Rule Engine Only mode. Organize can run only against generated dummy files in a uniquely owned Windows temporary folder; personal folders remain unavailable." />
+        <TextBlock Margin="0,16,0,0" Style="{StaticResource SubtitleTextBlockStyle}" Text="What is available now" />
+        <TextBlock TextWrapping="Wrap" Text="A friendly preview, explicit selection, deterministic safety checks, controlled demo execution, and a versioned local SQLite schema. History and undo are next." />
+    </StackPanel>
+</Page>
