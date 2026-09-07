@@ -5,6 +5,7 @@ using DeskAI.Core.Plans;
 using DeskAI.Infrastructure.Persistence;
 using DeskAI.Infrastructure.Execution;
 using DeskAI.Infrastructure.Scanning;
+using DeskAI.Infrastructure.Security;
 using DeskAI.Infrastructure.Time;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -25,6 +26,9 @@ public static class ServiceCollectionExtensions
             services.Configure(configureDemoWorkspace);
         }
         services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<ICredentialVault>(_ => OperatingSystem.IsWindows()
+            ? new WindowsCredentialVault()
+            : new UnsupportedCredentialVault());
         services.AddSingleton(DefaultFileTypeRules.Create());
         services.AddSingleton<IFileClassifier, DeterministicFileClassifier>();
         services.AddSingleton<IOrganizationPlanner, OrganizationPlanner>();
