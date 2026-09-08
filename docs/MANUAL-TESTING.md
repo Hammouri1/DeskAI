@@ -37,7 +37,7 @@ There is no scanner UI yet. Run the full test suite and review the `WindowsMetad
 2. Run the full suite and confirm the scanner-to-classifier integration test passes.
 3. Review the default mappings in `DefaultFileTypeRules.cs` and `DefaultFolderRecipe.cs`; note any formats or destination names you want changed before the planner is built.
 4. Launch the app and confirm Organize still states that scanning/classification are not connected to the UI and that it offers no file-changing control.
-5. Do not provide a Gemini/OpenRouter key for this step. No network request should occur.
+5. Do not provide an online AI key for this step. No network request should occur.
 
 ## V0.2 Step 3 — Side-Effect-Free Planner
 
@@ -103,12 +103,12 @@ There is no scanner UI yet. Run the full test suite and review the `WindowsMetad
 ## V0.3 — Optional AI and Privacy
 
 1. Build Release and run the full suite. Expected: 129 tests pass, none skipped, with zero warnings/errors. Automated tests make no network call and do not write Windows Credential Manager.
-2. Launch DeskAI and open Settings. Confirm “Privacy & AI” starts in Rule Engine Only, internet use Off, cloud sharing None, and telemetry Off.
+2. Launch DeskAI and open Settings. Confirm “Privacy and AI” starts with AI off, Internet Off, nothing shared with online AI, and usage tracking Off.
 3. Enable File name, choose Save privacy choices, and confirm the expansion dialog names that category. Disable it again if you do not want it available to cloud requests.
-4. Open Organize and choose Ask for suggestions while Rule Engine Only is active. Confirm it says AI is off and the deterministic practice organizer remains usable.
-5. Optional local test: run a trusted OpenAI-compatible server yourself, select Local AI endpoint, enter its loopback URL and exact model ID, set timeout, then save. DeskAI must reject a non-loopback URL. Do not use personal files; the AI card sends generated sample records only.
-6. Optional Gemini test: in Settings choose Google Gemini, enter a model ID available to your account and your key, enable the consent switch, and save. Read the second confirmation carefully. The key is stored in Windows Credential Manager, not the repository/database.
-7. In Organize, read the destination/category summary, choose Ask for suggestions once, and verify each result shows provider, category, confidence, and reason. It must not change selected moves or enable blocked operations.
-8. Test Cancel by starting a request and selecting Cancel. Lower the timeout to exercise the timeout message. Do not repeatedly call a paid provider; the daily request cap counts attempted cloud calls.
-9. Return to Settings and choose Remove Gemini key. Confirm Rule Engine Only becomes active. Never paste the key into logs, screenshots, issues, chat, source files, or test configuration.
-10. Review provider billing directly for exact cost. DeskAI reports token usage when Gemini supplies it but deliberately does not guess pricing.
+4. Open Organize and choose Get AI ideas while “Don't use AI” is active. Confirm it says AI is off and the practice organizer remains usable.
+5. Optional local test: run a trusted OpenAI-compatible service yourself, select “AI running on this computer,” enter its local address and exact model name, then save. DeskAI must reject a non-local address. Do not use personal files; the AI card sends generated sample records only.
+6. Optional OpenRouter test: in Settings choose “Online AI through OpenRouter,” enter an exact model name available to your OpenRouter account and your key, enable the agreement, and save. Read the second confirmation carefully. The key is stored in Windows Credential Manager, not the repository or database.
+7. In Organize, read what may be shared, choose Get AI ideas once, and verify each result shows a category, confidence, explanation, and OpenRouter. It must not change selected moves or enable skipped items.
+8. Test Stop by starting a request and selecting Stop. Lower the waiting limit under More options to exercise the timeout message. Do not repeatedly call a paid model; the daily request limit counts attempted online calls.
+9. Return to Settings and choose Remove saved OpenRouter key. Confirm AI becomes off. Never paste the key into logs, screenshots, issues, chat, source files, or test configuration.
+10. Review OpenRouter billing directly for exact cost. DeskAI reports token usage when OpenRouter supplies it but deliberately does not guess pricing.

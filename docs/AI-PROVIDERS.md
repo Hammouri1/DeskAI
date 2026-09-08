@@ -18,7 +18,7 @@ Inference runs on the user's computer, potentially through a local runtime with 
 
 The desktop app connects directly to the provider selected by the user. DeskAI has no required proxy and does not pay for usage. The UI must show that provider pricing, retention, and availability belong to that provider. Keys use Windows-protected storage and data sharing is opt-in and minimized.
 
-V0.3 implements two adapters: an explicit OpenAI-compatible loopback endpoint for a separately installed local runtime, and Google Gemini using the user's key. Other provider names remain future possibilities, not implemented capabilities.
+V0.3 implements two adapters: an explicit OpenAI-compatible loopback address for a separately installed local runtime, and OpenRouter using the user's key and chosen OpenRouter model name. Arbitrary cloud addresses are deliberately not accepted because they could send disclosed information to an unexpected destination.
 
 ## Provider-Neutral Contract
 
@@ -97,7 +97,7 @@ Store provider ID, endpoint (where allowed), model ID, capability cache, timeout
 
 - Rule Engine Only is the default and needs no provider.
 - Local mode accepts only loopback HTTP(S); DeskAI neither installs nor launches the runtime.
-- Gemini uses `https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent` and the `x-goog-api-key` header, following Google's official API reference.
+- OpenRouter uses only `https://openrouter.ai/api/v1/chat/completions` and an `Authorization: Bearer` header, following OpenRouter's official API reference. Users may select an available OpenRouter model, but cannot change the cloud destination.
 - Cloud mode requires a consent switch and a second disclosure summary confirmation.
 - The request builder includes only allowed metadata fields and excludes protected file IDs.
 - JSON output is versioned, byte/count bounded, duplicate-property checked, unknown-field rejecting, and limited to requested IDs and known categories.

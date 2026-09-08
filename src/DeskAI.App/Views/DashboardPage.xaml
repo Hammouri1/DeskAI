@@ -3,10 +3,10 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <StackPanel Margin="32" Spacing="12">
-        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Dashboard" />
+        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Welcome to DeskAI" />
         <TextBlock MaxWidth="680" HorizontalAlignment="Left" TextWrapping="Wrap"
-                   Text="DeskAI is ready in Rule Engine Only mode. Organize can run only against generated dummy files in a uniquely owned Windows temporary folder; personal folders remain unavailable." />
-        <TextBlock Margin="0,16,0,0" Style="{StaticResource SubtitleTextBlockStyle}" Text="What is available now" />
-        <TextBlock TextWrapping="Wrap" Text="A friendly preview, explicit selection, deterministic safety checks, controlled demo execution, and a versioned local SQLite schema. History and undo are next." />
+                   Text="DeskAI is ready. Try Organize with safe sample files—your personal folders will not be used." />
+        <TextBlock Margin="0,16,0,0" Style="{StaticResource SubtitleTextBlockStyle}" Text="What you can try now" />
+        <TextBlock TextWrapping="Wrap" Text="Preview and organize sample files, undo the sample changes, connect a folder for a read-only preview, or ask AI for optional ideas." />
     </StackPanel>
 </Page>

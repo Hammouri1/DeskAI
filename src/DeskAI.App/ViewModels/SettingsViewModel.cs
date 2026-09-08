@@ -10,7 +10,7 @@ public sealed class SettingsViewModel(
     IAuthorizedRootRepository rootRepository,
     ICredentialVault credentialVault) : ObservableObject
 {
-    private const string GeminiCredentialReference = "DeskAI/Gemini";
+    private const string OpenRouterCredentialReference = "DeskAI/OpenRouter";
     private AiSettings _loaded = AiSettings.Default;
     private bool _shareExtension = true;
     private bool _shareMetadata;
@@ -18,13 +18,13 @@ public sealed class SettingsViewModel(
     private bool _shareFolderNames;
     private bool _shareFullPath;
     private string _authorizedFolderCount = "0";
-    private string _saveStatus = "AI is off. These choices set the maximum data a future cloud request may use.";
+    private string _saveStatus = "AI is off. Nothing is being shared.";
     private int _selectedModeIndex;
     private string _localEndpoint = string.Empty;
     private string _localModel = string.Empty;
-    private string _geminiModel = string.Empty;
+    private string _openRouterModel = string.Empty;
     private bool _cloudConsent;
-    private string _providerStatus = "Choose Rule Engine Only, local AI, or Gemini.";
+    private string _providerStatus = "Choose whether you want to use AI.";
     private double _timeoutSeconds = 30;
     private double _dailyRequestLimit = 20;
 
@@ -37,18 +37,18 @@ public sealed class SettingsViewModel(
     public string SaveStatus => _saveStatus;
     public string AiProcessing => _loaded.Mode switch
     {
-        AiMode.Local => "Local AI",
-        AiMode.Cloud => $"Cloud · {_loaded.ProviderId}",
-        _ => "Rule Engine Only",
+        AiMode.Local => "On this computer",
+        AiMode.Cloud => "Online with OpenRouter",
+        _ => "AI is off",
     };
-    public string InternetUse => _loaded.Mode == AiMode.Cloud ? $"On · {_loaded.ProviderId}" : "Off";
+    public string InternetUse => _loaded.Mode == AiMode.Cloud ? "On — OpenRouter" : "Off";
     public string CloudDataShared => _loaded.Mode == AiMode.Cloud
         ? FormatCategories(_loaded.CloudDisclosures)
         : "None — AI is off";
     public int SelectedModeIndex { get => _selectedModeIndex; set => SetProperty(ref _selectedModeIndex, value); }
     public string LocalEndpoint { get => _localEndpoint; set => SetProperty(ref _localEndpoint, value); }
     public string LocalModel { get => _localModel; set => SetProperty(ref _localModel, value); }
-    public string GeminiModel { get => _geminiModel; set => SetProperty(ref _geminiModel, value); }
+    public string OpenRouterModel { get => _openRouterModel; set => SetProperty(ref _openRouterModel, value); }
     public bool CloudConsent { get => _cloudConsent; set => SetProperty(ref _cloudConsent, value); }
     public string ProviderStatus => _providerStatus;
     public double TimeoutSeconds { get => _timeoutSeconds; set => SetProperty(ref _timeoutSeconds, value); }
@@ -61,7 +61,7 @@ public sealed class SettingsViewModel(
         _selectedModeIndex = (int)_loaded.Mode;
         _localEndpoint = _loaded.Mode == AiMode.Local ? _loaded.Endpoint ?? string.Empty : string.Empty;
         _localModel = _loaded.Mode == AiMode.Local ? _loaded.ModelId : string.Empty;
-        _geminiModel = _loaded.ProviderId == "gemini" ? _loaded.ModelId : string.Empty;
+        _openRouterModel = _loaded.ProviderId == "openrouter" ? _loaded.ModelId : string.Empty;
         _cloudConsent = _loaded.CloudConsentGranted;
         _timeoutSeconds = _loaded.TimeoutSeconds;
         _dailyRequestLimit = _loaded.DailyRequestLimit;
@@ -70,7 +70,7 @@ public sealed class SettingsViewModel(
     }
 
     public string CloudConsentSummary() =>
-        $"Google Gemini will receive only: {FormatCategories(Selected())}. File contents and protected files are excluded. Provider pricing, retention, and availability are controlled by Google.";
+        $"OpenRouter will receive only: {FormatCategories(Selected())}. File contents and protected files are always left out.";
 
     public async Task SaveProviderAsync(string apiKey)
     {
@@ -99,8 +99,8 @@ public sealed class SettingsViewModel(
                     CloudConsentGranted = false,
                     CloudDisclosures = Selected(),
                 },
-                AiMode.Cloud when CloudConsent => await CreateGeminiSettingsAsync(apiKey),
-                _ => throw new InvalidOperationException("Confirm cloud sharing before enabling Gemini."),
+                AiMode.Cloud when CloudConsent => await CreateOpenRouterSettingsAsync(apiKey),
+                _ => throw new InvalidOperationException("Turn on the sharing agreement before using online AI."),
             };
 
             updated = updated with
@@ -113,9 +113,9 @@ public sealed class SettingsViewModel(
             _loaded = updated;
             _providerStatus = mode switch
             {
-                AiMode.RuleEngineOnly => "Saved. DeskAI will use deterministic rules only.",
-                AiMode.Local => "Saved. Only the configured local loopback endpoint may be used.",
-                _ => "Saved. Gemini is enabled with your confirmed sharing limits.",
+                AiMode.RuleEngineOnly => "Saved. DeskAI will work without AI.",
+                AiMode.Local => "Saved. AI will run only on this computer.",
+                _ => "Saved. OpenRouter is ready with your sharing choices.",
             };
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
@@ -126,11 +126,11 @@ public sealed class SettingsViewModel(
         NotifyAll();
     }
 
-    public async Task RemoveGeminiKeyAsync()
+    public async Task RemoveOpenRouterKeyAsync()
     {
         try
         {
-            await credentialVault.RemoveAsync(GeminiCredentialReference);
+            await credentialVault.RemoveAsync(OpenRouterCredentialReference);
             _loaded = _loaded with
             {
                 Mode = AiMode.RuleEngineOnly,
@@ -141,7 +141,7 @@ public sealed class SettingsViewModel(
             await settingsRepository.SaveAsync(_loaded);
             _selectedModeIndex = (int)AiMode.RuleEngineOnly;
             _cloudConsent = false;
-            _providerStatus = "Gemini key removed. Rule Engine Only mode is active.";
+            _providerStatus = "OpenRouter key removed. AI is now off.";
         }
         catch (System.ComponentModel.Win32Exception exception)
         {
@@ -151,25 +151,25 @@ public sealed class SettingsViewModel(
         NotifyAll();
     }
 
-    private async Task<AiSettings> CreateGeminiSettingsAsync(string apiKey)
+    private async Task<AiSettings> CreateOpenRouterSettingsAsync(string apiKey)
     {
-        var model = ProviderEndpointPolicy.RequireModelId(GeminiModel);
+        var model = ProviderEndpointPolicy.RequireModelId(OpenRouterModel);
         if (!string.IsNullOrWhiteSpace(apiKey))
         {
-            await credentialVault.SaveAsync(GeminiCredentialReference, apiKey);
+            await credentialVault.SaveAsync(OpenRouterCredentialReference, apiKey);
         }
-        else if (await credentialVault.RetrieveAsync(GeminiCredentialReference) is null)
+        else if (await credentialVault.RetrieveAsync(OpenRouterCredentialReference) is null)
         {
-            throw new InvalidOperationException("Enter a Gemini API key.");
+            throw new InvalidOperationException("Enter your OpenRouter key.");
         }
 
         return _loaded with
         {
             Mode = AiMode.Cloud,
-            ProviderId = "gemini",
+            ProviderId = "openrouter",
             Endpoint = null,
             ModelId = model,
-            CredentialReference = GeminiCredentialReference,
+            CredentialReference = OpenRouterCredentialReference,
             CloudConsentGranted = true,
             CloudDisclosures = Selected(),
         };
@@ -185,7 +185,7 @@ public sealed class SettingsViewModel(
     {
         _loaded = _loaded with { CloudDisclosures = Selected() };
         await settingsRepository.SaveAsync(_loaded);
-        _saveStatus = "Privacy choices saved locally. AI remains off until you explicitly select a provider.";
+        _saveStatus = "Saved on this computer. Nothing is sent unless you turn on online AI.";
         NotifyAll();
     }
 
@@ -232,13 +232,24 @@ public sealed class SettingsViewModel(
         OnPropertyChanged(nameof(SelectedModeIndex));
         OnPropertyChanged(nameof(LocalEndpoint));
         OnPropertyChanged(nameof(LocalModel));
-        OnPropertyChanged(nameof(GeminiModel));
+        OnPropertyChanged(nameof(OpenRouterModel));
         OnPropertyChanged(nameof(CloudConsent));
         OnPropertyChanged(nameof(ProviderStatus));
         OnPropertyChanged(nameof(TimeoutSeconds));
         OnPropertyChanged(nameof(DailyRequestLimit));
     }
 
-    private static string FormatCategories(IEnumerable<DisclosureCategory> categories) =>
-        string.Join(", ", categories.OrderBy(category => category).Select(category => category.ToString()));
+    private static string FormatCategories(IEnumerable<DisclosureCategory> categories)
+    {
+        var names = categories.OrderBy(category => category).Select(category => category switch
+        {
+            DisclosureCategory.Extension => "file types",
+            DisclosureCategory.Metadata => "file sizes and dates",
+            DisclosureCategory.FileName => "file names",
+            DisclosureCategory.FolderNames => "folder names",
+            DisclosureCategory.FullPath => "full file locations",
+            _ => "unknown information",
+        }).ToArray();
+        return names.Length == 0 ? "nothing" : string.Join(", ", names);
+    }
 }

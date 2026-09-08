@@ -11,7 +11,7 @@
         ItemInvoked="OnNavigationItemInvoked"
         PaneDisplayMode="Auto">
         <NavigationView.MenuItems>
-            <NavigationViewItem Content="Dashboard" Tag="dashboard">
+            <NavigationViewItem Content="Home" Tag="dashboard">
                 <NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;" /></NavigationViewItem.Icon>
             </NavigationViewItem>
             <NavigationViewItem Content="Organize" Tag="organize">
@@ -20,7 +20,7 @@
             <NavigationViewItem Content="Search" Tag="search">
                 <NavigationViewItem.Icon><FontIcon Glyph="&#xE721;" /></NavigationViewItem.Icon>
             </NavigationViewItem>
-            <NavigationViewItem Content="Automation" Tag="automation">
+            <NavigationViewItem Content="Automatic tasks" Tag="automation">
                 <NavigationViewItem.Icon><FontIcon Glyph="&#xE945;" /></NavigationViewItem.Icon>
             </NavigationViewItem>
             <NavigationViewItem Content="Settings" Tag="settings">

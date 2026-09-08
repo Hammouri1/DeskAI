@@ -12,7 +12,7 @@ public static class ProviderEndpointPolicy
             !string.IsNullOrEmpty(uri.Query) ||
             !string.IsNullOrEmpty(uri.Fragment))
         {
-            throw new ArgumentException("Local AI endpoint must be an HTTP(S) loopback URL without credentials, query, or fragment.", nameof(endpoint));
+            throw new ArgumentException("Enter the address shown by the AI app running on this computer.", nameof(endpoint));
         }
 
         return uri;
@@ -24,7 +24,7 @@ public static class ProviderEndpointPolicy
         if (modelId.Length > 100 || modelId.Any(character =>
                 !char.IsAsciiLetterOrDigit(character) && character is not '.' and not '_' and not ':' and not '/' and not '-'))
         {
-            throw new ArgumentException("The AI model ID contains unsupported characters.", nameof(modelId));
+            throw new ArgumentException("Enter a valid model name from your AI service.", nameof(modelId));
         }
 
         return modelId;

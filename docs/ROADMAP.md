@@ -46,7 +46,7 @@ Goal: optional AI improves ambiguous suggestions without changing the safety mod
 - ✅ Strict structured-output schema, validation, and prompt-injection test corpus.
 - ✅ Windows Credential Manager storage with SQLite references only.
 - ✅ Constrained OpenAI-compatible local adapter for explicit loopback endpoints.
-- ✅ Google Gemini BYO-key adapter behind disclosure consent; no silent fallback.
+- ✅ OpenRouter BYO-key adapter with a user-selected model, sharing consent, a fixed HTTPS destination, and no silent fallback.
 - ✅ AI provider, confidence, category, and explanations in the sample preview.
 - ✅ Daily cloud-request cap, timeout, cancellation, bounded payloads, no retries, usage reporting, and distinct failure UX.
 

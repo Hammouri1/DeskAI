@@ -134,6 +134,6 @@ Step 8 adds a separate, optional “Preview a folder” card below the practice 
 
 ## V0.3 AI and Privacy UI
 
-Settings is renamed visually to “Privacy & AI” and starts with a glanceable status card. Sharing controls use plain category names and require confirmation when expanding permission. Provider setup groups Rule Engine Only, local loopback, and Gemini without presenting every technical option at once. Cloud activation repeats the exact category summary and reminds the user that pricing/retention belong to Google.
+Settings is named “Privacy and AI” and starts with a short status card. Sharing controls use everyday names and require confirmation when allowing more information. The three main choices are “Don't use AI,” “AI running on this computer,” and “Online AI through OpenRouter.” Addresses, model names, timeouts, and daily limits are grouped below the main choice instead of leading with technical language. Online activation repeats exactly what may be shared and reminds the user that OpenRouter controls pricing and service-side data handling.
 
-Organize shows AI in a separate optional advice card for generated samples. The card identifies where data would go, exposes Cancel, reports token usage when provided, and displays category/confidence/reason/provider per suggestion. It explicitly states that advice cannot change or execute the plan.
+Organize presents AI as an optional “second opinion” for generated samples. The card identifies where data would go, offers a Stop button, reports usage when available, and shows the category, confidence, explanation, and source for each idea. It explicitly states that AI cannot move, rename, or change files.

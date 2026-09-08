@@ -151,9 +151,9 @@ The AI layer receives a minimized DTO, not a filesystem service. Its response pa
 
 Prompt text is usability guidance, never enforcement. See `AI-PROVIDERS.md`.
 
-V0.3 implements this boundary as `AiRequestBuilder → ConfiguredSuggestionProvider → local/Gemini adapter → StructuredSuggestionParser`. The builder excludes protected IDs and emits only fields permitted by the saved category set. Providers receive no filesystem, shell, executor, plan, root repository, or credential-enumeration capability. Responses can express only `{fileId, category, confidence, reason}` and remain advisory in the sample preview.
+V0.3 implements this boundary as `AiRequestBuilder → ConfiguredSuggestionProvider → local/OpenRouter adapter → StructuredSuggestionParser`. The builder excludes protected IDs and emits only fields permitted by the saved category set. Providers receive no filesystem, shell, executor, plan, root repository, or credential-enumeration capability. Responses can express only `{fileId, category, confidence, reason}` and remain advisory in the sample preview.
 
-Local endpoints must be explicit HTTP(S) loopback URLs without embedded credentials, query strings, or fragments. Cloud routing supports only the fixed Google Gemini HTTPS host. Redirects and automatic retries are disabled, and one provider failure never triggers another provider. Windows Credential Manager stores Gemini keys; SQLite holds the opaque `DeskAI/Gemini` reference. Daily request reservations are atomic and happen before cloud transport.
+Local addresses must be explicit HTTP(S) loopback URLs without embedded credentials, query strings, or fragments. Cloud routing supports only the fixed OpenRouter HTTPS chat-completions address while allowing a model name selected from OpenRouter. Redirects and automatic retries are disabled, and one provider failure never triggers another provider. Windows Credential Manager stores the OpenRouter key; SQLite holds only the opaque `DeskAI/OpenRouter` reference. Daily request reservations are atomic and happen before cloud transport.
 
 ## Dependency Injection and Configuration
 

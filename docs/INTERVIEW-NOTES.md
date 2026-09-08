@@ -218,19 +218,19 @@ New concept and my own explanation: Least privilege means a permission grants on
 Security cases tested: locked dummy file proves no content opening, protected-root ancestor refusal, bounded scanning, revocation without file change, metadata-only plan rejection, reparse protection, and schema-v4 migration.
 Build/test evidence: Release build completed with zero warnings/errors; all 94 tests passed.
 What is deliberately not built: real-folder move/rename/delete, content extraction, cross-restart undo, AI provider calls, API-key storage, search index, or automation.
-Next work cycle: V0.3 tasks 1–2—a provider-neutral structured AI contract with deterministic fake, then a privacy/disclosure policy and simple dashboard. Gemini/OpenRouter integration remains later and optional.
+Next work cycle: V0.3 tasks 1–2—a provider-neutral structured AI contract with deterministic fake, then a privacy/disclosure policy and simple dashboard. Online AI integration remains later and optional.
 ```
 
 ## V0.3 Learning Log — 2026-09-08
 
 ```text
-What became usable: Optional classification advice for generated samples through Rule Engine Only, an explicit loopback local endpoint, or consent-gated Google Gemini, with privacy settings and Windows-protected credentials.
+What became usable: Optional classification advice for generated samples with AI off, through an explicit local-only address, or through consent-gated OpenRouter with a chosen model, privacy settings, and Windows-protected credentials.
 Main data flow: FileItem → disclosure-filtered AiFileCandidate → configured provider → bounded HTTP transport → strict structured parser → advisory preview row. No provider result reaches the plan/executor.
 Classes/interfaces I can explain: IOrganizationSuggestionProvider, AiRequestBuilder, AiSettings, IAiSettingsRepository, ICredentialVault, WindowsCredentialVault, IAiHttpTransport, ConfiguredSuggestionProvider, StructuredSuggestionParser, and IAiUsageBudget.
 New concept and my own explanation: A DTO is a deliberately small data shape crossing a boundary. By constructing it before provider code and omitting disallowed fields, privacy does not depend on asking the model to ignore data it should never receive.
 Security cases tested: prompt injection, unknown/duplicate JSON fields and IDs, invented IDs, invalid enums/confidence, oversized responses, non-loopback endpoints, missing credentials, disclosure expansion, offline/timeout/cancellation/rate limits, secret redaction, and daily request caps.
 Build/test evidence: Release build completed with zero warnings/errors; all 129 tests passed without live network or personal credential-store writes.
-What is deliberately not built: AI processing of user-selected folders/content/images, AI-generated executable operations, OpenRouter, background AI, automatic fallback/retry, exact price calculation, or V0.4 search/index features.
+What is deliberately not built: AI processing of user-selected folders/content/images, AI-generated executable operations, background AI, automatic fallback/retry, exact price calculation, arbitrary cloud destinations, or V0.4 search/index features.
 Next work cycle: V0.4 begins with an incremental local metadata index and constrained structured search, still limited to authorized metadata-only roots and generated test directories.
 ```
 

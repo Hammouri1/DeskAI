@@ -24,7 +24,7 @@ public sealed class SqliteAiSettingsRepositoryTests
                 DisclosureCategory.Extension,
                 DisclosureCategory.FileName,
             },
-            CredentialReference = "DeskAI/Gemini",
+            CredentialReference = "DeskAI/OpenRouter",
         };
 
         await repository.SaveAsync(expected, TestContext.Current.CancellationToken);

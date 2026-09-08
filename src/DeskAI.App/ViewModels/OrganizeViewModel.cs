@@ -39,9 +39,9 @@ public sealed class OrganizeViewModel : ObservableObject, IDisposable
     private IReadOnlyList<FileItem> _demoFiles = [];
     private DeskAI.Core.Roots.AuthorizedRoot? _demoAiRoot;
     private bool _isAiBusy;
-    private string _aiPreviewMessage = "AI is optional. Suggestions appear here and never run automatically.";
+    private string _aiPreviewMessage = "AI is optional. Its ideas appear here, but it cannot change your files.";
     private string _aiDisclosureSummary = "No request has been prepared.";
-    private string _aiUsageSummary = "No provider usage yet.";
+    private string _aiUsageSummary = "No online AI use yet.";
     private CancellationTokenSource? _aiCancellation;
 
     public OrganizeViewModel(
@@ -141,10 +141,10 @@ public sealed class OrganizeViewModel : ObservableObject, IDisposable
         var settings = await _aiSettingsRepository.LoadAsync();
         _aiDisclosureSummary = settings.Mode switch
         {
-            AiMode.RuleEngineOnly => "Rule Engine Only · nothing will be sent",
-            AiMode.Local => $"Local endpoint · {FriendlyCategories(settings.CloudDisclosures)}",
-            AiMode.Cloud => $"Google Gemini · {FriendlyCategories(settings.CloudDisclosures)}",
-            _ => "AI configuration unavailable",
+            AiMode.RuleEngineOnly => "AI is off · nothing will be shared",
+            AiMode.Local => $"AI on this computer · may see {FriendlyCategories(settings.CloudDisclosures)}",
+            AiMode.Cloud => $"OpenRouter · may receive {FriendlyCategories(settings.CloudDisclosures)}",
+            _ => "AI settings are unavailable",
         };
         OnPropertyChanged(nameof(AiDisclosureSummary));
     }
@@ -159,7 +159,7 @@ public sealed class OrganizeViewModel : ObservableObject, IDisposable
         _isAiBusy = true;
         _aiCancellation = new CancellationTokenSource();
         AiSuggestions.Clear();
-        _aiPreviewMessage = "Waiting for optional AI advice…";
+        _aiPreviewMessage = "Getting AI ideas…";
         NotifyAiStateChanged();
         try
         {
@@ -186,15 +186,15 @@ public sealed class OrganizeViewModel : ObservableObject, IDisposable
 
             _aiPreviewMessage = response.Message;
             _aiUsageSummary = response.Usage is null
-                ? "No billable usage was reported."
+                ? "No usage was reported."
                 : response.Usage.EstimatedCostUsd is decimal cost
-                    ? $"Reported usage: {response.Usage.InputTokens ?? 0} input + {response.Usage.OutputTokens ?? 0} output tokens · estimated {cost:C}."
-                    : $"Reported usage: {response.Usage.InputTokens ?? 0} input + {response.Usage.OutputTokens ?? 0} output tokens. Check provider billing for cost.";
+                    ? $"AI used {response.Usage.InputTokens ?? 0} input and {response.Usage.OutputTokens ?? 0} output tokens · estimated {cost:C}."
+                    : $"AI used {response.Usage.InputTokens ?? 0} input and {response.Usage.OutputTokens ?? 0} output tokens. Check OpenRouter for the exact cost.";
             await RefreshAiDisclosureSummaryAsync();
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.Data.Common.DbException)
         {
-            _aiPreviewMessage = $"AI advice stayed off: {exception.Message}";
+            _aiPreviewMessage = $"AI stayed off: {exception.Message}";
         }
         finally
         {

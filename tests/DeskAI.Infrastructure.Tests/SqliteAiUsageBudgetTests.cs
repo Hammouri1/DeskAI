@@ -17,9 +17,9 @@ public sealed class SqliteAiUsageBudgetTests
         var budget = new SqliteAiUsageBudget(options);
         var day = new DateOnly(2026, 9, 8);
 
-        Assert.True(await budget.TryReserveRequestAsync("gemini", 2, day, TestContext.Current.CancellationToken));
-        Assert.True(await budget.TryReserveRequestAsync("gemini", 2, day, TestContext.Current.CancellationToken));
-        Assert.False(await budget.TryReserveRequestAsync("gemini", 2, day, TestContext.Current.CancellationToken));
-        Assert.Equal(2, await budget.GetRequestCountAsync("gemini", day, TestContext.Current.CancellationToken));
+        Assert.True(await budget.TryReserveRequestAsync("openrouter", 2, day, TestContext.Current.CancellationToken));
+        Assert.True(await budget.TryReserveRequestAsync("openrouter", 2, day, TestContext.Current.CancellationToken));
+        Assert.False(await budget.TryReserveRequestAsync("openrouter", 2, day, TestContext.Current.CancellationToken));
+        Assert.Equal(2, await budget.GetRequestCountAsync("openrouter", day, TestContext.Current.CancellationToken));
     }
 }

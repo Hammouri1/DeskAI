@@ -27,7 +27,7 @@ public sealed class ConfiguredSuggestionProvider(
         }
 
         if (settings.Mode == AiMode.Cloud && settings.CloudConsentGranted &&
-            settings.ProviderId == "gemini" && settings.CredentialReference is not null &&
+            settings.ProviderId == "openrouter" && settings.CredentialReference is not null &&
             !await usageBudget.TryReserveRequestAsync(
                 settings.ProviderId,
                 Math.Clamp(settings.DailyRequestLimit, 1, 1000),
@@ -38,7 +38,7 @@ public sealed class ConfiguredSuggestionProvider(
                 AiProviderStatus.CostLimitReached,
                 "AI unavailable",
                 [],
-                "Your daily cloud-request limit has been reached. No provider request was sent.");
+                "You have reached today's online AI limit. Nothing was sent.");
         }
 
         return settings.Mode switch
@@ -49,12 +49,12 @@ public sealed class ConfiguredSuggestionProvider(
                     transport, settings.Endpoint, settings.ModelId)
                 .SuggestAsync(request, cancellationToken).ConfigureAwait(false),
             AiMode.Cloud when !settings.CloudConsentGranted => Refused(
-                "Cloud AI is selected but disclosure consent has not been granted."),
-            AiMode.Cloud when settings.ProviderId == "gemini" && settings.CredentialReference is not null =>
-                await new GeminiSuggestionProvider(
+                "Online AI is selected, but sharing has not been approved."),
+            AiMode.Cloud when settings.ProviderId == "openrouter" && settings.CredentialReference is not null =>
+                await new OpenRouterSuggestionProvider(
                         transport, credentialVault, settings.CredentialReference, settings.ModelId)
                     .SuggestAsync(request, cancellationToken).ConfigureAwait(false),
-            _ => Refused("The selected AI provider is not configured. DeskAI did not use another provider."),
+            _ => Refused("AI is not set up yet. DeskAI did not send anything."),
         };
     }
 

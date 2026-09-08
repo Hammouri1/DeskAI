@@ -48,14 +48,14 @@
                 <StackPanel Spacing="10">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
                         <StackPanel Spacing="3">
-                            <TextBlock FontWeight="SemiBold" Text="Optional AI advice for sample files" />
+                            <TextBlock FontWeight="SemiBold" Text="Want a second opinion on the sample files?" />
                             <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                        Text="{Binding AiDisclosureSummary}" TextWrapping="Wrap" />
                         </StackPanel>
                         <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
                             <ProgressRing Width="22" Height="22" IsActive="{Binding IsAiBusy}" />
-                            <Button Command="{Binding GetAiSuggestionsCommand}" Content="Ask for suggestions" />
-                            <Button Command="{Binding CancelAiCommand}" Content="Cancel" />
+                            <Button Command="{Binding GetAiSuggestionsCommand}" Content="Get AI ideas" />
+                            <Button Command="{Binding CancelAiCommand}" Content="Stop" />
                         </StackPanel>
                     </Grid>
                     <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
@@ -84,7 +84,7 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                     <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                               Text="Advice only: these results cannot change the plan or run file operations." />
+                               Text="These are ideas only. AI cannot move, rename, or change files." />
                 </StackPanel>
             </Border>
 
@@ -165,7 +165,7 @@
                 </StackPanel>
             </Border>
 
-            <Expander Margin="0,0,0,32" Header="Technical details">
+            <Expander Margin="0,0,0,32" Header="More details">
                 <StackPanel Padding="12" Spacing="6">
                     <TextBlock FontWeight="SemiBold" Text="Temporary demo location" />
                     <TextBlock Text="{Binding DemoRoot}" TextWrapping="Wrap" />

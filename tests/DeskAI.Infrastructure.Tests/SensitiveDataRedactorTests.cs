@@ -18,7 +18,7 @@ public sealed class SensitiveDataRedactorTests
     }
 
     [Theory]
-    [InlineData("x-goog-api-key: obvious-gemini-secret")]
+    [InlineData("Authorization: Bearer obvious-openrouter-secret")]
     [InlineData("api_key=obvious-provider-secret")]
     public void Redact_RemovesProviderKeyHeaders(string message)
     {

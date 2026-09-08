@@ -4,7 +4,7 @@
 
 DeskAI is a planned open-source Windows desktop application. It will scan only folders a user selects, generate understandable organization proposals, validate every proposed action using deterministic safety rules, show a preview, and execute only approved operations with history and undo support.
 
-**Current status:** milestones V0.1–V0.3 are implemented. The safe local organizer remains available in Rule Engine Only mode. Optional AI can advise on generated sample metadata through a loopback local endpoint or consent-gated Google Gemini connection. Disclosure categories are filtered before provider code, Gemini keys stay in Windows Credential Manager, structured responses are treated as untrusted, and AI advice cannot edit or execute a plan. SQLite schema version 6 stores non-secret AI settings and daily request counts.
+**Current status:** milestones V0.1–V0.3 are implemented. The safe local organizer works with AI off by default. Optional AI can advise on generated sample metadata through an AI service running on this computer or a consent-gated OpenRouter connection. Sharing choices are applied before any online request, OpenRouter keys stay in Windows Credential Manager, structured responses are treated as untrusted, and AI advice cannot edit or execute a plan. SQLite schema version 6 stores non-secret AI settings and daily request counts.
 
 ## Why DeskAI
 

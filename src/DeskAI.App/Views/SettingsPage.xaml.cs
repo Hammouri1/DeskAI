@@ -32,8 +32,8 @@ public sealed partial class SettingsPage : Page
             var confirmation = new ContentDialog
             {
                 XamlRoot = XamlRoot,
-                Title = "Allow more data categories?",
-                Content = $"You are allowing: {names}. Nothing is sent while AI is off, and protected files remain excluded.",
+                Title = "Share more information?",
+                Content = $"You chose to allow: {names}. Nothing is sent while online AI is off. Private and protected files are always left out.",
                 PrimaryButtonText = "Allow and save",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,
@@ -54,9 +54,9 @@ public sealed partial class SettingsPage : Page
             var confirmation = new ContentDialog
             {
                 XamlRoot = XamlRoot,
-                Title = "Enable Google Gemini?",
+                Title = "Turn on online AI?",
                 Content = _viewModel.CloudConsentSummary(),
-                PrimaryButtonText = "Enable Gemini",
+                PrimaryButtonText = "Turn on OpenRouter",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,
             };
@@ -66,25 +66,25 @@ public sealed partial class SettingsPage : Page
             }
         }
 
-        await _viewModel.SaveProviderAsync(GeminiKeyBox.Password);
-        GeminiKeyBox.Password = string.Empty;
+        await _viewModel.SaveProviderAsync(OpenRouterKeyBox.Password);
+        OpenRouterKeyBox.Password = string.Empty;
     }
 
-    private async void OnRemoveGeminiKeyClick(object sender, RoutedEventArgs e)
+    private async void OnRemoveOpenRouterKeyClick(object sender, RoutedEventArgs e)
     {
-        await _viewModel.RemoveGeminiKeyAsync();
-        GeminiKeyBox.Password = string.Empty;
+        await _viewModel.RemoveOpenRouterKeyAsync();
+        OpenRouterKeyBox.Password = string.Empty;
     }
 
     private static string DisplayName(DisclosureCategory category) => category switch
     {
-        DisclosureCategory.Extension => "file extension",
-        DisclosureCategory.Metadata => "size and modified date",
+        DisclosureCategory.Extension => "file type",
+        DisclosureCategory.Metadata => "file size and last changed date",
         DisclosureCategory.FileName => "file name",
         DisclosureCategory.FolderNames => "folder names",
-        DisclosureCategory.FullPath => "full path",
-        DisclosureCategory.ExtractedContent => "document contents",
-        DisclosureCategory.ImageContent => "image contents",
+        DisclosureCategory.FullPath => "full file location",
+        DisclosureCategory.ExtractedContent => "text inside files",
+        DisclosureCategory.ImageContent => "images inside files",
         _ => category.ToString(),
     };
 }

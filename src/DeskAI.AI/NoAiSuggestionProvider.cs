@@ -13,7 +13,7 @@ public sealed class NoAiSuggestionProvider : IOrganizationSuggestionProvider
 
         return Task.FromResult(new OrganizationSuggestionResponse(
             AiProviderStatus.Disabled,
-            "Rule Engine Only",
+            "AI is off",
             [],
             "AI is off. DeskAI continues using deterministic rules."));
     }

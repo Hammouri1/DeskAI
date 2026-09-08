@@ -12,9 +12,9 @@ public sealed class ConfiguredSuggestionProviderTests
         var settings = AiSettings.Default with
         {
             Mode = AiMode.Cloud,
-            ProviderId = "gemini",
+            ProviderId = "openrouter",
             ModelId = "test-model",
-            CredentialReference = "DeskAI/Gemini",
+            CredentialReference = "DeskAI/OpenRouter",
             CloudConsentGranted = false,
         };
         var transport = new FakeAiHttpTransport(HttpStatusCode.OK, "{}");
@@ -33,9 +33,9 @@ public sealed class ConfiguredSuggestionProviderTests
         var settings = AiSettings.Default with
         {
             Mode = AiMode.Cloud,
-            ProviderId = "gemini",
+            ProviderId = "openrouter",
             ModelId = "test-model",
-            CredentialReference = "DeskAI/Gemini",
+            CredentialReference = "DeskAI/OpenRouter",
             CloudConsentGranted = true,
             CloudDisclosures = new HashSet<DisclosureCategory> { DisclosureCategory.Extension },
         };

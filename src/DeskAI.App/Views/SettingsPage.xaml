@@ -5,24 +5,24 @@
     <ScrollViewer>
         <StackPanel Margin="32" MaxWidth="760" HorizontalAlignment="Left" Spacing="18">
             <StackPanel Spacing="5">
-                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Privacy &amp; AI" />
+                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Privacy and AI" />
                 <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                           Text="AI is optional. DeskAI works normally with the rule engine when AI is off." />
+                           Text="You choose if AI is used and what it is allowed to see." />
             </StackPanel>
 
             <Border Padding="18" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="10">
                 <StackPanel Spacing="12">
-                    <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Your privacy at a glance" />
+                    <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="At a glance" />
                     <Grid ColumnDefinitions="190,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="9">
-                        <TextBlock Grid.Row="0" Text="Internet/provider use" />
+                        <TextBlock Grid.Row="0" Text="Internet" />
                         <TextBlock Grid.Row="0" Grid.Column="1" FontWeight="SemiBold" Text="{Binding InternetUse}" />
-                        <TextBlock Grid.Row="1" Text="AI processing" />
+                        <TextBlock Grid.Row="1" Text="AI" />
                         <TextBlock Grid.Row="1" Grid.Column="1" FontWeight="SemiBold" Text="{Binding AiProcessing}" />
-                        <TextBlock Grid.Row="2" Text="Cloud data shared" />
+                        <TextBlock Grid.Row="2" Text="Shared with online AI" />
                         <TextBlock Grid.Row="2" Grid.Column="1" FontWeight="SemiBold" Text="{Binding CloudDataShared}" TextWrapping="Wrap" />
-                        <TextBlock Grid.Row="3" Text="Authorized folders" />
+                        <TextBlock Grid.Row="3" Text="Folders you connected" />
                         <TextBlock Grid.Row="3" Grid.Column="1" FontWeight="SemiBold" Text="{Binding AuthorizedFolderCount}" />
-                        <TextBlock Grid.Row="4" Text="Telemetry" />
+                        <TextBlock Grid.Row="4" Text="Usage tracking" />
                         <TextBlock Grid.Row="4" Grid.Column="1" FontWeight="SemiBold" Text="Off" />
                     </Grid>
                 </StackPanel>
@@ -31,18 +31,18 @@
             <Border Padding="18" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="10">
                 <StackPanel Spacing="12">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Cloud sharing limits" />
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="What online AI may see" />
                         <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                                   Text="These are maximum permissions, not automatic sharing. Protected files are always excluded." />
+                                   Text="Nothing is sent unless you turn on online AI. Private and protected files are always left out." />
                     </StackPanel>
-                    <ToggleSwitch Header="File extension" OffContent="Not allowed" OnContent="Allowed" IsOn="{Binding ShareExtension, Mode=TwoWay}" />
-                    <ToggleSwitch Header="Size and modified date" OffContent="Not allowed" OnContent="Allowed" IsOn="{Binding ShareMetadata, Mode=TwoWay}" />
-                    <ToggleSwitch Header="File name" OffContent="Not allowed" OnContent="Allowed" IsOn="{Binding ShareFileName, Mode=TwoWay}" />
-                    <ToggleSwitch Header="Folder names" OffContent="Not allowed" OnContent="Allowed" IsOn="{Binding ShareFolderNames, Mode=TwoWay}" />
-                    <ToggleSwitch Header="Full path (usually unnecessary)" OffContent="Not allowed" OnContent="Allowed" IsOn="{Binding ShareFullPath, Mode=TwoWay}" />
-                    <ToggleSwitch Header="Document contents — not available yet" IsEnabled="False" IsOn="False" />
-                    <ToggleSwitch Header="Image contents — not available yet" IsEnabled="False" IsOn="False" />
-                    <Button HorizontalAlignment="Left" Click="OnSavePrivacyClick" Content="Save privacy choices"
+                    <ToggleSwitch Header="File type (.pdf, .jpg, and similar)" OffContent="No" OnContent="Yes" IsOn="{Binding ShareExtension, Mode=TwoWay}" />
+                    <ToggleSwitch Header="File size and last changed date" OffContent="No" OnContent="Yes" IsOn="{Binding ShareMetadata, Mode=TwoWay}" />
+                    <ToggleSwitch Header="File name" OffContent="No" OnContent="Yes" IsOn="{Binding ShareFileName, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Folder names" OffContent="No" OnContent="Yes" IsOn="{Binding ShareFolderNames, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Full location on your computer (best left off)" OffContent="No" OnContent="Yes" IsOn="{Binding ShareFullPath, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Text inside files — not available" IsEnabled="False" IsOn="False" />
+                    <ToggleSwitch Header="Images inside files — not available" IsEnabled="False" IsOn="False" />
+                    <Button HorizontalAlignment="Left" Click="OnSavePrivacyClick" Content="Save these choices"
                             Style="{StaticResource AccentButtonStyle}" />
                     <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding SaveStatus}" TextWrapping="Wrap" />
                 </StackPanel>
@@ -51,45 +51,47 @@
             <Border Padding="18" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="10">
                 <StackPanel Spacing="12">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="AI mode" />
+                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Choose how AI works" />
                         <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                                   Text="DeskAI never switches providers automatically. Local endpoints must stay on this computer." />
+                                   Text="AI is optional. If one choice fails, DeskAI will not quietly send your information somewhere else." />
                     </StackPanel>
-                    <ComboBox Header="Processing mode" SelectedIndex="{Binding SelectedModeIndex, Mode=TwoWay}">
-                        <ComboBoxItem Content="Rule Engine Only" />
-                        <ComboBoxItem Content="Local AI endpoint" />
-                        <ComboBoxItem Content="Google Gemini (your API key)" />
+                    <ComboBox Header="How should DeskAI work?" SelectedIndex="{Binding SelectedModeIndex, Mode=TwoWay}">
+                        <ComboBoxItem Content="Don't use AI" />
+                        <ComboBoxItem Content="AI running on this computer" />
+                        <ComboBoxItem Content="Online AI through OpenRouter" />
                     </ComboBox>
-                    <Grid ColumnDefinitions="*,*" ColumnSpacing="12">
-                        <NumberBox Header="Timeout (seconds)" Minimum="5" Maximum="120" SpinButtonPlacementMode="Compact"
-                                   Value="{Binding TimeoutSeconds, Mode=TwoWay}" />
-                        <NumberBox Grid.Column="1" Header="Maximum cloud requests per day" Minimum="1" Maximum="1000"
-                                   SpinButtonPlacementMode="Compact" Value="{Binding DailyRequestLimit, Mode=TwoWay}" />
-                    </Grid>
-                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                               Text="DeskAI never retries automatically. The daily cap limits requests, while exact pricing remains with the selected provider." />
-                    <Expander Header="Local AI setup">
+                    <Expander Header="More options">
                         <StackPanel Padding="0,10,0,0" Spacing="10">
-                            <TextBox Header="Loopback endpoint" PlaceholderText="http://127.0.0.1:11434/v1/chat/completions"
+                            <NumberBox Header="Stop waiting after this many seconds" Minimum="5" Maximum="120"
+                                       SpinButtonPlacementMode="Compact" Value="{Binding TimeoutSeconds, Mode=TwoWay}" />
+                            <NumberBox Header="Most online AI requests allowed each day" Minimum="1" Maximum="1000"
+                                       SpinButtonPlacementMode="Compact" Value="{Binding DailyRequestLimit, Mode=TwoWay}" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
+                                       Text="DeskAI does not retry by itself. Check OpenRouter to see prices and spending." />
+                        </StackPanel>
+                    </Expander>
+                    <Expander Header="AI on this computer">
+                        <StackPanel Padding="0,10,0,0" Spacing="10">
+                            <TextBox Header="Local AI address" PlaceholderText="http://127.0.0.1:11434/v1/chat/completions"
                                      Text="{Binding LocalEndpoint, Mode=TwoWay}" />
-                            <TextBox Header="Model ID" PlaceholderText="Enter the model exposed by your local runtime"
+                            <TextBox Header="Model name" PlaceholderText="Enter the model shown by your local AI app"
                                      Text="{Binding LocalModel, Mode=TwoWay}" />
                         </StackPanel>
                     </Expander>
-                    <Expander Header="Gemini setup">
+                    <Expander Header="Online AI with OpenRouter">
                         <StackPanel Padding="0,10,0,0" Spacing="10">
-                            <TextBox Header="Gemini model ID" PlaceholderText="Enter a model available to your Gemini account"
-                                     Text="{Binding GeminiModel, Mode=TwoWay}" />
-                            <PasswordBox x:Name="GeminiKeyBox" Header="Gemini API key" PasswordRevealMode="Peek"
-                                         PlaceholderText="Stored in Windows Credential Manager" />
-                            <ToggleSwitch Header="I agree to send the allowed categories above directly to Google Gemini"
+                            <TextBox Header="Model name from OpenRouter" PlaceholderText="For example: provider/model-name"
+                                     Text="{Binding OpenRouterModel, Mode=TwoWay}" />
+                            <PasswordBox x:Name="OpenRouterKeyBox" Header="Your OpenRouter key" PasswordRevealMode="Peek"
+                                         PlaceholderText="Saved securely by Windows" />
+                            <ToggleSwitch Header="I agree to send only my choices above to OpenRouter"
                                           IsOn="{Binding CloudConsent, Mode=TwoWay}" />
                             <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                                       Text="Provider pricing, retention, and availability belong to Google. DeskAI does not add a backend." />
-                            <Button HorizontalAlignment="Left" Click="OnRemoveGeminiKeyClick" Content="Remove Gemini key" />
+                                       Text="OpenRouter controls prices and how its service handles data. DeskAI sends no file contents in this version." />
+                            <Button HorizontalAlignment="Left" Click="OnRemoveOpenRouterKeyClick" Content="Remove saved OpenRouter key" />
                         </StackPanel>
                     </Expander>
-                    <Button HorizontalAlignment="Left" Click="OnSaveProviderClick" Content="Save AI mode"
+                    <Button HorizontalAlignment="Left" Click="OnSaveProviderClick" Content="Save AI choice"
                             Style="{StaticResource AccentButtonStyle}" />
                     <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding ProviderStatus}" TextWrapping="Wrap" />
                 </StackPanel>

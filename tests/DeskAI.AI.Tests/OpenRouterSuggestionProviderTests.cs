@@ -4,27 +4,28 @@ using DeskAI.Core.Ai;
 
 namespace DeskAI.AI.Tests;
 
-public sealed class GeminiSuggestionProviderTests
+public sealed class OpenRouterSuggestionProviderTests
 {
     [Fact]
-    public async Task SuggestAsync_UsesFixedGoogleHostAndHeaderCredential()
+    public async Task SuggestAsync_UsesFixedOpenRouterHostAndBearerCredential()
     {
         var id = Guid.NewGuid();
         var structured = $$"""{"schemaVersion":"1","suggestions":[{"fileId":"{{id}}","category":"Documents","confidence":0.85,"reason":"Document metadata."}]}""";
         var envelope = System.Text.Json.JsonSerializer.Serialize(new
         {
-            candidates = new[] { new { content = new { parts = new[] { new { text = structured } } } } },
-            usageMetadata = new { promptTokenCount = 10, candidatesTokenCount = 5 },
+            choices = new[] { new { message = new { content = structured } } },
+            usage = new { prompt_tokens = 10, completion_tokens = 5 },
         });
         var transport = new FakeAiHttpTransport(HttpStatusCode.OK, envelope);
         var vault = new FakeCredentialVault("obvious-test-api-key");
-        var provider = new GeminiSuggestionProvider(transport, vault, "DeskAI/Gemini", "test-model");
+        var provider = new OpenRouterSuggestionProvider(transport, vault, "DeskAI/OpenRouter", "test/model");
 
         var response = await provider.SuggestAsync(CreateRequest(id), TestContext.Current.CancellationToken);
 
         Assert.Equal(AiProviderStatus.Success, response.Status);
-        Assert.Equal("generativelanguage.googleapis.com", transport.Endpoint!.Host);
-        Assert.Equal("obvious-test-api-key", transport.Headers!["x-goog-api-key"]);
+        Assert.Equal("openrouter.ai", transport.Endpoint!.Host);
+        Assert.Equal("/api/v1/chat/completions", transport.Endpoint.AbsolutePath);
+        Assert.Equal("Bearer obvious-test-api-key", transport.Headers!["Authorization"]);
         Assert.DoesNotContain("obvious-test-api-key", transport.RequestBody, StringComparison.Ordinal);
         Assert.Equal(AiSuggestionProvenance.CloudAi, Assert.Single(response.Suggestions).Provenance);
         Assert.Equal(10, response.Usage!.InputTokens);
@@ -34,8 +35,8 @@ public sealed class GeminiSuggestionProviderTests
     public async Task SuggestAsync_MissingCredentialStopsBeforeNetwork()
     {
         var transport = new FakeAiHttpTransport(HttpStatusCode.OK, "{}");
-        var provider = new GeminiSuggestionProvider(
-            transport, new FakeCredentialVault(null), "DeskAI/Gemini", "test-model");
+        var provider = new OpenRouterSuggestionProvider(
+            transport, new FakeCredentialVault(null), "DeskAI/OpenRouter", "test/model");
 
         var response = await provider.SuggestAsync(CreateRequest(Guid.NewGuid()), TestContext.Current.CancellationToken);
 

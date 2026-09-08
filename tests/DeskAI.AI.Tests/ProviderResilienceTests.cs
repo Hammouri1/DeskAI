@@ -7,11 +7,11 @@ namespace DeskAI.AI.Tests;
 public sealed class ProviderResilienceTests
 {
     [Fact]
-    public async Task Gemini_RateLimitIsReportedWithoutRetry()
+    public async Task OpenRouter_RateLimitIsReportedWithoutRetry()
     {
         var transport = new FakeAiHttpTransport(HttpStatusCode.TooManyRequests, "provider details are not surfaced");
-        var provider = new GeminiSuggestionProvider(
-            transport, new FakeCredentialVault("key"), "DeskAI/Gemini", "test-model");
+        var provider = new OpenRouterSuggestionProvider(
+            transport, new FakeCredentialVault("key"), "DeskAI/OpenRouter", "test/model");
 
         var response = await provider.SuggestAsync(CreateRequest(), TestContext.Current.CancellationToken);
 
@@ -68,9 +68,9 @@ public sealed class ProviderResilienceTests
         var settings = AiSettings.Default with
         {
             Mode = AiMode.Cloud,
-            ProviderId = "gemini",
+            ProviderId = "openrouter",
             ModelId = "test-model",
-            CredentialReference = "DeskAI/Gemini",
+            CredentialReference = "DeskAI/OpenRouter",
             CloudConsentGranted = true,
         };
         var transport = new FakeAiHttpTransport(HttpStatusCode.OK, "{}");

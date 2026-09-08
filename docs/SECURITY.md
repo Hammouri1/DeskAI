@@ -117,7 +117,7 @@ Cloud use is disabled until configured. The user separately controls disclosure 
 
 Do not send an entire file when a smaller permitted representation answers the task. Define retention implications in provider-facing UI and link to the provider's terms. DeskAI must not claim control over provider retention.
 
-V0.3 cloud processing is limited to generated sample metadata in the Organize AI-advice card. The saved category policy is rechecked by the configured provider before transport. Gemini has a fixed HTTPS host, redirects are disabled, and no provider fallback exists. The real-folder metadata preview is not connected to AI.
+V0.3 cloud processing is limited to generated sample metadata in the Organize AI-ideas card. The saved sharing choices are rechecked before transport. OpenRouter uses only the fixed `https://openrouter.ai/api/v1/chat/completions` address, redirects are disabled, and no provider fallback exists. A model name may be chosen, but the cloud address cannot be changed. The real-folder metadata preview is not connected to AI.
 
 ## Credentials
 
@@ -128,7 +128,7 @@ V0.3 cloud processing is limited to generated sample metadata in the Organize AI
 - Support removal/replacement and ensure diagnostics redact common authorization headers.
 - Tests use fake providers and obvious non-secret tokens.
 
-The V0.3 implementation uses Windows Credential Manager generic credentials with DeskAI-owned references. Unmanaged and managed byte buffers are zeroed after native writes/reads where possible; managed UI strings cannot be forcibly erased, so the PasswordBox is cleared immediately after saving. SQLite stores only `DeskAI/Gemini`. Redaction covers authorization, `x-goog-api-key`, and common API-key labels.
+The V0.3 implementation uses Windows Credential Manager generic credentials with DeskAI-owned references. Unmanaged and managed byte buffers are zeroed after native writes/reads where possible; managed UI strings cannot be forcibly erased, so the PasswordBox is cleared immediately after saving. SQLite stores only `DeskAI/OpenRouter`. Redaction covers authorization bearer values and common API-key labels.
 
 ## Database and Logs
 

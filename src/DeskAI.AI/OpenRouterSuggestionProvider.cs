@@ -7,12 +7,13 @@ using DeskAI.Core.Ai;
 
 namespace DeskAI.AI;
 
-public sealed class GeminiSuggestionProvider(
+public sealed class OpenRouterSuggestionProvider(
     IAiHttpTransport transport,
     ICredentialVault credentialVault,
     string credentialReference,
     string modelId) : IOrganizationSuggestionProvider
 {
+    private static readonly Uri Endpoint = new("https://openrouter.ai/api/v1/chat/completions");
     private readonly string _modelId = ProviderEndpointPolicy.RequireModelId(modelId);
 
     public async Task<OrganizationSuggestionResponse> SuggestAsync(
@@ -27,38 +28,35 @@ public sealed class GeminiSuggestionProvider(
         }
         catch (System.ComponentModel.Win32Exception)
         {
-            return Failure(AiProviderStatus.AuthenticationFailed, "Windows could not retrieve the Gemini credential.");
+            return Failure(AiProviderStatus.AuthenticationFailed, "Windows could not open your saved OpenRouter key.");
         }
+
         if (string.IsNullOrWhiteSpace(key))
         {
-            return Failure(AiProviderStatus.AuthenticationFailed, "Add your Gemini API key in Privacy & AI settings.");
+            return Failure(AiProviderStatus.AuthenticationFailed, "Add your OpenRouter key in Settings first.");
         }
 
         var prompt = AiPromptFactory.CreateClassificationPrompt(request);
         var body = JsonSerializer.Serialize(new
         {
-            contents = new[] { new { parts = new[] { new { text = prompt } } } },
-            generationConfig = new
-            {
-                temperature = 0,
-                responseMimeType = "application/json",
-            },
+            model = _modelId,
+            messages = new[] { new { role = "user", content = prompt } },
+            response_format = new { type = "json_object" },
+            temperature = 0,
         });
         if (Encoding.UTF8.GetByteCount(body) > request.Limits.MaximumRequestBytes)
         {
-            return Failure(AiProviderStatus.CostLimitReached, "The Gemini request is larger than your configured limit.");
+            return Failure(AiProviderStatus.CostLimitReached, "This request is larger than your safety limit.");
         }
 
-        var endpoint = new Uri(
-            $"https://generativelanguage.googleapis.com/v1beta/models/{Uri.EscapeDataString(_modelId)}:generateContent");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(request.Limits.Timeout);
         try
         {
             var response = await transport.PostJsonAsync(
-                endpoint,
+                Endpoint,
                 body,
-                new Dictionary<string, string> { ["x-goog-api-key"] = key },
+                new Dictionary<string, string> { ["Authorization"] = $"Bearer {key}" },
                 request.Limits.MaximumResponseBytes,
                 timeout.Token).ConfigureAwait(false);
             if (response.StatusCode != HttpStatusCode.OK)
@@ -72,22 +70,22 @@ public sealed class GeminiSuggestionProvider(
             try
             {
                 using var envelope = JsonDocument.Parse(response.Body);
-                structuredJson = envelope.RootElement.GetProperty("candidates")[0]
-                    .GetProperty("content").GetProperty("parts")[0].GetProperty("text").GetString();
-                if (envelope.RootElement.TryGetProperty("usageMetadata", out var usage))
+                structuredJson = envelope.RootElement.GetProperty("choices")[0]
+                    .GetProperty("message").GetProperty("content").GetString();
+                if (envelope.RootElement.TryGetProperty("usage", out var usage))
                 {
-                    inputTokens = ReadInt(usage, "promptTokenCount");
-                    outputTokens = ReadInt(usage, "candidatesTokenCount");
+                    inputTokens = ReadInt(usage, "prompt_tokens");
+                    outputTokens = ReadInt(usage, "completion_tokens");
                 }
             }
             catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException)
             {
-                return Failure(AiProviderStatus.MalformedResponse, "Gemini returned an unreadable response.");
+                return Failure(AiProviderStatus.MalformedResponse, "OpenRouter sent a response DeskAI could not read.");
             }
 
             if (structuredJson is null)
             {
-                return Failure(AiProviderStatus.MalformedResponse, "Gemini returned no structured suggestions.");
+                return Failure(AiProviderStatus.MalformedResponse, "OpenRouter returned no suggestions.");
             }
 
             var parsed = StructuredSuggestionParser.Parse(
@@ -98,27 +96,27 @@ public sealed class GeminiSuggestionProvider(
             return parsed.IsValid
                 ? new OrganizationSuggestionResponse(
                     AiProviderStatus.Success,
-                    "Google Gemini",
+                    "OpenRouter",
                     parsed.Suggestions,
-                    $"Received {parsed.Suggestions.Count} validated Gemini suggestion(s).",
+                    $"Found {parsed.Suggestions.Count} AI suggestion(s) for you to review.",
                     new AiUsage(inputTokens, outputTokens, null))
-                : Failure(AiProviderStatus.SafetyRejected, "Gemini's response did not pass DeskAI validation.");
+                : Failure(AiProviderStatus.SafetyRejected, "The AI answer did not pass DeskAI's safety checks.");
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return Failure(AiProviderStatus.TimedOut, "Gemini took too long. DeskAI did not try another provider.");
+            return Failure(AiProviderStatus.TimedOut, "OpenRouter took too long. Nothing else was tried.");
         }
         catch (OperationCanceledException)
         {
-            return Failure(AiProviderStatus.Cancelled, "The Gemini request was cancelled.");
+            return Failure(AiProviderStatus.Cancelled, "Stopped getting AI ideas.");
         }
         catch (HttpRequestException)
         {
-            return Failure(AiProviderStatus.Offline, "Gemini is unreachable. The rule engine remains available.");
+            return Failure(AiProviderStatus.Offline, "OpenRouter could not be reached. You can still organize without AI.");
         }
         catch (AiResponseTooLargeException)
         {
-            return Failure(AiProviderStatus.MalformedResponse, "Gemini's response exceeded the configured limit.");
+            return Failure(AiProviderStatus.MalformedResponse, "The AI answer was too large, so DeskAI ignored it.");
         }
     }
 
@@ -128,17 +126,19 @@ public sealed class GeminiSuggestionProvider(
     private static AiProviderStatus MapStatus(HttpStatusCode status) => status switch
     {
         HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => AiProviderStatus.AuthenticationFailed,
+        HttpStatusCode.PaymentRequired => AiProviderStatus.QuotaExceeded,
         HttpStatusCode.TooManyRequests => AiProviderStatus.RateLimited,
         _ => AiProviderStatus.ProviderError,
     };
 
     private static string MessageFor(HttpStatusCode status) => status switch
     {
-        HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => "Gemini rejected the API key or permission.",
-        HttpStatusCode.TooManyRequests => "Gemini reported a rate or quota limit. DeskAI did not retry automatically.",
-        _ => "Gemini returned an error. No other provider was used.",
+        HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => "OpenRouter did not accept the saved key.",
+        HttpStatusCode.PaymentRequired => "Your OpenRouter account needs credits before this model can be used.",
+        HttpStatusCode.TooManyRequests => "OpenRouter is receiving too many requests. DeskAI did not try again automatically.",
+        _ => "OpenRouter returned an error. Nothing else was tried.",
     };
 
     private static OrganizationSuggestionResponse Failure(AiProviderStatus status, string message) =>
-        new(status, "Google Gemini", [], message);
+        new(status, "OpenRouter", [], message);
 }
