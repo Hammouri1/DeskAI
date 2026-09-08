@@ -7,11 +7,11 @@ namespace DeskAI.AI.Tests;
 public sealed class ProviderResilienceTests
 {
     [Fact]
-    public async Task OpenRouter_RateLimitIsReportedWithoutRetry()
+    public async Task Cloud_RateLimitIsReportedWithoutRetry()
     {
         var transport = new FakeAiHttpTransport(HttpStatusCode.TooManyRequests, "provider details are not surfaced");
-        var provider = new OpenRouterSuggestionProvider(
-            transport, new FakeCredentialVault("key"), "DeskAI/OpenRouter", "test/model");
+        var provider = new CloudChatCompletionsSuggestionProvider(
+            transport, new FakeCredentialVault("key"), CloudProviderCatalog.All[0], "test/model");
 
         var response = await provider.SuggestAsync(CreateRequest(), TestContext.Current.CancellationToken);
 

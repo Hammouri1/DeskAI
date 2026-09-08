@@ -4,7 +4,7 @@
 
 DeskAI is a planned open-source Windows desktop application. It will scan only folders a user selects, generate understandable organization proposals, validate every proposed action using deterministic safety rules, show a preview, and execute only approved operations with history and undo support.
 
-**Current status:** milestones V0.1–V0.3 are implemented, and V0.4 has begun with a local metadata index (backend only — DeskAI does not index anything on its own yet). The safe local organizer works with AI off by default. Optional AI can advise on generated sample metadata through an AI service running on this computer or a consent-gated OpenRouter connection. Sharing choices are applied before any online request, OpenRouter keys stay in Windows Credential Manager, structured responses are treated as untrusted, and AI advice cannot edit or execute a plan. SQLite schema version 7 stores non-secret AI settings, daily request counts, and the local metadata index, which is scoped per connected folder and erased when that folder is disconnected.
+**Current status:** milestones V0.1–V0.3 are implemented, and V0.4 has begun with a local metadata index (backend only — DeskAI does not index anything on its own yet). The safe local organizer works with AI off by default. Optional AI can advise on generated sample metadata through an AI service running on this computer, or through whichever supported online service you already have a key for — OpenRouter, OpenAI, Groq, Mistral, DeepSeek, or Together AI. Sharing choices are applied before any online request, each service's key stays in Windows Credential Manager under its own entry, structured responses are treated as untrusted, and AI advice cannot edit or execute a plan. SQLite schema version 7 stores non-secret AI settings, daily request counts, and the local metadata index, which is scoped per connected folder and erased when that folder is disconnected.
 
 ## Why DeskAI
 
@@ -42,7 +42,7 @@ DeskAI is designed to work without an account, subscription, hosted DeskAI backe
 
 1. **Rule Engine Only** — deterministic organization without AI.
 2. **Local AI** — compatible models run on the user's machine.
-3. **Bring Your Own API Key** — optional direct connection to a chosen provider, with explicit data-sharing controls.
+3. **Bring Your Own API Key** — optional direct connection to whichever supported service you choose, using your own key, with explicit data-sharing controls. DeskAI never asks you to type a web address, so your data can only reach the service you picked.
 
 Cloud providers receive only categories of information the user has permitted. Keys belong in Windows-protected credential storage, never plaintext SQLite. Read [AI Providers](docs/AI-PROVIDERS.md) and [Security](docs/SECURITY.md).
 

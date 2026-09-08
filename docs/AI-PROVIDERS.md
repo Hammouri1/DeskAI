@@ -18,7 +18,24 @@ Inference runs on the user's computer, potentially through a local runtime with 
 
 The desktop app connects directly to the provider selected by the user. DeskAI has no required proxy and does not pay for usage. The UI must show that provider pricing, retention, and availability belong to that provider. Keys use Windows-protected storage and data sharing is opt-in and minimized.
 
-V0.3 implements two adapters: an explicit OpenAI-compatible loopback address for a separately installed local runtime, and OpenRouter using the user's key and chosen OpenRouter model name. Arbitrary cloud addresses are deliberately not accepted because they could send disclosed information to an unexpected destination.
+DeskAI implements two adapters: an explicit OpenAI-compatible loopback address for a separately installed local runtime, and one cloud adapter that serves a vetted catalog of services using the user's own key and chosen model name. Arbitrary cloud addresses are deliberately not accepted because they could send disclosed information to an unexpected destination.
+
+### Supported cloud services
+
+The user chooses from a closed, compile-time list. Every entry has a fixed HTTPS address and its own credential entry:
+
+| Service | Fixed address | Credential reference |
+| --- | --- | --- |
+| OpenRouter | `https://openrouter.ai/api/v1/chat/completions` | `DeskAI/OpenRouter` |
+| OpenAI | `https://api.openai.com/v1/chat/completions` | `DeskAI/OpenAI` |
+| Groq | `https://api.groq.com/openai/v1/chat/completions` | `DeskAI/Groq` |
+| Mistral | `https://api.mistral.ai/v1/chat/completions` | `DeskAI/Mistral` |
+| DeepSeek | `https://api.deepseek.com/chat/completions` | `DeskAI/DeepSeek` |
+| Together AI | `https://api.together.xyz/v1/chat/completions` | `DeskAI/TogetherAI` |
+
+All six speak the same OpenAI-style chat-completions shape, which is why one adapter serves them all. A service with a different API shape — such as Anthropic's Messages API or Google Gemini — needs its own adapter, error mapping, and contract tests before it can be listed. Adding a provider is a reviewed code change, not a settings field.
+
+Because each service has its own credential reference, switching services never reuses or exposes a key saved for another company, and removing a key removes only the selected one.
 
 ## Provider-Neutral Contract
 
@@ -97,8 +114,10 @@ Store provider ID, endpoint (where allowed), model ID, capability cache, timeout
 
 - Rule Engine Only is the default and needs no provider.
 - Local mode accepts only loopback HTTP(S); DeskAI neither installs nor launches the runtime.
-- OpenRouter uses only `https://openrouter.ai/api/v1/chat/completions` and an `Authorization: Bearer` header, following OpenRouter's official API reference. Users may select an available OpenRouter model, but cannot change the cloud destination.
-- Cloud mode requires a consent switch and a second disclosure summary confirmation.
+- Cloud mode posts to the selected service's single fixed address with an `Authorization: Bearer` header. Users may choose the service and the model name, but cannot change or type a cloud destination.
+- An unrecognized saved provider ID is refused rather than guessed at, so a tampered settings row cannot choose a destination or reuse another service's key.
+- The daily request cap is counted per service, so switching services does not grant a fresh daily allowance.
+- Cloud mode requires a consent switch and a second disclosure confirmation that names the exact host which will receive the data.
 - The request builder includes only allowed metadata fields and excludes protected file IDs.
 - JSON output is versioned, byte/count bounded, duplicate-property checked, unknown-field rejecting, and limited to requested IDs and known categories.
 - Requests have a user-configurable timeout and daily cloud-request cap. There are no automatic retries or provider fallbacks.

@@ -26,10 +26,13 @@ public sealed class ConfiguredSuggestionProvider(
                 "The request asks for data outside your saved cloud-sharing choices.");
         }
 
+        // The daily cap is counted per provider, so choosing a different service does not
+        // hand the user a fresh allowance for the one they already used today.
+        var cloudProvider = CloudProviderCatalog.Find(settings.ProviderId);
         if (settings.Mode == AiMode.Cloud && settings.CloudConsentGranted &&
-            settings.ProviderId == "openrouter" && settings.CredentialReference is not null &&
+            cloudProvider is not null && settings.CredentialReference is not null &&
             !await usageBudget.TryReserveRequestAsync(
-                settings.ProviderId,
+                cloudProvider.Id,
                 Math.Clamp(settings.DailyRequestLimit, 1, 1000),
                 DateOnly.FromDateTime(clock.UtcNow.UtcDateTime),
                 cancellationToken).ConfigureAwait(false))
@@ -50,9 +53,12 @@ public sealed class ConfiguredSuggestionProvider(
                 .SuggestAsync(request, cancellationToken).ConfigureAwait(false),
             AiMode.Cloud when !settings.CloudConsentGranted => Refused(
                 "Online AI is selected, but sharing has not been approved."),
-            AiMode.Cloud when settings.ProviderId == "openrouter" && settings.CredentialReference is not null =>
-                await new OpenRouterSuggestionProvider(
-                        transport, credentialVault, settings.CredentialReference, settings.ModelId)
+            // The saved provider must still be one DeskAI knows. An unrecognized ID is
+            // refused rather than guessed at, so a tampered setting cannot pick a
+            // destination or reuse another provider's saved key.
+            AiMode.Cloud when cloudProvider is not null && settings.CredentialReference is not null =>
+                await new CloudChatCompletionsSuggestionProvider(
+                        transport, credentialVault, cloudProvider, settings.ModelId)
                     .SuggestAsync(request, cancellationToken).ConfigureAwait(false),
             _ => Refused("AI is not set up yet. DeskAI did not send anything."),
         };

@@ -143,7 +143,9 @@ public sealed class OrganizeViewModel : ObservableObject, IDisposable
         {
             AiMode.RuleEngineOnly => "AI is off · nothing will be shared",
             AiMode.Local => $"AI on this computer · may see {FriendlyCategories(settings.CloudDisclosures)}",
-            AiMode.Cloud => $"OpenRouter · may receive {FriendlyCategories(settings.CloudDisclosures)}",
+            // Name the exact service, so "online AI" is never vague about where data goes.
+            AiMode.Cloud =>
+                $"{CloudProviderCatalog.Find(settings.ProviderId)?.DisplayName ?? "Online AI"} · may receive {FriendlyCategories(settings.CloudDisclosures)}",
             _ => "AI settings are unavailable",
         };
         OnPropertyChanged(nameof(AiDisclosureSummary));
@@ -189,7 +191,7 @@ public sealed class OrganizeViewModel : ObservableObject, IDisposable
                 ? "No usage was reported."
                 : response.Usage.EstimatedCostUsd is decimal cost
                     ? $"AI used {response.Usage.InputTokens ?? 0} input and {response.Usage.OutputTokens ?? 0} output tokens · estimated {cost:C}."
-                    : $"AI used {response.Usage.InputTokens ?? 0} input and {response.Usage.OutputTokens ?? 0} output tokens. Check OpenRouter for the exact cost.";
+                    : $"AI used {response.Usage.InputTokens ?? 0} input and {response.Usage.OutputTokens ?? 0} output tokens. Check your AI service for the exact cost.";
             await RefreshAiDisclosureSummaryAsync();
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.Data.Common.DbException)

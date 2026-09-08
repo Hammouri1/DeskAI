@@ -58,7 +58,7 @@
                     <ComboBox Header="How should DeskAI work?" SelectedIndex="{Binding SelectedModeIndex, Mode=TwoWay}">
                         <ComboBoxItem Content="Don't use AI" />
                         <ComboBoxItem Content="AI running on this computer" />
-                        <ComboBoxItem Content="Online AI through OpenRouter" />
+                        <ComboBoxItem Content="Online AI with my own key" />
                     </ComboBox>
                     <Expander Header="More options">
                         <StackPanel Padding="0,10,0,0" Spacing="10">
@@ -67,7 +67,7 @@
                             <NumberBox Header="Most online AI requests allowed each day" Minimum="1" Maximum="1000"
                                        SpinButtonPlacementMode="Compact" Value="{Binding DailyRequestLimit, Mode=TwoWay}" />
                             <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                                       Text="DeskAI does not retry by itself. Check OpenRouter to see prices and spending." />
+                                       Text="DeskAI does not retry by itself. Check your AI service to see prices and spending." />
                         </StackPanel>
                     </Expander>
                     <Expander Header="AI on this computer">
@@ -78,17 +78,22 @@
                                      Text="{Binding LocalModel, Mode=TwoWay}" />
                         </StackPanel>
                     </Expander>
-                    <Expander Header="Online AI with OpenRouter">
+                    <Expander Header="Online AI with your own key">
                         <StackPanel Padding="0,10,0,0" Spacing="10">
-                            <TextBox Header="Model name from OpenRouter" PlaceholderText="For example: provider/model-name"
-                                     Text="{Binding OpenRouterModel, Mode=TwoWay}" />
-                            <PasswordBox x:Name="OpenRouterKeyBox" Header="Your OpenRouter key" PasswordRevealMode="Peek"
+                            <ComboBox Header="Which AI service is your key for?" HorizontalAlignment="Stretch"
+                                      ItemsSource="{Binding CloudProviderNames}"
+                                      SelectedIndex="{Binding SelectedCloudProviderIndex, Mode=TwoWay}" />
+                            <TextBox Header="Model name" Text="{Binding CloudModel, Mode=TwoWay}"
+                                     PlaceholderText="{Binding CloudModelHint}" />
+                            <PasswordBox x:Name="CloudKeyBox" PasswordRevealMode="Peek"
+                                         Header="{Binding CloudKeyHeader}"
                                          PlaceholderText="Saved securely by Windows" />
-                            <ToggleSwitch Header="I agree to send only my choices above to OpenRouter"
-                                          IsOn="{Binding CloudConsent, Mode=TwoWay}" />
                             <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                                       Text="OpenRouter controls prices and how its service handles data. DeskAI sends no file contents in this version." />
-                            <Button HorizontalAlignment="Left" Click="OnRemoveOpenRouterKeyClick" Content="Remove saved OpenRouter key" />
+                                       Text="{Binding CloudKeySourceHint}" />
+                            <ToggleSwitch Header="{Binding CloudConsentHeader}" IsOn="{Binding CloudConsent, Mode=TwoWay}" />
+                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
+                                       Text="{Binding CloudProviderNote}" />
+                            <Button HorizontalAlignment="Left" Click="OnRemoveCloudKeyClick" Content="{Binding RemoveKeyLabel}" />
                         </StackPanel>
                     </Expander>
                     <Button HorizontalAlignment="Left" Click="OnSaveProviderClick" Content="Save AI choice"

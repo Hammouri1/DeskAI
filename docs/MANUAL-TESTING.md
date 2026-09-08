@@ -134,7 +134,36 @@ verified by tests and by confirming the app's behavior did not change.
 6. Review `SqliteDatabaseInitializerTests`. Confirm fresh creation reaches schema version
    7, that versions 1–7 are each recorded, that an existing database gains `indexed_files`
    without losing its authorized roots, and that deleting a root removes its indexed rows.
-7. Optional database check: after launching the app once, open
+8. Optional database check: after launching the app once, open
    `%LocalAppData%\DeskAI\deskai.db` with a read-only SQLite viewer and confirm
    `indexed_files` exists and is **empty**. Nothing should be indexed until a later slice
    adds an explicit user action.
+
+## Bring Your Own Key — Any Supported Service
+
+1. Build Release and run the full suite. Expected: **202 passing tests**, none skipped,
+   zero warnings/errors. No automated test contacts a real AI service or writes your
+   Windows Credential Manager.
+2. Open Settings. Confirm the main choice now reads "Online AI with my own key" rather
+   than naming one company.
+3. Select that option and expand "Online AI with your own key". Confirm a service list
+   appears with OpenRouter, OpenAI, Groq, Mistral, DeepSeek, and Together AI.
+4. Change the selected service without saving. Confirm the model example, the key box
+   label, the agreement sentence, the pricing note, and the remove-key button **all**
+   rename themselves to the service you picked.
+5. Confirm there is no box anywhere to type a web address for online AI. That is
+   deliberate — DeskAI only sends to the fixed address of the service you selected.
+6. Optional live test with a service you already pay for: enter an exact model name and
+   your key, turn on the agreement, and save. Read the confirmation dialog. It must name
+   the service, list exactly what may be shared, and name the host that will receive it.
+7. Open Organize and confirm the AI card names your chosen service, not "OpenRouter" and
+   not a vague "the cloud".
+8. Choose "Get AI ideas" once. Verify each result shows a category, confidence,
+   explanation, and your service's name, and that it does not change or enable any move.
+9. Return to Settings and choose the remove-key button. Confirm it names only the
+   currently selected service and that AI becomes off afterwards.
+10. If you use more than one service, confirm saving a key for a second service does not
+    disturb the first: each is stored under its own Windows Credential Manager entry.
+11. Never paste a key into logs, screenshots, issues, chat, source files, or test data.
+    Check your provider's own billing page for exact cost; DeskAI reports token counts
+    when the service supplies them and deliberately does not guess prices.

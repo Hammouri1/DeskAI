@@ -251,6 +251,23 @@ What is deliberately not built: automatic/background indexing, any indexing UI, 
 Next small task: a typed structured search query model executed as parameterized SQL, scoped to authorized root IDs.
 ```
 
+## Multi-Provider Cloud AI Learning Log — 2026-09-09
+
+```text
+What became usable: Online AI now works with whichever supported service the user already has a key for — OpenRouter, OpenAI, Groq, Mistral, DeepSeek, or Together AI — instead of only OpenRouter. Every label, agreement, and message renames itself to the chosen service.
+Main data flow: Settings picks a CloudProvider from a fixed catalog → key saved under that provider's own Windows Credential Manager reference → settings store the provider ID and reference only → ConfiguredSuggestionProvider resolves the ID back through the catalog → CloudChatCompletionsSuggestionProvider posts to that provider's fixed HTTPS address.
+Classes/interfaces I can explain: CloudProvider, CloudProviderCatalog, CloudChatCompletionsSuggestionProvider, ConfiguredSuggestionProvider, and ICredentialVault.
+New concept and my own explanation: An allow-list is safer than validation. Rather than checking whether a user-typed address looks acceptable, DeskAI only knows a fixed set of destinations. There is no input to get wrong, so there is no parsing bug to exploit.
+New concept and my own explanation (2): Separate credential references are a blast radius decision. Because each service stores its key under its own name, sending one company's key to another is not one bug away — the adapter physically cannot read a reference it was not given.
+Tension I had to resolve: the owner wanted "any API key", but SECURITY.md forbids arbitrary cloud addresses because a typo would send approved data to the wrong host. The catalog satisfies the intent (use the service you already pay for) without a free-text endpoint. A reviewed custom-endpoint path is recorded as an open question in ADR 0013, not shipped quietly.
+Security cases tested: every catalog entry is plain HTTPS with a default port and no credentials/query/fragment; IDs, display names, hosts, and credential references are all unique; every reference stays under the DeskAI namespace; Find refuses null, blank, whitespace-padded, wrong-case, and unknown IDs; each provider routes only to its own address; the adapter reads only its own credential entry; an unknown saved provider ID is refused before any network call; a missing key stops before the network.
+Build/test evidence: Release build with zero warnings/errors; 202 tests passed with none skipped (171 before this change). dotnet format reported no changes.
+AI containment check: DeskAI.AI still references DeskAI.Core only. A search for index, scanner, path, executor, journal, process, and registry use across the project returns nothing.
+Trade-off/ADR: docs/decisions/0013-vetted-multi-provider-cloud-ai.md.
+What is deliberately not built: services with a different API shape (Anthropic Messages, Google Gemini), a user-typed custom endpoint, provider fallback, retries, and price estimation.
+Next small task: make the interface look and feel better without weakening any safety wording.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

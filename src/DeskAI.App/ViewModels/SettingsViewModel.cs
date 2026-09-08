@@ -10,7 +10,6 @@ public sealed class SettingsViewModel(
     IAuthorizedRootRepository rootRepository,
     ICredentialVault credentialVault) : ObservableObject
 {
-    private const string OpenRouterCredentialReference = "DeskAI/OpenRouter";
     private AiSettings _loaded = AiSettings.Default;
     private bool _shareExtension = true;
     private bool _shareMetadata;
@@ -22,7 +21,8 @@ public sealed class SettingsViewModel(
     private int _selectedModeIndex;
     private string _localEndpoint = string.Empty;
     private string _localModel = string.Empty;
-    private string _openRouterModel = string.Empty;
+    private string _cloudModel = string.Empty;
+    private int _selectedCloudProviderIndex;
     private bool _cloudConsent;
     private string _providerStatus = "Choose whether you want to use AI.";
     private double _timeoutSeconds = 30;
@@ -38,17 +38,54 @@ public sealed class SettingsViewModel(
     public string AiProcessing => _loaded.Mode switch
     {
         AiMode.Local => "On this computer",
-        AiMode.Cloud => "Online with OpenRouter",
+        AiMode.Cloud => $"Online with {SavedProviderName}",
         _ => "AI is off",
     };
-    public string InternetUse => _loaded.Mode == AiMode.Cloud ? "On — OpenRouter" : "Off";
+    public string InternetUse => _loaded.Mode == AiMode.Cloud ? $"On — {SavedProviderName}" : "Off";
     public string CloudDataShared => _loaded.Mode == AiMode.Cloud
         ? FormatCategories(_loaded.CloudDisclosures)
         : "None — AI is off";
     public int SelectedModeIndex { get => _selectedModeIndex; set => SetProperty(ref _selectedModeIndex, value); }
     public string LocalEndpoint { get => _localEndpoint; set => SetProperty(ref _localEndpoint, value); }
     public string LocalModel { get => _localModel; set => SetProperty(ref _localModel, value); }
-    public string OpenRouterModel { get => _openRouterModel; set => SetProperty(ref _openRouterModel, value); }
+    public string CloudModel { get => _cloudModel; set => SetProperty(ref _cloudModel, value); }
+
+    /// <summary>The services a person can pick between. The list is fixed in code.</summary>
+    public IReadOnlyList<string> CloudProviderNames { get; } =
+        [.. CloudProviderCatalog.All.Select(provider => provider.DisplayName)];
+
+    public int SelectedCloudProviderIndex
+    {
+        get => _selectedCloudProviderIndex;
+        set
+        {
+            if (SetProperty(ref _selectedCloudProviderIndex, value))
+            {
+                OnPropertyChanged(nameof(SelectedProviderName));
+                OnPropertyChanged(nameof(CloudModelHint));
+                OnPropertyChanged(nameof(CloudKeyHeader));
+                OnPropertyChanged(nameof(CloudKeySourceHint));
+                OnPropertyChanged(nameof(CloudConsentHeader));
+                OnPropertyChanged(nameof(CloudProviderNote));
+                OnPropertyChanged(nameof(RemoveKeyLabel));
+            }
+        }
+    }
+
+    private CloudProvider SelectedProvider =>
+        CloudProviderCatalog.All[Math.Clamp(_selectedCloudProviderIndex, 0, CloudProviderCatalog.All.Count - 1)];
+
+    private string SavedProviderName =>
+        CloudProviderCatalog.Find(_loaded.ProviderId)?.DisplayName ?? "an online service";
+
+    public string SelectedProviderName => SelectedProvider.DisplayName;
+    public string CloudModelHint => SelectedProvider.ModelHint;
+    public string CloudKeyHeader => $"Your {SelectedProvider.DisplayName} key";
+    public string CloudKeySourceHint => $"Get a key from {SelectedProvider.KeySource}. Windows stores it safely and DeskAI never shows it again.";
+    public string CloudConsentHeader => $"I agree to send only my choices above to {SelectedProvider.DisplayName}";
+    public string CloudProviderNote =>
+        $"{SelectedProvider.DisplayName} controls prices and how its service handles data. DeskAI sends no file contents in this version.";
+    public string RemoveKeyLabel => $"Remove saved {SelectedProvider.DisplayName} key";
     public bool CloudConsent { get => _cloudConsent; set => SetProperty(ref _cloudConsent, value); }
     public string ProviderStatus => _providerStatus;
     public double TimeoutSeconds { get => _timeoutSeconds; set => SetProperty(ref _timeoutSeconds, value); }
@@ -61,7 +98,11 @@ public sealed class SettingsViewModel(
         _selectedModeIndex = (int)_loaded.Mode;
         _localEndpoint = _loaded.Mode == AiMode.Local ? _loaded.Endpoint ?? string.Empty : string.Empty;
         _localModel = _loaded.Mode == AiMode.Local ? _loaded.ModelId : string.Empty;
-        _openRouterModel = _loaded.ProviderId == "openrouter" ? _loaded.ModelId : string.Empty;
+        var savedProvider = CloudProviderCatalog.Find(_loaded.ProviderId);
+        _cloudModel = savedProvider is not null ? _loaded.ModelId : string.Empty;
+        _selectedCloudProviderIndex = savedProvider is null
+            ? 0
+            : CloudProviderCatalog.All.ToList().FindIndex(provider => provider.Id == savedProvider.Id);
         _cloudConsent = _loaded.CloudConsentGranted;
         _timeoutSeconds = _loaded.TimeoutSeconds;
         _dailyRequestLimit = _loaded.DailyRequestLimit;
@@ -70,7 +111,9 @@ public sealed class SettingsViewModel(
     }
 
     public string CloudConsentSummary() =>
-        $"OpenRouter will receive only: {FormatCategories(Selected())}. File contents and protected files are always left out.";
+        $"{SelectedProvider.DisplayName} will receive only: {FormatCategories(Selected())}. " +
+        $"It is sent to {SelectedProvider.ChatCompletionsEndpoint.Host} and nowhere else. " +
+        "File contents and protected files are always left out.";
 
     public async Task SaveProviderAsync(string apiKey)
     {
@@ -99,7 +142,7 @@ public sealed class SettingsViewModel(
                     CloudConsentGranted = false,
                     CloudDisclosures = Selected(),
                 },
-                AiMode.Cloud when CloudConsent => await CreateOpenRouterSettingsAsync(apiKey),
+                AiMode.Cloud when CloudConsent => await CreateCloudSettingsAsync(apiKey),
                 _ => throw new InvalidOperationException("Turn on the sharing agreement before using online AI."),
             };
 
@@ -115,7 +158,7 @@ public sealed class SettingsViewModel(
             {
                 AiMode.RuleEngineOnly => "Saved. DeskAI will work without AI.",
                 AiMode.Local => "Saved. AI will run only on this computer.",
-                _ => "Saved. OpenRouter is ready with your sharing choices.",
+                _ => $"Saved. {SelectedProvider.DisplayName} is ready with your sharing choices.",
             };
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
@@ -126,11 +169,13 @@ public sealed class SettingsViewModel(
         NotifyAll();
     }
 
-    public async Task RemoveOpenRouterKeyAsync()
+    /// <summary>Removes only the key for the currently selected service, never every saved key.</summary>
+    public async Task RemoveCloudKeyAsync()
     {
+        var provider = SelectedProvider;
         try
         {
-            await credentialVault.RemoveAsync(OpenRouterCredentialReference);
+            await credentialVault.RemoveAsync(provider.CredentialReference);
             _loaded = _loaded with
             {
                 Mode = AiMode.RuleEngineOnly,
@@ -141,7 +186,7 @@ public sealed class SettingsViewModel(
             await settingsRepository.SaveAsync(_loaded);
             _selectedModeIndex = (int)AiMode.RuleEngineOnly;
             _cloudConsent = false;
-            _providerStatus = "OpenRouter key removed. AI is now off.";
+            _providerStatus = $"{provider.DisplayName} key removed. AI is now off.";
         }
         catch (System.ComponentModel.Win32Exception exception)
         {
@@ -151,25 +196,29 @@ public sealed class SettingsViewModel(
         NotifyAll();
     }
 
-    private async Task<AiSettings> CreateOpenRouterSettingsAsync(string apiKey)
+    private async Task<AiSettings> CreateCloudSettingsAsync(string apiKey)
     {
-        var model = ProviderEndpointPolicy.RequireModelId(OpenRouterModel);
+        var provider = SelectedProvider;
+        var model = ProviderEndpointPolicy.RequireModelId(CloudModel);
+
+        // Each service keeps its own credential entry, so switching services never reuses
+        // a key the user saved for a different company.
         if (!string.IsNullOrWhiteSpace(apiKey))
         {
-            await credentialVault.SaveAsync(OpenRouterCredentialReference, apiKey);
+            await credentialVault.SaveAsync(provider.CredentialReference, apiKey);
         }
-        else if (await credentialVault.RetrieveAsync(OpenRouterCredentialReference) is null)
+        else if (await credentialVault.RetrieveAsync(provider.CredentialReference) is null)
         {
-            throw new InvalidOperationException("Enter your OpenRouter key.");
+            throw new InvalidOperationException($"Enter your {provider.DisplayName} key.");
         }
 
         return _loaded with
         {
             Mode = AiMode.Cloud,
-            ProviderId = "openrouter",
+            ProviderId = provider.Id,
             Endpoint = null,
             ModelId = model,
-            CredentialReference = OpenRouterCredentialReference,
+            CredentialReference = provider.CredentialReference,
             CloudConsentGranted = true,
             CloudDisclosures = Selected(),
         };
@@ -232,7 +281,15 @@ public sealed class SettingsViewModel(
         OnPropertyChanged(nameof(SelectedModeIndex));
         OnPropertyChanged(nameof(LocalEndpoint));
         OnPropertyChanged(nameof(LocalModel));
-        OnPropertyChanged(nameof(OpenRouterModel));
+        OnPropertyChanged(nameof(CloudModel));
+        OnPropertyChanged(nameof(SelectedCloudProviderIndex));
+        OnPropertyChanged(nameof(SelectedProviderName));
+        OnPropertyChanged(nameof(CloudModelHint));
+        OnPropertyChanged(nameof(CloudKeyHeader));
+        OnPropertyChanged(nameof(CloudKeySourceHint));
+        OnPropertyChanged(nameof(CloudConsentHeader));
+        OnPropertyChanged(nameof(CloudProviderNote));
+        OnPropertyChanged(nameof(RemoveKeyLabel));
         OnPropertyChanged(nameof(CloudConsent));
         OnPropertyChanged(nameof(ProviderStatus));
         OnPropertyChanged(nameof(TimeoutSeconds));

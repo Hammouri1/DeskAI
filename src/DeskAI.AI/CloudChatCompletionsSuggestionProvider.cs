@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Net;
 using System.Text;
 using System.Text.Json;
@@ -7,13 +8,24 @@ using DeskAI.Core.Ai;
 
 namespace DeskAI.AI;
 
-public sealed class OpenRouterSuggestionProvider(
+/// <summary>
+/// Talks to whichever vetted online AI service the user chose, using their own key.
+/// </summary>
+/// <remarks>
+/// The destination comes from <see cref="CloudProvider"/>, a compile-time allow-list, so
+/// no user input, saved setting, or model output can change where a request goes. The
+/// adapter reads only the credential reference belonging to the selected provider, so a
+/// key saved for one company is never sent to another. It has no filesystem, executor, or
+/// credential-enumeration capability, and its answer is advice that Safety still judges.
+/// </remarks>
+public sealed class CloudChatCompletionsSuggestionProvider(
     IAiHttpTransport transport,
     ICredentialVault credentialVault,
-    string credentialReference,
+    CloudProvider provider,
     string modelId) : IOrganizationSuggestionProvider
 {
-    private static readonly Uri Endpoint = new("https://openrouter.ai/api/v1/chat/completions");
+    private readonly CloudProvider _provider = provider
+        ?? throw new ArgumentNullException(nameof(provider));
     private readonly string _modelId = ProviderEndpointPolicy.RequireModelId(modelId);
 
     public async Task<OrganizationSuggestionResponse> SuggestAsync(
@@ -21,19 +33,23 @@ public sealed class OpenRouterSuggestionProvider(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        var name = _provider.DisplayName;
+
         string? key;
         try
         {
-            key = await credentialVault.RetrieveAsync(credentialReference, cancellationToken).ConfigureAwait(false);
+            key = await credentialVault
+                .RetrieveAsync(_provider.CredentialReference, cancellationToken)
+                .ConfigureAwait(false);
         }
-        catch (System.ComponentModel.Win32Exception)
+        catch (Win32Exception)
         {
-            return Failure(AiProviderStatus.AuthenticationFailed, "Windows could not open your saved OpenRouter key.");
+            return Failure(AiProviderStatus.AuthenticationFailed, $"Windows could not open your saved {name} key.");
         }
 
         if (string.IsNullOrWhiteSpace(key))
         {
-            return Failure(AiProviderStatus.AuthenticationFailed, "Add your OpenRouter key in Settings first.");
+            return Failure(AiProviderStatus.AuthenticationFailed, $"Add your {name} key in Settings first.");
         }
 
         var prompt = AiPromptFactory.CreateClassificationPrompt(request);
@@ -54,14 +70,14 @@ public sealed class OpenRouterSuggestionProvider(
         try
         {
             var response = await transport.PostJsonAsync(
-                Endpoint,
+                _provider.ChatCompletionsEndpoint,
                 body,
                 new Dictionary<string, string> { ["Authorization"] = $"Bearer {key}" },
                 request.Limits.MaximumResponseBytes,
                 timeout.Token).ConfigureAwait(false);
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                return Failure(MapStatus(response.StatusCode), MessageFor(response.StatusCode));
+                return Failure(MapStatus(response.StatusCode), MessageFor(response.StatusCode, name));
             }
 
             string? structuredJson;
@@ -80,12 +96,12 @@ public sealed class OpenRouterSuggestionProvider(
             }
             catch (Exception exception) when (exception is JsonException or KeyNotFoundException or InvalidOperationException or IndexOutOfRangeException)
             {
-                return Failure(AiProviderStatus.MalformedResponse, "OpenRouter sent a response DeskAI could not read.");
+                return Failure(AiProviderStatus.MalformedResponse, $"{name} sent a response DeskAI could not read.");
             }
 
             if (structuredJson is null)
             {
-                return Failure(AiProviderStatus.MalformedResponse, "OpenRouter returned no suggestions.");
+                return Failure(AiProviderStatus.MalformedResponse, $"{name} returned no suggestions.");
             }
 
             var parsed = StructuredSuggestionParser.Parse(
@@ -96,7 +112,7 @@ public sealed class OpenRouterSuggestionProvider(
             return parsed.IsValid
                 ? new OrganizationSuggestionResponse(
                     AiProviderStatus.Success,
-                    "OpenRouter",
+                    name,
                     parsed.Suggestions,
                     $"Found {parsed.Suggestions.Count} AI suggestion(s) for you to review.",
                     new AiUsage(inputTokens, outputTokens, null))
@@ -104,7 +120,7 @@ public sealed class OpenRouterSuggestionProvider(
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            return Failure(AiProviderStatus.TimedOut, "OpenRouter took too long. Nothing else was tried.");
+            return Failure(AiProviderStatus.TimedOut, $"{name} took too long. Nothing else was tried.");
         }
         catch (OperationCanceledException)
         {
@@ -112,7 +128,7 @@ public sealed class OpenRouterSuggestionProvider(
         }
         catch (HttpRequestException)
         {
-            return Failure(AiProviderStatus.Offline, "OpenRouter could not be reached. You can still organize without AI.");
+            return Failure(AiProviderStatus.Offline, $"{name} could not be reached. You can still organize without AI.");
         }
         catch (AiResponseTooLargeException)
         {
@@ -131,14 +147,14 @@ public sealed class OpenRouterSuggestionProvider(
         _ => AiProviderStatus.ProviderError,
     };
 
-    private static string MessageFor(HttpStatusCode status) => status switch
+    private static string MessageFor(HttpStatusCode status, string name) => status switch
     {
-        HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => "OpenRouter did not accept the saved key.",
-        HttpStatusCode.PaymentRequired => "Your OpenRouter account needs credits before this model can be used.",
-        HttpStatusCode.TooManyRequests => "OpenRouter is receiving too many requests. DeskAI did not try again automatically.",
-        _ => "OpenRouter returned an error. Nothing else was tried.",
+        HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => $"{name} did not accept the saved key.",
+        HttpStatusCode.PaymentRequired => $"Your {name} account needs credit before this model can be used.",
+        HttpStatusCode.TooManyRequests => $"{name} is receiving too many requests. DeskAI did not try again automatically.",
+        _ => $"{name} returned an error. Nothing else was tried.",
     };
 
-    private static OrganizationSuggestionResponse Failure(AiProviderStatus status, string message) =>
-        new(status, "OpenRouter", [], message);
+    private OrganizationSuggestionResponse Failure(AiProviderStatus status, string message) =>
+        new(status, _provider.DisplayName, [], message);
 }

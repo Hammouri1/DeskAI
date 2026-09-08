@@ -56,7 +56,7 @@ public sealed partial class SettingsPage : Page
                 XamlRoot = XamlRoot,
                 Title = "Turn on online AI?",
                 Content = _viewModel.CloudConsentSummary(),
-                PrimaryButtonText = "Turn on OpenRouter",
+                PrimaryButtonText = $"Turn on {_viewModel.SelectedProviderName}",
                 CloseButtonText = "Cancel",
                 DefaultButton = ContentDialogButton.Close,
             };
@@ -66,14 +66,15 @@ public sealed partial class SettingsPage : Page
             }
         }
 
-        await _viewModel.SaveProviderAsync(OpenRouterKeyBox.Password);
-        OpenRouterKeyBox.Password = string.Empty;
+        await _viewModel.SaveProviderAsync(CloudKeyBox.Password);
+        // Managed strings cannot be forcibly erased, so clear the box as soon as possible.
+        CloudKeyBox.Password = string.Empty;
     }
 
-    private async void OnRemoveOpenRouterKeyClick(object sender, RoutedEventArgs e)
+    private async void OnRemoveCloudKeyClick(object sender, RoutedEventArgs e)
     {
-        await _viewModel.RemoveOpenRouterKeyAsync();
-        OpenRouterKeyBox.Password = string.Empty;
+        await _viewModel.RemoveCloudKeyAsync();
+        CloudKeyBox.Password = string.Empty;
     }
 
     private static string DisplayName(DisclosureCategory category) => category switch
