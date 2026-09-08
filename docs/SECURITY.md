@@ -130,6 +130,24 @@ V0.3 cloud processing is limited to generated sample metadata in the Organize AI
 
 The V0.3 implementation uses Windows Credential Manager generic credentials with DeskAI-owned references. Unmanaged and managed byte buffers are zeroed after native writes/reads where possible; managed UI strings cannot be forcibly erased, so the PasswordBox is cleared immediately after saving. SQLite stores only `DeskAI/OpenRouter`. Redaction covers authorization bearer values and common API-key labels.
 
+## Local Metadata Index
+
+The index remembers file metadata so search and storage summaries do not require a fresh
+scan. It is subject to the same rules as any other cached state:
+
+- It stores a root ID and a root-relative path only. Absolute paths and file content are
+  never written.
+- Entries are always scoped to one authorized root. There is no operation that reads the
+  whole index across roots.
+- Disconnecting a folder erases its entries through a cascading foreign key, so revoking
+  permission is a full erasure, not a permission flag with leftover data.
+- Only a service that first refuses protected and policy-blocked roots may write to it,
+  and it reaches the disk solely through the bounded, content-free metadata scanner.
+- The index is never authority. It records how a file looked when last scanned, so any
+  mutation must still revalidate live state immediately before acting.
+- Index contents are not an AI disclosure channel. The AI layer references Core contracts
+  only and is given no index, scanner, or filesystem service.
+
 ## Database and Logs
 
 Use parameterized queries and migrations. Treat stored paths/content as sensitive. Avoid storing document content unless a user enables a feature that requires it. Define history/index deletion controls. Local logs must be bounded and redact secrets and sensitive payloads. Any future telemetry is opt-in and documented.

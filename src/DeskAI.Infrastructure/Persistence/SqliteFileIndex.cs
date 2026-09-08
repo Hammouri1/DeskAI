@@ -1,0 +1,232 @@
+using System.Globalization;
+using DeskAI.Core.Abstractions;
+using DeskAI.Core.Classification;
+using DeskAI.Core.Files;
+using DeskAI.Core.Indexing;
+using Microsoft.Data.Sqlite;
+using Microsoft.Extensions.Options;
+
+namespace DeskAI.Infrastructure.Persistence;
+
+/// <summary>
+/// Stores remembered file metadata in the local SQLite database.
+/// </summary>
+/// <remarks>
+/// Rows belong to an authorized root through a foreign key with ON DELETE CASCADE, so
+/// disconnecting a folder also forgets everything the index remembered about it. Every
+/// statement is parameterized and every read is filtered by root ID.
+/// </remarks>
+public sealed class SqliteFileIndex(IOptions<DatabaseOptions> options) : IFileIndex
+{
+    private readonly string _databasePath = options.Value.DatabasePath;
+
+    public async Task<FileIndexSyncResult> SynchronizeRootAsync(
+        Guid rootId,
+        IReadOnlyList<IndexedFile> files,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(files);
+        if (rootId == Guid.Empty)
+        {
+            throw new ArgumentException("Index changes must name an authorized root.", nameof(rootId));
+        }
+
+        if (files.Any(file => file.RootId != rootId))
+        {
+            throw new ArgumentException("Every entry must belong to the root being synchronized.", nameof(files));
+        }
+
+        var rootKey = rootId.ToString("D");
+        await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        var sqliteTransaction = (SqliteTransaction)transaction;
+
+        var existing = await ReadExistingAsync(connection, sqliteTransaction, rootId, cancellationToken)
+            .ConfigureAwait(false);
+
+        var added = 0;
+        var updated = 0;
+        var unchanged = 0;
+        var seen = new HashSet<Guid>();
+
+        foreach (var file in files)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (!seen.Add(file.FileId))
+            {
+                // A duplicate ID in one pass would silently drop a file; refuse instead.
+                throw new ArgumentException("The same file ID was supplied twice in one refresh.", nameof(files));
+            }
+
+            if (existing.TryGetValue(file.FileId, out var stored) && stored.MatchesStoredFacts(file))
+            {
+                unchanged++;
+                continue;
+            }
+
+            await WriteAsync(connection, sqliteTransaction, rootKey, file, cancellationToken).ConfigureAwait(false);
+            if (existing.ContainsKey(file.FileId))
+            {
+                updated++;
+            }
+            else
+            {
+                added++;
+            }
+        }
+
+        var removed = 0;
+        foreach (var missing in existing.Keys.Where(id => !seen.Contains(id)))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await using var delete = connection.CreateCommand();
+            delete.Transaction = sqliteTransaction;
+            delete.CommandText = "DELETE FROM indexed_files WHERE root_id = $rootId AND file_id = $fileId;";
+            delete.Parameters.AddWithValue("$rootId", rootKey);
+            delete.Parameters.AddWithValue("$fileId", missing.ToString("D"));
+            removed += await delete.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+        return new FileIndexSyncResult(added, updated, unchanged, removed);
+    }
+
+    public async Task<IReadOnlyList<IndexedFile>> ListForRootAsync(
+        Guid rootId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT file_id, relative_path, kind, category, size_bytes,
+                   created_at_utc, modified_at_utc, indexed_at_utc
+            FROM indexed_files
+            WHERE root_id = $rootId
+            ORDER BY relative_path COLLATE NOCASE;
+            """;
+        command.Parameters.AddWithValue("$rootId", rootId.ToString("D"));
+
+        var files = new List<IndexedFile>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            files.Add(Read(rootId, reader));
+        }
+
+        return files.AsReadOnly();
+    }
+
+    public async Task<FileIndexStatistics> GetStatisticsAsync(
+        Guid rootId,
+        CancellationToken cancellationToken = default)
+    {
+        await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT COUNT(*), COALESCE(SUM(size_bytes), 0), MAX(indexed_at_utc)
+            FROM indexed_files WHERE root_id = $rootId;
+            """;
+        command.Parameters.AddWithValue("$rootId", rootId.ToString("D"));
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        if (!await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            return FileIndexStatistics.Empty;
+        }
+
+        var count = reader.GetInt32(0);
+        return count == 0
+            ? FileIndexStatistics.Empty
+            : new FileIndexStatistics(count, reader.GetInt64(1), ParseTimestamp(reader.GetString(2)));
+    }
+
+    public async Task ClearRootAsync(Guid rootId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM indexed_files WHERE root_id = $rootId;";
+        command.Parameters.AddWithValue("$rootId", rootId.ToString("D"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private static async Task<Dictionary<Guid, IndexedFile>> ReadExistingAsync(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        Guid rootId,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            SELECT file_id, relative_path, kind, category, size_bytes,
+                   created_at_utc, modified_at_utc, indexed_at_utc
+            FROM indexed_files WHERE root_id = $rootId;
+            """;
+        command.Parameters.AddWithValue("$rootId", rootId.ToString("D"));
+
+        var existing = new Dictionary<Guid, IndexedFile>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            var file = Read(rootId, reader);
+            existing[file.FileId] = file;
+        }
+
+        return existing;
+    }
+
+    private static async Task WriteAsync(
+        SqliteConnection connection,
+        SqliteTransaction transaction,
+        string rootKey,
+        IndexedFile file,
+        CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = """
+            INSERT INTO indexed_files(
+                root_id, file_id, relative_path, name, extension, kind, category,
+                size_bytes, created_at_utc, modified_at_utc, indexed_at_utc)
+            VALUES ($rootId, $fileId, $relativePath, $name, $extension, $kind, $category,
+                    $sizeBytes, $createdAtUtc, $modifiedAtUtc, $indexedAtUtc)
+            ON CONFLICT(root_id, file_id) DO UPDATE SET
+                relative_path = excluded.relative_path,
+                name = excluded.name,
+                extension = excluded.extension,
+                kind = excluded.kind,
+                category = excluded.category,
+                size_bytes = excluded.size_bytes,
+                created_at_utc = excluded.created_at_utc,
+                modified_at_utc = excluded.modified_at_utc,
+                indexed_at_utc = excluded.indexed_at_utc;
+            """;
+        command.Parameters.AddWithValue("$rootId", rootKey);
+        command.Parameters.AddWithValue("$fileId", file.FileId.ToString("D"));
+        command.Parameters.AddWithValue("$relativePath", file.RelativePath);
+        command.Parameters.AddWithValue("$name", file.Name);
+        command.Parameters.AddWithValue("$extension", file.Extension);
+        command.Parameters.AddWithValue("$kind", (int)file.Kind);
+        command.Parameters.AddWithValue("$category", (int)file.Category);
+        command.Parameters.AddWithValue("$sizeBytes", file.SizeBytes);
+        command.Parameters.AddWithValue("$createdAtUtc", file.CreatedAtUtc.ToString("O"));
+        command.Parameters.AddWithValue("$modifiedAtUtc", file.ModifiedAtUtc.ToString("O"));
+        command.Parameters.AddWithValue("$indexedAtUtc", file.IndexedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private static IndexedFile Read(Guid rootId, SqliteDataReader reader) => new(
+        rootId,
+        Guid.Parse(reader.GetString(0)),
+        reader.GetString(1),
+        (FileKind)reader.GetInt32(2),
+        (FileCategory)reader.GetInt32(3),
+        reader.GetInt64(4),
+        ParseTimestamp(reader.GetString(5)),
+        ParseTimestamp(reader.GetString(6)),
+        ParseTimestamp(reader.GetString(7)));
+
+    private static DateTimeOffset ParseTimestamp(string value) => DateTimeOffset.Parse(
+        value,
+        CultureInfo.InvariantCulture,
+        DateTimeStyles.RoundtripKind);
+}

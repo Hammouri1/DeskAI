@@ -4,6 +4,7 @@ using DeskAI.Core.Recipes;
 using DeskAI.Core.Plans;
 using DeskAI.Infrastructure.Persistence;
 using DeskAI.Infrastructure.Execution;
+using DeskAI.Infrastructure.Indexing;
 using DeskAI.Infrastructure.Scanning;
 using DeskAI.Infrastructure.Security;
 using DeskAI.Infrastructure.Time;
@@ -35,6 +36,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(DefaultFolderRecipe.Create());
         services.AddSingleton<IFileScanner, WindowsMetadataScanner>();
         services.AddSingleton<IReadOnlyFolderService, ReadOnlyFolderService>();
+        services.AddSingleton<IFileIndex, SqliteFileIndex>();
+        services.AddSingleton<IMetadataIndexService, MetadataIndexService>();
         services.AddSingleton<IDatabaseInitializer, SqliteDatabaseInitializer>();
         services.AddSingleton<IAuthorizedRootRepository, SqliteAuthorizedRootRepository>();
         services.AddSingleton<IAiSettingsRepository, SqliteAiSettingsRepository>();

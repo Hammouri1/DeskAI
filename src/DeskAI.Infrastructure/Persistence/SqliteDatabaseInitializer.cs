@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 6;
+    public const int CurrentSchemaVersion = 7;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -39,8 +39,56 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplyAuthorizationScopeMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyAiSettingsMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyAiUsageMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplyFileIndexMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
+    }
+
+    /// <summary>
+    /// Adds the local metadata index. Rows cascade from their authorized root so that
+    /// disconnecting a folder also erases everything DeskAI remembered about it.
+    /// </summary>
+    private static async Task ApplyFileIndexMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = """
+            CREATE TABLE IF NOT EXISTS indexed_files (
+                root_id TEXT NOT NULL,
+                file_id TEXT NOT NULL,
+                relative_path TEXT NOT NULL,
+                name TEXT NOT NULL,
+                extension TEXT NOT NULL,
+                kind INTEGER NOT NULL,
+                category INTEGER NOT NULL,
+                size_bytes INTEGER NOT NULL CHECK (size_bytes >= 0),
+                created_at_utc TEXT NOT NULL,
+                modified_at_utc TEXT NOT NULL,
+                indexed_at_utc TEXT NOT NULL,
+                PRIMARY KEY (root_id, file_id),
+                FOREIGN KEY (root_id) REFERENCES authorized_roots(id) ON DELETE CASCADE
+            );
+
+            CREATE INDEX IF NOT EXISTS ix_indexed_files_root_path
+                ON indexed_files(root_id, relative_path);
+            CREATE INDEX IF NOT EXISTS ix_indexed_files_root_name
+                ON indexed_files(root_id, name COLLATE NOCASE);
+            CREATE INDEX IF NOT EXISTS ix_indexed_files_root_category
+                ON indexed_files(root_id, category);
+            CREATE INDEX IF NOT EXISTS ix_indexed_files_root_size
+                ON indexed_files(root_id, size_bytes);
+            CREATE INDEX IF NOT EXISTS ix_indexed_files_root_modified
+                ON indexed_files(root_id, modified_at_utc);
+
+            INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (7, $appliedAtUtc);
+            """;
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     private static async Task ApplyAiUsageMigrationAsync(
@@ -125,8 +173,7 @@ public sealed partial class SqliteDatabaseInitializer(
 
         await using var command = connection.CreateCommand();
         command.Transaction = (SqliteTransaction)transaction;
-        command.CommandText = "INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES ($version, $appliedAtUtc);";
-        command.Parameters.AddWithValue("$version", CurrentSchemaVersion);
+        command.CommandText = "INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (4, $appliedAtUtc);";
         command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);

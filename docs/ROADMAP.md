@@ -52,17 +52,20 @@ Goal: optional AI improves ambiguous suggestions without changing the safety mod
 
 Exit criteria: disabling AI preserves the organizer; protected/unapproved data never enters requests; malformed/malicious output cannot cause execution; credentials do not appear in database/logs.
 
-## V0.4 — Search and Storage Intelligence (**Planned**)
+## V0.4 — Search and Storage Intelligence (**Now**)
 
 Goal: find and understand files without needing to move them.
 
-- Incremental local metadata index and structured search filters.
-- Natural-language query translation into a constrained local query model.
-- Smart Collections as saved virtual queries.
-- Storage summaries, large/old downloads, archive and installer views.
-- Exact duplicate candidates using staged size/hash checks; possible-duplicate review.
-- Organization Health score with transparent components.
-- Optional permission-gated content extraction, followed later by local embeddings/semantic search.
+1. ✅ Incremental local metadata index with root-scoped storage and cascade erasure.
+   Completed 2026-09-09; backend only, invoked by tests with generated temporary data.
+   Nothing is indexed automatically and no UI calls it yet.
+2. ⬜ Structured search filters over the index.
+3. ⬜ Natural-language query translation into a constrained local query model.
+4. ⬜ Smart Collections as saved virtual queries.
+5. ⬜ Storage summaries, large/old downloads, archive and installer views.
+6. ⬜ Exact duplicate candidates using staged size/hash checks; possible-duplicate review.
+7. ⬜ Organization Health score with transparent components.
+8. ⬜ Optional permission-gated content extraction, followed later by local embeddings/semantic search.
 
 Exit criteria: results are scoped to authorized roots, index deletion/privacy controls work, score is explainable, and no cleanup action bypasses preview.
 

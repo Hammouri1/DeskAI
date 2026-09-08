@@ -121,7 +121,9 @@ SQLite is local application state, not a source of authority over the current fi
 
 Use migrations, foreign keys, transactions, indexes, UTC timestamps, and an explicit retention strategy. Repositories are justified when they separate Core use cases from SQLite—not as one generic repository for every table. API keys stay in a Windows-protected credential store and SQLite holds only a credential reference.
 
-Schema version 1 introduced migration tracking, local settings, and authorized roots. Versions 2–3 added plans, operations, journal outcomes, and undo links. Version 4 added authorization scope. Version 5 adds non-secret AI mode, endpoint/model, disclosure flags, limits, consent, and a credential reference. Version 6 adds an atomic per-provider daily request counter. API-key bytes never enter SQLite.
+Schema version 1 introduced migration tracking, local settings, and authorized roots. Versions 2–3 added plans, operations, journal outcomes, and undo links. Version 4 added authorization scope. Version 5 adds non-secret AI mode, endpoint/model, disclosure flags, limits, consent, and a credential reference. Version 6 adds an atomic per-provider daily request counter. Version 7 adds `indexed_files`, keyed on `(root_id, file_id)` with a foreign key to `authorized_roots` using `ON DELETE CASCADE`, plus indexes on path, name, category, size, and modification time. API-key bytes never enter SQLite.
+
+Version 4 previously recorded the constant `CurrentSchemaVersion` instead of the literal `4`, so no database ever stored that row. The migration now records `4`, and `INSERT OR IGNORE` backfills it on existing installations.
 
 ## Scanning and Indexing
 
@@ -132,6 +134,14 @@ The V0.2 scanner contract streams a closed `ScanEvent` hierarchy: `FileDiscovere
 Step 8 adds `IReadOnlyFolderService` between the native picker and scanner. Only the picker supplies a path, a second dialog confirms the exact metadata disclosure, and the service persists a `MetadataOnly` root after canonical-path, protected-location, unsupported-root, and reparse-point checks. The UI scan is capped at depth 3 and 250 entries. `PlanValidator` rejects every plan bound to a metadata-only root, so picker consent cannot flow into the executor.
 
 Content extraction is a separate, permission-gated pipeline with file-size/type limits and sandbox considerations. It is not part of the initial metadata scanner.
+
+### Local metadata index (V0.4 step 1)
+
+`MetadataIndexService` is the only route from the filesystem into `IFileIndex`. It refuses a `Protected` root and any root `IPathPolicy` blocks, then consumes the same bounded, content-free `IFileScanner` stream and the same deterministic classifier used by planning. Each discovered file becomes an `IndexedFile` holding a root ID, a normalized root-relative path, derived name/extension, kind, category, size, timestamps, and when it was last confirmed. Absolute paths and file content are never stored.
+
+`IFileIndex` exposes no unscoped read: `SynchronizeRootAsync`, `ListForRootAsync`, `GetStatisticsAsync`, and `ClearRootAsync` each name one root. `SqliteFileIndex` compares the new scan against stored rows and writes only real differences, returning a `FileIndexSyncResult` of added, updated, unchanged, and removed counts so the UI can honestly say nothing changed. "Removed" means an index row was forgotten, never that a file was deleted.
+
+The index is a cache, not authority. It proves only how a file looked when last scanned, so a future executor must still revalidate live state before mutating anything. No code path lets an index row become an approved operation, and nothing indexes automatically in this slice.
 
 ## Deterministic Classification and Recipes
 

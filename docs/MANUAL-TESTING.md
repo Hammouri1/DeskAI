@@ -112,3 +112,29 @@ There is no scanner UI yet. Run the full test suite and review the `WindowsMetad
 8. Test Stop by starting a request and selecting Stop. Lower the waiting limit under More options to exercise the timeout message. Do not repeatedly call a paid model; the daily request limit counts attempted online calls.
 9. Return to Settings and choose Remove saved OpenRouter key. Confirm AI becomes off. Never paste the key into logs, screenshots, issues, chat, source files, or test configuration.
 10. Review OpenRouter billing directly for exact cost. DeskAI reports token usage when OpenRouter supplies it but deliberately does not guess pricing.
+
+## V0.4 Step 1 — Local Metadata Index
+
+There is no index UI yet, and DeskAI does not index anything on its own. This step is
+verified by tests and by confirming the app's behavior did not change.
+
+1. Build Release and run the complete suite. Expected result: **171 passing tests**, none
+   skipped, and zero build warnings/errors.
+2. Launch the new Release build. Confirm Organize, Search, and Settings behave exactly as
+   they did in V0.3 and that Search still honestly says no search index exists yet.
+3. Confirm nothing new appears asking to scan a personal folder. Do not connect Desktop,
+   Downloads, Documents, Pictures, or a cloud-sync folder.
+4. Review `MetadataIndexServiceTests`, in particular the locked-file case (proving file
+   contents are never opened), the protected-root and protected-child refusals, the
+   entry-limit and cancellation cases, and the "forgets files that are no longer there"
+   case.
+5. Review `SqliteFileIndexTests`, in particular root isolation with identical file names,
+   refusal of entries belonging to another root, refusal of an unauthorized root, and the
+   assertion that no stored row contains an absolute path.
+6. Review `SqliteDatabaseInitializerTests`. Confirm fresh creation reaches schema version
+   7, that versions 1–7 are each recorded, that an existing database gains `indexed_files`
+   without losing its authorized roots, and that deleting a root removes its indexed rows.
+7. Optional database check: after launching the app once, open
+   `%LocalAppData%\DeskAI\deskai.db` with a read-only SQLite viewer and confirm
+   `indexed_files` exists and is **empty**. Nothing should be indexed until a later slice
+   adds an explicit user action.

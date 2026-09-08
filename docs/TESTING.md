@@ -63,6 +63,17 @@ Cover valid structured responses plus malformed/truncated/oversized JSON, unknow
 
 V0.3 provider tests use fake transports, fake settings, fake clocks, and fake credential vaults. No automated test contacts OpenRouter or local AI services or writes the developer's credential store. The corpus covers hostile names, extra command fields, duplicate JSON properties/IDs, invented IDs, bad enums/confidence, oversized output, loopback refusal, offline, timeout, cancellation, rate-limit, missing key, disclosure expansion, and daily-cap refusal.
 
+## Index Tests
+
+Index tests must prove refusal as well as storage: traversal, rooted, alternate-data-stream
+and oversized paths rejected at construction; protected roots and protected children never
+indexed; entry limits and cancellation honoured with nothing written; entries belonging to
+another root refused; duplicate file IDs in one refresh refused; an unauthorized root
+refused by the foreign key; two roots with identical file names kept separate; no stored
+row containing an absolute path; and disconnecting a root erasing its rows. A file held
+under an exclusive lock must still index successfully, which proves contents are never
+opened.
+
 ## Database Tests
 
 Test fresh schema, every supported migration path, foreign keys, transaction rollback, concurrent access policy, enum/version compatibility, retention deletion, interrupted execution records, and that credentials are never stored in tables. Each test uses an isolated database.

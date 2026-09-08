@@ -234,6 +234,23 @@ What is deliberately not built: AI processing of user-selected folders/content/i
 Next work cycle: V0.4 begins with an incremental local metadata index and constrained structured search, still limited to authorized metadata-only roots and generated test directories.
 ```
 
+## V0.4 Step 1 Learning Log — 2026-09-09
+
+```text
+What became usable: A local metadata index that can remember one authorized folder's file names, sizes, dates, and categories between scans, refresh incrementally, summarize itself, and forget everything about a folder the moment that folder is disconnected. Backend only; no UI calls it yet.
+Main data flow: AuthorizedRoot → MetadataIndexService (refuses protected roots) → IFileScanner metadata stream → DeterministicFileClassifier → IndexedFile records → IFileIndex.SynchronizeRootAsync → SqliteFileIndex diff/write in one transaction → FileIndexSyncResult counts.
+Classes/interfaces I can explain: IndexedFile, FileIndexSyncResult, FileIndexStatistics, IFileIndex, IMetadataIndexService, IndexUpdateResult, MetadataIndexService, and SqliteFileIndex.
+New concept and my own explanation: A cache is not an authority. The index says how a file looked the last time DeskAI looked at it. That is enough to search or summarize, but never enough to move a file, because the disk can change afterwards. Anything that mutates must re-check live state.
+New concept and my own explanation (2): A foreign key with ON DELETE CASCADE makes deletion a data rule rather than a habit. Disconnecting a folder erases its remembered rows in the same statement, so nobody has to remember to clean up.
+Hardest thing to get right: Making the refresh genuinely incremental. Reading the stored rows first and comparing only the facts a rescan can change (path, kind, category, size, timestamps) means an unchanged folder reports "nothing changed" and writes zero rows, instead of rewriting everything and looking busy.
+Security cases tested: traversal/rooted/ADS/oversized paths refused at construction, protected root refused, root overlapping a protected location refused, protected child skipped, entry limit honoured, cancellation writes nothing, entries for another root refused, duplicate file IDs refused, unauthorized root refused by the foreign key, roots isolated with identical file names, no stored row contains an absolute path, and disconnecting a root erases its index.
+Build/test evidence: Release build completed with zero warnings/errors; 171 tests passed with none skipped (129 before this slice). dotnet format reported no changes.
+AI containment check: DeskAI.AI references DeskAI.Core only and contains no filesystem, scanner, index, path, or executor use. The index is not an AI disclosure channel.
+Trade-off/ADR: docs/decisions/0012-local-metadata-index.md — root-scoped, cascade-erased, non-authoritative index instead of a global file table with absolute paths.
+What is deliberately not built: automatic/background indexing, any indexing UI, content hashes, duplicate detection, content extraction, embeddings, and search queries.
+Next small task: a typed structured search query model executed as parameterized SQL, scoped to authorized root IDs.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”
