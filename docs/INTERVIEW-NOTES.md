@@ -268,6 +268,22 @@ What is deliberately not built: services with a different API shape (Anthropic M
 Next small task: make the interface look and feel better without weakening any safety wording.
 ```
 
+## Interface Refresh Learning Log — 2026-09-09
+
+```text
+What became usable: A consistent visual system across all five pages — accent headers, bordered cards, one type ramp, icon-and-word status badges, and a permanent practice-mode reminder in the navigation footer.
+Main data flow: App.xaml holds shared styles and converter instances → pages reference them by key → PreviewStatusLevel from a view model is converted to a brush, a glyph, and a badge background at bind time.
+Classes/interfaces I can explain: PreviewStatusLevel, StatusLevelToBrushConverter, StatusLevelToGlyphConverter, StatusLevelToBackgroundConverter, and the styles in App.xaml.
+New concept and my own explanation: An IValueConverter turns view-model data into something a view can draw, without the view model referencing WinUI. The view model says "this row is Blocked"; the converter decides that means a red brush and a cross icon. That keeps Brush and FontIcon types out of the view model, so it stays testable.
+New concept and my own explanation (2): Theme resources instead of chosen colours. Naming SystemFillColorCriticalBrush rather than a hex red means Windows supplies the right value for light, dark, and high contrast. Inventing a palette would have looked fine on my machine and failed on someone else's.
+Hardest thing to get right: proving it actually works. XAML resource keys resolve at runtime, not compile time, so a missing key builds cleanly and then crashes on navigation. I first tried searching the WinUI DLL for key names, which reported even known-good keys as missing because they live in compiled XBF. The verification that counted was temporary scaffolding that constructed all five pages in a real run and wrote the result to a file — then removing it and diffing against the backup to prove it was gone.
+Safety cases checked: blocked rows still unselectable; colour never the sole carrier of meaning; Search and Automatic tasks state plainly that they are unfinished and their controls are disabled; no safety wording was shortened to fit a nicer layout.
+Build/test evidence: Release build with zero warnings/errors; 202 tests still pass; dotnet format clean; all five pages verified to construct in a real run.
+AI containment check: this slice changed presentation only. No view gained a filesystem, index, or provider capability, and DeskAI.AI still references DeskAI.Core alone.
+What is deliberately not built: animations, custom title bar, per-file-type icons beyond two well-established glyphs, and any visual for a feature that does not exist.
+Next small task: V0.4 step 2 — the typed structured search query executed as parameterized SQL over the index.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

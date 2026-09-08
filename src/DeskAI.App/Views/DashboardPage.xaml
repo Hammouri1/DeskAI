@@ -2,11 +2,113 @@
     x:Class="DeskAI.App.Views.DashboardPage"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <StackPanel Margin="32" Spacing="12">
-        <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Welcome to DeskAI" />
-        <TextBlock MaxWidth="680" HorizontalAlignment="Left" TextWrapping="Wrap"
-                   Text="DeskAI is ready. Try Organize with safe sample files—your personal folders will not be used." />
-        <TextBlock Margin="0,16,0,0" Style="{StaticResource SubtitleTextBlockStyle}" Text="What you can try now" />
-        <TextBlock TextWrapping="Wrap" Text="Preview and organize sample files, undo the sample changes, connect a folder for a read-only preview, or ask AI for optional ideas." />
-    </StackPanel>
+    <ScrollViewer>
+        <StackPanel Margin="32,24,32,40" MaxWidth="980" HorizontalAlignment="Left" Spacing="20">
+
+            <Border Style="{StaticResource HeroPanelStyle}">
+                <Grid>
+                    <Border Background="{StaticResource HeroSheenBrush}" CornerRadius="16" Margin="-28,-24" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+                        <StackPanel Spacing="10">
+                            <TextBlock FontSize="13" FontWeight="SemiBold" Text="LOCAL AND PRIVATE"
+                                       Foreground="{ThemeResource TextOnAccentFillColorSecondaryBrush}" />
+                            <TextBlock FontSize="30" FontWeight="SemiBold" TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                       Text="Welcome to DeskAI" />
+                            <TextBlock MaxWidth="520" TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextOnAccentFillColorSecondaryBrush}"
+                                       Text="DeskAI organizes, finds, and explains your files — and shows you every change before it happens. Nothing is touched until you say so." />
+                        </StackPanel>
+                        <FontIcon Grid.Column="1" FontSize="72" Glyph="&#xE8B7;" VerticalAlignment="Center"
+                                  Foreground="{ThemeResource TextOnAccentFillColorSecondaryBrush}" />
+                    </Grid>
+                </Grid>
+            </Border>
+
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="14">
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="8">
+                        <FontIcon FontSize="20" HorizontalAlignment="Left" Glyph="&#xE72E;"
+                                  Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                        <TextBlock FontWeight="SemiBold" Text="Folders connected" />
+                        <TextBlock FontSize="26" FontWeight="SemiBold" Text="0" />
+                        <TextBlock Style="{StaticResource CaptionStyle}"
+                                   Text="DeskAI reads nothing until you choose a folder." />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="8">
+                        <FontIcon FontSize="20" HorizontalAlignment="Left" Glyph="&#xE753;"
+                                  Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                        <TextBlock FontWeight="SemiBold" Text="AI" />
+                        <TextBlock FontSize="26" FontWeight="SemiBold" Text="Off" />
+                        <TextBlock Style="{StaticResource CaptionStyle}"
+                                   Text="Turn it on with your own key whenever you want." />
+                    </StackPanel>
+                </Border>
+                <Border Grid.Column="2" Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="8">
+                        <FontIcon FontSize="20" HorizontalAlignment="Left" Glyph="&#xE7BA;"
+                                  Foreground="{ThemeResource SystemFillColorCautionBrush}" />
+                        <TextBlock FontWeight="SemiBold" Text="Still being built" />
+                        <TextBlock FontSize="26" FontWeight="SemiBold" Text="Search" />
+                        <TextBlock Style="{StaticResource CaptionStyle}"
+                                   Text="Searching your files is not finished yet." />
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="What you can try now" />
+
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="16">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                        <Border Style="{StaticResource StepBadgeStyle}" VerticalAlignment="Top">
+                            <FontIcon FontSize="14" Glyph="&#xE8B7;"
+                                      Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Spacing="3">
+                            <TextBlock FontWeight="SemiBold" Text="Practise organizing" />
+                            <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                       Text="Open Organize to see suggested moves for safe sample files, run them, and undo them. Your own files are never used here." />
+                        </StackPanel>
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                        <Border Style="{StaticResource StepBadgeStyle}" VerticalAlignment="Top">
+                            <FontIcon FontSize="14" Glyph="&#xE8A5;"
+                                      Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Spacing="3">
+                            <TextBlock FontWeight="SemiBold" Text="Look inside a folder, safely" />
+                            <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                       Text="Connect a folder for a read-only preview. DeskAI lists names, sizes, and dates. It cannot move, rename, delete, or open what is inside." />
+                        </StackPanel>
+                    </Grid>
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                        <Border Style="{StaticResource StepBadgeStyle}" VerticalAlignment="Top">
+                            <FontIcon FontSize="14" Glyph="&#xE753;"
+                                      Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Spacing="3">
+                            <TextBlock FontWeight="SemiBold" Text="Add your own AI key, if you want one" />
+                            <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                       Text="Privacy and AI lets you use a service you already pay for. AI only ever suggests — it can never move or change a file." />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource SoftCardStyle}">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                    <FontIcon FontSize="18" Glyph="&#xE946;" VerticalAlignment="Top"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock FontWeight="SemiBold" Text="How DeskAI keeps you in control" />
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                   Text="Scan → suggest → check → preview → you approve → run → undo. AI can recommend, but only DeskAI's own code decides what is allowed, and only after you approve it." />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
 </Page>

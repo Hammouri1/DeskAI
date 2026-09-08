@@ -6,17 +6,22 @@ public sealed record PreviewIssueViewModel(
     string Severity,
     string Title,
     string Explanation,
-    string AffectedItems)
+    string AffectedItems,
+    PreviewStatusLevel Level)
 {
     public static PreviewIssueViewModel FromIssue(PlanIssue issue)
     {
         ArgumentNullException.ThrowIfNull(issue);
         var affectedCount = Math.Max(issue.FileIds.Count, issue.OperationIds.Count);
+        var isConflict = issue.Severity == PlanIssueSeverity.Conflict;
         return new PreviewIssueViewModel(
-            issue.Severity == PlanIssueSeverity.Conflict ? "Needs your choice" : "Note",
+            isConflict ? "Needs your choice" : "Note",
             FormatTitle(issue.Code),
             FriendlyExplanation(issue.Code, issue.Explanation),
-            affectedCount == 0 ? "No change suggested" : $"{affectedCount} sample file(s)");
+            affectedCount == 0 ? "No change suggested" : $"{affectedCount} sample file(s)",
+            // A conflict is not an error the user caused, so it reads as "needs attention"
+            // rather than a failure, but it still must not look like an ordinary note.
+            isConflict ? PreviewStatusLevel.Attention : PreviewStatusLevel.Ready);
     }
 
     private static string FormatTitle(PlanIssueCode code) => code switch

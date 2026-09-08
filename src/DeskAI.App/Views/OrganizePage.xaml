@@ -3,114 +3,125 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <ScrollViewer>
-        <StackPanel Margin="32" MaxWidth="900" HorizontalAlignment="Left" Spacing="20">
-            <StackPanel Spacing="6">
-                <TextBlock Style="{StaticResource TitleTextBlockStyle}" Text="Try organizing sample files" />
-                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                           Text="See how DeskAI works before using any of your own folders." />
-            </StackPanel>
+        <StackPanel Margin="32,24,32,40" MaxWidth="980" HorizontalAlignment="Left" Spacing="20">
 
-            <InfoBar IsClosable="False" IsOpen="True" Severity="Success"
-                     Title="Practice mode"
-                     Message="Only sample files are used. Your personal files are not opened or changed." />
+            <Border Style="{StaticResource HeroPanelStyle}">
+                <Grid>
+                    <Border Background="{StaticResource HeroSheenBrush}" CornerRadius="16" Margin="-28,-24" />
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+                        <StackPanel Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <FontIcon FontSize="14" Glyph="&#xE72E;"
+                                          Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                                <TextBlock FontSize="13" FontWeight="SemiBold" Text="PRACTICE MODE"
+                                           Foreground="{ThemeResource TextOnAccentFillColorSecondaryBrush}" />
+                            </StackPanel>
+                            <TextBlock FontSize="28" FontWeight="SemiBold" TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                       Text="Try organizing sample files" />
+                            <TextBlock MaxWidth="560" TextWrapping="Wrap"
+                                       Foreground="{ThemeResource TextOnAccentFillColorSecondaryBrush}"
+                                       Text="Everything below uses files DeskAI made up for practice. None of your own files are opened or changed." />
+                        </StackPanel>
+                        <FontIcon Grid.Column="1" FontSize="64" Glyph="&#xE8F1;" VerticalAlignment="Center"
+                                  Foreground="{ThemeResource TextOnAccentFillColorSecondaryBrush}" />
+                    </Grid>
+                </Grid>
+            </Border>
 
-            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="10">
-                <Border Padding="14" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
-                    <StackPanel Spacing="4">
-                        <TextBlock Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" FontWeight="SemiBold" Text="1  Review" />
-                        <TextBlock FontSize="12" Text="See the suggested moves" />
+            <Grid ColumnDefinitions="*,*,*" ColumnSpacing="14">
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Style="{StaticResource StepBadgeStyle}">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontWeight="SemiBold" Text="1"
+                                       Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="Review" />
+                            <TextBlock Style="{StaticResource CaptionStyle}" Text="See the suggested moves" />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
-                <Border Grid.Column="1" Padding="14" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
-                    <StackPanel Spacing="4">
-                        <TextBlock FontWeight="SemiBold" Text="2  Choose" />
-                        <TextBlock FontSize="12" Text="Uncheck anything you do not want" />
+                <Border Grid.Column="1" Style="{StaticResource CardStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Style="{StaticResource StepBadgeStyle}">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontWeight="SemiBold" Text="2"
+                                       Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="Choose" />
+                            <TextBlock Style="{StaticResource CaptionStyle}" Text="Untick anything you don't want" />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
-                <Border Grid.Column="2" Padding="14" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
-                    <StackPanel Spacing="4">
-                        <TextBlock FontWeight="SemiBold" Text="3  Try it" />
-                        <TextBlock FontSize="12" Text="Run safely with sample files" />
+                <Border Grid.Column="2" Style="{StaticResource CardStyle}">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Border Style="{StaticResource StepBadgeStyle}">
+                            <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center"
+                                       FontWeight="SemiBold" Text="3"
+                                       Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}" />
+                        </Border>
+                        <StackPanel VerticalAlignment="Center" Spacing="2">
+                            <TextBlock FontWeight="SemiBold" Text="Try it" />
+                            <TextBlock Style="{StaticResource CaptionStyle}" Text="Run it on sample files" />
+                        </StackPanel>
                     </StackPanel>
                 </Border>
             </Grid>
 
             <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8">
                 <StackPanel Spacing="3">
-                    <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Suggested moves" />
-                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding ReadySummary}" />
+                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Suggested moves" />
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" Text="{Binding ReadySummary}" />
                 </StackPanel>
-                <Button Grid.Column="1" Command="{Binding SelectAllSafeCommand}" Content="Select all" />
-                <Button Grid.Column="2" Command="{Binding ClearSelectionCommand}" Content="Clear" />
+                <Button Grid.Column="1" VerticalAlignment="Bottom"
+                        Command="{Binding SelectAllSafeCommand}" Content="Select all" />
+                <Button Grid.Column="2" VerticalAlignment="Bottom"
+                        Command="{Binding ClearSelectionCommand}" Content="Clear" />
             </Grid>
-
-            <Border Padding="18" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="10">
-                <StackPanel Spacing="10">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                        <StackPanel Spacing="3">
-                            <TextBlock FontWeight="SemiBold" Text="Want a second opinion on the sample files?" />
-                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                       Text="{Binding AiDisclosureSummary}" TextWrapping="Wrap" />
-                        </StackPanel>
-                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
-                            <ProgressRing Width="22" Height="22" IsActive="{Binding IsAiBusy}" />
-                            <Button Command="{Binding GetAiSuggestionsCommand}" Content="Get AI ideas" />
-                            <Button Command="{Binding CancelAiCommand}" Content="Stop" />
-                        </StackPanel>
-                    </Grid>
-                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               Text="{Binding AiPreviewMessage}" TextWrapping="Wrap" />
-                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               Text="{Binding AiUsageSummary}" TextWrapping="Wrap" />
-                    <ItemsControl ItemsSource="{Binding AiSuggestions}">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate>
-                                <Border Margin="0,0,0,6" Padding="12"
-                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="8">
-                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                                        <StackPanel Spacing="3">
-                                            <TextBlock FontWeight="SemiBold" Text="{Binding FileName}" />
-                                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                                       Text="{Binding Reason}" TextWrapping="Wrap" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="2">
-                                            <TextBlock FontWeight="SemiBold" Text="{Binding Category}" />
-                                            <TextBlock FontSize="12" Text="{Binding Confidence}" />
-                                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding Provider}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                               Text="These are ideas only. AI cannot move, rename, or change files." />
-                </StackPanel>
-            </Border>
 
             <ItemsControl ItemsSource="{Binding Operations}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Margin="0,0,0,8" Padding="16"
-                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
-                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                        <Border Style="{StaticResource RowCardStyle}">
+                            <Grid ColumnDefinitions="Auto,Auto,*,Auto" ColumnSpacing="14">
                                 <CheckBox VerticalAlignment="Center"
                                           AutomationProperties.Name="Include this sample file"
                                           IsChecked="{Binding IsSelected, Mode=TwoWay}"
                                           IsEnabled="{Binding IsSelectable}" />
-                                <StackPanel Grid.Column="1" Spacing="5">
-                                    <TextBlock FontSize="16" FontWeight="SemiBold" Text="{Binding DisplayName}" />
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap">
-                                        <Run Text="{Binding FromFolder}" />
-                                        <Run Text="  →  " />
-                                        <Run Text="{Binding ToFolder}" />
-                                    </TextBlock>
-                                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding FileType}" />
+                                <Border Grid.Column="1" Width="40" Height="40" CornerRadius="8"
+                                        VerticalAlignment="Center"
+                                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+                                    <FontIcon FontSize="17" Glyph="{Binding FileGlyph}"
+                                              Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                                </Border>
+                                <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="5">
+                                    <TextBlock FontSize="15" FontWeight="SemiBold" Text="{Binding DisplayName}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock Style="{StaticResource BodySecondaryStyle}" Text="{Binding FromFolder}" />
+                                        <FontIcon FontSize="11" Glyph="&#xE72A;" VerticalAlignment="Center"
+                                                  Foreground="{ThemeResource TextFillColorTertiaryBrush}" />
+                                        <TextBlock FontWeight="SemiBold" Text="{Binding ToFolder}" />
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource CaptionStyle}" Text="{Binding FileType}" />
                                 </StackPanel>
-                                <StackPanel Grid.Column="2" Width="190" VerticalAlignment="Center" Spacing="3">
-                                    <TextBlock FontWeight="SemiBold" Text="{Binding StatusText}" />
-                                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                               Text="{Binding StatusDetail}" TextWrapping="Wrap" />
+                                <StackPanel Grid.Column="3" Width="200" VerticalAlignment="Center" Spacing="6">
+                                    <!--
+                                        Colour is never alone here: the badge always carries an icon
+                                        and the status word, so a blocked row still reads as blocked.
+                                    -->
+                                    <Border HorizontalAlignment="Left" Padding="10,4" CornerRadius="12"
+                                            Background="{Binding StatusLevel, Converter={StaticResource StatusLevelToBackground}}">
+                                        <StackPanel Orientation="Horizontal" Spacing="7">
+                                            <FontIcon FontSize="12" VerticalAlignment="Center"
+                                                      Glyph="{Binding StatusLevel, Converter={StaticResource StatusLevelToGlyph}}"
+                                                      Foreground="{Binding StatusLevel, Converter={StaticResource StatusLevelToBrush}}" />
+                                            <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding StatusText}" />
+                                        </StackPanel>
+                                    </Border>
+                                    <TextBlock Style="{StaticResource CaptionStyle}" Text="{Binding StatusDetail}" />
                                 </StackPanel>
                             </Grid>
                         </Border>
@@ -118,32 +129,12 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
 
-            <StackPanel Spacing="8">
-                <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Needs attention" />
-                <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding AttentionSummary}" />
-                <ItemsControl ItemsSource="{Binding Issues}">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Margin="0,0,0,8" Padding="16"
-                                    Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="8">
-                                <StackPanel Spacing="5">
-                                    <TextBlock FontWeight="SemiBold" Text="{Binding Title}" />
-                                    <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                               Text="{Binding Explanation}" TextWrapping="Wrap" />
-                                </StackPanel>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-                <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding UnchangedSummary}" />
-            </StackPanel>
-
-            <Border Padding="18" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8">
+            <Border Style="{StaticResource CardStyle}">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="20">
                     <StackPanel Spacing="5">
-                        <TextBlock FontWeight="SemiBold" Text="Ready to try it?" />
-                        <TextBlock MaxWidth="570" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                                   Text="{Binding ResultMessage}" TextWrapping="Wrap" />
+                        <TextBlock FontSize="16" FontWeight="SemiBold" Text="Ready to try it?" />
+                        <TextBlock MaxWidth="570" Style="{StaticResource BodySecondaryStyle}"
+                                   Text="{Binding ResultMessage}" />
                     </StackPanel>
                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="8">
                         <ProgressRing Width="24" Height="24" HorizontalAlignment="Center" IsActive="{Binding IsBusy}" />
@@ -156,16 +147,96 @@
                 </Grid>
             </Border>
 
-            <Border Padding="16" Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}" CornerRadius="8">
-                <StackPanel Spacing="5">
-                    <TextBlock FontWeight="SemiBold" Text="Recent activity" />
-                    <TextBlock Text="{Binding ActivityTitle}" />
-                    <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               Text="{Binding ActivityMessage}" />
+            <StackPanel Spacing="10">
+                <StackPanel Spacing="3">
+                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Needs attention" />
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" Text="{Binding AttentionSummary}" />
+                </StackPanel>
+                <ItemsControl ItemsSource="{Binding Issues}">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                            <Border Style="{StaticResource RowCardStyle}">
+                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                                    <FontIcon VerticalAlignment="Top" FontSize="17"
+                                              Glyph="{Binding Level, Converter={StaticResource StatusLevelToGlyph}}"
+                                              Foreground="{Binding Level, Converter={StaticResource StatusLevelToBrush}}" />
+                                    <StackPanel Grid.Column="1" Spacing="4">
+                                        <TextBlock FontWeight="SemiBold" Text="{Binding Title}" />
+                                        <TextBlock Style="{StaticResource BodySecondaryStyle}" Text="{Binding Explanation}" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" HorizontalAlignment="Right" Spacing="3">
+                                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding Severity}" />
+                                        <TextBlock Style="{StaticResource CaptionStyle}" Text="{Binding AffectedItems}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+                <TextBlock Style="{StaticResource CaptionStyle}" Text="{Binding UnchangedSummary}" />
+            </StackPanel>
+
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="14">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="14">
+                        <FontIcon FontSize="20" VerticalAlignment="Top" Glyph="&#xE753;"
+                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        <StackPanel Grid.Column="1" Spacing="3">
+                            <TextBlock FontSize="16" FontWeight="SemiBold" Text="Want a second opinion?" />
+                            <TextBlock Style="{StaticResource CaptionStyle}" Text="{Binding AiDisclosureSummary}" />
+                        </StackPanel>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center" Spacing="8">
+                            <ProgressRing Width="22" Height="22" IsActive="{Binding IsAiBusy}" />
+                            <Button Command="{Binding GetAiSuggestionsCommand}" Content="Get AI ideas" />
+                            <Button Command="{Binding CancelAiCommand}" Content="Stop" />
+                        </StackPanel>
+                    </Grid>
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" Text="{Binding AiPreviewMessage}" />
+                    <TextBlock Style="{StaticResource CaptionStyle}" Text="{Binding AiUsageSummary}" />
+                    <ItemsControl ItemsSource="{Binding AiSuggestions}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Style="{StaticResource SoftCardStyle}" Margin="0,0,0,8">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="14">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock FontWeight="SemiBold" Text="{Binding FileName}" />
+                                            <TextBlock Style="{StaticResource CaptionStyle}" Text="{Binding Reason}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="3">
+                                            <TextBlock HorizontalAlignment="Right" FontWeight="SemiBold" Text="{Binding Category}" />
+                                            <TextBlock HorizontalAlignment="Right" FontSize="12" Text="{Binding Confidence}" />
+                                            <TextBlock HorizontalAlignment="Right" Style="{StaticResource CaptionStyle}" Text="{Binding Provider}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <Border Padding="12" CornerRadius="8"
+                            Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <FontIcon FontSize="14" VerticalAlignment="Center" Glyph="&#xE72E;"
+                                      Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                            <TextBlock Style="{StaticResource CaptionStyle}" VerticalAlignment="Center"
+                                       Text="These are ideas only. AI cannot move, rename, or change any file." />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </Border>
 
-            <Expander Margin="0,0,0,32" Header="More details">
+            <Border Style="{StaticResource SoftCardStyle}">
+                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                    <FontIcon FontSize="18" VerticalAlignment="Top" Glyph="&#xE81C;"
+                              Foreground="{ThemeResource TextFillColorSecondaryBrush}" />
+                    <StackPanel Grid.Column="1" Spacing="4">
+                        <TextBlock FontWeight="SemiBold" Text="Recent activity" />
+                        <TextBlock Text="{Binding ActivityTitle}" />
+                        <TextBlock Style="{StaticResource CaptionStyle}" Text="{Binding ActivityMessage}" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Expander HorizontalAlignment="Stretch" Header="More details">
                 <StackPanel Padding="12" Spacing="6">
                     <TextBlock FontWeight="SemiBold" Text="Temporary demo location" />
                     <TextBlock Text="{Binding DemoRoot}" TextWrapping="Wrap" />
@@ -177,32 +248,34 @@
                 </StackPanel>
             </Expander>
 
-            <Border Margin="0,0,0,32" Padding="20"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="10">
-                <StackPanel Spacing="12">
-                    <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource SubtitleTextBlockStyle}" Text="Preview a folder" />
-                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                                   Text="Optional and read-only. DeskAI can list file names, sizes, and dates. Moving and deleting stay off." />
-                    </StackPanel>
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="14">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
+                        <FontIcon FontSize="20" VerticalAlignment="Top" Glyph="&#xE8DA;"
+                                  Foreground="{ThemeResource AccentTextFillColorPrimaryBrush}" />
+                        <StackPanel Grid.Column="1" Spacing="4">
+                            <TextBlock FontSize="16" FontWeight="SemiBold" Text="Preview one of your own folders" />
+                            <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                       Text="Optional and read-only. DeskAI lists file names, sizes, and dates. It cannot move, rename, delete, or open what is inside." />
+                        </StackPanel>
+                    </Grid>
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <Button Click="OnChooseFolderClick" Content="Choose a folder" Style="{StaticResource AccentButtonStyle}" />
                         <Button Command="{Binding RevokeFolderCommand}" Content="Disconnect" />
-                        <ProgressRing Width="22" Height="22" IsActive="{Binding IsFolderBusy}" />
+                        <ProgressRing Width="22" Height="22" VerticalAlignment="Center" IsActive="{Binding IsFolderBusy}" />
                     </StackPanel>
                     <StackPanel Spacing="3">
                         <TextBlock FontWeight="SemiBold" Text="{Binding FolderPreviewTitle}" />
-                        <TextBlock Foreground="{ThemeResource TextFillColorSecondaryBrush}" TextWrapping="Wrap"
-                                   Text="{Binding FolderPreviewMessage}" />
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" Text="{Binding FolderPreviewMessage}" />
                     </StackPanel>
-                    <Expander Header="{Binding FolderFileCount}">
+                    <Expander HorizontalAlignment="Stretch" Header="{Binding FolderFileCount}">
                         <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding FolderFiles}">
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate>
                                     <Grid Padding="10,8" ColumnDefinitions="2*,*,Auto" ColumnSpacing="12">
                                         <StackPanel>
                                             <TextBlock FontWeight="SemiBold" Text="{Binding Name}" />
-                                            <TextBlock FontSize="12" Foreground="{ThemeResource TextFillColorSecondaryBrush}" Text="{Binding Folder}" />
+                                            <TextBlock Style="{StaticResource CaptionStyle}" Text="{Binding Folder}" />
                                         </StackPanel>
                                         <TextBlock Grid.Column="1" VerticalAlignment="Center" Text="{Binding Modified}" />
                                         <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{Binding Size}" />

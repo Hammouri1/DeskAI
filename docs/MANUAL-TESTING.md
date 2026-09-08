@@ -167,3 +167,26 @@ verified by tests and by confirming the app's behavior did not change.
 11. Never paste a key into logs, screenshots, issues, chat, source files, or test data.
     Check your provider's own billing page for exact cost; DeskAI reports token counts
     when the service supplies them and deliberately does not guess prices.
+
+## Interface Refresh
+
+1. Build Release and launch the new executable. Expected: **202 passing tests** and zero
+   build warnings/errors.
+2. Confirm the window has a Mica background and that the navigation pane footer shows a
+   permanent green "Practice mode" note on every page.
+3. Visit **all five pages** — Home, Organize, Search, Automatic tasks, Privacy and AI.
+   None should show an empty box where an icon belongs, and none should fail to open.
+4. On Organize, confirm each suggested move shows a rounded status badge with an icon
+   **and** a word ("Ready" / "Not included"), never colour alone.
+5. Confirm the two conflicting `course-notes.pdf` rows still show "Not included" with a
+   red cross icon and that their checkboxes are still **not selectable**. Polish must not
+   have made a blocked row look available.
+6. Switch Windows between light and dark mode with DeskAI open. Confirm text stays
+   readable on every card and on the coloured headers.
+7. Turn on Windows high-contrast mode and revisit Organize and Privacy and AI. Confirm
+   status badges and headers remain legible.
+8. Tab through Organize and Privacy and AI using only the keyboard. Confirm focus is
+   visible and reaches every checkbox, button, and expander.
+9. On Search and Automatic tasks, confirm the pages plainly say the feature is not
+   finished. The Search filter buttons must appear **disabled**, not clickable.
+10. Confirm no page claims a capability that does not exist yet.

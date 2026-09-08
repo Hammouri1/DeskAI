@@ -54,6 +54,10 @@ public sealed class PreviewOperationViewModel : ObservableObject
         StatusDetail = _isAllowed
             ? "Ready to organize"
             : "Two sample files have the same name. Choose a different name later.";
+        // Presentation only. Safety already decided; this just picks the icon and colour
+        // that accompany the words, so a blocked row still reads as blocked without colour.
+        StatusLevel = _isAllowed ? PreviewStatusLevel.Ready : PreviewStatusLevel.Blocked;
+        FileGlyph = FriendlyFileGlyph(Source);
     }
 
     public Guid Id { get; }
@@ -70,6 +74,8 @@ public sealed class PreviewOperationViewModel : ObservableObject
     public string FileType { get; }
     public string StatusText { get; }
     public string StatusDetail { get; }
+    public PreviewStatusLevel StatusLevel { get; }
+    public string FileGlyph { get; }
     public bool IsSelectable => _isAllowed && _isInteractionEnabled;
 
     public bool IsSelected
@@ -106,5 +112,16 @@ public sealed class PreviewOperationViewModel : ObservableObject
         ".xlsx" or ".xls" => "Spreadsheet",
         ".md" => "Notes",
         _ => "File",
+    };
+
+    /// <summary>
+    /// A Segoe Fluent glyph shown beside the file name. Only two well-established glyphs
+    /// are used, because the written type label already carries the meaning and a guessed
+    /// icon code would render as an empty box.
+    /// </summary>
+    private static string FriendlyFileGlyph(string path) => Path.GetExtension(path).ToLowerInvariant() switch
+    {
+        ".png" or ".jpg" or ".jpeg" => "\uE91B",
+        _ => "\uE8A5",
     };
 }

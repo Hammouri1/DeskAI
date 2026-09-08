@@ -103,6 +103,21 @@ Always show actual scope (“Searching 3 authorized folders”). Natural-languag
 
 Use a readable “When / If / Then / Scope” editor. When AI drafts a rule, show the deterministic interpretation and a simulation against sample/current indexed files before approval. Clearly distinguish enabled, scheduled/watched, manual-only, paused, and needs-review. Provide a kill switch/pause-all action.
 
+## Implemented Visual System
+
+A small shared vocabulary lives in `App.xaml` so pages stay consistent and no page invents its own colours:
+
+- `HeroPanelStyle` — a rounded accent header, used once at the top of Home, Organize, and Privacy and AI. Depth comes from `HeroSheenBrush`, a translucent white wash over the system accent, so the header is correct in light, dark, and high contrast without a hand-picked palette.
+- `CardStyle`, `SoftCardStyle`, `RowCardStyle` — bordered, rounded surfaces built only from `CardBackgroundFillColor*` and `CardStrokeColorDefaultBrush`.
+- `PageTitleStyle`, `SectionTitleStyle`, `BodySecondaryStyle`, `CaptionStyle` — one type ramp instead of ad-hoc font sizes.
+- `StepBadgeStyle` — the numbered circles in the Organize steps.
+
+The window uses a Mica backdrop, and the navigation pane footer carries a permanent Practice-mode reminder, because "which files can this app touch" should never require navigating to find out.
+
+Status is expressed through `PreviewStatusLevel` (`Ready`, `Attention`, `Blocked`) mapped by converters to a system semantic brush, a paired Segoe Fluent glyph, and a tinted badge background. Colour is never alone: every badge carries an icon **and** the status word, so a blocked row still reads as blocked in greyscale or high contrast. `PreviewStatusLevel` is presentation severity only — Safety decides what is blocked, and the enum merely chooses how that decision is drawn.
+
+Empty states stay truthful rather than becoming decorative. Search shows its future filter controls **disabled** with a plain "Not finished yet" notice, and Automatic tasks states outright that DeskAI is doing nothing in the background. Neither page implies a capability that exists.
+
 ## Visual Direction
 
 - Use WinUI/Fluent conventions, system typography, spacing, rounded surfaces, and light/dark themes.
