@@ -22,8 +22,12 @@
                                  Text="{x:Bind ViewModel.Phrase, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  KeyDown="OnPhraseKeyDown"
                                  AutomationProperties.Name="What are you looking for" />
+                        <!--
+                            Deliberately not an accent button. The accent means "safe or
+                            confirmed", and searching confirms nothing, so wearing that
+                            colour here would dilute the one signal the app relies on.
+                        -->
                         <Button Grid.Column="1"
-                                Style="{StaticResource AccentButtonStyle}"
                                 Content="Search"
                                 Command="{x:Bind ViewModel.SearchCommand}" />
                     </Grid>

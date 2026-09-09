@@ -136,6 +136,8 @@ Shared styles:
 - `DeskDisplayStyle`, `PageTitleStyle`, `SectionTitleStyle`, `MetricStyle`, `BodySecondaryStyle`, `CaptionStyle` — one type ramp on Segoe UI Variable Display for headings and Segoe UI Variable Text for body, with negative tracking on the display sizes. `MetricStyle` sets numbers large and light so the value reads before its label.
 - `StepBadgeStyle` — a quiet bordered chip. It is deliberately **not** accent-filled, because the accent is reserved for safety state.
 
+Accent buttons override `AccentButtonBackground` as well as `AccentFillColorDefaultBrush`, because the WinUI accent button style takes its fill from the former; setting only the latter leaves the button on the Windows accent colour. They are used for actions that confirm or authorize something, never for ordinary commands — the Search button is a plain button, since searching confirms nothing.
+
 `HeroSheenBrush` is retired. It remains defined as a transparent brush so any page still referencing the old gradient wash renders nothing rather than failing to load.
 
 Three treatments were removed as generic and meaningless here: the all-caps eyebrow labels (`LOCAL AND PRIVATE`, `PRACTICE MODE`), the translucent gradient wash over the accent, and the 56–72px decorative icons in the page headers. Metrics that belong to one reading now share a single panel divided by hairlines instead of being split into identical repeated cards.
