@@ -67,6 +67,71 @@
             </Border>
 
             <!--
+                The health score. The number is never shown on its own: the three parts that
+                produced it, what each one measured, and how much each counted for are all on
+                the same card, so a person can add it up instead of trusting it. Like every
+                other reading here it describes and never proposes.
+            -->
+            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasHealth, Mode=OneWay}">
+                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="How organized this looks" />
+
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="18">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
+                            <StackPanel Spacing="2" VerticalAlignment="Top">
+                                <TextBlock Style="{StaticResource DeskDisplayStyle}"
+                                           Foreground="{ThemeResource DeskAccentBrush}"
+                                           Text="{x:Bind ViewModel.HealthScore, Mode=OneWay}" />
+                                <TextBlock Style="{StaticResource CaptionStyle}" Text="out of 100" />
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                <TextBlock FontWeight="SemiBold" FontSize="15"
+                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                           Text="{x:Bind ViewModel.HealthBand, Mode=OneWay}" />
+                                <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="560"
+                                           HorizontalAlignment="Left"
+                                           Text="{x:Bind ViewModel.HealthMessage, Mode=OneWay}" />
+                            </StackPanel>
+                        </Grid>
+
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.HealthComponents, Mode=OneWay}"
+                                      AutomationProperties.Name="What the score is made of">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="viewmodels:HealthComponentViewModel">
+                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Margin="0,0,0,14">
+                                        <StackPanel Spacing="4">
+                                            <TextBlock FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                       Text="{x:Bind Name}" />
+                                            <TextBlock Style="{StaticResource CaptionStyle}"
+                                                       Text="{x:Bind Explanation}" />
+                                            <TextBlock Style="{StaticResource CaptionStyle}"
+                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                       Text="{x:Bind Measurement}" />
+                                            <ProgressBar Margin="0,4,0,0" Height="6" MaxWidth="360"
+                                                         HorizontalAlignment="Left"
+                                                         Minimum="0" Maximum="1"
+                                                         Value="{x:Bind PartScore}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="1" Spacing="2" MinWidth="120"
+                                                    VerticalAlignment="Top">
+                                            <TextBlock TextAlignment="Right"
+                                                       Style="{StaticResource CaptionStyle}"
+                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                       Text="{x:Bind ScoreLabel}" />
+                                            <TextBlock TextAlignment="Right"
+                                                       Style="{StaticResource CaptionStyle}"
+                                                       Text="{x:Bind WeightLabel}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <!--
                 Where the space went. This describes and never proposes: there is no cleanup
                 button here, because any cleanup still has to go through preview and approval.
             -->

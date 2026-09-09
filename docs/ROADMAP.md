@@ -82,7 +82,12 @@ Goal: find and understand files without needing to move them.
    Stage 2, confirming by content hash, is deliberately NOT done here. Hashing reads
    file bytes, which the metadata-only authorization these folders were connected
    under does not permit, so it belongs with step 8 permission-gated content work.
-7. ⬜ Organization Health score with transparent components.
+7. ✅ Organization Health score with transparent components.
+   Completed 2026-09-09; Home shows a score out of 100 next to the three parts that
+   produced it — possible copies, files sitting unused, and types DeskAI cannot recognise —
+   each with what it measured and how much it counted for. The calculation is pure
+   arithmetic over the readings already gathered, so it reaches nothing new, and a folder
+   with nothing remembered is reported as not measured rather than scored.
 8. ⬜ Optional permission-gated content extraction, followed later by local embeddings/semantic search.
 
 Exit criteria: results are scoped to authorized roots, index deletion/privacy controls work, score is explainable, and no cleanup action bypasses preview.

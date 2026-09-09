@@ -23,6 +23,21 @@ public sealed record LargestFileViewModel(string Name, string Location, string S
 public sealed record DuplicateGroupViewModel(string Headline, string Locations, string Reclaimable);
 
 /// <summary>
+/// One measured part of the organization health score.
+/// </summary>
+/// <remarks>
+/// The part carries its own evidence and its own weight, so the total can be read as a sum
+/// a person can check rather than as a verdict they have to take on trust.
+/// </remarks>
+public sealed record HealthComponentViewModel(
+    string Name,
+    string Explanation,
+    string Measurement,
+    string ScoreLabel,
+    string WeightLabel,
+    double PartScore);
+
+/// <summary>
 /// Drives the Home page: what is connected, and where the space is going.
 /// </summary>
 /// <remarks>
@@ -55,6 +70,11 @@ public sealed class DashboardViewModel(
     private string _oldFilesDetail = "Connect a folder to see what has been sitting unused.";
     private string _lastChecked = string.Empty;
     private bool _hasStorage;
+    private string _healthScore = "--";
+    private string _healthBand = "Not measured yet";
+    private string _healthMessage =
+        "Connect a folder in Search and DeskAI can tell you how settled it looks.";
+    private bool _hasHealth;
     private string _heroState = "Practice mode";
     private string _heroTitle = "Your files are untouched";
     private string _heroMessage =
@@ -81,6 +101,40 @@ public sealed class DashboardViewModel(
     {
         get => _heroMessage;
         private set => SetProperty(ref _heroMessage, value);
+    }
+
+    public ObservableCollection<HealthComponentViewModel> HealthComponents { get; } = [];
+
+    /// <summary>
+    /// The health score out of a hundred, shown next to every part that produced it.
+    /// </summary>
+    /// <remarks>
+    /// A bare number would be an opinion. It is only shown alongside
+    /// <see cref="HealthComponents"/>, which state what was measured and how much each part
+    /// counted for, so the total can be checked by hand.
+    /// </remarks>
+    public string HealthScore
+    {
+        get => _healthScore;
+        private set => SetProperty(ref _healthScore, value);
+    }
+
+    public string HealthBand
+    {
+        get => _healthBand;
+        private set => SetProperty(ref _healthBand, value);
+    }
+
+    public string HealthMessage
+    {
+        get => _healthMessage;
+        private set => SetProperty(ref _healthMessage, value);
+    }
+
+    public bool HasHealth
+    {
+        get => _hasHealth;
+        private set => SetProperty(ref _hasHealth, value);
     }
 
     public ObservableCollection<CategoryUsageViewModel> Categories { get; } = [];
@@ -180,11 +234,13 @@ public sealed class DashboardViewModel(
             TotalSize = "DeskAI could not read the storage summary.";
             HasStorage = false;
             HasDuplicates = false;
+            HasHealth = false;
             return;
         }
 
         Apply(summary);
         ApplyDuplicates(duplicates);
+        ApplyHealth(OrganizationHealthCalculator.Evaluate(summary, duplicates));
     }
 
     private static string DescribeSize(long bytes) => bytes switch
@@ -237,6 +293,74 @@ public sealed class DashboardViewModel(
                 locations,
                 $"up to {DescribeSize(group.ReclaimableBytes)}"));
         }
+    }
+
+    /// <summary>
+    /// Words the health score and each part behind it.
+    /// </summary>
+    /// <remarks>
+    /// Every part states what was actually measured and how much it counted for. Nothing
+    /// here offers to fix anything: the score describes, and any cleanup a person chooses
+    /// still goes through the ordinary preview and approval path.
+    /// </remarks>
+    private void ApplyHealth(OrganizationHealth health)
+    {
+        HealthComponents.Clear();
+        HasHealth = health.IsMeasured;
+
+        if (!health.IsMeasured)
+        {
+            HealthScore = "--";
+            HealthBand = "Not measured yet";
+            HealthMessage = "Connect a folder in Search and DeskAI can tell you how settled it looks.";
+            return;
+        }
+
+        HealthScore = health.Score.ToString(CultureInfo.CurrentCulture);
+        HealthBand = health.Band switch
+        {
+            Core.Indexing.HealthBand.Good => "Looking tidy",
+            Core.Indexing.HealthBand.Fair => "Mostly fine",
+            _ => "Worth a look",
+        };
+        HealthMessage =
+            "Out of 100, worked out from the three things below. DeskAI is describing what it "
+            + "remembers about your folders. It is not suggesting you change anything.";
+
+        foreach (var component in health.Components)
+        {
+            var (name, explanation) = Describe(component.Kind);
+            HealthComponents.Add(new HealthComponentViewModel(
+                name,
+                explanation,
+                DescribeMeasurement(component),
+                $"{component.Score} out of 100",
+                $"counts for {component.Weight}%",
+                component.Score / 100d));
+        }
+    }
+
+    private static (string Name, string Explanation) Describe(HealthComponentKind kind) => kind switch
+    {
+        HealthComponentKind.PossibleCopies =>
+            ("Possible copies", "Space that may be held twice by files of the same exact size."),
+        HealthComponentKind.UnusedFiles =>
+            ("Sitting unused", "Space in files that have not changed in about six months."),
+        _ => ("Types DeskAI does not know", "Space in files whose kind DeskAI could not tell from the name."),
+    };
+
+    private static string DescribeMeasurement(HealthComponent component)
+    {
+        if (component.MeasuredBytes <= 0)
+        {
+            return "Nothing found here.";
+        }
+
+        var share = component.ShareOfTotal.ToString("P0", CultureInfo.CurrentCulture);
+        var files = component.MeasuredFileCount == 1
+            ? "1 file"
+            : $"{component.MeasuredFileCount.ToString("N0", CultureInfo.CurrentCulture)} files";
+        return $"{DescribeSize(component.MeasuredBytes)} across {files}, about {share} of the space.";
     }
 
     private void Apply(StorageSummary summary)

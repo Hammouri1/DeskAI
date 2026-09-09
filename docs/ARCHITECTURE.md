@@ -176,6 +176,24 @@ Files below 4 KB are ignored, because small files collide on size constantly and
 
 **Stage 2, confirming by hash, is deliberately absent.** Hashing reads the bytes of a file. These folders are authorized `MetadataOnly`, which does not permit that, so confirming duplicates belongs with the permission-gated content work in step 8 rather than being slipped in behind a size check. Everything the UI says is therefore hedged: "possible duplicates", "might be duplicated", "up to" a saving. `ReclaimableBytes` is a ceiling on what could be freed if the copies turn out identical, never a promise. A test asserts the service reads no content at all.
 
+### Organization health score (V0.4 step 7)
+
+`OrganizationHealthCalculator.Evaluate` turns the storage summary and the possible-duplicate report into a score out of 100. It is a static, pure calculation: no dependencies, no I/O, no clock, no AI. It reaches no folder, so it can only ever describe what the two readings it is handed were already allowed to see.
+
+The score is a weighted average of three measured parts, each carried as a `HealthComponent` holding the bytes and file count measured, its share of the total, its own part score, and its weight:
+
+| Part | Zero-score limit | Weight |
+| --- | --- | --- |
+| Possible copies | 10% of space | 40 |
+| Sitting unused (unchanged ~6 months) | 60% of space | 30 |
+| Unrecognised type (`FileCategory.Unknown`) | 25% of space | 30 |
+
+Each part falls in a straight line from 100 at nothing to 0 at its limit. The limits differ because the findings differ in meaning: space that may be duplicated is nearly always waste, unchanged files are ordinary and only stand out in bulk, and an unrecognised type is a mild signal. The thresholds and weights are named public constants rather than hidden numbers, and a test asserts the total is exactly the weighted average of the parts shown, so a person can add the score up by hand.
+
+Two honesty rules shape the result. Nothing connected, or nothing remembered yet, returns `HealthBand.NotMeasured` rather than a score, because scoring no evidence invents a judgement. And a share that would exceed the whole — possible when the two readings are gathered a moment apart — is clamped instead of producing a share above one.
+
+`HealthComponentKind` identifies each part without wording it, so Core stays free of user-facing text and the UI decides how a part is named and explained. Like every other reading in V0.4, the score describes and never proposes: it produces no plan, and the page attaches no fix action to it.
+
 ### Natural-language query translation (V0.4 step 3)
 
 `NaturalLanguageQueryTranslator.Translate` reads a short typed phrase such as "big videos from last month" into a `QueryTranslation`: the resulting `SearchQuery`, plus one `QueryChip` for every part it understood.
