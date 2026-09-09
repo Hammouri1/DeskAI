@@ -31,6 +31,49 @@ public sealed class DeterministicFileClassifierTests
         Assert.Equal(1, result.Confidence);
     }
 
+    /// <summary>
+    /// Everyday types a real folder is full of. A file DeskAI cannot name is invisible to
+    /// the storage picture and shrinks how much of a folder the health reading covers, so
+    /// gaps here are a cost to the person, not a neutral omission.
+    /// </summary>
+    [Theory]
+    [InlineData("notes.epub", FileCategory.Documents)]
+    [InlineData("scan.tiff", FileCategory.Images)]
+    [InlineData("holiday.m4v", FileCategory.Videos)]
+    [InlineData("audiobook.m4b", FileCategory.Audio)]
+    [InlineData("podcast.wma", FileCategory.Audio)]
+    [InlineData("disk.iso", FileCategory.Archives)]
+    [InlineData("archive.tgz", FileCategory.Archives)]
+    [InlineData("update.msu", FileCategory.Installers)]
+    [InlineData("script.bat", FileCategory.SourceCode)]
+    [InlineData("styles.scss", FileCategory.SourceCode)]
+    [InlineData("app.log", FileCategory.Data)]
+    [InlineData("config.ini", FileCategory.Data)]
+    [InlineData("settings.toml", FileCategory.Data)]
+    [InlineData("library.sqlite3", FileCategory.Data)]
+    public void Classify_RecognisesEverydayFileTypes(string relativePath, FileCategory expectedCategory)
+    {
+        var result = _classifier.Classify(CreateFile(relativePath));
+
+        Assert.Equal(expectedCategory, result.Category);
+        Assert.NotEqual(FileCategory.Unknown, result.Category);
+    }
+
+    /// <summary>
+    /// Longest suffix wins, so a longer extension is never swallowed by a shorter one that
+    /// happens to end it. A TypeScript file and a video stream must not be confused.
+    /// </summary>
+    [Theory]
+    [InlineData("stream.m2ts", FileCategory.Videos)]
+    [InlineData("component.ts", FileCategory.SourceCode)]
+    [InlineData("song.midi", FileCategory.Audio)]
+    public void Classify_PrefersTheLongerExtensionWhenTwoRulesCouldMatch(
+        string relativePath,
+        FileCategory expectedCategory)
+    {
+        Assert.Equal(expectedCategory, _classifier.Classify(CreateFile(relativePath)).Category);
+    }
+
     [Theory]
     [InlineData("Screenshot 2026-09-07.png")]
     [InlineData("Screen Shot 2026-09-07.jpg")]

@@ -46,7 +46,7 @@ public sealed class OrganizationHealthCalculatorTests
     public void Evaluate_LowersTheScoreWhenMuchOfTheSpaceMightBeDuplicated()
     {
         var summary = Summary(totalBytes: 1_000_000, categories: [Usage(FileCategory.Documents, 10, 1_000_000)]);
-        var duplicates = Report(reclaimableBytes: 200_000, fileCount: 4);
+        var duplicates = Report(reclaimableBytes: 400_000, fileCount: 4);
 
         var health = OrganizationHealthCalculator.Evaluate(summary, duplicates);
 
@@ -55,25 +55,48 @@ public sealed class OrganizationHealthCalculatorTests
         Assert.True(health.Score < 100);
     }
 
+    /// <summary>
+    /// A settled archive is not a mess. Nearly everything in one is old by definition, so a
+    /// folder whose only finding is age must not be flagged: that would be the score saying
+    /// moving more files is always better, which is exactly what it must not say.
+    /// </summary>
     [Fact]
-    public void Evaluate_LowersTheScoreWhenMostFilesHaveNotChangedInMonths()
+    public void Evaluate_DoesNotFlagAnArchiveWhereEverythingIsSimplyOld()
     {
         var summary = Summary(
             totalBytes: 1_000_000,
-            categories: [Usage(FileCategory.Documents, 10, 1_000_000)],
-            oldFileCount: 9,
-            oldFileBytes: 900_000);
+            categories: [Usage(FileCategory.Videos, 100, 1_000_000)],
+            oldFileCount: 93,
+            oldFileBytes: 930_000);
 
         var health = OrganizationHealthCalculator.Evaluate(summary, DuplicateReport.Empty);
 
-        var unused = Component(health, HealthComponentKind.UnusedFiles);
-        Assert.Equal(0, unused.Score);
-        Assert.Equal(900_000, unused.MeasuredBytes);
-        Assert.Equal(9, unused.MeasuredFileCount);
+        Assert.True(health.Score >= OrganizationHealthCalculator.GoodScore);
+        Assert.Equal(HealthBand.Good, health.Band);
     }
 
+    /// <summary>
+    /// Age is the weaker of the two signals, so it may move the score but must never carry it.
+    /// </summary>
     [Fact]
-    public void Evaluate_LowersTheScoreWhenManyFilesAreOfAnUnrecognisedType()
+    public void Evaluate_CountsAgeForLessThanPossibleCopies()
+    {
+        var health = OrganizationHealthCalculator.Evaluate(
+            Summary(1_000_000, [Usage(FileCategory.Documents, 10, 1_000_000)]),
+            DuplicateReport.Empty);
+
+        Assert.True(
+            Component(health, HealthComponentKind.PossibleCopies).Weight
+            > Component(health, HealthComponentKind.UnusedFiles).Weight);
+    }
+
+    /// <summary>
+    /// A file type DeskAI cannot name is a gap in this app's own knowledge, not a mess the
+    /// person made. Scoring it down would blame someone for what DeskAI does not know, so it
+    /// is reported as a limit on the reading instead of a penalty.
+    /// </summary>
+    [Fact]
+    public void Evaluate_DoesNotPenaliseFilesItSimplyCannotRecognise()
     {
         var summary = Summary(
             totalBytes: 1_000_000,
@@ -85,9 +108,42 @@ public sealed class OrganizationHealthCalculatorTests
 
         var health = OrganizationHealthCalculator.Evaluate(summary, DuplicateReport.Empty);
 
-        var unrecognised = Component(health, HealthComponentKind.UnrecognisedFiles);
-        Assert.Equal(0, unrecognised.Score);
-        Assert.Equal(500_000, unrecognised.MeasuredBytes);
+        Assert.Equal(100, health.Score);
+        Assert.Equal(2, health.Components.Count);
+    }
+
+    [Fact]
+    public void Evaluate_ReportsHowMuchOfTheFolderItCouldRecognise()
+    {
+        var summary = Summary(
+            totalBytes: 1_000_000,
+            categories:
+            [
+                Usage(FileCategory.Documents, 5, 520_000),
+                Usage(FileCategory.Unknown, 67, 480_000),
+            ]);
+
+        var health = OrganizationHealthCalculator.Evaluate(summary, DuplicateReport.Empty);
+
+        Assert.Equal(0.52, health.RecognisedShare, 3);
+        Assert.Equal(67, health.UnrecognisedFileCount);
+        Assert.True(health.IsRecognitionPartial);
+    }
+
+    [Fact]
+    public void Evaluate_DoesNotCallTheReadingPartialWhenItRecognisedNearlyEverything()
+    {
+        var summary = Summary(
+            totalBytes: 1_000_000,
+            categories:
+            [
+                Usage(FileCategory.Documents, 20, 990_000),
+                Usage(FileCategory.Unknown, 1, 10_000),
+            ]);
+
+        var health = OrganizationHealthCalculator.Evaluate(summary, DuplicateReport.Empty);
+
+        Assert.False(health.IsRecognitionPartial);
     }
 
     /// <summary>
@@ -101,7 +157,7 @@ public sealed class OrganizationHealthCalculatorTests
 
         var health = OrganizationHealthCalculator.Evaluate(summary, DuplicateReport.Empty);
 
-        Assert.Equal(3, health.Components.Count);
+        Assert.Equal(2, health.Components.Count);
         Assert.All(health.Components, component =>
         {
             Assert.InRange(component.Score, 0, 100);
@@ -142,7 +198,7 @@ public sealed class OrganizationHealthCalculatorTests
     {
         var summary = Summary(
             totalBytes: 1_000_000,
-            categories: [Usage(FileCategory.Unknown, 10, 1_000_000)],
+            categories: [Usage(FileCategory.Documents, 10, 1_000_000)],
             oldFileCount: 10,
             oldFileBytes: 1_000_000);
         var duplicates = Report(reclaimableBytes: 1_000_000, fileCount: 10);

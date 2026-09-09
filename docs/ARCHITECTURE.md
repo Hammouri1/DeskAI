@@ -180,17 +180,20 @@ Files below 4 KB are ignored, because small files collide on size constantly and
 
 `OrganizationHealthCalculator.Evaluate` turns the storage summary and the possible-duplicate report into a score out of 100. It is a static, pure calculation: no dependencies, no I/O, no clock, no AI. It reaches no folder, so it can only ever describe what the two readings it is handed were already allowed to see.
 
-The score is a weighted average of three measured parts, each carried as a `HealthComponent` holding the bytes and file count measured, its share of the total, its own part score, and its weight:
+The score is a weighted average of two measured parts, each carried as a `HealthComponent` holding the bytes and file count measured, its share of the total, its own part score, and its weight:
 
 | Part | Zero-score limit | Weight |
 | --- | --- | --- |
-| Possible copies | 10% of space | 40 |
-| Sitting unused (unchanged ~6 months) | 60% of space | 30 |
-| Unrecognised type (`FileCategory.Unknown`) | 25% of space | 30 |
+| Possible copies | 20% of space | 80 |
+| Sitting unused (unchanged ~6 months) | 100% of space | 20 |
 
-Each part falls in a straight line from 100 at nothing to 0 at its limit. The limits differ because the findings differ in meaning: space that may be duplicated is nearly always waste, unchanged files are ordinary and only stand out in bulk, and an unrecognised type is a mild signal. The thresholds and weights are named public constants rather than hidden numbers, and a test asserts the total is exactly the weighted average of the parts shown, so a person can add the score up by hand.
+Each part falls in a straight line from 100 at nothing to 0 at its limit. Possible copies carries most of the score because it is the one finding metadata alone genuinely supports; its limit is generous because matching sizes are unconfirmed evidence, and scoring hard on an unproven signal would overstate what DeskAI knows. Age is deliberately weak in both dimensions: a settled archive is nearly all old by definition and is not a mess, so age nudges the score rather than deciding it. The thresholds and weights are named public constants, and a test asserts the total is exactly the weighted average of the parts shown, so a person can add the score up by hand.
 
-Two honesty rules shape the result. Nothing connected, or nothing remembered yet, returns `HealthBand.NotMeasured` rather than a score, because scoring no evidence invents a judgement. And a share that would exceed the whole — possible when the two readings are gathered a moment apart — is clamped instead of producing a share above one.
+**Both were recalibrated after the first run against realistic folders.** The original limits (10% copies, 60% age) scored a 3.4 GB archive at 53 — "Worth a look" — purely because 93% of it had not changed in six months. That is the score saying that moving more files is always better, which `UI-UX.md` forbids. A regression test now asserts that a folder whose only finding is age stays in the `Good` band.
+
+**Unrecognised types are reported beside the score, never inside it.** `OrganizationHealth` carries `RecognisedShare` and `UnrecognisedFileCount`, and `IsRecognitionPartial` is true below `FullRecognitionShare` (95%). A file type DeskAI has not learned is a gap in this app's knowledge, not a mess the person made; charging them points for it would be both unfair and uninformative. The first run made this concrete — a 90-file folder scored 70 because 67 of its files used extensions the classifier did not cover. The fix was in two parts: stop scoring it, and widen `DefaultFileTypeRules` to cover everyday types (`.log`, `.ini`, `.toml`, `.iso`, `.m4v`, `.wma`, `.bat`, `.scss`, and others). Because categories are stored per row at index time, a widened rule set only reaches an existing folder when it is refreshed.
+
+Two further honesty rules shape the result. Nothing connected, or nothing remembered yet, returns `HealthBand.NotMeasured` rather than a score, because scoring no evidence invents a judgement. And a share that would exceed the whole — possible when the two readings are gathered a moment apart — is clamped instead of producing a share above one.
 
 `HealthComponentKind` identifies each part without wording it, so Core stays free of user-facing text and the UI decides how a part is named and explained. Like every other reading in V0.4, the score describes and never proposes: it produces no plan, and the page attaches no fix action to it.
 

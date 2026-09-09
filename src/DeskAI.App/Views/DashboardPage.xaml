@@ -91,6 +91,16 @@
                                 <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="560"
                                            HorizontalAlignment="Left"
                                            Text="{x:Bind ViewModel.HealthMessage, Mode=OneWay}" />
+                                <!--
+                                    How much of the folder DeskAI could recognise, stated
+                                    beside the score rather than subtracted from it. Not
+                                    knowing a file type is this app's gap, and charging
+                                    someone points for it would blame them for our limits.
+                                -->
+                                <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="560"
+                                           HorizontalAlignment="Left" Margin="0,4,0,0"
+                                           Visibility="{x:Bind ViewModel.HasHealthCoverage, Mode=OneWay}"
+                                           Text="{x:Bind ViewModel.HealthCoverage, Mode=OneWay}" />
                             </StackPanel>
                         </Grid>
 

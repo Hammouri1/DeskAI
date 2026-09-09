@@ -83,11 +83,15 @@ Goal: find and understand files without needing to move them.
    file bytes, which the metadata-only authorization these folders were connected
    under does not permit, so it belongs with step 8 permission-gated content work.
 7. ✅ Organization Health score with transparent components.
-   Completed 2026-09-09; Home shows a score out of 100 next to the three parts that
-   produced it — possible copies, files sitting unused, and types DeskAI cannot recognise —
-   each with what it measured and how much it counted for. The calculation is pure
-   arithmetic over the readings already gathered, so it reaches nothing new, and a folder
-   with nothing remembered is reported as not measured rather than scored.
+   Completed 2026-09-09; Home shows a score out of 100 next to the two parts that produced
+   it — possible copies and files sitting unused — each with what it measured and how much
+   it counted for. The calculation is pure arithmetic over the readings already gathered, so
+   it reaches nothing new, and a folder with nothing remembered is reported as not measured
+   rather than scored. Recalibrated the same day after running against realistic folders:
+   the first thresholds flagged a settled archive as "worth a look" for being old, and
+   charged a folder points for file types DeskAI had simply never learned. Age is now weak
+   and generous, unrecognised types are a stated limit on the reading instead of a penalty,
+   and the classifier covers many more everyday extensions.
 8. ⬜ Optional permission-gated content extraction, followed later by local embeddings/semantic search.
 
 Exit criteria: results are scoped to authorized roots, index deletion/privacy controls work, score is explainable, and no cleanup action bypasses preview.

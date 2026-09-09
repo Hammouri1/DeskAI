@@ -25,28 +25,35 @@ public static class OrganizationHealthCalculator
     /// </summary>
     /// <remarks>
     /// A part's score falls in a straight line from full marks at nothing to zero at its
-    /// limit. The limits differ because the findings differ in weight of meaning: space that
-    /// might be duplicated is nearly always waste, so a tenth of a folder is already a lot;
-    /// files sitting unchanged are ordinary and only stand out once most of the folder is
-    /// like that; an unrecognised type is a mild signal, so a quarter is the point where
-    /// DeskAI can barely describe what is there.
+    /// limit. Both limits are deliberately generous. Matching sizes are unconfirmed
+    /// evidence, so a fifth of a folder is the point at which duplication is worth
+    /// mentioning at all; scoring hard on a signal DeskAI has not proven would overstate
+    /// what it knows.
     /// </remarks>
-    public const double PossibleCopiesLimit = 0.10;
+    public const double PossibleCopiesLimit = 0.20;
 
-    /// <inheritdoc cref="PossibleCopiesLimit"/>
-    public const double UnusedFilesLimit = 0.60;
+    /// <summary>
+    /// Age only reaches zero when effectively the whole folder is untouched.
+    /// </summary>
+    /// <remarks>
+    /// A settled archive is nearly all old by definition and is not a mess. An earlier,
+    /// harsher limit flagged exactly that case, which would have made the score say that
+    /// moving more files is always better. `UI-UX.md` forbids it saying that.
+    /// </remarks>
+    public const double UnusedFilesLimit = 1.00;
 
-    /// <inheritdoc cref="PossibleCopiesLimit"/>
-    public const double UnrecognisedFilesLimit = 0.25;
-
-    /// <summary>How much each part counts for. The weights add up to one hundred.</summary>
-    public const int PossibleCopiesWeight = 40;
+    /// <summary>
+    /// How much each part counts for. The weights add up to one hundred.
+    /// </summary>
+    /// <remarks>
+    /// Possible copies carries most of the score because it is the one finding metadata
+    /// alone genuinely supports: two files of the same exact size are worth a look. Age is
+    /// weak evidence of disorder, so it nudges the score rather than deciding it.
+    /// </remarks>
+    public const int PossibleCopiesWeight = 80;
 
     /// <inheritdoc cref="PossibleCopiesWeight"/>
-    public const int UnusedFilesWeight = 30;
-
-    /// <inheritdoc cref="PossibleCopiesWeight"/>
-    public const int UnrecognisedFilesWeight = 30;
+    public const int UnusedFilesWeight = 20;
 
     /// <summary>At or above this the folders look settled.</summary>
     public const int GoodScore = 80;
@@ -66,8 +73,6 @@ public static class OrganizationHealthCalculator
             return OrganizationHealth.NotMeasured;
         }
 
-        var unrecognised = storage.Categories.FirstOrDefault(usage => usage.Category == FileCategory.Unknown);
-
         var components = new[]
         {
             Component(
@@ -84,13 +89,6 @@ public static class OrganizationHealthCalculator
                 storage.TotalSizeBytes,
                 UnusedFilesLimit,
                 UnusedFilesWeight),
-            Component(
-                HealthComponentKind.UnrecognisedFiles,
-                unrecognised?.TotalSizeBytes ?? 0,
-                unrecognised?.FileCount ?? 0,
-                storage.TotalSizeBytes,
-                UnrecognisedFilesLimit,
-                UnrecognisedFilesWeight),
         };
 
         var totalWeight = components.Sum(component => component.Weight);
@@ -102,7 +100,20 @@ public static class OrganizationHealthCalculator
             : score >= FairScore ? HealthBand.Fair
             : HealthBand.NeedsAttention;
 
-        return new OrganizationHealth(score, band, components.AsReadOnly(), storage.FoldersIncluded);
+        // Files DeskAI could not name are reported beside the score, never inside it. An
+        // unrecognised type is a gap in what this app has learned, not a mess someone made,
+        // so it limits how much of the folder the reading covers instead of lowering it.
+        var unrecognised = storage.Categories.FirstOrDefault(usage => usage.Category == FileCategory.Unknown);
+        var unrecognisedBytes = Math.Clamp(unrecognised?.TotalSizeBytes ?? 0, 0, storage.TotalSizeBytes);
+        var recognisedShare = 1 - ((double)unrecognisedBytes / storage.TotalSizeBytes);
+
+        return new OrganizationHealth(
+            score,
+            band,
+            components.AsReadOnly(),
+            recognisedShare,
+            unrecognised?.FileCount ?? 0,
+            storage.FoldersIncluded);
     }
 
     private static HealthComponent Component(

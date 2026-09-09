@@ -144,23 +144,33 @@ verified by tests and by confirming the app's behavior did not change.
 Use a folder of generated dummy files only. Never connect Desktop, Downloads, Documents,
 Pictures, or a cloud-sync folder for this check.
 
-1. Build Release and run the complete suite. Expected result: **340 passing tests**, none
+1. Build Release and run the complete suite. Expected result: **360 passing tests**, none
    skipped, and zero build warnings/errors.
 2. Launch the new Release build with nothing connected. Home must **not** show a health
    score at all — no zero, no full marks. A score from no evidence would be invented.
 3. In Search, connect a temporary folder holding a few dummy files, then return to Home.
    Confirm a score out of 100 appears with a plain-language state such as "Looking tidy".
-4. Confirm the three parts are listed under it — possible copies, sitting unused, types
-   DeskAI does not know — each with what it measured, its own score out of 100, and how
-   much it counts for. Check the total by hand: multiply each part by its weight, add them,
-   and divide by 100. The number on the page must match.
+4. Confirm the two parts are listed under it — possible copies and sitting unused — each
+   with what it measured, its own score out of 100, and how much it counts for. Check the
+   total by hand: multiply each part by its weight, add them, and divide by 100. The number
+   on the page must match.
 5. Confirm there is **no** button offering to improve, fix, or clean up the score anywhere
    on the page. The score describes only.
 6. Add two identical dummy files of the same size to the folder, refresh it in Search, and
    return to Home. Confirm the possible-copies part drops and the wording still says
    "possible" or "may", never that copies are confirmed.
-7. Disconnect the folder. Confirm the score disappears rather than lingering on remembered
+7. Set a few dummy files to a date older than six months and refresh. Confirm the
+   sitting-unused part moves only a little and the folder is **not** flagged for age alone.
+   A settled archive is not a mess, and the score must never say otherwise.
+8. Put a few files with unusual extensions DeskAI cannot know (`.qqq`, `.zzz`) in the
+   folder and refresh. Confirm the score does **not** fall, and that a line beside it says
+   how much of the folder DeskAI could recognise. An unrecognised type is this app's gap,
+   never a charge against the person.
+9. Disconnect the folder. Confirm the score disappears rather than lingering on remembered
    numbers from a folder DeskAI can no longer see.
+
+Note: file categories are stored when a folder is indexed, so a widened rule set only
+reaches a folder that is refreshed in Search afterwards.
 
 ## Bring Your Own Key — Any Supported Service
 

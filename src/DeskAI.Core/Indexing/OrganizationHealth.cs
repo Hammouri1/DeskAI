@@ -12,9 +12,6 @@ public enum HealthComponentKind
 
     /// <summary>How much space has not changed in a long time.</summary>
     UnusedFiles,
-
-    /// <summary>How much space is in files DeskAI could not recognise by type.</summary>
-    UnrecognisedFiles,
 }
 
 /// <summary>How settled the connected folders look overall.</summary>
@@ -62,9 +59,29 @@ public sealed record OrganizationHealth(
     int Score,
     HealthBand Band,
     IReadOnlyList<HealthComponent> Components,
+    double RecognisedShare,
+    int UnrecognisedFileCount,
     int FoldersIncluded)
 {
-    public static OrganizationHealth NotMeasured { get; } = new(0, HealthBand.NotMeasured, [], 0);
+    /// <summary>Above this the reading is complete enough not to need a caveat.</summary>
+    /// <remarks>
+    /// A line announcing that DeskAI recognised 99% of a folder is noise. The caveat is for
+    /// the case where a real part of the folder is invisible to the reading.
+    /// </remarks>
+    public const double FullRecognitionShare = 0.95;
+
+    public static OrganizationHealth NotMeasured { get; } = new(0, HealthBand.NotMeasured, [], 1, 0, 0);
 
     public bool IsMeasured => Band != HealthBand.NotMeasured;
+
+    /// <summary>
+    /// True when DeskAI could not tell the type of enough of the folder to call the reading
+    /// complete.
+    /// </summary>
+    /// <remarks>
+    /// This is a limit on what DeskAI knows, not a fault in the folder, which is why it is
+    /// carried separately from the score instead of lowering it. Blaming a person for the
+    /// file types this app has not learned would be both unfair and uninformative.
+    /// </remarks>
+    public bool IsRecognitionPartial => IsMeasured && RecognisedShare < FullRecognitionShare;
 }

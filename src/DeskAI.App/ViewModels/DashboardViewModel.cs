@@ -75,6 +75,8 @@ public sealed class DashboardViewModel(
     private string _healthMessage =
         "Connect a folder in Search and DeskAI can tell you how settled it looks.";
     private bool _hasHealth;
+    private string _healthCoverage = string.Empty;
+    private bool _hasHealthCoverage;
     private string _heroState = "Practice mode";
     private string _heroTitle = "Your files are untouched";
     private string _heroMessage =
@@ -135,6 +137,26 @@ public sealed class DashboardViewModel(
     {
         get => _hasHealth;
         private set => SetProperty(ref _hasHealth, value);
+    }
+
+    /// <summary>
+    /// How much of the folder DeskAI could actually recognise.
+    /// </summary>
+    /// <remarks>
+    /// Shown next to the score, never inside it. A file type DeskAI has not learned is this
+    /// app's gap, so it limits how complete the reading is rather than costing the person
+    /// points for it.
+    /// </remarks>
+    public string HealthCoverage
+    {
+        get => _healthCoverage;
+        private set => SetProperty(ref _healthCoverage, value);
+    }
+
+    public bool HasHealthCoverage
+    {
+        get => _hasHealthCoverage;
+        private set => SetProperty(ref _hasHealthCoverage, value);
     }
 
     public ObservableCollection<CategoryUsageViewModel> Categories { get; } = [];
@@ -313,6 +335,8 @@ public sealed class DashboardViewModel(
             HealthScore = "--";
             HealthBand = "Not measured yet";
             HealthMessage = "Connect a folder in Search and DeskAI can tell you how settled it looks.";
+            HasHealthCoverage = false;
+            HealthCoverage = string.Empty;
             return;
         }
 
@@ -324,8 +348,18 @@ public sealed class DashboardViewModel(
             _ => "Worth a look",
         };
         HealthMessage =
-            "Out of 100, worked out from the three things below. DeskAI is describing what it "
+            "Out of 100, worked out from the two things below. DeskAI is describing what it "
             + "remembers about your folders. It is not suggesting you change anything.";
+
+        // Said out loud rather than folded into the score. Not knowing a file type is a gap
+        // in what DeskAI has learned, and charging someone points for it would be blaming
+        // them for this app's limits.
+        HasHealthCoverage = health.IsRecognitionPartial;
+        HealthCoverage = health.IsRecognitionPartial
+            ? $"DeskAI could tell the type of about {health.RecognisedShare.ToString("P0", CultureInfo.CurrentCulture)} "
+                + $"of this space. The other {DescribeFileCount(health.UnrecognisedFileCount)} use file types it does "
+                + "not know yet, so they are left out of the picture rather than counted against you."
+            : string.Empty;
 
         foreach (var component in health.Components)
         {
@@ -344,9 +378,8 @@ public sealed class DashboardViewModel(
     {
         HealthComponentKind.PossibleCopies =>
             ("Possible copies", "Space that may be held twice by files of the same exact size."),
-        HealthComponentKind.UnusedFiles =>
-            ("Sitting unused", "Space in files that have not changed in about six months."),
-        _ => ("Types DeskAI does not know", "Space in files whose kind DeskAI could not tell from the name."),
+        _ => ("Sitting unused", "Space in files that have not changed in about six months. "
+            + "Older files are perfectly normal, so this only counts for a little."),
     };
 
     private static string DescribeMeasurement(HealthComponent component)
@@ -357,11 +390,13 @@ public sealed class DashboardViewModel(
         }
 
         var share = component.ShareOfTotal.ToString("P0", CultureInfo.CurrentCulture);
-        var files = component.MeasuredFileCount == 1
-            ? "1 file"
-            : $"{component.MeasuredFileCount.ToString("N0", CultureInfo.CurrentCulture)} files";
-        return $"{DescribeSize(component.MeasuredBytes)} across {files}, about {share} of the space.";
+        return $"{DescribeSize(component.MeasuredBytes)} across "
+            + $"{DescribeFileCount(component.MeasuredFileCount)}, about {share} of the space.";
     }
+
+    private static string DescribeFileCount(int count) => count == 1
+        ? "1 file"
+        : $"{count.ToString("N0", CultureInfo.CurrentCulture)} files";
 
     private void Apply(StorageSummary summary)
     {
