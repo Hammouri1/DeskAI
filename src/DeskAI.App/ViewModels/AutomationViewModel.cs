@@ -45,6 +45,7 @@ public sealed class AutomationViewModel : ObservableObject
     private string _newRuleExtension = string.Empty;
     private string _newRuleDestination = string.Empty;
     private string _message = "No rules yet. Write one below and try a practice run.";
+    private string _formMessage = string.Empty;
     private string _practiceHeadline = string.Empty;
     private string _practiceDetail = string.Empty;
     private bool _hasPractised;
@@ -78,26 +79,73 @@ public sealed class AutomationViewModel : ObservableObject
     public string NewRuleName
     {
         get => _newRuleName;
-        set => SetProperty(ref _newRuleName, value);
+        set
+        {
+            if (SetProperty(ref _newRuleName, value))
+            {
+                ClearFormMessage();
+            }
+        }
     }
 
     public string NewRuleNameContains
     {
         get => _newRuleNameContains;
-        set => SetProperty(ref _newRuleNameContains, value);
+        set
+        {
+            if (SetProperty(ref _newRuleNameContains, value))
+            {
+                ClearFormMessage();
+            }
+        }
     }
 
     public string NewRuleExtension
     {
         get => _newRuleExtension;
-        set => SetProperty(ref _newRuleExtension, value);
+        set
+        {
+            if (SetProperty(ref _newRuleExtension, value))
+            {
+                ClearFormMessage();
+            }
+        }
     }
 
     public string NewRuleDestination
     {
         get => _newRuleDestination;
-        set => SetProperty(ref _newRuleDestination, value);
+        set
+        {
+            if (SetProperty(ref _newRuleDestination, value))
+            {
+                ClearFormMessage();
+            }
+        }
     }
+
+    /// <summary>
+    /// What happened the last time Save was pressed, shown beside the button.
+    /// </summary>
+    /// <remarks>
+    /// Kept apart from <see cref="Message"/>, which describes the rule list further up the
+    /// page. A refusal shown next to the list is a refusal nobody reads: the person is at
+    /// the bottom of the page looking at the form, and the answer to what they just did has
+    /// to be where they are looking.
+    /// </remarks>
+    public string FormMessage
+    {
+        get => _formMessage;
+        private set
+        {
+            if (SetProperty(ref _formMessage, value))
+            {
+                OnPropertyChanged(nameof(HasFormMessage));
+            }
+        }
+    }
+
+    public bool HasFormMessage => !string.IsNullOrEmpty(FormMessage);
 
     public string Message
     {
@@ -179,7 +227,7 @@ public sealed class AutomationViewModel : ObservableObject
             // file. Saying so here is friendlier than letting the exception be the message.
             if (conditions.Count == 0)
             {
-                Message = "Add at least one thing to look for, or this rule would match every file.";
+                FormMessage = "Add at least one thing to look for, or this rule would match every file.";
                 return;
             }
 
@@ -195,17 +243,20 @@ public sealed class AutomationViewModel : ObservableObject
             NewRuleExtension = string.Empty;
             NewRuleDestination = string.Empty;
             await ReloadAsync().ConfigureAwait(true);
-            Message = $"Saved. {rule.Describe()} Nothing has moved — try a practice run.";
+
+            // Set after clearing the boxes, because clearing them wipes the form message.
+            FormMessage = $"Saved: {rule.Describe()} It is in the list above. Nothing has moved.";
+            Message = "Try a practice run to see what your rules would do.";
         }
         catch (ArgumentException exception)
         {
             // Every refusal in the rule domain is written for a person to read, so the
             // message can be shown as-is rather than replaced with something vaguer.
-            Message = exception.Message;
+            FormMessage = exception.Message;
         }
         catch (Exception exception) when (IsExpectedFailure(exception))
         {
-            Message = $"DeskAI stopped safely: {exception.Message}";
+            FormMessage = $"DeskAI stopped safely: {exception.Message}";
         }
         finally
         {
@@ -341,6 +392,21 @@ public sealed class AutomationViewModel : ObservableObject
         if (Rules.Count == 0)
         {
             Message = "No rules yet. Write one below and try a practice run.";
+        }
+    }
+
+    /// <summary>
+    /// Drops the last answer as soon as the form changes.
+    /// </summary>
+    /// <remarks>
+    /// A refusal that stays on screen while someone fixes the thing it complained about
+    /// stops describing anything true, and reads as if the fix did not work.
+    /// </remarks>
+    private void ClearFormMessage()
+    {
+        if (!string.IsNullOrEmpty(_formMessage))
+        {
+            FormMessage = string.Empty;
         }
     }
 

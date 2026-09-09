@@ -169,6 +169,17 @@
                                    Text="The folder is inside a folder you connected. Saving a rule changes nothing on its own." />
                         <Button Content="Save rule" HorizontalAlignment="Left"
                                 Command="{x:Bind ViewModel.AddRuleCommand}" />
+                        <!--
+                            The answer to pressing Save belongs next to Save. This used to
+                            appear beside the rule list further up the page, where someone
+                            typing in this form never saw it, so a refused rule looked like
+                            a button that did nothing.
+                        -->
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                   MaxWidth="560" HorizontalAlignment="Left"
+                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                   Visibility="{x:Bind ViewModel.HasFormMessage, Mode=OneWay}"
+                                   Text="{x:Bind ViewModel.FormMessage, Mode=OneWay}" />
                     </StackPanel>
                 </Border>
             </StackPanel>
