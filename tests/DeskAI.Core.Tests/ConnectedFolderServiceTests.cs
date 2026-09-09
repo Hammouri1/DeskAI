@@ -87,6 +87,100 @@ public sealed class ConnectedFolderServiceTests
     }
 
     /// <summary>
+    /// Connecting a folder says DeskAI may remember names, sizes, and dates. Reading what is
+    /// written inside is a second, separate consent, so a freshly connected folder must not
+    /// already have it.
+    /// </summary>
+    [Fact]
+    public async Task ConnectAsync_DoesNotGrantPermissionToReadInsideFiles()
+    {
+        var folders = new FakeFolders();
+        var service = new ConnectedFolderService(folders, new FakeIndex(), folders);
+
+        var connected = await service.ConnectAsync(SamplePath, TestContext.Current.CancellationToken);
+
+        Assert.False(connected.Folder!.CanReadContent);
+    }
+
+    [Fact]
+    public async Task AllowContentAsync_GrantsReadingInsideFilesAndSaysSo()
+    {
+        var folders = new FakeFolders();
+        var service = new ConnectedFolderService(folders, new FakeIndex(), folders);
+        var connected = await service.ConnectAsync(SamplePath, TestContext.Current.CancellationToken);
+
+        var result = await service.AllowContentAsync(
+            connected.Folder!.Id,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsAllowed);
+        Assert.True(result.Folder!.CanReadContent);
+        Assert.Equal(
+            RootAuthorizationScope.MetadataAndContent,
+            Assert.Single(folders.Saved).AuthorizationScope);
+    }
+
+    /// <summary>
+    /// Reading inside files must stay reversible, and taking it back must leave the folder
+    /// connected rather than silently disconnecting it.
+    /// </summary>
+    [Fact]
+    public async Task StopContentAsync_TakesThePermissionBackAndKeepsTheFolderConnected()
+    {
+        var folders = new FakeFolders();
+        var service = new ConnectedFolderService(folders, new FakeIndex(), folders);
+        var connected = await service.ConnectAsync(SamplePath, TestContext.Current.CancellationToken);
+        await service.AllowContentAsync(connected.Folder!.Id, TestContext.Current.CancellationToken);
+
+        var result = await service.StopContentAsync(
+            connected.Folder.Id,
+            TestContext.Current.CancellationToken);
+
+        Assert.True(result.IsAllowed);
+        Assert.False(result.Folder!.CanReadContent);
+        Assert.Equal(RootAuthorizationScope.MetadataOnly, Assert.Single(folders.Saved).AuthorizationScope);
+    }
+
+    /// <summary>
+    /// A folder that can be changed is not a folder whose reading permission this path may
+    /// touch. Allowing it would let a consent meant for the folder list reach a scope that
+    /// grants mutation.
+    /// </summary>
+    [Theory]
+    [InlineData(RootAuthorizationScope.ControlledDemo)]
+    [InlineData(RootAuthorizationScope.Organize)]
+    public async Task AllowContentAsync_RefusesAFolderThatWasNotConnectedForReading(
+        RootAuthorizationScope scope)
+    {
+        var folders = new FakeFolders();
+        var root = AuthorizedRoot.Create(
+            Guid.NewGuid(),
+            SamplePath,
+            "Practice",
+            RootAccessLevel.Allowed,
+            scope);
+        await folders.SaveAsync(root, TestContext.Current.CancellationToken);
+        var service = new ConnectedFolderService(folders, new FakeIndex(), folders);
+
+        var result = await service.AllowContentAsync(root.Id, TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsAllowed);
+        Assert.Equal(scope, Assert.Single(folders.Saved).AuthorizationScope);
+    }
+
+    [Fact]
+    public async Task AllowContentAsync_ReportsAFolderThatIsNoLongerConnected()
+    {
+        var folders = new FakeFolders();
+        var service = new ConnectedFolderService(folders, new FakeIndex(), folders);
+
+        var result = await service.AllowContentAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsAllowed);
+        Assert.Null(result.Folder);
+    }
+
+    /// <summary>
     /// The index is cleared before the root is revoked, so no remembered row can outlive
     /// the permission that justified it.
     /// </summary>
@@ -185,8 +279,12 @@ public sealed class ConnectedFolderServiceTests
         public Task<AuthorizedRoot?> FindAsync(Guid rootId, CancellationToken cancellationToken = default) =>
             Task.FromResult(_roots.FirstOrDefault(root => root.Id == rootId));
 
-        public Task SaveAsync(AuthorizedRoot root, CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
+        public Task SaveAsync(AuthorizedRoot root, CancellationToken cancellationToken = default)
+        {
+            _roots.RemoveAll(existing => existing.Id == root.Id);
+            _roots.Add(root);
+            return Task.CompletedTask;
+        }
 
         public Task RemoveAsync(Guid rootId, CancellationToken cancellationToken = default) =>
             RevokeAsync(rootId, cancellationToken);

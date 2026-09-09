@@ -1,15 +1,22 @@
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Files;
+using DeskAI.Core.Roots;
 
 namespace DeskAI.Core.Search;
 
 /// <summary>One folder DeskAI has been allowed to remember, and how much it remembers.</summary>
+/// <remarks>
+/// <see cref="CanReadContent"/> is carried so the folder list can state the permission a
+/// person actually gave. A permission that is granted but invisible is one they cannot
+/// reconsider.
+/// </remarks>
 public sealed record ConnectedFolder(
     Guid Id,
     string Name,
     string Path,
     int FileCount,
-    DateTimeOffset? LastCheckedUtc);
+    DateTimeOffset? LastCheckedUtc,
+    bool CanReadContent);
 
 /// <summary>
 /// The outcome of connecting or refreshing a folder, including a refusal reason.
@@ -125,7 +132,8 @@ public sealed class ConnectedFolderService(
                 root.DisplayName,
                 root.CanonicalPath,
                 statistics.FileCount,
-                statistics.LastIndexedAtUtc));
+                statistics.LastIndexedAtUtc,
+                RootCapabilities.CanReadContent(root)));
         }
 
         return described.AsReadOnly();
@@ -144,6 +152,77 @@ public sealed class ConnectedFolderService(
         await _folders.RevokeAsync(rootId, cancellationToken).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Lets DeskAI open the text files in an already-connected folder.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This is a deliberate second consent, not an extension of the first. Connecting a
+    /// folder said DeskAI may remember names, sizes, and dates; it did not say DeskAI may
+    /// read what is written inside. The caller must have shown the person exactly what will
+    /// be read before calling this.
+    /// </para>
+    /// <para>
+    /// Only a folder connected for reading can be upgraded. The practice workspace and any
+    /// folder connected for organizing are refused, so this can never widen a permission
+    /// that was granted for changing files.
+    /// </para>
+    /// </remarks>
+    public Task<ConnectFolderResult> AllowContentAsync(
+        Guid rootId,
+        CancellationToken cancellationToken = default) =>
+        ChangeContentPermissionAsync(
+            rootId,
+            RootAuthorizationScope.MetadataAndContent,
+            "DeskAI can now read the words inside text files here. It still cannot move, rename, or delete anything.",
+            cancellationToken);
+
+    /// <summary>
+    /// Takes back permission to read inside the files of a folder.
+    /// </summary>
+    /// <remarks>
+    /// Nothing extracted is stored anywhere, so withdrawing consent leaves nothing behind to
+    /// delete. The folder stays connected for names, sizes, and dates.
+    /// </remarks>
+    public Task<ConnectFolderResult> StopContentAsync(
+        Guid rootId,
+        CancellationToken cancellationToken = default) =>
+        ChangeContentPermissionAsync(
+            rootId,
+            RootAuthorizationScope.MetadataOnly,
+            "DeskAI can no longer read inside these files. It still remembers names, sizes, and dates.",
+            cancellationToken);
+
+    private async Task<ConnectFolderResult> ChangeContentPermissionAsync(
+        Guid rootId,
+        RootAuthorizationScope scope,
+        string explanation,
+        CancellationToken cancellationToken)
+    {
+        var root = await _roots.FindAsync(rootId, cancellationToken).ConfigureAwait(false);
+        if (root is null)
+        {
+            return new ConnectFolderResult(false, "That folder is no longer connected.", null);
+        }
+
+        // Only the two reading scopes may be swapped between. A folder that can be changed
+        // is not a folder whose reading permission this method is entitled to touch.
+        if (root.AuthorizationScope is not (RootAuthorizationScope.MetadataOnly
+            or RootAuthorizationScope.MetadataAndContent))
+        {
+            return new ConnectFolderResult(false, "That folder was not connected for reading.", null);
+        }
+
+        await _roots
+            .SaveAsync(
+                AuthorizedRoot.Create(root.Id, root.CanonicalPath, root.DisplayName, root.Permission, scope),
+                cancellationToken)
+            .ConfigureAwait(false);
+
+        var folder = await DescribeAsync(rootId, cancellationToken).ConfigureAwait(false);
+        return new ConnectFolderResult(true, explanation, folder);
+    }
+
     private async Task<ConnectedFolder?> DescribeAsync(Guid rootId, CancellationToken cancellationToken)
     {
         var root = await _roots.FindAsync(rootId, cancellationToken).ConfigureAwait(false);
@@ -158,6 +237,7 @@ public sealed class ConnectedFolderService(
             root.DisplayName,
             root.CanonicalPath,
             statistics.FileCount,
-            statistics.LastIndexedAtUtc);
+            statistics.LastIndexedAtUtc,
+            RootCapabilities.CanReadContent(root));
     }
 }

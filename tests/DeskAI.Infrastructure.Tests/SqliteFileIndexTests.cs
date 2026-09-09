@@ -123,6 +123,40 @@ public sealed class SqliteFileIndexTests
         Assert.Equal(0, (await fixture.Index.GetStatisticsAsync(rootId, TestContext.Current.CancellationToken)).FileCount);
     }
 
+    /// <summary>
+    /// A folder whose contents someone allowed must stay disconnectable. Revoking filtered
+    /// on metadata-only alone, so granting content access would have quietly made a folder
+    /// impossible to remove — a permission you could give and never take back.
+    /// </summary>
+    [Fact]
+    public async Task AFolderConnectedForReadingInsideFilesCanStillBeDisconnected()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Reading", RootAuthorizationScope.MetadataAndContent);
+        await fixture.Index.SynchronizeRootAsync(
+            rootId, [Entry(rootId, 1, "notes.txt")], TestContext.Current.CancellationToken);
+
+        await fixture.Roots.RemoveAsync(rootId, TestContext.Current.CancellationToken);
+
+        Assert.Null(await fixture.Roots.FindAsync(rootId, TestContext.Current.CancellationToken));
+        Assert.Empty(await fixture.Index.ListForRootAsync(rootId, TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>
+    /// The practice workspace is not the folder list's to revoke. A path meant for folders
+    /// someone connected for reading must not reach a scope that can change files.
+    /// </summary>
+    [Fact]
+    public async Task RemoveAsync_LeavesAFolderThatWasNotConnectedForReading()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice", RootAuthorizationScope.ControlledDemo);
+
+        await fixture.Roots.RemoveAsync(rootId, TestContext.Current.CancellationToken);
+
+        Assert.NotNull(await fixture.Roots.FindAsync(rootId, TestContext.Current.CancellationToken));
+    }
+
     [Fact]
     public async Task ClearRootAsync_ForgetsOnlyTheNamedRoot()
     {
@@ -673,7 +707,9 @@ public sealed class SqliteFileIndexTests
             return new IndexFixture(sandbox, databasePath);
         }
 
-        public async Task<Guid> AddRootAsync(string name)
+        public async Task<Guid> AddRootAsync(
+            string name,
+            RootAuthorizationScope scope = RootAuthorizationScope.MetadataOnly)
         {
             var rootId = Guid.NewGuid();
             await Roots.SaveAsync(
@@ -682,7 +718,7 @@ public sealed class SqliteFileIndexTests
                     System.IO.Path.Combine(_sandbox.Path, name),
                     name,
                     RootAccessLevel.Allowed,
-                    RootAuthorizationScope.MetadataOnly),
+                    scope),
                 TestContext.Current.CancellationToken);
             return rootId;
         }

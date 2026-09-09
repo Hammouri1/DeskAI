@@ -44,8 +44,24 @@ public sealed record SearchResultViewModel(string Name, string Location, string 
 public sealed record SavedSearchViewModel(Guid Id, string Name, string Phrase);
 
 /// <summary>One connected folder, formatted for the folder list.</summary>
-public sealed record ConnectedFolderViewModel(Guid Id, string Name, string Path, string Remembered)
+/// <remarks>
+/// The row states whether DeskAI may read inside this folder's files. A permission granted
+/// but not shown is one a person cannot reconsider, so it is written on the row rather than
+/// left implicit in a button label.
+/// </remarks>
+public sealed record ConnectedFolderViewModel(
+    Guid Id,
+    string Name,
+    string Path,
+    string Remembered,
+    bool CanReadContent)
 {
+    public string ContentState => CanReadContent
+        ? "DeskAI can read inside the text files here."
+        : "Names, sizes, and dates only.";
+
+    public string ContentAction => CanReadContent ? "Stop reading inside" : "Read inside files";
+
     public static ConnectedFolderViewModel From(ConnectedFolder folder)
     {
         ArgumentNullException.ThrowIfNull(folder);
@@ -56,7 +72,12 @@ public sealed record ConnectedFolderViewModel(Guid Id, string Name, string Path,
             _ => $"{folder.FileCount} files remembered",
         };
 
-        return new ConnectedFolderViewModel(folder.Id, folder.Name, folder.Path, remembered);
+        return new ConnectedFolderViewModel(
+            folder.Id,
+            folder.Name,
+            folder.Path,
+            remembered,
+            folder.CanReadContent);
     }
 }
 
@@ -336,6 +357,35 @@ public sealed class SearchViewModel : ObservableObject
         try
         {
             var result = await _folders.RefreshAsync(rootId).ConfigureAwait(true);
+            await ReloadFoldersAsync().ConfigureAwait(true);
+            FolderMessage = result.Explanation;
+        }
+        catch (Exception exception) when (IsExpectedFolderFailure(exception))
+        {
+            FolderMessage = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            IsFolderBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// Grants or withdraws permission to read inside a folder's text files.
+    /// </summary>
+    /// <remarks>
+    /// Granting is only ever called after the page has shown a confirmation naming exactly
+    /// what will be read. Withdrawing needs no confirmation: taking a permission back is
+    /// never the dangerous direction.
+    /// </remarks>
+    public async Task SetContentPermissionAsync(Guid rootId, bool allow)
+    {
+        IsFolderBusy = true;
+        try
+        {
+            var result = allow
+                ? await _folders.AllowContentAsync(rootId).ConfigureAwait(true)
+                : await _folders.StopContentAsync(rootId).ConfigureAwait(true);
             await ReloadFoldersAsync().ConfigureAwait(true);
             FolderMessage = result.Explanation;
         }

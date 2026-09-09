@@ -185,7 +185,7 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="viewmodels:ConnectedFolderViewModel">
                                 <Border Style="{StaticResource RowCardStyle}">
-                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                                    <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
                                         <StackPanel Spacing="3">
                                             <TextBlock FontWeight="SemiBold"
                                                        TextTrimming="CharacterEllipsis"
@@ -196,11 +196,22 @@
                                                        Text="{x:Bind Path}" />
                                             <TextBlock Style="{StaticResource CaptionStyle}"
                                                        Text="{x:Bind Remembered}" />
+                                            <!--
+                                                The permission is written on the row, not left
+                                                implicit in a button label. A permission a
+                                                person cannot see is one they cannot reconsider.
+                                            -->
+                                            <TextBlock Style="{StaticResource CaptionStyle}"
+                                                       Text="{x:Bind ContentState}" />
                                         </StackPanel>
-                                        <Button Grid.Column="1" VerticalAlignment="Center" Content="Refresh"
+                                        <Button Grid.Column="1" VerticalAlignment="Center"
+                                                Content="{x:Bind ContentAction}"
+                                                Tag="{x:Bind Id}"
+                                                Click="OnContentPermissionClick" />
+                                        <Button Grid.Column="2" VerticalAlignment="Center" Content="Refresh"
                                                 Command="{Binding ElementName=Root, Path=ViewModel.RefreshFolderCommand}"
                                                 CommandParameter="{x:Bind Id}" />
-                                        <Button Grid.Column="2" VerticalAlignment="Center" Content="Disconnect"
+                                        <Button Grid.Column="3" VerticalAlignment="Center" Content="Disconnect"
                                                 Command="{Binding ElementName=Root, Path=ViewModel.DisconnectFolderCommand}"
                                                 CommandParameter="{x:Bind Id}" />
                                     </Grid>

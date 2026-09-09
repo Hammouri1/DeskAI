@@ -71,9 +71,18 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
     {
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
         await using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM authorized_roots WHERE id = $id AND authorization_scope = $scope;";
+        // Only folders connected for reading may be removed here. The practice workspace and
+        // any folder connected for organizing are excluded on purpose, so a revoke path
+        // meant for the folder list cannot reach a scope that can change files. Both reading
+        // scopes are listed, or a folder whose contents someone allowed could never be
+        // disconnected again.
+        command.CommandText = """
+            DELETE FROM authorized_roots
+            WHERE id = $id AND authorization_scope IN ($metadataScope, $contentScope);
+            """;
         command.Parameters.AddWithValue("$id", rootId.ToString("D"));
-        command.Parameters.AddWithValue("$scope", (int)RootAuthorizationScope.MetadataOnly);
+        command.Parameters.AddWithValue("$metadataScope", (int)RootAuthorizationScope.MetadataOnly);
+        command.Parameters.AddWithValue("$contentScope", (int)RootAuthorizationScope.MetadataAndContent);
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 }

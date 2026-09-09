@@ -123,4 +123,57 @@ public sealed partial class SearchPage : Page
             await ViewModel.ConnectFolderAsync(path);
         }
     }
+
+    /// <summary>
+    /// Grants or withdraws permission to read inside a folder's text files.
+    /// </summary>
+    /// <remarks>
+    /// Granting asks first, and the question names exactly what will be opened, what will
+    /// not, and what happens to what is read. Connecting a folder was consent to remember
+    /// names, sizes, and dates; it was not consent to read what is written inside, so this
+    /// is asked separately rather than folded into the first question.
+    ///
+    /// Withdrawing is not confirmed. Taking a permission back is never the direction that
+    /// needs a second thought.
+    /// </remarks>
+    private async void OnContentPermissionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: Guid rootId })
+        {
+            return;
+        }
+
+        var folder = ViewModel.Folders.FirstOrDefault(item => item.Id == rootId);
+        if (folder is null)
+        {
+            return;
+        }
+
+        if (folder.CanReadContent)
+        {
+            await ViewModel.SetContentPermissionAsync(rootId, allow: false);
+            return;
+        }
+
+        var confirmation = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Let DeskAI read inside these files?",
+            Content = $"{folder.Path}\n\n"
+                + "DeskAI will open plain text files here — notes, lists, and settings files — and read the "
+                + "beginning of each one, so you can search for words written inside them.\n\n"
+                + "It will not open PDFs, Word documents, spreadsheets, photos, or programs.\n"
+                + "It still cannot move, rename, or delete anything.\n"
+                + "What it reads is never saved and never sent anywhere.\n\n"
+                + "You can turn this off at any time.",
+            PrimaryButtonText = "Allow reading",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+
+        if (await confirmation.ShowAsync() == ContentDialogResult.Primary)
+        {
+            await ViewModel.SetContentPermissionAsync(rootId, allow: true);
+        }
+    }
 }
