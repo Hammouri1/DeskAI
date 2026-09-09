@@ -191,6 +191,24 @@ no file is opened, so it is verified by tests and by confirming nothing changed 
 6. Read `docs/security/2026-09-09-content-access-gate-review.md`. Extraction itself is
    explicitly **not** accepted yet; that needs its own review before any file is opened.
 
+## V0.4 Step 8, Stage 2 — Plain-Text Extraction
+
+The first code in DeskAI that opens a file. It is registered nowhere and called by nothing,
+so it cannot run in the app yet; this is verified by tests and by confirming nothing changed.
+
+1. Build Release and run the complete suite. Expected result: **391 passing tests**, none
+   skipped, and zero build warnings/errors.
+2. Launch the new Release build. Confirm every page behaves exactly as before and that
+   nothing anywhere offers to read inside files or asks for content permission.
+3. Review `PlainTextExtractorTests`, in particular: the refusal for all three non-content
+   scopes; that unsupported formats are refused without opening; that a long file is cut
+   short and says so; that a file which is not really text is refused rather than decoded;
+   that a path leaving the folder is refused; that a missing file stays missing; and that
+   prompt-injection wording comes back as inert text.
+4. Read `docs/security/2026-09-09-plain-text-extraction-review.md`. Confirm for yourself
+   that sending extracted text to an AI provider, reading PDF or Office files, and storing
+   extracted text are each listed as still **not** accepted.
+
 ## Bring Your Own Key — Any Supported Service
 
 1. Build Release and run the full suite. Expected: **202 passing tests**, none skipped,

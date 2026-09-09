@@ -186,6 +186,18 @@ This replaces direct comparisons such as `scope == MetadataOnly`, which decided 
 
 **No extraction code, no UI, and no way to grant the scope exist yet.** The three places that construct an authorized root produce `ControlledDemo` and `MetadataOnly` only. The gate is built and tested before the capability it guards, which is the order `SECURITY.md` asks for. See ADR 0014 and the gate review in `docs/security/`.
 
+### Plain-text extraction (V0.4 step 8, stage 2)
+
+`PlainTextExtractor` is the only code in DeskAI that opens a file. `IContentTextExtractor` is deliberately the narrowest interface that can do the job: one file per call, named relative to a root the caller must supply, bounded by options, returning inert text. The root is a separate argument for the same reason a search query carries none — the permission travels with the call and cannot be chosen by whatever assembled the path.
+
+Checks run in order, first refusal wins. `RootCapabilities.CanReadContent` comes first, before any path work, so an unauthorized folder never reaches a path calculation let alone a handle. Then path policy on root and relative path; then the extension, which is what makes an unsupported file never get touched at all; then canonical containment inside the root, with a separator required after the prefix so a sibling folder with a similar name is not mistaken for a child.
+
+Reading is `FileMode.Open` read-only, never `OpenOrCreate`, so asking for a missing file reports it rather than creating one. Links are refused before opening and checked again once the handle is open, because a file can be swapped for a link in between; the handle still refers to what was opened, so a link found afterwards abandons the read. A zero byte marks the file as not text rather than decoding it into convincing nonsense, and invalid UTF-8 is replaced rather than thrown, because the bytes are whatever happened to be in the file.
+
+Reads are bounded to 64 KB from the beginning of the file — enough to tell what a document is about, which is the only reason the capability exists. Truncation is decided by whether bytes remain, not by whether the buffer filled, so a file of exactly the limit is complete. Extracted text is returned to the caller and stored nowhere.
+
+Plain-text formats only; PDF and Office are excluded because parsing them runs a third-party parser over attacker-controlled binary structure (ADR 0015). Extracted text is untrusted input exactly like a file name: a test feeds prompt-injection wording through and asserts it comes back as inert text. **The extractor is registered in no container and called by nothing**, so it is unreachable from the running application until the consent step in stage 3 exists.
+
 ### Organization health score (V0.4 step 7)
 
 `OrganizationHealthCalculator.Evaluate` turns the storage summary and the possible-duplicate report into a score out of 100. It is a static, pure calculation: no dependencies, no I/O, no clock, no AI. It reaches no folder, so it can only ever describe what the two readings it is handed were already allowed to see.

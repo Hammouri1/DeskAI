@@ -101,9 +101,17 @@ Goal: find and understand files without needing to move them.
    anywhere; the refusal path is deliberately built and tested before the capability it
    guards. See `docs/decisions/0014-content-access-capability-gate.md` and
    `docs/security/2026-09-09-content-access-gate-review.md`.
-   Stage 2, actually extracting text, is NOT accepted yet. It needs its own consent step,
-   format and bounds decisions, hostile-document handling, storage and deletion rules, and a
-   further security review before any file is opened.
+   Stage 2 completed 2026-09-09: `PlainTextExtractor` reads a bounded 64 KB prefix of plain
+   text from one file in a content-authorized folder. Plain-text formats only; PDF and
+   Office are refused before opening, because parsing them means running a third-party
+   parser over attacker-controlled binary and is its own security question. Extracted text
+   is returned and stored nowhere. The extractor is registered in no container and called by
+   nothing, so it is unreachable from the running app. See
+   `docs/decisions/0015-plain-text-only-content-extraction.md` and
+   `docs/security/2026-09-09-plain-text-extraction-review.md`.
+   Stage 3, the consent step that can actually grant the scope, is NOT done. Until it exists
+   no folder can be content-authorized, and disconnect for such a folder must be fixed in the
+   same slice. Sending extracted text to an AI provider remains separately unaccepted.
 
 Exit criteria: results are scoped to authorized roots, index deletion/privacy controls work, score is explainable, and no cleanup action bypasses preview.
 
