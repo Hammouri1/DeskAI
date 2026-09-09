@@ -24,8 +24,6 @@ public sealed class ShellViewModel(ConnectedFolderService folders) : ObservableO
     private string _scopeTitle = "Practice mode";
     private string _scopeMessage = "No folders connected. DeskAI cannot see any of your files.";
 
-    public string ApplicationName => "DeskAI";
-
     public string ScopeTitle
     {
         get => _scopeTitle;

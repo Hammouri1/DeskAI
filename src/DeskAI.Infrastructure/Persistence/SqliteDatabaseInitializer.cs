@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 7;
+    public const int CurrentSchemaVersion = 8;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -40,8 +40,44 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplyAiSettingsMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyAiUsageMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyFileIndexMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplySavedSearchMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
+    }
+
+    /// <summary>
+    /// Adds saved searches.
+    /// </summary>
+    /// <remarks>
+    /// The table stores a phrase and no root reference on purpose. A saved search must not
+    /// be able to outlive or widen an authorization, so scope is resolved from the
+    /// authorized roots each time one runs rather than captured here. The unique index is
+    /// case-insensitive so two collections cannot be told apart only by capitalisation.
+    /// </remarks>
+    private static async Task ApplySavedSearchMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = """
+            CREATE TABLE IF NOT EXISTS saved_searches (
+                saved_search_id   TEXT NOT NULL PRIMARY KEY,
+                name            TEXT NOT NULL,
+                phrase          TEXT NOT NULL,
+                created_at_utc  TEXT NOT NULL
+            );
+
+            CREATE UNIQUE INDEX IF NOT EXISTS ix_saved_searches_name
+                ON saved_searches(name COLLATE NOCASE);
+
+            INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (8, $appliedAtUtc);
+            """;
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

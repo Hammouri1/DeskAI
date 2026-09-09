@@ -75,6 +75,55 @@
                     <TextBlock Style="{StaticResource CaptionStyle}"
                                Visibility="{x:Bind ViewModel.HasScopeMessage, Mode=OneWay}"
                                Text="{x:Bind ViewModel.ScopeMessage, Mode=OneWay}" />
+
+                    <Button Content="Save this search"
+                            Click="OnSaveSearchClick"
+                            IsEnabled="{x:Bind ViewModel.CanSaveCurrentSearch, Mode=OneWay}"
+                            HorizontalAlignment="Left" />
+                </StackPanel>
+            </Border>
+
+            <!--
+                Saved searches are virtual. Running one searches again from scratch against
+                whatever is connected now; nothing about a saved search moves a file, and
+                none of them records a folder, so one cannot outlive an authorization.
+            -->
+            <Border Style="{StaticResource CardStyle}"
+                    Visibility="{x:Bind ViewModel.HasSavedSearches, Mode=OneWay}">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Saved searches" />
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="600"
+                                   HorizontalAlignment="Left"
+                                   Text="These are searches, not folders. Running one looks again in whatever folders are connected at the time. Nothing is moved or changed." />
+                    </StackPanel>
+
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.SavedSearches, Mode=OneWay}"
+                                  AutomationProperties.Name="Saved searches">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:SavedSearchViewModel">
+                                <Border Style="{StaticResource RowCardStyle}">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                                        <StackPanel Spacing="3">
+                                            <TextBlock FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                       Text="{x:Bind Name}" />
+                                            <TextBlock Style="{StaticResource CaptionStyle}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Text="{x:Bind Phrase}" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1" VerticalAlignment="Center" Content="Run"
+                                                Command="{Binding ElementName=Root, Path=ViewModel.RunSavedSearchCommand}"
+                                                CommandParameter="{x:Bind Id}" />
+                                        <Button Grid.Column="2" VerticalAlignment="Center" Content="Remove"
+                                                Command="{Binding ElementName=Root, Path=ViewModel.DeleteSavedSearchCommand}"
+                                                CommandParameter="{x:Bind Id}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel>
             </Border>
 

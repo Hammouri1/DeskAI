@@ -1,6 +1,7 @@
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 
@@ -39,6 +40,45 @@ public sealed partial class SearchPage : Page
         if (ViewModel.SearchCommand.CanExecute(null))
         {
             ViewModel.SearchCommand.Execute(null);
+        }
+    }
+
+    /// <summary>Asks for a name, then saves the phrase currently in the box.</summary>
+    private async void OnSaveSearchClick(object sender, RoutedEventArgs e)
+    {
+        var nameBox = new TextBox
+        {
+            PlaceholderText = "University photos",
+            MaxLength = SearchViewModel.MaxSavedSearchNameLength,
+        };
+        AutomationProperties.SetName(nameBox, "Name for this saved search");
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Save this search",
+            Content = new StackPanel
+            {
+                Spacing = 12,
+                Children =
+                {
+                    new TextBlock
+                    {
+                        TextWrapping = TextWrapping.Wrap,
+                        Text = $"DeskAI will remember the words \"{ViewModel.Phrase}\" so you can run them again. "
+                            + "A saved search finds files. It never moves, renames, or deletes anything.",
+                    },
+                    nameBox,
+                },
+            },
+            PrimaryButtonText = "Save",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary,
+        };
+
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            await ViewModel.SaveCurrentSearchAsync(nameBox.Text);
         }
     }
 

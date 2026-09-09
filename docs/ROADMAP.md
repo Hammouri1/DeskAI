@@ -68,7 +68,10 @@ Goal: find and understand files without needing to move them.
    The Search page now uses steps 1-3: phrase, chips, results, and stated scope.
    Search also connects, refreshes, and disconnects folders, which is what fills
    the index; without it every V0.4 feature was unreachable.
-4. ⬜ Smart Collections as saved virtual queries.
+4. ✅ Smart Collections as saved virtual queries.
+   Completed 2026-09-09; saved searches store the typed phrase and no folder, so a
+   relative phrase stays relative and one can never outlive an authorization.
+   Implemented in code as SavedSearch; "Smart Collection" remains the product term.
 5. ⬜ Storage summaries, large/old downloads, archive and installer views.
 6. ⬜ Exact duplicate candidates using staged size/hash checks; possible-duplicate review.
 7. ⬜ Organization Health score with transparent components.

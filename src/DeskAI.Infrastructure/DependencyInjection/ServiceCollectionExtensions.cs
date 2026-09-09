@@ -40,6 +40,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMetadataIndexService, MetadataIndexService>();
         services.AddSingleton<IDatabaseInitializer, SqliteDatabaseInitializer>();
         services.AddSingleton<IAuthorizedRootRepository, SqliteAuthorizedRootRepository>();
+        services.AddSingleton<ISavedSearchRepository, SqliteSavedSearchRepository>();
         services.AddSingleton<IAiSettingsRepository, SqliteAiSettingsRepository>();
         services.AddSingleton<IAiUsageBudget, SqliteAiUsageBudget>();
         services.AddSingleton<IPlanRepository, SqlitePlanRepository>();

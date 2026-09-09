@@ -40,22 +40,9 @@ public sealed record SearchResultViewModel(string Name, string Location, string 
     };
 }
 
-/// <summary>
-/// Drives the Search page: reads a typed phrase, shows how it was understood, and lists
-/// what matched.
-/// </summary>
-/// <remarks>
-/// <para>
-/// All search rules live in <see cref="FileSearchService"/>. This class only turns an
-/// outcome into text and lists, which keeps the decision about which folders may be read
-/// out of the App layer entirely.
-/// </para>
-/// <para>
-/// The three states a person can end up in are kept distinct on purpose, because collapsing
-/// them is how a search screen starts lying: not understood, understood but nothing matched,
-/// and matched. Only the last one shows results.
-/// </para>
-/// </remarks>
+/// <summary>One saved search, formatted for its row.</summary>
+public sealed record SavedSearchViewModel(Guid Id, string Name, string Phrase);
+
 /// <summary>One connected folder, formatted for the folder list.</summary>
 public sealed record ConnectedFolderViewModel(Guid Id, string Name, string Path, string Remembered)
 {
@@ -73,10 +60,27 @@ public sealed record ConnectedFolderViewModel(Guid Id, string Name, string Path,
     }
 }
 
+/// <summary>
+/// Drives the Search page: reads a typed phrase, shows how it was understood, and lists
+/// what matched.
+/// </summary>
+/// <remarks>
+/// <para>
+/// All search rules live in <see cref="FileSearchService"/>. This class only turns an
+/// outcome into text and lists, which keeps the decision about which folders may be read
+/// out of the App layer entirely.
+/// </para>
+/// <para>
+/// The three states a person can end up in are kept distinct on purpose, because collapsing
+/// them is how a search screen starts lying: not understood, understood but nothing matched,
+/// and matched. Only the last one shows results.
+/// </para>
+/// </remarks>
 public sealed class SearchViewModel : ObservableObject
 {
     private readonly FileSearchService _search;
     private readonly ConnectedFolderService _folders;
+    private readonly ISavedSearchRepository _savedSearches;
     private readonly IClock _clock;
     private string _phrase = string.Empty;
     private string _folderMessage = "No folders connected yet.";
@@ -88,12 +92,19 @@ public sealed class SearchViewModel : ObservableObject
     private bool _isBusy;
     private bool _hasSearched;
 
-    public SearchViewModel(FileSearchService search, ConnectedFolderService folders, IClock clock)
+    public SearchViewModel(
+        FileSearchService search,
+        ConnectedFolderService folders,
+        ISavedSearchRepository savedSearches,
+        IClock clock)
     {
         _search = search;
         _folders = folders;
+        _savedSearches = savedSearches;
         _clock = clock;
         SearchCommand = new AsyncRelayCommand(RunAsync, () => !IsBusy);
+        RunSavedSearchCommand = new AsyncRelayCommand<Guid>(RunSavedSearchAsync, _ => !IsBusy);
+        DeleteSavedSearchCommand = new AsyncRelayCommand<Guid>(DeleteSavedSearchAsync, _ => !IsBusy);
         RefreshFolderCommand = new AsyncRelayCommand<Guid>(RefreshFolderAsync, _ => !IsFolderBusy);
         DisconnectFolderCommand = new AsyncRelayCommand<Guid>(DisconnectFolderAsync, _ => !IsFolderBusy);
     }
@@ -141,7 +152,13 @@ public sealed class SearchViewModel : ObservableObject
     public string Phrase
     {
         get => _phrase;
-        set => SetProperty(ref _phrase, value);
+        set
+        {
+            if (SetProperty(ref _phrase, value))
+            {
+                OnPropertyChanged(nameof(CanSaveCurrentSearch));
+            }
+        }
     }
 
     public string StatusTitle
@@ -190,8 +207,99 @@ public sealed class SearchViewModel : ObservableObject
     /// <summary>True only after a search that found nothing, so the first visit stays calm.</summary>
     public bool ShowsNothingFound => _hasSearched && Results.Count == 0;
 
-    /// <summary>Loads the folder list when the page opens.</summary>
-    public Task InitializeAsync() => ReloadFoldersAsync();
+    public ObservableCollection<SavedSearchViewModel> SavedSearches { get; } = [];
+
+    public AsyncRelayCommand<Guid> RunSavedSearchCommand { get; }
+
+    public AsyncRelayCommand<Guid> DeleteSavedSearchCommand { get; }
+
+    public bool HasSavedSearches => SavedSearches.Count > 0;
+
+    /// <summary>A phrase must exist before there is anything worth saving.</summary>
+    public bool CanSaveCurrentSearch => !string.IsNullOrWhiteSpace(Phrase);
+
+    public static int MaxSavedSearchNameLength => SavedSearch.MaxNameLength;
+
+    /// <summary>Loads the folder list and saved searches when the page opens.</summary>
+    public async Task InitializeAsync()
+    {
+        await ReloadFoldersAsync().ConfigureAwait(true);
+        await ReloadSavedSearchesAsync().ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Saves the phrase currently in the box under <paramref name="name"/>.
+    /// </summary>
+    /// <remarks>
+    /// The phrase is stored, not the query it produced, so a relative phrase stays relative.
+    /// No folder is recorded: a saved search is re-scoped against the connected folders each
+    /// time it runs, and can never act as a lingering grant to somewhere since disconnected.
+    /// </remarks>
+    public async Task SaveCurrentSearchAsync(string name)
+    {
+        if (!CanSaveCurrentSearch)
+        {
+            return;
+        }
+
+        try
+        {
+            var saved = SavedSearch.Create(Guid.NewGuid(), name, Phrase, _clock.UtcNow);
+            if (SavedSearches.Count >= SavedSearch.MaxSavedSearches)
+            {
+                StatusTitle = "That is as many as DeskAI keeps";
+                StatusMessage =
+                    $"You already have {SavedSearch.MaxSavedSearches} saved searches. Remove one to save another.";
+                return;
+            }
+
+            await _savedSearches.SaveAsync(saved).ConfigureAwait(true);
+            await ReloadSavedSearchesAsync().ConfigureAwait(true);
+            StatusTitle = $"Saved as \"{saved.Name}\"";
+            StatusMessage = "Running it searches again from scratch. It never moves or changes a file.";
+        }
+        catch (ArgumentException exception)
+        {
+            StatusTitle = "That name will not work";
+            StatusMessage = exception.Message;
+        }
+        catch (InvalidOperationException exception)
+        {
+            // A duplicate name, surfaced by the repository as a readable message.
+            StatusTitle = "That name is taken";
+            StatusMessage = exception.Message;
+        }
+    }
+
+    private async Task RunSavedSearchAsync(Guid savedSearchId)
+    {
+        var match = SavedSearches.FirstOrDefault(item => item.Id == savedSearchId);
+        if (match is null)
+        {
+            return;
+        }
+
+        Phrase = match.Phrase;
+        await RunAsync().ConfigureAwait(true);
+    }
+
+    private async Task DeleteSavedSearchAsync(Guid savedSearchId)
+    {
+        await _savedSearches.RemoveAsync(savedSearchId).ConfigureAwait(true);
+        await ReloadSavedSearchesAsync().ConfigureAwait(true);
+    }
+
+    private async Task ReloadSavedSearchesAsync()
+    {
+        var stored = await _savedSearches.ListAsync().ConfigureAwait(true);
+        SavedSearches.Clear();
+        foreach (var item in stored)
+        {
+            SavedSearches.Add(new SavedSearchViewModel(item.Id, item.Name, item.Phrase));
+        }
+
+        OnPropertyChanged(nameof(HasSavedSearches));
+    }
 
     /// <summary>
     /// Connects a folder the person picked and confirmed in the view.

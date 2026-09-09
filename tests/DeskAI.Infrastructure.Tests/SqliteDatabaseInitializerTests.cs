@@ -26,14 +26,14 @@ public sealed class SqliteDatabaseInitializerTests
         command.CommandText = "SELECT MAX(version) FROM schema_migrations;";
         var version = await command.ExecuteScalarAsync(TestContext.Current.CancellationToken);
 
-        Assert.Equal(7L, version);
+        Assert.Equal((long)SqliteDatabaseInitializer.CurrentSchemaVersion, version);
 
         command.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name IN ('app_settings', 'authorized_roots', 'organization_plans', 'plan_operations', 'execution_transactions', 'indexed_files');";
         Assert.Equal(6L, await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
 
         // Every migration must record its own number so the upgrade path stays auditable.
         command.CommandText = "SELECT group_concat(version, ',') FROM (SELECT version FROM schema_migrations ORDER BY version);";
-        Assert.Equal("1,2,3,4,5,6,7", await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("1,2,3,4,5,6,7,8", await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public sealed class SqliteDatabaseInitializerTests
         await upgraded.OpenAsync(TestContext.Current.CancellationToken);
         await using var verify = upgraded.CreateCommand();
         verify.CommandText = "SELECT MAX(version) FROM schema_migrations;";
-        Assert.Equal(7L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal((long)SqliteDatabaseInitializer.CurrentSchemaVersion, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
         verify.CommandText = "SELECT COUNT(*) FROM pragma_table_info('authorized_roots') WHERE name = 'authorization_scope';";
         Assert.Equal(1L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
         verify.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'execution_transactions';";
@@ -128,7 +128,7 @@ public sealed class SqliteDatabaseInitializerTests
         await upgraded.OpenAsync(TestContext.Current.CancellationToken);
         await using var verify = upgraded.CreateCommand();
         verify.CommandText = "SELECT MAX(version) FROM schema_migrations;";
-        Assert.Equal(7L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal((long)SqliteDatabaseInitializer.CurrentSchemaVersion, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
         verify.CommandText = "SELECT COUNT(*) FROM sqlite_master WHERE type = 'table' AND name = 'indexed_files';";
         Assert.Equal(1L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
         verify.CommandText = "SELECT COUNT(*) FROM authorized_roots WHERE display_name = 'Practice';";
