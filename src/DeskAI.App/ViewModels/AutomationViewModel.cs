@@ -434,6 +434,14 @@ public sealed class AutomationViewModel : ObservableObject
             return;
         }
 
+        // A new sentence replaces the whole draft. Filling only what was understood would
+        // leave parts of the last one behind, so a sentence that never mentioned PDFs would
+        // quietly keep ".pdf" from the sentence before it and save a rule nobody described.
+        // The rule's name is left alone, because drafting never sets one.
+        NewRuleNameContains = string.Empty;
+        NewRuleExtension = string.Empty;
+        NewRuleDestination = string.Empty;
+
         foreach (var condition in draft.Conditions)
         {
             switch (condition)
