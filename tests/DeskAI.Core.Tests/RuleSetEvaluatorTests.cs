@@ -7,14 +7,13 @@ namespace DeskAI.Core.Tests;
 public sealed class RuleSetEvaluatorTests
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 9, 12, 0, 0, TimeSpan.Zero);
-    private readonly RuleSetEvaluator _evaluator = new();
 
     [Fact]
     public void Evaluate_ProposesAMoveForAFileARuleMatched()
     {
         var rule = Rule("Invoices", "Documents", new NameContainsCondition("invoice"));
 
-        var preview = _evaluator.Evaluate([rule], [Subject("invoice-march.pdf")], Now);
+        var preview = RuleSetEvaluator.Evaluate([rule], [Subject("invoice-march.pdf")], Now);
 
         var proposal = Assert.Single(preview.Proposals);
         Assert.Equal("invoice-march.pdf", proposal.RelativePath);
@@ -34,7 +33,7 @@ public sealed class RuleSetEvaluatorTests
         var toDocuments = Rule("By name", "Documents", new NameContainsCondition("invoice"));
         var toArchive = Rule("By type", "Archive", new ExtensionIsCondition(".pdf"));
 
-        var preview = _evaluator.Evaluate([toDocuments, toArchive], [Subject("invoice-march.pdf")], Now);
+        var preview = RuleSetEvaluator.Evaluate([toDocuments, toArchive], [Subject("invoice-march.pdf")], Now);
 
         Assert.Empty(preview.Proposals);
         var conflict = Assert.Single(preview.Conflicts);
@@ -53,8 +52,8 @@ public sealed class RuleSetEvaluatorTests
         var second = Rule("By type", "Archive", new ExtensionIsCondition(".pdf"));
         var subjects = new[] { Subject("invoice-march.pdf") };
 
-        var forwards = _evaluator.Evaluate([first, second], subjects, Now);
-        var backwards = _evaluator.Evaluate([second, first], subjects, Now);
+        var forwards = RuleSetEvaluator.Evaluate([first, second], subjects, Now);
+        var backwards = RuleSetEvaluator.Evaluate([second, first], subjects, Now);
 
         Assert.Equal(forwards.Proposals.Count, backwards.Proposals.Count);
         Assert.Equal(forwards.Conflicts.Count, backwards.Conflicts.Count);
@@ -73,7 +72,7 @@ public sealed class RuleSetEvaluatorTests
         var byName = Rule("By name", "Documents", new NameContainsCondition("invoice"));
         var byType = Rule("By type", "Documents", new ExtensionIsCondition(".pdf"));
 
-        var preview = _evaluator.Evaluate([byName, byType], [Subject("invoice-march.pdf")], Now);
+        var preview = RuleSetEvaluator.Evaluate([byName, byType], [Subject("invoice-march.pdf")], Now);
 
         Assert.Empty(preview.Conflicts);
         var proposal = Assert.Single(preview.Proposals);
@@ -86,7 +85,7 @@ public sealed class RuleSetEvaluatorTests
     {
         var rule = Rule("Invoices", "Documents", new NameContainsCondition("invoice"));
 
-        var preview = _evaluator.Evaluate([rule], [Subject(@"Documents\invoice-march.pdf")], Now);
+        var preview = RuleSetEvaluator.Evaluate([rule], [Subject(@"Documents\invoice-march.pdf")], Now);
 
         Assert.Empty(preview.Proposals);
         Assert.Equal(1, preview.AlreadyInPlace);
@@ -101,7 +100,7 @@ public sealed class RuleSetEvaluatorTests
     {
         var rule = Rule("Invoices", "Documents", new NameContainsCondition("invoice")).WithEnabled(false);
 
-        var preview = _evaluator.Evaluate([rule], [Subject("invoice-march.pdf")], Now);
+        var preview = RuleSetEvaluator.Evaluate([rule], [Subject("invoice-march.pdf")], Now);
 
         Assert.Empty(preview.Proposals);
         Assert.Equal(0, preview.RulesApplied);
@@ -117,7 +116,7 @@ public sealed class RuleSetEvaluatorTests
         var toDocuments = Rule("By name", "Documents", new NameContainsCondition("invoice"));
         var toArchive = Rule("By type", "Archive", new ExtensionIsCondition(".pdf")).WithEnabled(false);
 
-        var preview = _evaluator.Evaluate([toDocuments, toArchive], [Subject("invoice-march.pdf")], Now);
+        var preview = RuleSetEvaluator.Evaluate([toDocuments, toArchive], [Subject("invoice-march.pdf")], Now);
 
         Assert.Empty(preview.Conflicts);
         Assert.Equal("Documents", Assert.Single(preview.Proposals).DestinationRelativeDirectory);
@@ -128,7 +127,7 @@ public sealed class RuleSetEvaluatorTests
     {
         var rule = Rule("Invoices", "Documents", new NameContainsCondition("invoice"));
 
-        var preview = _evaluator.Evaluate([rule], [Subject("holiday.png"), Subject("notes.md")], Now);
+        var preview = RuleSetEvaluator.Evaluate([rule], [Subject("holiday.png"), Subject("notes.md")], Now);
 
         Assert.Empty(preview.Proposals);
         Assert.Empty(preview.Conflicts);
@@ -138,7 +137,7 @@ public sealed class RuleSetEvaluatorTests
     [Fact]
     public void Evaluate_ReportsNothingWhenThereAreNoRulesAtAll()
     {
-        var preview = _evaluator.Evaluate([], [Subject("invoice-march.pdf")], Now);
+        var preview = RuleSetEvaluator.Evaluate([], [Subject("invoice-march.pdf")], Now);
 
         Assert.False(preview.HasProposals);
         Assert.False(preview.HasConflicts);
@@ -154,7 +153,7 @@ public sealed class RuleSetEvaluatorTests
         var rule = Rule("Everything pdf", "Documents", new ExtensionIsCondition(".pdf"));
         var subjects = new[] { Subject("zeta.pdf"), Subject("alpha.pdf"), Subject("mid.pdf") };
 
-        var preview = _evaluator.Evaluate([rule], subjects, Now);
+        var preview = RuleSetEvaluator.Evaluate([rule], subjects, Now);
 
         Assert.Equal(
             ["alpha.pdf", "mid.pdf", "zeta.pdf"],

@@ -60,6 +60,10 @@ public sealed record NameContainsCondition : RuleCondition
 /// <summary>Matches one exact file ending.</summary>
 public sealed record ExtensionIsCondition : RuleCondition
 {
+    /// <summary>Characters that would make an ending a path or a pattern instead.</summary>
+    private static readonly System.Buffers.SearchValues<char> NotInAnEnding =
+        System.Buffers.SearchValues.Create(['.', '\\', '/', '*', '?', ':']);
+
     public ExtensionIsCondition(string extension)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(extension);
@@ -68,7 +72,7 @@ public sealed record ExtensionIsCondition : RuleCondition
         // A file ending, not a pattern and not a path. Accepting either would turn a
         // deliberately narrow condition into something with reach nobody reviewed.
         if (normalized.Length > MaxTextLength
-            || normalized.AsSpan(1).ContainsAny(['.', '\\', '/', '*', '?', ':'])
+            || normalized.AsSpan(1).ContainsAny(NotInAnEnding)
             || normalized.Length == 1)
         {
             throw new ArgumentException("A file ending looks like \".txt\".", nameof(extension));

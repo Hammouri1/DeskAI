@@ -13,17 +13,16 @@ public sealed class RuleApprovalTests
 {
     private static readonly DateTimeOffset Now = new(2026, 9, 9, 12, 0, 0, TimeSpan.Zero);
     private static readonly Guid Root = Guid.NewGuid();
-    private readonly RuleSetEvaluator _evaluator = new();
 
     [Fact]
     public void Covers_AcceptsTheExactRunThatWasApproved()
     {
         var rule = Rule("Invoices", "Documents", new NameContainsCondition("invoice"));
         var files = new[] { Subject("invoice-march.pdf") };
-        var preview = _evaluator.Evaluate([rule], files, Now);
+        var preview = RuleSetEvaluator.Evaluate([rule], files, Now);
         var approval = Approve([rule], preview);
 
-        var check = approval.Covers(Root, [rule], _evaluator.Evaluate([rule], files, Now));
+        var check = approval.Covers(Root, [rule], RuleSetEvaluator.Evaluate([rule], files, Now));
 
         Assert.True(check.IsValid);
     }
@@ -37,10 +36,10 @@ public sealed class RuleApprovalTests
     {
         var rule = Rule("Invoices", "Documents", new NameContainsCondition("invoice"));
         var files = new[] { Subject("invoice-march.pdf") };
-        var approval = Approve([rule], _evaluator.Evaluate([rule], files, Now));
+        var approval = Approve([rule], RuleSetEvaluator.Evaluate([rule], files, Now));
 
         var broadened = rule.WithChanges(conditions: [new ExtensionIsCondition(".pdf")]);
-        var check = approval.Covers(Root, [broadened], _evaluator.Evaluate([broadened], files, Now));
+        var check = approval.Covers(Root, [broadened], RuleSetEvaluator.Evaluate([broadened], files, Now));
 
         Assert.False(check.IsValid);
         Assert.Equal(RuleApprovalStatus.RuleChanged, check.Status);
@@ -51,10 +50,10 @@ public sealed class RuleApprovalTests
     {
         var rule = Rule("Invoices", "Documents", new NameContainsCondition("invoice"));
         var files = new[] { Subject("invoice-march.pdf"), Subject("holiday.png") };
-        var approval = Approve([rule], _evaluator.Evaluate([rule], files, Now));
+        var approval = Approve([rule], RuleSetEvaluator.Evaluate([rule], files, Now));
 
         var extra = Rule("Pictures", "Images", new ExtensionIsCondition(".png"));
-        var check = approval.Covers(Root, [rule, extra], _evaluator.Evaluate([rule, extra], files, Now));
+        var check = approval.Covers(Root, [rule, extra], RuleSetEvaluator.Evaluate([rule, extra], files, Now));
 
         Assert.Equal(RuleApprovalStatus.RuleAdded, check.Status);
     }
@@ -65,9 +64,9 @@ public sealed class RuleApprovalTests
         var kept = Rule("Invoices", "Documents", new NameContainsCondition("invoice"));
         var removed = Rule("Pictures", "Images", new ExtensionIsCondition(".png"));
         var files = new[] { Subject("invoice-march.pdf"), Subject("holiday.png") };
-        var approval = Approve([kept, removed], _evaluator.Evaluate([kept, removed], files, Now));
+        var approval = Approve([kept, removed], RuleSetEvaluator.Evaluate([kept, removed], files, Now));
 
-        var check = approval.Covers(Root, [kept], _evaluator.Evaluate([kept], files, Now));
+        var check = approval.Covers(Root, [kept], RuleSetEvaluator.Evaluate([kept], files, Now));
 
         Assert.Equal(RuleApprovalStatus.RuleRemoved, check.Status);
     }
@@ -81,10 +80,10 @@ public sealed class RuleApprovalTests
     {
         var rule = Rule("Invoices", "Documents", new NameContainsCondition("invoice"));
         var files = new[] { Subject("invoice-march.pdf") };
-        var approval = Approve([rule], _evaluator.Evaluate([rule], files, Now));
+        var approval = Approve([rule], RuleSetEvaluator.Evaluate([rule], files, Now));
 
         var disabled = rule.WithEnabled(false);
-        var check = approval.Covers(Root, [disabled], _evaluator.Evaluate([disabled], files, Now));
+        var check = approval.Covers(Root, [disabled], RuleSetEvaluator.Evaluate([disabled], files, Now));
 
         Assert.Equal(RuleApprovalStatus.RuleRemoved, check.Status);
     }
@@ -98,10 +97,10 @@ public sealed class RuleApprovalTests
     public void Covers_RefusesWhenTheSameRulesNowWantToMoveDifferentFiles()
     {
         var rule = Rule("Invoices", "Documents", new NameContainsCondition("invoice"));
-        var approval = Approve([rule], _evaluator.Evaluate([rule], [Subject("invoice-march.pdf")], Now));
+        var approval = Approve([rule], RuleSetEvaluator.Evaluate([rule], [Subject("invoice-march.pdf")], Now));
 
         var laterFiles = new[] { Subject("invoice-march.pdf"), Subject("invoice-april.pdf") };
-        var check = approval.Covers(Root, [rule], _evaluator.Evaluate([rule], laterFiles, Now));
+        var check = approval.Covers(Root, [rule], RuleSetEvaluator.Evaluate([rule], laterFiles, Now));
 
         Assert.False(check.IsValid);
         Assert.Equal(RuleApprovalStatus.DifferentOutcome, check.Status);
@@ -112,9 +111,9 @@ public sealed class RuleApprovalTests
     {
         var rule = Rule("Invoices", "Documents", new NameContainsCondition("invoice"));
         var files = new[] { Subject("invoice-march.pdf") };
-        var approval = Approve([rule], _evaluator.Evaluate([rule], files, Now));
+        var approval = Approve([rule], RuleSetEvaluator.Evaluate([rule], files, Now));
 
-        var check = approval.Covers(Guid.NewGuid(), [rule], _evaluator.Evaluate([rule], files, Now));
+        var check = approval.Covers(Guid.NewGuid(), [rule], RuleSetEvaluator.Evaluate([rule], files, Now));
 
         Assert.Equal(RuleApprovalStatus.DifferentFolder, check.Status);
     }
@@ -131,8 +130,8 @@ public sealed class RuleApprovalTests
         var files = new[] { Subject("invoice-march.pdf") };
 
         Assert.Equal(
-            RuleApproval.Fingerprint(_evaluator.Evaluate([rule], files, Now)),
-            RuleApproval.Fingerprint(_evaluator.Evaluate([renamed], files, Now)));
+            RuleApproval.Fingerprint(RuleSetEvaluator.Evaluate([rule], files, Now)),
+            RuleApproval.Fingerprint(RuleSetEvaluator.Evaluate([renamed], files, Now)));
     }
 
     [Fact]
@@ -143,8 +142,8 @@ public sealed class RuleApprovalTests
         var files = new[] { Subject("invoice-march.pdf") };
 
         Assert.NotEqual(
-            RuleApproval.Fingerprint(_evaluator.Evaluate([toDocuments], files, Now)),
-            RuleApproval.Fingerprint(_evaluator.Evaluate([toArchive], files, Now)));
+            RuleApproval.Fingerprint(RuleSetEvaluator.Evaluate([toDocuments], files, Now)),
+            RuleApproval.Fingerprint(RuleSetEvaluator.Evaluate([toArchive], files, Now)));
     }
 
     /// <summary>
@@ -156,11 +155,11 @@ public sealed class RuleApprovalTests
     {
         var rule = Rule("Invoices", "Documents", new NameContainsCondition("invoice"));
         var files = new[] { Subject("invoice-march.pdf"), Subject("holiday.png") };
-        var withoutConflict = _evaluator.Evaluate([rule], files, Now);
+        var withoutConflict = RuleSetEvaluator.Evaluate([rule], files, Now);
 
         var competing = Rule("Pictures", "Images", new ExtensionIsCondition(".png"));
         var alsoPictures = Rule("Snaps", "Snapshots", new ExtensionIsCondition(".png"));
-        var withConflict = _evaluator.Evaluate([rule, competing, alsoPictures], files, Now);
+        var withConflict = RuleSetEvaluator.Evaluate([rule, competing, alsoPictures], files, Now);
 
         Assert.True(withConflict.HasConflicts);
         Assert.Equal(

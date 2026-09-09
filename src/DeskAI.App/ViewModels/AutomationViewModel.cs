@@ -40,6 +40,7 @@ public sealed class AutomationViewModel : ObservableObject
     private readonly IRuleRepository _rules;
     private readonly RuleSimulationService _simulation;
     private readonly IClock _clock;
+    private string _sentence = string.Empty;
     private string _newRuleName = string.Empty;
     private string _newRuleNameContains = string.Empty;
     private string _newRuleExtension = string.Empty;
@@ -57,6 +58,7 @@ public sealed class AutomationViewModel : ObservableObject
         _simulation = simulation;
         _clock = clock;
         AddRuleCommand = new AsyncRelayCommand(AddRuleAsync, () => !IsBusy);
+        DraftFromSentenceCommand = new RelayCommand(DraftFromSentence, () => !IsBusy);
         PractiseCommand = new AsyncRelayCommand(PractiseAsync, () => !IsBusy);
         ToggleRuleCommand = new AsyncRelayCommand<Guid>(ToggleRuleAsync, _ => !IsBusy);
         DeleteRuleCommand = new AsyncRelayCommand<Guid>(DeleteRuleAsync, _ => !IsBusy);
@@ -70,11 +72,20 @@ public sealed class AutomationViewModel : ObservableObject
 
     public AsyncRelayCommand AddRuleCommand { get; }
 
+    public RelayCommand DraftFromSentenceCommand { get; }
+
     public AsyncRelayCommand PractiseCommand { get; }
 
     public AsyncRelayCommand<Guid> ToggleRuleCommand { get; }
 
     public AsyncRelayCommand<Guid> DeleteRuleCommand { get; }
+
+    /// <summary>A sentence someone typed, waiting to be read into the form.</summary>
+    public string Sentence
+    {
+        get => _sentence;
+        set => SetProperty(ref _sentence, value);
+    }
 
     public string NewRuleName
     {
@@ -393,6 +404,73 @@ public sealed class AutomationViewModel : ObservableObject
         {
             Message = "No rules yet. Write one below and try a practice run.";
         }
+    }
+
+    /// <summary>
+    /// Reads a typed sentence into the form, for the person to check and change.
+    /// </summary>
+    /// <remarks>
+    /// It fills the boxes and stops. Nothing is saved, because DeskAI understanding a
+    /// sentence is not the same as someone agreeing to what it understood — the whole point
+    /// of drafting is that the reading is visible before it becomes a rule.
+    /// </remarks>
+    private void DraftFromSentence()
+    {
+        RuleDraft draft;
+        try
+        {
+            draft = RuleDraftTranslator.Draft(Sentence);
+        }
+        catch (ArgumentException exception)
+        {
+            FormMessage = exception.Message;
+            return;
+        }
+
+        if (!draft.UnderstoodAnything)
+        {
+            FormMessage = "DeskAI did not understand any of that. Try something like "
+                + "\"move invoices to Documents\", or fill the boxes in yourself.";
+            return;
+        }
+
+        foreach (var condition in draft.Conditions)
+        {
+            switch (condition)
+            {
+                case NameContainsCondition text:
+                    NewRuleNameContains = text.Text;
+                    break;
+                case ExtensionIsCondition ending:
+                    NewRuleExtension = ending.Extension;
+                    break;
+                default:
+                    // Sizes and ages have no box on this form yet. Saying so is better than
+                    // dropping part of what was understood without a word.
+                    break;
+            }
+        }
+
+        if (draft.Action is not null)
+        {
+            NewRuleDestination = draft.Action.DestinationRelativeDirectory;
+        }
+
+        // Set last: filling the boxes above clears the form message.
+        FormMessage = Describe(draft);
+    }
+
+    private static string Describe(RuleDraft draft)
+    {
+        var understood = string.Join(", ", draft.Chips.Select(chip => chip.Label));
+        var problem = draft.DestinationProblem is null ? string.Empty : $" {draft.DestinationProblem}";
+        var unsupported = draft.Conditions.Any(condition =>
+            condition is LargerThanCondition or SmallerThanCondition or OlderThanCondition)
+            ? " Sizes and dates cannot be typed into this form yet, so that part was left out."
+            : string.Empty;
+
+        return $"DeskAI read that as: {understood}. Check it and change anything that is wrong, "
+            + $"then give it a name and save it.{problem}{unsupported}";
     }
 
     /// <summary>

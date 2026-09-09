@@ -148,7 +148,13 @@ Goal: turn repeated intent into deterministic, auditable behavior.
 - ✅ Safe default: risky or novel outcomes return to preview.
   Completed 2026-09-09 as part of the approval check above: an outcome that differs from the
   one approved is reported as needing review rather than carried out.
-- ⬜ Natural-language-to-rule drafting with review.
+- ✅ Natural-language-to-rule drafting with review.
+  Completed 2026-09-09; a typed sentence such as "move invoices to Documents" is read into the
+  rule form for review. Deterministic and local with a fixed vocabulary and no AI, the same
+  choice search made. It fills the boxes and stops — understanding a sentence is not the same
+  as someone agreeing to what was understood — and every part understood is stated back. A
+  bare "word files" is only read as a file ending when the word is a type DeskAI knows, so
+  "invoice files" becomes a name to look for rather than an ending of ".invoice".
 - ⬜ Folder watchers and/or scheduler selected through an ADR.
 - ⬜ Run history, notifications, pause/disable controls, missed-run behavior, and safe concurrency.
 

@@ -68,9 +68,9 @@ public sealed record RuleRunPreview(
 /// differently depending on the order rules were written cannot be reasoned about.
 /// </para>
 /// </remarks>
-public sealed class RuleSetEvaluator
+public static class RuleSetEvaluator
 {
-    public RuleRunPreview Evaluate(
+    public static RuleRunPreview Evaluate(
         IReadOnlyList<AutomationRule> rules,
         IReadOnlyList<RuleSubject> subjects,
         DateTimeOffset nowUtc)
@@ -147,7 +147,7 @@ public sealed class RuleSetEvaluator
         _ => throw new NotSupportedException($"No destination is defined for {rule.Action.GetType().Name}."),
     };
 
-    private static string Reason(IReadOnlyList<AutomationRule> matched) => matched.Count == 1
+    private static string Reason(AutomationRule[] matched) => matched.Length == 1
         ? $"Rule \"{matched[0].Name}\": {matched[0].Describe()}"
-        : $"{matched.Count} rules agree: {string.Join(", ", matched.Select(rule => $"\"{rule.Name}\""))}";
+        : $"{matched.Length} rules agree: {string.Join(", ", matched.Select(rule => $"\"{rule.Name}\""))}";
 }

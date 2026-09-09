@@ -50,7 +50,6 @@ public sealed class RuleSimulationService(
     /// <summary>How many remembered files one folder contributes to a practice run.</summary>
     private const int MaxFilesPerFolder = SearchQuery.MaxLimit;
 
-    private readonly RuleSetEvaluator _evaluator = new();
     private readonly IRuleRepository _rules = rules;
     private readonly IAuthorizedRootRepository _roots = roots;
     private readonly IFileIndex _index = index;
@@ -85,7 +84,7 @@ public sealed class RuleSimulationService(
             simulations.Add(new FolderRuleSimulation(
                 root.Id,
                 root.DisplayName,
-                _evaluator.Evaluate(enabled, subjects, nowUtc)));
+                RuleSetEvaluator.Evaluate(enabled, subjects, nowUtc)));
         }
 
         return new RuleSimulation(simulations.AsReadOnly(), enabled.Length, turnedOff);

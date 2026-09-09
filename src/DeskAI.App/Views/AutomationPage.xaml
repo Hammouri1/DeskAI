@@ -154,6 +154,21 @@
                 <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Write a rule" />
                 <Border Style="{StaticResource CardStyle}">
                     <StackPanel Spacing="14">
+                        <!--
+                            Say it in a sentence and DeskAI fills the boxes below. It fills
+                            them and stops: understanding a sentence is not the same as
+                            someone agreeing to what was understood, so the reading is always
+                            shown in the form before it can become a rule.
+                        -->
+                        <TextBox Header="Say it in your own words, and DeskAI will fill in the boxes"
+                                 PlaceholderText="move invoices to Documents"
+                                 MaxLength="256"
+                                 Text="{x:Bind ViewModel.Sentence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                        <Button Content="Read my sentence" HorizontalAlignment="Left"
+                                Command="{x:Bind ViewModel.DraftFromSentenceCommand}" />
+
+                        <Border Height="1" Margin="0,4" Background="{ThemeResource DeskLineBrush}" />
+
                         <TextBox Header="Name this rule" PlaceholderText="Tidy invoices"
                                  MaxLength="60"
                                  Text="{x:Bind ViewModel.NewRuleName, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
