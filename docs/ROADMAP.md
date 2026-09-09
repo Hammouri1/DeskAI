@@ -65,6 +65,7 @@ Goal: find and understand files without needing to move them.
 3. ✅ Natural-language query translation into a constrained local query model.
    Completed 2026-09-09; deterministic local vocabulary with no AI, backend only.
    Every understood part produces a chip, and understanding nothing is reported as such.
+   The Search page now uses steps 1-3: phrase, chips, results, and stated scope.
 4. ⬜ Smart Collections as saved virtual queries.
 5. ⬜ Storage summaries, large/old downloads, archive and installer views.
 6. ⬜ Exact duplicate candidates using staged size/hash checks; possible-duplicate review.

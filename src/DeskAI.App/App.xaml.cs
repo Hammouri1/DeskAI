@@ -6,6 +6,7 @@ using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.App.Views;
 using DeskAI.Core.Ai;
+using DeskAI.Core.Search;
 using DeskAI.Infrastructure.DependencyInjection;
 using DeskAI.Infrastructure.Logging;
 using DeskAI.Infrastructure.Persistence;
@@ -79,7 +80,9 @@ public partial class App : Application
                 services.AddSingleton<IFolderPickerService, WindowsFolderPickerService>();
                 services.AddTransient<ShellViewModel>();
                 services.AddTransient<OrganizeViewModel>();
+                services.AddSingleton<FileSearchService>();
                 services.AddTransient<SettingsViewModel>();
+                services.AddTransient<SearchViewModel>();
                 services.AddTransient<DashboardPage>();
                 services.AddTransient<OrganizePage>();
                 services.AddTransient<SearchPage>();

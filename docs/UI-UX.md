@@ -144,7 +144,19 @@ The window uses a Mica backdrop, pages paint `DeskGroundBrush`, and the navigati
 
 Status is expressed through `PreviewStatusLevel` (`Ready`, `Attention`, `Blocked`) mapped by converters to a system semantic brush, a paired Segoe Fluent glyph, and a tinted badge background. Colour is never alone: every badge carries an icon **and** the status word, so a blocked row still reads as blocked in greyscale or high contrast. `PreviewStatusLevel` is presentation severity only — Safety decides what is blocked, and the enum merely chooses how that decision is drawn.
 
-Empty states stay truthful rather than becoming decorative. Search shows its future filter controls **disabled** with a plain "Not finished yet" notice, and Automatic tasks states outright that DeskAI is doing nothing in the background. Neither page implies a capability that exists.
+Empty states stay truthful rather than becoming decorative. Automatic tasks states outright that DeskAI is doing nothing in the background, and no page implies a capability that does not exist.
+
+Search keeps three outcomes visibly distinct, because collapsing them is how a search screen starts lying:
+
+| Outcome | What the page says |
+| --- | --- |
+| No folders connected | "No folders connected yet" and points to Organize |
+| Phrase not understood | "I did not understand that", with examples. **No results are listed.** |
+| Understood | A count, the matches, and the scope actually searched |
+
+The second row is the important one. An unrecognised phrase produces a query with no filters, which would list every remembered file — a full listing presented as a search result. The page refuses instead.
+
+Above the results, chips show how the phrase was read ("Photos", "Larger than 100 MB", "Changed in the last month"), so interpretation is visible and correctable rather than silently assumed. Vague words state their real threshold instead of hiding it. Scope is always stated — "Searched 2 connected folders" — so the page never implies the whole computer was searched, and a truncated list says so rather than passing as complete. Results show a folder name and a path relative to it, never an absolute path.
 
 ## Visual Direction
 

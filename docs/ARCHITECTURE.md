@@ -170,6 +170,14 @@ Three properties matter:
 
 Vague words state their real meaning: "big" is a named constant and the chip says "Larger than 100 MB" rather than hiding the threshold. A vague word never contradicts an explicit number — "big files under 5 MB" keeps the number and drops the vague half, instead of building an impossible query. Matched phrases are consumed as they are read, so leftover words are exactly those nothing claimed and become the text filter, which keeps "from" in "videos from last month" out of the search term.
 
+### Running a search (V0.4, Search page)
+
+`FileSearchService` in Core joins the pieces: it translates the phrase, lists the authorized roots, searches each one, and merges the hits. It lives in Core so the rules are testable without a window and so the App layer holds no decision about which folders may be read.
+
+Only roots marked `Allowed` are searched. A `Restricted` or `Protected` root is skipped even though its rows may still exist in the index, because permission is a live decision and a cached row cannot grant access. The service reports `FoldersSearched` so the UI can state real scope, and `ReachedLimit` so a truncated list is never shown as complete. A `SearchHit` carries the root's display name and the path relative to it, so no absolute path reaches the screen.
+
+`SearchViewModel` only turns that outcome into text and lists. It keeps three states distinct — not understood, understood but nothing matched, and matched — because collapsing them is how a search screen starts lying. An unrecognised phrase shows "I did not understand that" and lists nothing, rather than falling through to a full listing of every remembered file.
+
 ## Deterministic Classification and Recipes
 
 `IFileClassifier` accepts a `FileItem` and returns one immutable `Classification`. `DeterministicFileClassifier` matches case-insensitive, dot-prefixed rules from `FileTypeRuleSet`; longer compound extensions win. A narrow filename heuristic separates common screenshot names from other images. Results always include a closed `FileCategory`, `FileKind`, provenance, bounded confidence, and explanation. Unknown is an explicit valid outcome.
