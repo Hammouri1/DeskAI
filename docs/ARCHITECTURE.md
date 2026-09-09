@@ -166,6 +166,16 @@ The six-month threshold is a named constant, `StorageSummaryService.OldFileAge`,
 
 A summary describes and never proposes. It produces no plan, and the page deliberately offers no cleanup action, because any cleanup must still go through the ordinary preview and approval path.
 
+### Possible duplicates (V0.4 step 6, stage 1)
+
+`DuplicateFinderService` groups remembered files by exact byte size. This is the cheap first stage: it rules out the overwhelming majority of pairs, costs one grouped query per folder, and opens no file.
+
+Sizes are merged across roots before deciding what repeats. A per-root `HAVING COUNT(*) > 1` would have been cheaper but wrong: a file copied into a second connected folder appears once in each, and filtering per root would hide exactly the case worth finding. `GetSizeCountsAsync` therefore returns single occurrences too, bounded by the number of distinct sizes.
+
+Files below 4 KB are ignored, because small files collide on size constantly and would bury real candidates in noise. Groups are capped at 50, largest possible saving first.
+
+**Stage 2, confirming by hash, is deliberately absent.** Hashing reads the bytes of a file. These folders are authorized `MetadataOnly`, which does not permit that, so confirming duplicates belongs with the permission-gated content work in step 8 rather than being slipped in behind a size check. Everything the UI says is therefore hedged: "possible duplicates", "might be duplicated", "up to" a saving. `ReclaimableBytes` is a ceiling on what could be freed if the copies turn out identical, never a promise. A test asserts the service reads no content at all.
+
 ### Natural-language query translation (V0.4 step 3)
 
 `NaturalLanguageQueryTranslator.Translate` reads a short typed phrase such as "big videos from last month" into a `QueryTranslation`: the resulting `SearchQuery`, plus one `QueryChip` for every part it understood.

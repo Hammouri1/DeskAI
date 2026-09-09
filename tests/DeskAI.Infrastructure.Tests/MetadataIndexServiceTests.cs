@@ -255,6 +255,12 @@ public sealed class MetadataIndexServiceTests
         /// synchronization, and a second copy of the aggregate rules could silently
         /// disagree with the real one.
         /// </summary>
+        public Task<IReadOnlyList<SizeGroup>> GetSizeCountsAsync(
+            Guid rootId,
+            long minimumSizeBytes,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException("This fake does not implement size grouping.");
+
         public Task<RootStorageSummary> SummarizeRootAsync(
             Guid rootId,
             DateTimeOffset unchangedSinceUtc,

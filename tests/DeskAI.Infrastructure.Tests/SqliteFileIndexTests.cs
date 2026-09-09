@@ -431,6 +431,84 @@ public sealed class SqliteFileIndexTests
     }
 
     [Fact]
+    public async Task GetSizeCountsAsync_CountsFilesSharingAnExactSize()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [
+                Entry(rootId, 1, "a.txt", sizeBytes: 50_000),
+                Entry(rootId, 2, "b.txt", sizeBytes: 50_000),
+                Entry(rootId, 3, "c.txt", sizeBytes: 90_000),
+            ],
+            TestContext.Current.CancellationToken);
+
+        var groups = await fixture.Index.GetSizeCountsAsync(
+            rootId, minimumSizeBytes: 4096, TestContext.Current.CancellationToken);
+
+        Assert.Equal(2, Assert.Single(groups, group => group.SizeBytes == 50_000).FileCount);
+        Assert.Equal(1, Assert.Single(groups, group => group.SizeBytes == 90_000).FileCount);
+    }
+
+    /// <summary>
+    /// Sizes seen once are still reported. A file copied into a second connected folder
+    /// appears once in each, and filtering per root would hide exactly that case.
+    /// </summary>
+    [Fact]
+    public async Task GetSizeCountsAsync_KeepsSizesSeenOnlyOnceSoCrossFolderCopiesSurvive()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [Entry(rootId, 1, "only.txt", sizeBytes: 60_000)],
+            TestContext.Current.CancellationToken);
+
+        var groups = await fixture.Index.GetSizeCountsAsync(
+            rootId, minimumSizeBytes: 4096, TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, Assert.Single(groups).FileCount);
+    }
+
+    [Fact]
+    public async Task GetSizeCountsAsync_IgnoresFilesBelowTheMinimumSize()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [
+                Entry(rootId, 1, "tiny-a.txt", sizeBytes: 10),
+                Entry(rootId, 2, "tiny-b.txt", sizeBytes: 10),
+                Entry(rootId, 3, "big.txt", sizeBytes: 80_000),
+            ],
+            TestContext.Current.CancellationToken);
+
+        var groups = await fixture.Index.GetSizeCountsAsync(
+            rootId, minimumSizeBytes: 4096, TestContext.Current.CancellationToken);
+
+        Assert.Equal(80_000, Assert.Single(groups).SizeBytes);
+    }
+
+    [Fact]
+    public async Task GetSizeCountsAsync_ReportsOnlyTheNamedRoot()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var mine = await fixture.AddRootAsync("Mine");
+        var theirs = await fixture.AddRootAsync("Theirs");
+        await fixture.Index.SynchronizeRootAsync(
+            mine, [Entry(mine, 1, "mine.txt", sizeBytes: 70_000)], TestContext.Current.CancellationToken);
+        await fixture.Index.SynchronizeRootAsync(
+            theirs, [Entry(theirs, 2, "theirs.txt", sizeBytes: 70_000)], TestContext.Current.CancellationToken);
+
+        var groups = await fixture.Index.GetSizeCountsAsync(
+            mine, minimumSizeBytes: 4096, TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, Assert.Single(groups).FileCount);
+    }
+
+    [Fact]
     public async Task SummarizeRootAsync_GroupsSizeByCategoryLargestFirst()
     {
         await using var fixture = await IndexFixture.CreateAsync();

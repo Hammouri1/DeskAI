@@ -106,6 +106,45 @@
                 </Border>
             </StackPanel>
 
+            <!--
+                Possible duplicates, never confirmed ones. The wording stays hedged because
+                the evidence is a matching size, not a compared file. There is no remove
+                action here: any removal still goes through preview and approval.
+            -->
+            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasDuplicates, Mode=OneWay}">
+                <StackPanel Spacing="4">
+                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Possible duplicates" />
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
+                               HorizontalAlignment="Left"
+                               Text="{x:Bind ViewModel.DuplicateDetail, Mode=OneWay}" />
+                </StackPanel>
+
+                <ItemsControl ItemsSource="{x:Bind ViewModel.DuplicateGroups, Mode=OneWay}"
+                              AutomationProperties.Name="Possible duplicate groups">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="viewmodels:DuplicateGroupViewModel">
+                            <Border Style="{StaticResource RowCardStyle}">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontWeight="SemiBold"
+                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                   Text="{x:Bind Headline}" />
+                                        <TextBlock Style="{StaticResource CaptionStyle}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Text="{x:Bind Locations}" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" MinWidth="110"
+                                               TextAlignment="Right"
+                                               Style="{StaticResource CaptionStyle}"
+                                               Foreground="{ThemeResource DeskCautionBrush}"
+                                               Text="{x:Bind Reclaimable}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
             <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasStorage, Mode=OneWay}">
                 <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Largest files" />
                 <ItemsControl ItemsSource="{x:Bind ViewModel.LargestFiles, Mode=OneWay}"

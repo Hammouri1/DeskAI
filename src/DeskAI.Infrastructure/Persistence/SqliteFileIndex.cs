@@ -232,6 +232,44 @@ public sealed class SqliteFileIndex(IOptions<DatabaseOptions> options) : IFileIn
             : new FileIndexStatistics(count, reader.GetInt64(1), ParseTimestamp(reader.GetString(2)));
     }
 
+    public async Task<IReadOnlyList<SizeGroup>> GetSizeCountsAsync(
+        Guid rootId,
+        long minimumSizeBytes,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(minimumSizeBytes);
+
+        await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+
+        // Grouping happens in SQL, so this stays cheap on a large folder and reads only the
+        // size column. No file is opened, which is what lets it run under a metadata-only
+        // authorization.
+        //
+        // Sizes that occur only once here are deliberately still returned. A file copied
+        // into a second connected folder appears once in each, and filtering to counts
+        // above one per root would hide exactly that case. The caller merges across roots
+        // before deciding what repeats. Rows are bounded by the number of distinct sizes.
+        command.CommandText = """
+            SELECT size_bytes, COUNT(*)
+            FROM indexed_files
+            WHERE root_id = $rootId AND size_bytes >= $minimumSize
+            GROUP BY size_bytes
+            ORDER BY size_bytes DESC;
+            """;
+        command.Parameters.AddWithValue("$rootId", rootId.ToString("D"));
+        command.Parameters.AddWithValue("$minimumSize", minimumSizeBytes);
+
+        var groups = new List<SizeGroup>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            groups.Add(new SizeGroup(reader.GetInt64(0), reader.GetInt32(1)));
+        }
+
+        return groups.AsReadOnly();
+    }
+
     public async Task<RootStorageSummary> SummarizeRootAsync(
         Guid rootId,
         DateTimeOffset unchangedSinceUtc,

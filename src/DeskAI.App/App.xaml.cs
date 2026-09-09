@@ -83,6 +83,7 @@ public partial class App : Application
                 services.AddSingleton<FileSearchService>();
                 services.AddSingleton<ConnectedFolderService>();
                 services.AddSingleton<StorageSummaryService>();
+                services.AddSingleton<DuplicateFinderService>();
                 services.AddTransient<SettingsViewModel>();
                 services.AddTransient<SearchViewModel>();
                 services.AddTransient<DashboardViewModel>();

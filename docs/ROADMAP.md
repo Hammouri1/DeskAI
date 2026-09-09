@@ -76,7 +76,12 @@ Goal: find and understand files without needing to move them.
    Completed 2026-09-09; Home shows size by category, the largest files, and what has
    not changed in six months, aggregated in SQL and scoped to connected folders only.
    It describes and never proposes: there is no cleanup action that bypasses preview.
-6. ⬜ Exact duplicate candidates using staged size/hash checks; possible-duplicate review.
+6. ◐ Exact duplicate candidates using staged size/hash checks; possible-duplicate review.
+   Stage 1 completed 2026-09-09: files sharing an exact size are grouped and shown on
+   Home as possible duplicates, merged across folders, with no file ever opened.
+   Stage 2, confirming by content hash, is deliberately NOT done here. Hashing reads
+   file bytes, which the metadata-only authorization these folders were connected
+   under does not permit, so it belongs with step 8 permission-gated content work.
 7. ⬜ Organization Health score with transparent components.
 8. ⬜ Optional permission-gated content extraction, followed later by local embeddings/semantic search.
 

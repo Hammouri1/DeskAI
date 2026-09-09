@@ -14,6 +14,15 @@ public sealed record CategoryUsageViewModel(string Category, string Files, strin
 public sealed record LargestFileViewModel(string Name, string Location, string Size);
 
 /// <summary>
+/// A set of files that share an exact size and might therefore be copies.
+/// </summary>
+/// <remarks>
+/// <see cref="Locations"/> is a single readable line rather than a nested list, because the
+/// point of the row is to let a person recognise the copies, not to browse them.
+/// </remarks>
+public sealed record DuplicateGroupViewModel(string Headline, string Locations, string Reclaimable);
+
+/// <summary>
 /// Drives the Home page: what is connected, and where the space is going.
 /// </summary>
 /// <remarks>
@@ -28,10 +37,17 @@ public sealed record LargestFileViewModel(string Name, string Location, string S
 /// must not become a shortcut around it.
 /// </para>
 /// </remarks>
-public sealed class DashboardViewModel(StorageSummaryService storage, IClock clock) : ObservableObject
+public sealed class DashboardViewModel(
+    StorageSummaryService storage,
+    DuplicateFinderService duplicates,
+    IClock clock) : ObservableObject
 {
     private readonly StorageSummaryService _storage = storage;
+    private readonly DuplicateFinderService _duplicates = duplicates;
     private readonly IClock _clock = clock;
+    private string _duplicateHeadline = "0";
+    private string _duplicateDetail = "Connect a folder to look for possible copies.";
+    private bool _hasDuplicates;
     private string _foldersConnected = "0";
     private string _totalFiles = "0";
     private string _totalSize = "Nothing remembered yet";
@@ -70,6 +86,30 @@ public sealed class DashboardViewModel(StorageSummaryService storage, IClock clo
     public ObservableCollection<CategoryUsageViewModel> Categories { get; } = [];
 
     public ObservableCollection<LargestFileViewModel> LargestFiles { get; } = [];
+
+    public ObservableCollection<DuplicateGroupViewModel> DuplicateGroups { get; } = [];
+
+    /// <summary>
+    /// How many files share a size with another. Worded as "possible" everywhere, because
+    /// matching sizes is evidence and not proof.
+    /// </summary>
+    public string DuplicateHeadline
+    {
+        get => _duplicateHeadline;
+        private set => SetProperty(ref _duplicateHeadline, value);
+    }
+
+    public string DuplicateDetail
+    {
+        get => _duplicateDetail;
+        private set => SetProperty(ref _duplicateDetail, value);
+    }
+
+    public bool HasDuplicates
+    {
+        get => _hasDuplicates;
+        private set => SetProperty(ref _hasDuplicates, value);
+    }
 
     public string FoldersConnected
     {
@@ -125,9 +165,11 @@ public sealed class DashboardViewModel(StorageSummaryService storage, IClock clo
     public async Task InitializeAsync()
     {
         StorageSummary summary;
+        DuplicateReport duplicates;
         try
         {
             summary = await _storage.BuildAsync(_clock.UtcNow).ConfigureAwait(true);
+            duplicates = await _duplicates.FindAsync().ConfigureAwait(true);
         }
         catch (Exception exception) when (exception is InvalidOperationException
             or System.Data.Common.DbException
@@ -137,10 +179,12 @@ public sealed class DashboardViewModel(StorageSummaryService storage, IClock clo
             // have nothing" instead of "DeskAI could not check".
             TotalSize = "DeskAI could not read the storage summary.";
             HasStorage = false;
+            HasDuplicates = false;
             return;
         }
 
         Apply(summary);
+        ApplyDuplicates(duplicates);
     }
 
     private static string DescribeSize(long bytes) => bytes switch
@@ -154,6 +198,46 @@ public sealed class DashboardViewModel(StorageSummaryService storage, IClock clo
     /// <summary>Turns an enum name such as "SourceCode" into "Source code".</summary>
     private static string Humanize(string name) => string.Concat(name.Select((character, index) =>
         index > 0 && char.IsUpper(character) ? " " + char.ToLowerInvariant(character) : character.ToString()));
+
+    /// <summary>
+    /// Presents size matches as possibilities, never as facts.
+    /// </summary>
+    /// <remarks>
+    /// Every string here says "possible" or "might". Proving two files identical means
+    /// reading their bytes, which the metadata-only authorization these folders were
+    /// connected under does not permit, so the wording must not outrun the evidence.
+    /// </remarks>
+    private void ApplyDuplicates(DuplicateReport report)
+    {
+        DuplicateGroups.Clear();
+        HasDuplicates = report.HasAnything;
+
+        if (!report.HasAnything)
+        {
+            DuplicateHeadline = "0";
+            DuplicateDetail = report.FoldersIncluded == 0
+                ? "Connect a folder to look for possible copies."
+                : "No files share a size, so nothing looks duplicated.";
+            return;
+        }
+
+        DuplicateHeadline = report.TotalFiles.ToString("N0", CultureInfo.CurrentCulture);
+        DuplicateDetail =
+            $"These share an exact size, so up to {DescribeSize(report.ReclaimableBytes)} might be duplicated. "
+            + "DeskAI has not compared their contents, so they are not confirmed copies.";
+
+        foreach (var group in report.Groups)
+        {
+            var locations = string.Join(
+                "   •   ",
+                group.Files.Select(file => $"{file.RootName} / {file.RelativePath}"));
+
+            DuplicateGroups.Add(new DuplicateGroupViewModel(
+                $"{group.Count} files of {DescribeSize(group.SizeBytes)}",
+                locations,
+                $"up to {DescribeSize(group.ReclaimableBytes)}"));
+        }
+    }
 
     private void Apply(StorageSummary summary)
     {

@@ -49,6 +49,19 @@ public interface IFileIndex
     /// very large folder stays affordable to summarize. This reads remembered metadata and
     /// touches no file.
     /// </remarks>
+    /// <summary>
+    /// Reports how many remembered files share each exact size, for sizes at or above
+    /// <paramref name="minimumSizeBytes"/> that occur more than once in this root.
+    /// </summary>
+    /// <remarks>
+    /// This is the cheap first stage of duplicate detection. It reads remembered sizes only
+    /// and opens no file, so it can run under a metadata-only authorization.
+    /// </remarks>
+    Task<IReadOnlyList<SizeGroup>> GetSizeCountsAsync(
+        Guid rootId,
+        long minimumSizeBytes,
+        CancellationToken cancellationToken = default);
+
     Task<RootStorageSummary> SummarizeRootAsync(
         Guid rootId,
         DateTimeOffset unchangedSinceUtc,

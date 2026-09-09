@@ -274,6 +274,12 @@ public sealed class FileSearchServiceTests
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
+        public Task<IReadOnlyList<SizeGroup>> GetSizeCountsAsync(
+            Guid rootId,
+            long minimumSizeBytes,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException("This fake does not implement size grouping.");
+
         public Task<RootStorageSummary> SummarizeRootAsync(
             Guid rootId,
             DateTimeOffset unchangedSinceUtc,
