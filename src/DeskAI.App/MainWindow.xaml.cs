@@ -8,16 +8,35 @@ namespace DeskAI.App;
 public sealed partial class MainWindow : Window
 {
     private readonly INavigationService? _navigationService;
+    private readonly ShellViewModel? _shell;
 
     public MainWindow(ShellViewModel viewModel, INavigationService navigationService)
     {
         InitializeComponent();
         Title = "DeskAI";
+        _shell = viewModel;
         RootNavigation.DataContext = viewModel;
         _navigationService = navigationService;
         _navigationService.Initialize(ContentFrame);
         RootNavigation.SelectedItem = RootNavigation.MenuItems[0];
         _navigationService.Navigate("dashboard");
+        _ = RefreshScopeAsync();
+    }
+
+    /// <summary>
+    /// Keeps the pane's scope reminder honest.
+    /// </summary>
+    /// <remarks>
+    /// Refreshed on every navigation because connecting or disconnecting a folder happens
+    /// on another page, and a stale reminder about what DeskAI can reach is exactly the
+    /// thing this label exists to prevent.
+    /// </remarks>
+    private async Task RefreshScopeAsync()
+    {
+        if (_shell is not null)
+        {
+            await _shell.RefreshAsync();
+        }
     }
 
     private MainWindow()
@@ -40,6 +59,7 @@ public sealed partial class MainWindow : Window
         if (args.InvokedItemContainer?.Tag is string tag)
         {
             _navigationService?.Navigate(tag);
+            _ = RefreshScopeAsync();
         }
     }
 }

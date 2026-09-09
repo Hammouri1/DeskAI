@@ -53,6 +53,23 @@ public sealed class FileSearchService(IAuthorizedRootRepository roots, IFileInde
     private readonly IFileIndex _index = index;
 
     /// <summary>
+    /// The single definition of "a folder search may look in".
+    /// </summary>
+    /// <remarks>
+    /// Both the permission and the scope are checked. Filtering on permission alone would
+    /// include the controlled demo workspace that the Organize page creates, so the page
+    /// would report searching more folders than it lists, and claim to search a temporary
+    /// folder the person never connected for that purpose. Anything that counts folders
+    /// must use this predicate so the count and the list can never disagree.
+    /// </remarks>
+    public static bool IsSearchable(AuthorizedRoot root)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        return root.Permission == RootAccessLevel.Allowed
+            && root.AuthorizationScope == RootAuthorizationScope.MetadataOnly;
+    }
+
+    /// <summary>
     /// Reads <paramref name="phrase"/> and returns what matched. <paramref name="nowUtc"/>
     /// anchors relative dates so the same phrase means the same thing every time.
     /// </summary>
@@ -63,7 +80,7 @@ public sealed class FileSearchService(IAuthorizedRootRepository roots, IFileInde
     {
         var translation = NaturalLanguageQueryTranslator.Translate(phrase, nowUtc);
         var searchable = (await _roots.ListAsync(cancellationToken).ConfigureAwait(false))
-            .Where(root => root.Permission == RootAccessLevel.Allowed)
+            .Where(IsSearchable)
             .ToArray();
 
         // An unfiltered query would list every remembered file, which is not a search

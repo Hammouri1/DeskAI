@@ -45,11 +45,11 @@
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon FontSize="14" Glyph="&#xE72E;"
                                   Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
-                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="Practice mode" />
+                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding ScopeTitle}" />
                     </StackPanel>
                     <TextBlock FontSize="11" TextWrapping="Wrap"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               Text="Sample files only. Your personal folders are not connected." />
+                               Text="{Binding ScopeMessage}" />
                 </StackPanel>
             </Border>
         </NavigationView.PaneFooter>

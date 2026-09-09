@@ -55,6 +55,54 @@ public sealed class FileSearchServiceTests
     }
 
     /// <summary>
+    /// The Organize page creates a controlled demo workspace with Allowed permission.
+    /// Counting on permission alone would make the page claim to search a temporary folder
+    /// nobody connected for searching, and report a larger scope than it lists.
+    /// </summary>
+    [Fact]
+    public async Task SearchAsync_IgnoresTheControlledDemoWorkspace()
+    {
+        var roots = new FakeRoots();
+        var index = new FakeIndex();
+        var connected = roots.Add("Study");
+        var demo = roots.Add("Demo", RootAccessLevel.Allowed, RootAuthorizationScope.ControlledDemo);
+        index.Put(connected, Entry(connected, 1, "a.png", FileCategory.Images));
+        index.Put(demo, Entry(demo, 2, "b.png", FileCategory.Images));
+        var service = new FileSearchService(roots, index);
+
+        var outcome = await service.SearchAsync("photos", Now, TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, outcome.FoldersSearched);
+        Assert.Equal("Study", Assert.Single(outcome.Hits).RootName);
+        Assert.DoesNotContain(index.SearchedRoots, id => id == demo);
+    }
+
+    /// <summary>
+    /// The scope a search reports must equal the folder list the page shows, so both use
+    /// this one predicate.
+    /// </summary>
+    [Theory]
+    [InlineData(RootAccessLevel.Allowed, RootAuthorizationScope.MetadataOnly, true)]
+    [InlineData(RootAccessLevel.Allowed, RootAuthorizationScope.ControlledDemo, false)]
+    [InlineData(RootAccessLevel.Allowed, RootAuthorizationScope.Organize, false)]
+    [InlineData(RootAccessLevel.Restricted, RootAuthorizationScope.MetadataOnly, false)]
+    [InlineData(RootAccessLevel.Protected, RootAuthorizationScope.MetadataOnly, false)]
+    public void IsSearchableRequiresBothPermissionAndMetadataOnlyScope(
+        RootAccessLevel permission,
+        RootAuthorizationScope scope,
+        bool expected)
+    {
+        var root = AuthorizedRoot.Create(
+            Guid.NewGuid(),
+            Path.Combine(Path.GetTempPath(), "deskai-tests", "Any"),
+            "Any",
+            permission,
+            scope);
+
+        Assert.Equal(expected, FileSearchService.IsSearchable(root));
+    }
+
+    /// <summary>
     /// A phrase nothing was understood from must not fall through to listing everything.
     /// </summary>
     [Fact]
@@ -151,7 +199,10 @@ public sealed class FileSearchServiceTests
     {
         private readonly List<AuthorizedRoot> _roots = [];
 
-        public Guid Add(string name, RootAccessLevel permission = RootAccessLevel.Allowed)
+        public Guid Add(
+            string name,
+            RootAccessLevel permission = RootAccessLevel.Allowed,
+            RootAuthorizationScope scope = RootAuthorizationScope.MetadataOnly)
         {
             var id = Guid.NewGuid();
             _roots.Add(AuthorizedRoot.Create(
@@ -159,7 +210,7 @@ public sealed class FileSearchServiceTests
                 Path.Combine(Path.GetTempPath(), "deskai-tests", name),
                 name,
                 permission,
-                RootAuthorizationScope.MetadataOnly));
+                scope));
             return id;
         }
 

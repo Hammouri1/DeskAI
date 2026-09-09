@@ -78,6 +78,34 @@
                 </StackPanel>
             </Border>
 
+            <ItemsControl ItemsSource="{x:Bind ViewModel.Results, Mode=OneWay}"
+                          Visibility="{x:Bind ViewModel.HasResults, Mode=OneWay}"
+                          AutomationProperties.Name="Search results">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="viewmodels:SearchResultViewModel">
+                        <Border Style="{StaticResource RowCardStyle}">
+                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="16">
+                                <StackPanel Spacing="3">
+                                    <TextBlock FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                               Text="{x:Bind Name}" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}"
+                                               TextTrimming="CharacterEllipsis"
+                                               Text="{x:Bind Location}" />
+                                </StackPanel>
+                                <TextBlock Grid.Column="1" VerticalAlignment="Center"
+                                           Style="{StaticResource CaptionStyle}"
+                                           Text="{x:Bind Size}" />
+                                <TextBlock Grid.Column="2" VerticalAlignment="Center" MinWidth="88"
+                                           TextAlignment="Right"
+                                           Style="{StaticResource CaptionStyle}"
+                                           Text="{x:Bind Changed}" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
             <!--
                 Folder management sits on this page because scope is part of searching:
                 what DeskAI can find is exactly what you connected, and nothing else.
@@ -133,34 +161,6 @@
                     </ItemsControl>
                 </StackPanel>
             </Border>
-
-            <ItemsControl ItemsSource="{x:Bind ViewModel.Results, Mode=OneWay}"
-                          Visibility="{x:Bind ViewModel.HasResults, Mode=OneWay}"
-                          AutomationProperties.Name="Search results">
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:DataType="viewmodels:SearchResultViewModel">
-                        <Border Style="{StaticResource RowCardStyle}">
-                            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="16">
-                                <StackPanel Spacing="3">
-                                    <TextBlock FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
-                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                               Text="{x:Bind Name}" />
-                                    <TextBlock Style="{StaticResource CaptionStyle}"
-                                               TextTrimming="CharacterEllipsis"
-                                               Text="{x:Bind Location}" />
-                                </StackPanel>
-                                <TextBlock Grid.Column="1" VerticalAlignment="Center"
-                                           Style="{StaticResource CaptionStyle}"
-                                           Text="{x:Bind Size}" />
-                                <TextBlock Grid.Column="2" VerticalAlignment="Center" MinWidth="88"
-                                           TextAlignment="Right"
-                                           Style="{StaticResource CaptionStyle}"
-                                           Text="{x:Bind Changed}" />
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
 
             <Border Style="{StaticResource SoftCardStyle}">
                 <StackPanel Spacing="10">

@@ -148,6 +148,10 @@ Status is expressed through `PreviewStatusLevel` (`Ready`, `Attention`, `Blocked
 
 Empty states stay truthful rather than becoming decorative. Automatic tasks states outright that DeskAI is doing nothing in the background, and no page implies a capability that does not exist.
 
+The navigation pane always states the current scope, and that text is derived from what is actually connected rather than written as a fixed string. An earlier version hard-coded "Sample files only. Your personal folders are not connected.", which stayed on screen after a real folder was connected: the one label that promises what DeskAI can reach was the label that lied. It now reads "Practice mode" only while nothing is connected, and otherwise reports the folder and file counts. If the scope cannot be read it says so, and never falls back to the reassuring wording.
+
+The scope a search reports and the folder list a page shows come from one predicate, `FileSearchService.IsSearchable`, so they cannot disagree. It requires both an `Allowed` permission and `MetadataOnly` scope; permission alone would include the controlled demo workspace and make the page claim to search a temporary folder nobody connected.
+
 Search keeps three outcomes visibly distinct, because collapsing them is how a search screen starts lying:
 
 | Outcome | What the page says |
