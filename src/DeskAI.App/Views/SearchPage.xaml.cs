@@ -100,12 +100,24 @@ public sealed partial class SearchPage : Page
         }
 
         var handle = WinRT.Interop.WindowNative.GetWindowHandle(window);
-        var path = await _folderPicker.PickFolderAsync(handle);
-        if (string.IsNullOrWhiteSpace(path))
+        var picked = await _folderPicker.PickFolderAsync(handle);
+
+        // Cancelling is silent, because the person meant it. Anything else is said out
+        // loud: pressing "Select folder" and seeing nothing happen looks like a broken app.
+        if (picked.Outcome == FolderPickOutcome.Unavailable)
+        {
+            ViewModel.ReportFolderProblem(
+                "Windows did not give DeskAI a location for that choice, so it could not be connected. "
+                + "This happens with phones, cameras, and some cloud folders. Pick a folder on this computer.");
+            return;
+        }
+
+        if (!picked.WasPicked)
         {
             return;
         }
 
+        var path = picked.Path!;
         var confirmation = new ContentDialog
         {
             XamlRoot = XamlRoot,

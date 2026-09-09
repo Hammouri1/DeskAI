@@ -41,12 +41,30 @@ public sealed partial class OrganizePage : Page
         }
 
         var handle = WinRT.Interop.WindowNative.GetWindowHandle(window);
-        var path = await _folderPicker.PickFolderAsync(handle);
-        if (string.IsNullOrWhiteSpace(path))
+        var picked = await _folderPicker.PickFolderAsync(handle);
+
+        // Cancelling is silent; a folder Windows gave no location for is not, or the button
+        // would look broken.
+        if (picked.Outcome == FolderPickOutcome.Unavailable)
+        {
+            await new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = "That folder could not be used",
+                Content = "Windows did not give DeskAI a location for that choice, so there is nothing to "
+                    + "preview. This happens with phones, cameras, and some cloud folders. "
+                    + "Pick a folder on this computer.",
+                CloseButtonText = "OK",
+            }.ShowAsync();
+            return;
+        }
+
+        if (!picked.WasPicked)
         {
             return;
         }
 
+        var path = picked.Path!;
         var confirmation = new ContentDialog
         {
             XamlRoot = XamlRoot,

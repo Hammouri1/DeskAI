@@ -400,6 +400,20 @@ public sealed class SearchViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Says why choosing a folder did not work.
+    /// </summary>
+    /// <remarks>
+    /// The page owns the folder dialog, so it is the only thing that knows a pick failed.
+    /// Reporting it here keeps the message in the same place as every other folder message,
+    /// instead of a dialog that appears and vanishes.
+    /// </remarks>
+    public void ReportFolderProblem(string message)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(message);
+        FolderMessage = message;
+    }
+
+    /// <summary>
     /// Grants or withdraws permission to read inside a folder's text files.
     /// </summary>
     /// <remarks>

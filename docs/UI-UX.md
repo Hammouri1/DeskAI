@@ -71,6 +71,8 @@ Preview undo consequences and conflicts. Explain that files changed after the or
 
 ## Safety Language
 
+A button that appears to do nothing is a bug, not a quiet success. Choosing a folder distinguishes three outcomes: a folder was picked, the person cancelled (silence is right — they meant it), or Windows gave no location for what they chose (a phone, a camera, some cloud folders). The third case must always say so, because pressing "Select folder" and seeing nothing happen reads as a broken app and gives someone no idea what to try instead.
+
 Prefer precise, neutral labels:
 
 - “DeskAI can scan metadata in this folder.”
