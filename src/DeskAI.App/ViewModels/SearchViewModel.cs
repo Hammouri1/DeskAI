@@ -40,6 +40,14 @@ public sealed record SearchResultViewModel(string Name, string Location, string 
     };
 }
 
+/// <summary>One file whose words matched, with the piece of text that matched.</summary>
+/// <remarks>
+/// The snippet is shown so a person can see why a file matched rather than trusting that it
+/// did. It is text from a file, which makes it untrusted input: it is displayed and nothing
+/// more, exactly like a file name.
+/// </remarks>
+public sealed record ContentHitViewModel(string Name, string Location, string Snippet);
+
 /// <summary>One saved search, formatted for its row.</summary>
 public sealed record SavedSearchViewModel(Guid Id, string Name, string Phrase);
 
@@ -101,6 +109,7 @@ public sealed class SearchViewModel : ObservableObject
 {
     private readonly FileSearchService _search;
     private readonly ConnectedFolderService _folders;
+    private readonly ContentSearchService _insideFiles;
     private readonly ISavedSearchRepository _savedSearches;
     private readonly IClock _clock;
     private string _phrase = string.Empty;
@@ -110,17 +119,21 @@ public sealed class SearchViewModel : ObservableObject
     private string _statusMessage =
         "Try \"photos from last month\" or \"documents over 10 mb\". DeskAI reads only the folders you connected.";
     private string _scopeMessage = string.Empty;
+    private string _insideMessage = string.Empty;
+    private bool _showsInsideFiles;
     private bool _isBusy;
     private bool _hasSearched;
 
     public SearchViewModel(
         FileSearchService search,
         ConnectedFolderService folders,
+        ContentSearchService insideFiles,
         ISavedSearchRepository savedSearches,
         IClock clock)
     {
         _search = search;
         _folders = folders;
+        _insideFiles = insideFiles;
         _savedSearches = savedSearches;
         _clock = clock;
         SearchCommand = new AsyncRelayCommand(RunAsync, () => !IsBusy);
@@ -131,6 +144,22 @@ public sealed class SearchViewModel : ObservableObject
     }
 
     public ObservableCollection<ConnectedFolderViewModel> Folders { get; } = [];
+
+    /// <summary>Files whose words matched, from folders that allowed reading inside.</summary>
+    public ObservableCollection<ContentHitViewModel> InsideResults { get; } = [];
+
+    /// <summary>What was looked at inside files, stated rather than implied.</summary>
+    public string InsideMessage
+    {
+        get => _insideMessage;
+        private set => SetProperty(ref _insideMessage, value);
+    }
+
+    public bool ShowsInsideFiles
+    {
+        get => _showsInsideFiles;
+        private set => SetProperty(ref _showsInsideFiles, value);
+    }
 
     public AsyncRelayCommand<Guid> RefreshFolderCommand { get; }
 
@@ -452,6 +481,11 @@ public sealed class SearchViewModel : ObservableObject
         {
             var outcome = await _search.SearchAsync(Phrase, _clock.UtcNow).ConfigureAwait(true);
             Apply(outcome);
+
+            // Looking inside files is a separate pass, after the results are on screen, and
+            // only in folders that allowed it. It finds files whose words match even when
+            // the name says nothing, which is the whole reason someone grants the permission.
+            ApplyInsideFiles(await _insideFiles.SearchAsync(Phrase).ConfigureAwait(true));
         }
         catch (ArgumentException)
         {
@@ -522,10 +556,56 @@ public sealed class SearchViewModel : ObservableObject
         RaiseListChanges();
     }
 
+    /// <summary>
+    /// Shows what was found inside files, and how much was actually looked at.
+    /// </summary>
+    /// <remarks>
+    /// The count of files read is stated rather than hidden. "Nothing matched" and "nothing
+    /// matched in the first fifty files DeskAI opened" mean different things to someone
+    /// deciding whether to trust the answer.
+    /// </remarks>
+    private void ApplyInsideFiles(ContentSearchOutcome outcome)
+    {
+        InsideResults.Clear();
+        ShowsInsideFiles = outcome.WasSearched;
+
+        if (!outcome.WasSearched)
+        {
+            InsideMessage = string.Empty;
+            OnPropertyChanged(nameof(ShowsInsideFiles));
+            return;
+        }
+
+        foreach (var hit in outcome.Hits)
+        {
+            var folder = Path.GetDirectoryName(hit.RelativePath);
+            InsideResults.Add(new ContentHitViewModel(
+                hit.Name,
+                string.IsNullOrEmpty(folder) ? hit.RootName : $"{hit.RootName} / {folder}",
+                hit.Snippet));
+        }
+
+        var read = outcome.FilesRead == 1 ? "1 text file" : $"{outcome.FilesRead} text files";
+        InsideMessage = outcome.Hits.Count switch
+        {
+            0 when outcome.ReachedLimit =>
+                $"Nothing found in the first {read} DeskAI opened. Narrow the search to look at different files.",
+            0 => $"Nothing found inside the {read} DeskAI opened.",
+            _ when outcome.ReachedLimit =>
+                $"Found in {outcome.Hits.Count} of the first {read} DeskAI opened. There may be more.",
+            _ => $"Found in {outcome.Hits.Count} of {read} DeskAI opened.",
+        };
+
+        OnPropertyChanged(nameof(ShowsInsideFiles));
+    }
+
     private void Reset()
     {
         Chips.Clear();
         Results.Clear();
+        InsideResults.Clear();
+        ShowsInsideFiles = false;
+        InsideMessage = string.Empty;
     }
 
     private void RaiseListChanges()
@@ -533,5 +613,6 @@ public sealed class SearchViewModel : ObservableObject
         OnPropertyChanged(nameof(HasResults));
         OnPropertyChanged(nameof(HasChips));
         OnPropertyChanged(nameof(ShowsNothingFound));
+        OnPropertyChanged(nameof(ShowsInsideFiles));
     }
 }

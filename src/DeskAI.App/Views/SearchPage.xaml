@@ -156,6 +156,42 @@
             </ItemsControl>
 
             <!--
+                What was found inside files. Only appears when a folder has allowed reading,
+                and always states how many files were actually opened, so "nothing matched"
+                is never mistaken for "nothing exists".
+            -->
+            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.ShowsInsideFiles, Mode=OneWay}">
+                <StackPanel Spacing="4">
+                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Found inside your files" />
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="620"
+                               HorizontalAlignment="Left"
+                               Text="{x:Bind ViewModel.InsideMessage, Mode=OneWay}" />
+                </StackPanel>
+
+                <ItemsControl ItemsSource="{x:Bind ViewModel.InsideResults, Mode=OneWay}"
+                              AutomationProperties.Name="Files matched by their contents">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="viewmodels:ContentHitViewModel">
+                            <Border Style="{StaticResource RowCardStyle}">
+                                <StackPanel Spacing="4">
+                                    <TextBlock FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                               Text="{x:Bind Name}" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}"
+                                               TextTrimming="CharacterEllipsis"
+                                               Text="{x:Bind Location}" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}"
+                                               TextWrapping="Wrap"
+                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                               Text="{x:Bind Snippet}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+
+            <!--
                 Folder management sits on this page because scope is part of searching:
                 what DeskAI can find is exactly what you connected, and nothing else.
             -->
@@ -229,7 +265,7 @@
                                Text="What search can and cannot do" />
                     <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
                                HorizontalAlignment="Left"
-                               Text="It looks only inside folders you connected, and only at names, sizes, and dates that DeskAI remembered — never the contents of your files. Disconnecting a folder immediately forgets everything remembered about it." />
+                               Text="It looks only inside folders you connected. Normally it uses just the names, sizes, and dates it remembered. If you allow it for a folder, it can also read the beginning of plain text files there to find words written inside — never PDFs, photos, or programs, and nothing it reads is saved or sent anywhere. Disconnecting a folder immediately forgets everything remembered about it." />
                 </StackPanel>
             </Border>
 

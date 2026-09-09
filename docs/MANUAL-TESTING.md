@@ -209,6 +209,34 @@ so it cannot run in the app yet; this is verified by tests and by confirming not
    that sending extracted text to an AI provider, reading PDF or Office files, and storing
    extracted text are each listed as still **not** accepted.
 
+## V0.4 Step 8, Stage 3 — Content Consent and Inside-File Search
+
+Use a temporary folder of generated dummy files. Put a few `.txt` and `.md` files in it with
+a distinctive word inside one of them, and give that file a name that does **not** contain
+the word, so a match can only come from reading the contents.
+
+1. Build Release and run the complete suite. Expected result: **413 passing tests**, none
+   skipped, and zero build warnings/errors.
+2. Connect the folder in Search. Confirm the connect dialog says DeskAI will not read what
+   is inside your files unless you allow that separately afterwards.
+3. Confirm the folder row says "Names, sizes, and dates only." and offers "Read inside
+   files". Search for the distinctive word: there must be **no** "Found inside your files"
+   section at all.
+4. Choose "Read inside files". Confirm the dialog names the folder, says which kinds of file
+   are opened, says PDFs, Word documents, spreadsheets, photos, and programs are not, says
+   nothing read is saved or sent, and says files still cannot be moved, renamed, or deleted.
+   Cancel it. Confirm the permission did **not** change.
+5. Choose it again and allow. Confirm the row now says DeskAI can read inside the text files
+   here, and that the navigation pane reminder now mentions the folder you let it read.
+6. Search for the distinctive word again. Confirm the file appears under "Found inside your
+   files" with a readable snippet, and that the message states how many files were opened.
+7. Put the word in a `.pdf` or `.jpg` file as well and search again. It must **not** appear:
+   those formats are never opened.
+8. Choose "Stop reading inside". Confirm it happens immediately with no confirmation, the
+   row returns to names, sizes, and dates, and searching finds nothing inside files.
+9. Allow reading again, then choose "Disconnect". Confirm the folder disconnects properly —
+   a permission you can give must stay one you can take back.
+
 ## Bring Your Own Key — Any Supported Service
 
 1. Build Release and run the full suite. Expected: **202 passing tests**, none skipped,

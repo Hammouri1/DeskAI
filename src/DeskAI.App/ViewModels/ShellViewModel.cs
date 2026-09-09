@@ -64,6 +64,14 @@ public sealed class ShellViewModel(ConnectedFolderService folders) : ObservableO
 
         var files = connected.Sum(folder => folder.FileCount);
         ScopeTitle = connected.Count == 1 ? "1 folder connected" : $"{connected.Count} folders connected";
-        ScopeMessage = $"DeskAI remembers names, sizes, and dates for {files} file(s). It has not opened any of them.";
+
+        // "It has not opened any of them" stops being true the moment someone allows reading
+        // inside a folder, so the reminder counts those folders instead of repeating a
+        // reassurance that has quietly expired.
+        var reading = connected.Count(folder => folder.CanReadContent);
+        ScopeMessage = reading == 0
+            ? $"DeskAI remembers names, sizes, and dates for {files} file(s). It has not opened any of them."
+            : $"DeskAI remembers names, sizes, and dates for {files} file(s). You have let it read inside "
+                + (reading == 1 ? "1 folder." : $"{reading} folders.");
     }
 }

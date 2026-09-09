@@ -101,6 +101,8 @@ Changing from local/rule-only to cloud requires provider selection and a disclos
 
 Always show actual scope (“Searching 3 authorized folders”). Natural-language input translates to visible filter chips so the user can correct interpretation. Results show path context, classification source, and why they matched. A Smart Collection is labeled virtual; saving it does not move files.
 
+Reading inside files is a separate, visible permission. Connecting a folder never grants it; a second dialog asks, and names what is opened, what is not, and that nothing read is saved or sent. Each folder row states in words whether DeskAI may read inside it, because a permission a person cannot see is one they cannot reconsider, and withdrawing it takes one click with no confirmation. Results found by their contents appear in their own section with a snippet showing why they matched, and the section always says how many files were actually opened — “nothing matched” and “nothing matched in the first fifty files” mean different things. No safety sentence anywhere may claim DeskAI never opens files: that stops being true the moment someone grants this, so the wording is conditional on the permission instead.
+
 ## Rules and Automation
 
 Use a readable “When / If / Then / Scope” editor. When AI drafts a rule, show the deterministic interpretation and a simulation against sample/current indexed files before approval. Clearly distinguish enabled, scheduled/watched, manual-only, paused, and needs-review. Provide a kill switch/pause-all action.

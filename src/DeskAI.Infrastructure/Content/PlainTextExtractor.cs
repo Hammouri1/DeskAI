@@ -31,20 +31,6 @@ namespace DeskAI.Infrastructure.Content;
 /// </remarks>
 public sealed class PlainTextExtractor(IPathPolicy pathPolicy) : IContentTextExtractor
 {
-    /// <summary>
-    /// The file endings this reads.
-    /// </summary>
-    /// <remarks>
-    /// All of these are text by definition, so reading one cannot execute a parser over
-    /// hostile structure. The list is deliberately short; widening it is a security
-    /// decision, not a convenience one.
-    /// </remarks>
-    private static readonly string[] SupportedExtensions =
-    [
-        ".txt", ".md", ".log", ".csv", ".tsv", ".json", ".jsonl", ".ndjson",
-        ".xml", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf",
-    ];
-
     private readonly IPathPolicy _pathPolicy = pathPolicy;
 
     public async Task<TextExtraction> ExtractAsync(
@@ -78,9 +64,10 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy) : IContentTextExt
                 "This location is protected, so DeskAI did not open it.");
         }
 
-        // Refused before opening: an unsupported file is never touched at all.
-        if (!SupportedExtensions.Any(extension =>
-            relativePath.EndsWith(extension, StringComparison.OrdinalIgnoreCase)))
+        // Refused before opening: an unsupported file is never touched at all. The list
+        // lives in Core so the code choosing candidates and the code opening them cannot
+        // drift into disagreeing about which files get read.
+        if (!TextFileFormats.IsSupported(relativePath))
         {
             return TextExtraction.Refused(
                 relativePath,

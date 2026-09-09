@@ -198,6 +198,16 @@ Reads are bounded to 64 KB from the beginning of the file — enough to tell wha
 
 Plain-text formats only; PDF and Office are excluded because parsing them runs a third-party parser over attacker-controlled binary structure (ADR 0015). Extracted text is untrusted input exactly like a file name: a test feeds prompt-injection wording through and asserts it comes back as inert text. **The extractor is registered in no container and called by nothing**, so it is unreachable from the running application until the consent step in stage 3 exists.
 
+### Content consent and inside-file search (V0.4 step 8, stage 3)
+
+`ConnectedFolderService.AllowContentAsync` and `StopContentAsync` move a connected folder between `MetadataOnly` and `MetadataAndContent`. Only those two scopes may be swapped between: the practice workspace and any organize-scoped folder are refused, so a consent belonging to the folder list cannot reach a scope that grants changes. Connecting a folder still grants metadata only, and a test asserts a freshly connected folder has no content permission — reading inside is a separate question, asked with its own dialog naming what is opened, what is not, and that nothing read is saved or sent.
+
+This slice also closes the gap ADR 0014 recorded: `RemoveAsync` filtered on metadata-only alone, so allowing content access would have made a folder impossible to disconnect — a permission you could give and never take back. Both reading scopes are now accepted, the practice workspace still excluded.
+
+`ContentSearchService` is the only consumer of file content. It selects roots with `RootCapabilities.CanReadContent`, chooses candidates from the index by remembered name so a file DeskAI would refuse to read is never offered to the extractor, and reads only through `IContentTextExtractor`, which refuses independently. Bounds: at most 50 files per search, 64 KB each, and phrases under three characters open nothing. The outcome carries how many files were read and whether the limit was reached, and the UI states it, so "nothing matched" is never mistaken for "nothing exists".
+
+`TextFileFormats` holds the supported endings in Core, so the code choosing candidates and the code opening files cannot drift into disagreeing about which files get read. Snippets are file text — whitespace collapsed, control characters dropped — and are displayed and nothing more.
+
 ### Organization health score (V0.4 step 7)
 
 `OrganizationHealthCalculator.Evaluate` turns the storage summary and the possible-duplicate report into a score out of 100. It is a static, pure calculation: no dependencies, no I/O, no clock, no AI. It reaches no folder, so it can only ever describe what the two readings it is handed were already allowed to see.

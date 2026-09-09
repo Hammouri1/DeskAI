@@ -111,7 +111,8 @@ public sealed partial class SearchPage : Page
             XamlRoot = XamlRoot,
             Title = "Let DeskAI search this folder?",
             Content = $"{path}\n\nDeskAI will remember file names, sizes, and dates so you can search them. "
-                + "It will not read what is inside your files, and it cannot move, rename, or delete anything.\n\n"
+                + "It will not read what is inside your files unless you allow that separately afterwards, "
+                + "and it cannot move, rename, or delete anything.\n\n"
                 + "You can disconnect this folder at any time, which immediately forgets everything remembered about it.",
             PrimaryButtonText = "Connect folder",
             CloseButtonText = "Cancel",

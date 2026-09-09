@@ -5,8 +5,10 @@ using DeskAI.App.Preview;
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.App.Views;
+using DeskAI.Core.Abstractions;
 using DeskAI.Core.Ai;
 using DeskAI.Core.Search;
+using DeskAI.Infrastructure.Content;
 using DeskAI.Infrastructure.DependencyInjection;
 using DeskAI.Infrastructure.Logging;
 using DeskAI.Infrastructure.Persistence;
@@ -82,6 +84,10 @@ public partial class App : Application
                 services.AddTransient<OrganizeViewModel>();
                 services.AddSingleton<FileSearchService>();
                 services.AddSingleton<ConnectedFolderService>();
+                // The only service that opens a file. It refuses any folder that was not
+                // connected for reading inside, so registering it grants nothing on its own.
+                services.AddSingleton<IContentTextExtractor, PlainTextExtractor>();
+                services.AddSingleton<ContentSearchService>();
                 services.AddSingleton<StorageSummaryService>();
                 services.AddSingleton<DuplicateFinderService>();
                 services.AddTransient<SettingsViewModel>();

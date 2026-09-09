@@ -422,9 +422,12 @@ public sealed class DashboardViewModel(
 
         HeroState = summary.FoldersIncluded == 1 ? "1 folder connected" : $"{summary.FoldersIncluded} folders connected";
         HeroTitle = $"{DescribeSize(summary.TotalSizeBytes)} across {summary.TotalFiles:N0} files";
+        // Not "it has not opened any of them": that reassurance would expire silently the
+        // moment someone allowed reading inside a folder, and this page cannot see that.
         HeroMessage =
-            "DeskAI remembers names, sizes, and dates for these files. It has not opened any of them, "
-            + "and it cannot move, rename, or delete anything without showing you first.";
+            "DeskAI remembers names, sizes, and dates for these files. It opens a file only if you "
+            + "allowed that for its folder, and it cannot move, rename, or delete anything "
+            + "without showing you first.";
 
         TotalSize = DescribeSize(summary.TotalSizeBytes);
 

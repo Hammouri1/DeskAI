@@ -52,7 +52,7 @@ Goal: optional AI improves ambiguous suggestions without changing the safety mod
 
 Exit criteria: disabling AI preserves the organizer; protected/unapproved data never enters requests; malformed/malicious output cannot cause execution; credentials do not appear in database/logs.
 
-## V0.4 — Search and Storage Intelligence (**Now**)
+## V0.4 — Search and Storage Intelligence (**Complete except duplicate confirmation — 2026-09-09**)
 
 Goal: find and understand files without needing to move them.
 
@@ -79,9 +79,12 @@ Goal: find and understand files without needing to move them.
 6. ◐ Exact duplicate candidates using staged size/hash checks; possible-duplicate review.
    Stage 1 completed 2026-09-09: files sharing an exact size are grouped and shown on
    Home as possible duplicates, merged across folders, with no file ever opened.
-   Stage 2, confirming by content hash, is deliberately NOT done here. Hashing reads
-   file bytes, which the metadata-only authorization these folders were connected
-   under does not permit, so it belongs with step 8 permission-gated content work.
+   Stage 2, confirming by content hash, is still NOT done, and is the one open item in
+   this milestone. Step 8 has since built a content permission, but that is not enough on
+   its own: hashing must read a whole file, and the consent dialog people actually agree to
+   says DeskAI reads only the beginning of each text file. Confirming duplicates therefore
+   needs its own consent wording and its own bounds, not a quiet reuse of this one. It is
+   carried forward rather than rushed to close a milestone.
 7. ✅ Organization Health score with transparent components.
    Completed 2026-09-09; Home shows a score out of 100 next to the two parts that produced
    it — possible copies and files sitting unused — each with what it measured and how much
@@ -92,7 +95,7 @@ Goal: find and understand files without needing to move them.
    charged a folder points for file types DeskAI had simply never learned. Age is now weak
    and generous, unrecognised types are a stated limit on the reading instead of a penalty,
    and the classifier covers many more everyday extensions.
-8. ◐ Optional permission-gated content extraction, followed later by local embeddings/semantic search.
+8. ✅ Optional permission-gated content extraction, followed later by local embeddings/semantic search.
    Stage 1 completed 2026-09-09: the permission gate only. `RootCapabilities` is now the
    single answer to what a connected folder permits, and it denies any scope not explicitly
    listed, so extending the model fails closed instead of open. A `MetadataAndContent` scope
@@ -109,13 +112,21 @@ Goal: find and understand files without needing to move them.
    nothing, so it is unreachable from the running app. See
    `docs/decisions/0015-plain-text-only-content-extraction.md` and
    `docs/security/2026-09-09-plain-text-extraction-review.md`.
-   Stage 3, the consent step that can actually grant the scope, is NOT done. Until it exists
-   no folder can be content-authorized, and disconnect for such a folder must be fixed in the
-   same slice. Sending extracted text to an AI provider remains separately unaccepted.
+   Stage 3 completed 2026-09-09: the consent that grants the scope, and its one consumer.
+   A connected folder can be allowed to have its text files read, through a separate dialog
+   naming exactly what is opened, what is not, and that nothing read is saved or sent. The
+   permission is shown in words on the folder row and can be withdrawn without confirmation.
+   Disconnect now works for a content-authorized folder, closing the gap ADR 0014 recorded.
+   `ContentSearchService` finds files whose words match a typed phrase — at most 50 files per
+   search, 64 KB each, text formats only — and the results state how many files were opened.
+   Sending extracted text to an AI provider, reading PDF or Office documents, and storing
+   extracted text each remain unaccepted. See
+   `docs/security/2026-09-09-content-consent-and-search-review.md`.
+   Local embeddings and semantic search remain future work, not part of this milestone.
 
 Exit criteria: results are scoped to authorized roots, index deletion/privacy controls work, score is explainable, and no cleanup action bypasses preview.
 
-## V0.5 — Rules and Automation (**Planned**)
+## V0.5 — Rules and Automation (**Now**)
 
 Goal: turn repeated intent into deterministic, auditable behavior.
 
