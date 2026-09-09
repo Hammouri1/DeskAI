@@ -274,6 +274,13 @@ public sealed class FileSearchServiceTests
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
+        public Task<RootStorageSummary> SummarizeRootAsync(
+            Guid rootId,
+            DateTimeOffset unchangedSinceUtc,
+            int largestFileCount,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException("This fake does not implement summaries.");
+
         public Task<FileIndexStatistics> GetStatisticsAsync(
             Guid rootId,
             CancellationToken cancellationToken = default) =>

@@ -232,6 +232,83 @@ public sealed class SqliteFileIndex(IOptions<DatabaseOptions> options) : IFileIn
             : new FileIndexStatistics(count, reader.GetInt64(1), ParseTimestamp(reader.GetString(2)));
     }
 
+    public async Task<RootStorageSummary> SummarizeRootAsync(
+        Guid rootId,
+        DateTimeOffset unchangedSinceUtc,
+        int largestFileCount,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(largestFileCount);
+
+        await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
+        var rootKey = rootId.ToString("D");
+
+        // Counting and summing happen in SQL so a folder with a hundred thousand remembered
+        // files costs about the same to summarize as one with ten.
+        var categories = new List<CategoryUsage>();
+        await using (var command = connection.CreateCommand())
+        {
+            command.CommandText = """
+                SELECT category, COUNT(*), COALESCE(SUM(size_bytes), 0)
+                FROM indexed_files
+                WHERE root_id = $rootId
+                GROUP BY category
+                ORDER BY SUM(size_bytes) DESC;
+                """;
+            command.Parameters.AddWithValue("$rootId", rootKey);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                categories.Add(new CategoryUsage(
+                    (FileCategory)reader.GetInt32(0),
+                    reader.GetInt32(1),
+                    reader.GetInt64(2)));
+            }
+        }
+
+        var largest = new List<IndexedFile>();
+        await using (var command = connection.CreateCommand())
+        {
+            command.CommandText = """
+                SELECT file_id, relative_path, kind, category, size_bytes,
+                       created_at_utc, modified_at_utc, indexed_at_utc
+                FROM indexed_files
+                WHERE root_id = $rootId
+                ORDER BY size_bytes DESC
+                LIMIT $limit;
+                """;
+            command.Parameters.AddWithValue("$rootId", rootKey);
+            command.Parameters.AddWithValue("$limit", largestFileCount);
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                largest.Add(Read(rootId, reader));
+            }
+        }
+
+        // Normalized to UTC for the same reason search range filters are: stored timestamps
+        // keep whatever offset the file carried, so a raw string compare would misorder them.
+        await using (var command = connection.CreateCommand())
+        {
+            command.CommandText = """
+                SELECT COUNT(*), COALESCE(SUM(size_bytes), 0)
+                FROM indexed_files
+                WHERE root_id = $rootId
+                  AND strftime('%Y-%m-%dT%H:%M:%SZ', modified_at_utc) < $unchangedSince;
+                """;
+            command.Parameters.AddWithValue("$rootId", rootKey);
+            command.Parameters.AddWithValue("$unchangedSince", FormatUtcBoundary(unchangedSinceUtc));
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            return await reader.ReadAsync(cancellationToken).ConfigureAwait(false)
+                ? new RootStorageSummary(
+                    categories.AsReadOnly(),
+                    largest.AsReadOnly(),
+                    reader.GetInt32(0),
+                    reader.GetInt64(1))
+                : new RootStorageSummary(categories.AsReadOnly(), largest.AsReadOnly(), 0, 0);
+        }
+    }
+
     public async Task ClearRootAsync(Guid rootId, CancellationToken cancellationToken = default)
     {
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);

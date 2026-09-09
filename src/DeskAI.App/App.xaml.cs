@@ -82,8 +82,10 @@ public partial class App : Application
                 services.AddTransient<OrganizeViewModel>();
                 services.AddSingleton<FileSearchService>();
                 services.AddSingleton<ConnectedFolderService>();
+                services.AddSingleton<StorageSummaryService>();
                 services.AddTransient<SettingsViewModel>();
                 services.AddTransient<SearchViewModel>();
+                services.AddTransient<DashboardViewModel>();
                 services.AddTransient<DashboardPage>();
                 services.AddTransient<OrganizePage>();
                 services.AddTransient<SearchPage>();

@@ -1,7 +1,9 @@
 <Page
     x:Class="DeskAI.App.Views.DashboardPage"
+    x:Name="Root"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewmodels="using:DeskAI.App.ViewModels"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
         <StackPanel Margin="32,28,32,44" MaxWidth="920" HorizontalAlignment="Left" Spacing="24">
@@ -19,12 +21,12 @@
                                  Fill="{ThemeResource DeskAccentBrush}" />
                         <TextBlock FontSize="13" FontWeight="SemiBold"
                                    Foreground="{ThemeResource DeskAccentBrush}"
-                                   Text="Practice mode" />
+                                   Text="{x:Bind ViewModel.HeroState, Mode=OneWay}" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource DeskDisplayStyle}"
-                               Text="Your files are untouched" />
+                               Text="{x:Bind ViewModel.HeroTitle, Mode=OneWay}" />
                     <TextBlock Style="{StaticResource BodySecondaryStyle}"
-                               Text="DeskAI is working with sample files only. No folder of yours is connected, so nothing on your computer can be moved, renamed, or deleted." />
+                               Text="{x:Bind ViewModel.HeroMessage, Mode=OneWay}" />
                 </StackPanel>
             </Border>
 
@@ -36,7 +38,7 @@
                 <Grid ColumnDefinitions="*,Auto,*,Auto,*">
                     <StackPanel Padding="20,18" Spacing="6">
                         <TextBlock Style="{StaticResource CaptionStyle}" Text="Folders connected" />
-                        <TextBlock Style="{StaticResource MetricStyle}" Text="0" />
+                        <TextBlock Style="{StaticResource MetricStyle}" Text="{x:Bind ViewModel.FoldersConnected, Mode=OneWay}" />
                         <TextBlock Style="{StaticResource CaptionStyle}"
                                    Text="DeskAI reads nothing until you pick one." />
                     </StackPanel>
@@ -45,25 +47,91 @@
                             Background="{ThemeResource DeskLineBrush}" />
 
                     <StackPanel Grid.Column="2" Padding="20,18" Spacing="6">
-                        <TextBlock Style="{StaticResource CaptionStyle}" Text="AI help" />
-                        <TextBlock Style="{StaticResource MetricStyle}" Text="Off" />
+                        <TextBlock Style="{StaticResource CaptionStyle}" Text="Files remembered" />
+                        <TextBlock Style="{StaticResource MetricStyle}" Text="{x:Bind ViewModel.TotalFiles, Mode=OneWay}" />
                         <TextBlock Style="{StaticResource CaptionStyle}"
-                                   Text="Turn it on with your own key any time." />
+                                   Text="{x:Bind ViewModel.TotalSize, Mode=OneWay}" />
                     </StackPanel>
 
                     <Border Grid.Column="3" Width="1" Margin="0,16"
                             Background="{ThemeResource DeskLineBrush}" />
 
                     <StackPanel Grid.Column="4" Padding="20,18" Spacing="6">
-                        <TextBlock Style="{StaticResource CaptionStyle}" Text="Search" />
+                        <TextBlock Style="{StaticResource CaptionStyle}" Text="Sitting unused" />
                         <TextBlock Style="{StaticResource MetricStyle}"
-                                   Foreground="{ThemeResource DeskCautionBrush}"
-                                   Text="Not ready" />
+                                   Text="{x:Bind ViewModel.OldFilesHeadline, Mode=OneWay}" />
                         <TextBlock Style="{StaticResource CaptionStyle}"
-                                   Text="Still being built." />
+                                   Text="{x:Bind ViewModel.OldFilesDetail, Mode=OneWay}" />
                     </StackPanel>
                 </Grid>
             </Border>
+
+            <!--
+                Where the space went. This describes and never proposes: there is no cleanup
+                button here, because any cleanup still has to go through preview and approval.
+            -->
+            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasStorage, Mode=OneWay}">
+                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Where your space is going" />
+
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="12">
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
+                                      AutomationProperties.Name="Storage by kind of file">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="viewmodels:CategoryUsageViewModel">
+                                    <Grid ColumnDefinitions="150,*,Auto,90" ColumnSpacing="14" Margin="0,0,0,10">
+                                        <TextBlock VerticalAlignment="Center"
+                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                   Text="{x:Bind Category}" />
+                                        <ProgressBar Grid.Column="1" VerticalAlignment="Center" Height="6"
+                                                     Minimum="0" Maximum="1"
+                                                     Value="{x:Bind ShareOfTotal}" />
+                                        <TextBlock Grid.Column="2" VerticalAlignment="Center" MinWidth="70"
+                                                   TextAlignment="Right"
+                                                   Style="{StaticResource CaptionStyle}"
+                                                   Text="{x:Bind Files}" />
+                                        <TextBlock Grid.Column="3" VerticalAlignment="Center"
+                                                   TextAlignment="Right"
+                                                   Style="{StaticResource CaptionStyle}"
+                                                   Text="{x:Bind Size}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Style="{StaticResource CaptionStyle}"
+                                   Visibility="{x:Bind ViewModel.HasLastChecked, Mode=OneWay}"
+                                   Text="{x:Bind ViewModel.LastChecked, Mode=OneWay}" />
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+
+            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasStorage, Mode=OneWay}">
+                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Largest files" />
+                <ItemsControl ItemsSource="{x:Bind ViewModel.LargestFiles, Mode=OneWay}"
+                              AutomationProperties.Name="Largest files">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="viewmodels:LargestFileViewModel">
+                            <Border Style="{StaticResource RowCardStyle}">
+                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                   Text="{x:Bind Name}" />
+                                        <TextBlock Style="{StaticResource CaptionStyle}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Text="{x:Bind Location}" />
+                                    </StackPanel>
+                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" MinWidth="80"
+                                               TextAlignment="Right"
+                                               Style="{StaticResource CaptionStyle}"
+                                               Text="{x:Bind Size}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
 
             <StackPanel Spacing="12">
                 <TextBlock Style="{StaticResource SectionTitleStyle}" Text="What you can try now" />

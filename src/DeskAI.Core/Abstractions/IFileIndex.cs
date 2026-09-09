@@ -40,6 +40,21 @@ public interface IFileIndex
 
     Task<FileIndexStatistics> GetStatisticsAsync(Guid rootId, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Summarizes one root: how much each category holds, the largest few files, and how
+    /// much has not changed since <paramref name="unchangedSinceUtc"/>.
+    /// </summary>
+    /// <remarks>
+    /// Implementations must aggregate in the store rather than by reading every row, so a
+    /// very large folder stays affordable to summarize. This reads remembered metadata and
+    /// touches no file.
+    /// </remarks>
+    Task<RootStorageSummary> SummarizeRootAsync(
+        Guid rootId,
+        DateTimeOffset unchangedSinceUtc,
+        int largestFileCount,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Forgets everything remembered about one root. Files on disk are untouched.</summary>
     Task ClearRootAsync(Guid rootId, CancellationToken cancellationToken = default);
 }

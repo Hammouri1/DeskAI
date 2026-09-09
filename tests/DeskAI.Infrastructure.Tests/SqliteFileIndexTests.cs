@@ -430,6 +430,122 @@ public sealed class SqliteFileIndexTests
         Assert.Empty(results);
     }
 
+    [Fact]
+    public async Task SummarizeRootAsync_GroupsSizeByCategoryLargestFirst()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [
+                Entry(rootId, 1, "note.txt", sizeBytes: 100),
+                Entry(rootId, 2, "photo.png", sizeBytes: 900, kind: FileKind.Image, category: FileCategory.Images),
+                Entry(rootId, 3, "shot.png", sizeBytes: 300, kind: FileKind.Image, category: FileCategory.Images),
+            ],
+            TestContext.Current.CancellationToken);
+
+        var summary = await fixture.Index.SummarizeRootAsync(
+            rootId,
+            Moment.AddYears(-1),
+            largestFileCount: 5,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            [FileCategory.Images, FileCategory.Documents],
+            summary.Categories.Select(usage => usage.Category));
+        var images = summary.Categories[0];
+        Assert.Equal(2, images.FileCount);
+        Assert.Equal(1200, images.TotalSizeBytes);
+    }
+
+    [Fact]
+    public async Task SummarizeRootAsync_ReturnsTheLargestFilesInOrderAndHonoursTheLimit()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [
+                Entry(rootId, 1, "small.txt", sizeBytes: 10),
+                Entry(rootId, 2, "huge.txt", sizeBytes: 5000),
+                Entry(rootId, 3, "medium.txt", sizeBytes: 500),
+            ],
+            TestContext.Current.CancellationToken);
+
+        var summary = await fixture.Index.SummarizeRootAsync(
+            rootId,
+            Moment.AddYears(-1),
+            largestFileCount: 2,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(["huge.txt", "medium.txt"], summary.LargestFiles.Select(file => file.RelativePath));
+    }
+
+    /// <summary>
+    /// The age cut-off is compared in UTC for the same reason search ranges are: stored
+    /// timestamps keep whatever offset the file carried.
+    /// </summary>
+    [Fact]
+    public async Task SummarizeRootAsync_CountsOnlyFilesUnchangedBeforeTheCutOff()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [
+                Entry(rootId, 1, "old.txt", sizeBytes: 700, modifiedAtUtc: Moment.AddYears(-2)),
+                Entry(rootId, 2, "recent.txt", sizeBytes: 200, modifiedAtUtc: Moment),
+            ],
+            TestContext.Current.CancellationToken);
+
+        var summary = await fixture.Index.SummarizeRootAsync(
+            rootId,
+            Moment.AddYears(-1),
+            largestFileCount: 5,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, summary.OldFileCount);
+        Assert.Equal(700, summary.OldFileBytes);
+    }
+
+    [Fact]
+    public async Task SummarizeRootAsync_ReportsNothingForAnEmptyRoot()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+
+        var summary = await fixture.Index.SummarizeRootAsync(
+            rootId,
+            Moment.AddYears(-1),
+            largestFileCount: 5,
+            TestContext.Current.CancellationToken);
+
+        Assert.Empty(summary.Categories);
+        Assert.Empty(summary.LargestFiles);
+        Assert.Equal(0, summary.OldFileCount);
+    }
+
+    [Fact]
+    public async Task SummarizeRootAsync_SummarizesOnlyTheNamedRoot()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var mine = await fixture.AddRootAsync("Mine");
+        var theirs = await fixture.AddRootAsync("Theirs");
+        await fixture.Index.SynchronizeRootAsync(
+            mine, [Entry(mine, 1, "mine.txt", sizeBytes: 100)], TestContext.Current.CancellationToken);
+        await fixture.Index.SynchronizeRootAsync(
+            theirs, [Entry(theirs, 2, "theirs.txt", sizeBytes: 900)], TestContext.Current.CancellationToken);
+
+        var summary = await fixture.Index.SummarizeRootAsync(
+            mine,
+            Moment.AddYears(-1),
+            largestFileCount: 5,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal("mine.txt", Assert.Single(summary.LargestFiles).RelativePath);
+        Assert.Equal(100, Assert.Single(summary.Categories).TotalSizeBytes);
+    }
+
     private static IndexedFile Entry(
         Guid rootId,
         int seed,

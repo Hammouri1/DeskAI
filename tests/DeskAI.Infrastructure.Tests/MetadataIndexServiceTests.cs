@@ -250,6 +250,18 @@ public sealed class MetadataIndexServiceTests
             Task.FromResult<IReadOnlyList<IndexedFile>>(
                 _entries.TryGetValue(rootId, out var stored) ? stored.AsReadOnly() : []);
 
+        /// <summary>
+        /// Deliberately unsupported, for the same reason search is: this fake observes
+        /// synchronization, and a second copy of the aggregate rules could silently
+        /// disagree with the real one.
+        /// </summary>
+        public Task<RootStorageSummary> SummarizeRootAsync(
+            Guid rootId,
+            DateTimeOffset unchangedSinceUtc,
+            int largestFileCount,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException("This fake does not implement summaries.");
+
         public Task<FileIndexStatistics> GetStatisticsAsync(
             Guid rootId,
             CancellationToken cancellationToken = default)

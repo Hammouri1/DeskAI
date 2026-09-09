@@ -156,6 +156,16 @@ The limit is mandatory and capped, so there is no unlimited search. Text is boun
 
 Search is a read of remembered metadata. It opens no file, produces no plan, and cannot become an operation.
 
+### Storage summaries (V0.4 step 5)
+
+`StorageSummaryService` builds the storage picture across connected folders: size and count per category, the largest files, and how much has not changed in six months. Scope comes from `FileSearchService.IsSearchable`, so a summary can never describe a folder search would not look in.
+
+Aggregation happens in SQL through `IFileIndex.SummarizeRootAsync` rather than by loading every row, so a folder with a hundred thousand remembered files costs about the same to summarize as one with ten. The age cut-off is compared in UTC through `strftime` for the same reason search ranges are.
+
+The six-month threshold is a named constant, `StorageSummaryService.OldFileAge`, and the UI states it as "not changed in 6 months" rather than implying a judgement DeskAI has not made. The summary carries `LastCheckedUtc` so the page can say when the numbers were true instead of implying they are live, and `FoldersIncluded` so it can state real scope.
+
+A summary describes and never proposes. It produces no plan, and the page deliberately offers no cleanup action, because any cleanup must still go through the ordinary preview and approval path.
+
 ### Natural-language query translation (V0.4 step 3)
 
 `NaturalLanguageQueryTranslator.Translate` reads a short typed phrase such as "big videos from last month" into a `QueryTranslation`: the resulting `SearchQuery`, plus one `QueryChip` for every part it understood.

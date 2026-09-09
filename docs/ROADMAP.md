@@ -72,7 +72,10 @@ Goal: find and understand files without needing to move them.
    Completed 2026-09-09; saved searches store the typed phrase and no folder, so a
    relative phrase stays relative and one can never outlive an authorization.
    Implemented in code as SavedSearch; "Smart Collection" remains the product term.
-5. ⬜ Storage summaries, large/old downloads, archive and installer views.
+5. ✅ Storage summaries, large/old downloads, archive and installer views.
+   Completed 2026-09-09; Home shows size by category, the largest files, and what has
+   not changed in six months, aggregated in SQL and scoped to connected folders only.
+   It describes and never proposes: there is no cleanup action that bypasses preview.
 6. ⬜ Exact duplicate candidates using staged size/hash checks; possible-duplicate review.
 7. ⬜ Organization Health score with transparent components.
 8. ⬜ Optional permission-gated content extraction, followed later by local embeddings/semantic search.
