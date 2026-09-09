@@ -156,6 +156,20 @@ The limit is mandatory and capped, so there is no unlimited search. Text is boun
 
 Search is a read of remembered metadata. It opens no file, produces no plan, and cannot become an operation.
 
+### Natural-language query translation (V0.4 step 3)
+
+`NaturalLanguageQueryTranslator.Translate` reads a short typed phrase such as "big videos from last month" into a `QueryTranslation`: the resulting `SearchQuery`, plus one `QueryChip` for every part it understood.
+
+It is deterministic and local, with a fixed vocabulary and no AI. This follows the project rule that ordinary cases are handled conventionally and AI is reserved for genuinely uncertain ones, and `AI-PROVIDERS.md` sequences natural-language search *after* a typed query model exists. A fixed vocabulary is also auditable in a way a model's reading of the same sentence is not. When AI translation is added later it must produce the same `SearchQuery` type through the existing validated-suggestion path, so it gains no new reach.
+
+Three properties matter:
+
+- **Interpretation is visible.** Every filter the translator sets produces a chip written for a person to read back, so the UI can show its reading and let someone remove a part of it. Guessing silently is worse than guessing visibly.
+- **Understanding nothing is reported, not disguised.** `QueryTranslation.UnderstoodAnything` is false when no part matched. The resulting query has no filters, so running it would list the whole folder; callers must say they did not understand rather than presenting that listing as a result.
+- **Time is an argument.** `nowUtc` is passed in rather than read from the system clock, so "last month" resolves identically in tests and in the app, and the same phrase always produces the same query.
+
+Vague words state their real meaning: "big" is a named constant and the chip says "Larger than 100 MB" rather than hiding the threshold. A vague word never contradicts an explicit number — "big files under 5 MB" keeps the number and drops the vague half, instead of building an impossible query. Matched phrases are consumed as they are read, so leftover words are exactly those nothing claimed and become the text filter, which keeps "from" in "videos from last month" out of the search term.
+
 ## Deterministic Classification and Recipes
 
 `IFileClassifier` accepts a `FileItem` and returns one immutable `Classification`. `DeterministicFileClassifier` matches case-insensitive, dot-prefixed rules from `FileTypeRuleSet`; longer compound extensions win. A narrow filename heuristic separates common screenshot names from other images. Results always include a closed `FileCategory`, `FileKind`, provenance, bounded confidence, and explanation. Unknown is an explicit valid outcome.
