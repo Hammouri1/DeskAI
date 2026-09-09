@@ -56,11 +56,31 @@ public sealed record SearchResultViewModel(string Name, string Location, string 
 /// and matched. Only the last one shows results.
 /// </para>
 /// </remarks>
+/// <summary>One connected folder, formatted for the folder list.</summary>
+public sealed record ConnectedFolderViewModel(Guid Id, string Name, string Path, string Remembered)
+{
+    public static ConnectedFolderViewModel From(ConnectedFolder folder)
+    {
+        ArgumentNullException.ThrowIfNull(folder);
+        var remembered = folder.FileCount switch
+        {
+            0 => "Nothing remembered yet — refresh to scan it.",
+            1 => "1 file remembered",
+            _ => $"{folder.FileCount} files remembered",
+        };
+
+        return new ConnectedFolderViewModel(folder.Id, folder.Name, folder.Path, remembered);
+    }
+}
+
 public sealed class SearchViewModel : ObservableObject
 {
     private readonly FileSearchService _search;
+    private readonly ConnectedFolderService _folders;
     private readonly IClock _clock;
     private string _phrase = string.Empty;
+    private string _folderMessage = "No folders connected yet.";
+    private bool _isFolderBusy;
     private string _statusTitle = "Search your connected folders";
     private string _statusMessage =
         "Try \"photos from last month\" or \"documents over 10 mb\". DeskAI reads only the folders you connected.";
@@ -68,12 +88,46 @@ public sealed class SearchViewModel : ObservableObject
     private bool _isBusy;
     private bool _hasSearched;
 
-    public SearchViewModel(FileSearchService search, IClock clock)
+    public SearchViewModel(FileSearchService search, ConnectedFolderService folders, IClock clock)
     {
         _search = search;
+        _folders = folders;
         _clock = clock;
         SearchCommand = new AsyncRelayCommand(RunAsync, () => !IsBusy);
+        RefreshFolderCommand = new AsyncRelayCommand<Guid>(RefreshFolderAsync, _ => !IsFolderBusy);
+        DisconnectFolderCommand = new AsyncRelayCommand<Guid>(DisconnectFolderAsync, _ => !IsFolderBusy);
     }
+
+    public ObservableCollection<ConnectedFolderViewModel> Folders { get; } = [];
+
+    public AsyncRelayCommand<Guid> RefreshFolderCommand { get; }
+
+    public AsyncRelayCommand<Guid> DisconnectFolderCommand { get; }
+
+    public string FolderMessage
+    {
+        get => _folderMessage;
+        private set => SetProperty(ref _folderMessage, value);
+    }
+
+    public bool IsFolderBusy
+    {
+        get => _isFolderBusy;
+        private set
+        {
+            if (SetProperty(ref _isFolderBusy, value))
+            {
+                OnPropertyChanged(nameof(IsFolderIdle));
+                RefreshFolderCommand.NotifyCanExecuteChanged();
+                DisconnectFolderCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    /// <summary>The inverse of <see cref="IsFolderBusy"/>, so the view needs no converter.</summary>
+    public bool IsFolderIdle => !IsFolderBusy;
+
+    public bool HasFolders => Folders.Count > 0;
 
     public ObservableCollection<string> Chips { get; } = [];
 
@@ -135,6 +189,103 @@ public sealed class SearchViewModel : ObservableObject
 
     /// <summary>True only after a search that found nothing, so the first visit stays calm.</summary>
     public bool ShowsNothingFound => _hasSearched && Results.Count == 0;
+
+    /// <summary>Loads the folder list when the page opens.</summary>
+    public Task InitializeAsync() => ReloadFoldersAsync();
+
+    /// <summary>
+    /// Connects a folder the person picked and confirmed in the view.
+    /// </summary>
+    /// <remarks>
+    /// The path arrives already chosen through the Windows picker and an explicit
+    /// confirmation, so this method never invents or guesses a location.
+    /// </remarks>
+    public async Task ConnectFolderAsync(string path)
+    {
+        IsFolderBusy = true;
+        FolderMessage = "Checking this folder…";
+        try
+        {
+            var result = await _folders.ConnectAsync(path).ConfigureAwait(true);
+            await ReloadFoldersAsync().ConfigureAwait(true);
+            FolderMessage = result.IsAllowed
+                ? $"{result.Folder?.Name}: {result.Explanation}"
+                : result.Explanation;
+        }
+        catch (Exception exception) when (IsExpectedFolderFailure(exception))
+        {
+            FolderMessage = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            IsFolderBusy = false;
+        }
+    }
+
+    private async Task RefreshFolderAsync(Guid rootId)
+    {
+        IsFolderBusy = true;
+        try
+        {
+            var result = await _folders.RefreshAsync(rootId).ConfigureAwait(true);
+            await ReloadFoldersAsync().ConfigureAwait(true);
+            FolderMessage = result.Explanation;
+        }
+        catch (Exception exception) when (IsExpectedFolderFailure(exception))
+        {
+            FolderMessage = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            IsFolderBusy = false;
+        }
+    }
+
+    private async Task DisconnectFolderAsync(Guid rootId)
+    {
+        IsFolderBusy = true;
+        try
+        {
+            await _folders.DisconnectAsync(rootId).ConfigureAwait(true);
+            await ReloadFoldersAsync().ConfigureAwait(true);
+
+            // Results already on screen may have come from the folder just removed, so they
+            // are cleared rather than left behind as stale rows.
+            Reset();
+            RaiseListChanges();
+            FolderMessage = "Disconnected. Everything remembered about it has been forgotten.";
+        }
+        catch (Exception exception) when (IsExpectedFolderFailure(exception))
+        {
+            FolderMessage = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            IsFolderBusy = false;
+        }
+    }
+
+    private async Task ReloadFoldersAsync()
+    {
+        var connected = await _folders.ListAsync().ConfigureAwait(true);
+        Folders.Clear();
+        foreach (var folder in connected)
+        {
+            Folders.Add(ConnectedFolderViewModel.From(folder));
+        }
+
+        OnPropertyChanged(nameof(HasFolders));
+        if (Folders.Count == 0)
+        {
+            FolderMessage = "No folders connected yet.";
+        }
+    }
+
+    private static bool IsExpectedFolderFailure(Exception exception) =>
+        exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException
+            or System.Data.Common.DbException;
 
     private async Task RunAsync()
     {

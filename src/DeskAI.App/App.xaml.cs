@@ -81,6 +81,7 @@ public partial class App : Application
                 services.AddTransient<ShellViewModel>();
                 services.AddTransient<OrganizeViewModel>();
                 services.AddSingleton<FileSearchService>();
+                services.AddSingleton<ConnectedFolderService>();
                 services.AddTransient<SettingsViewModel>();
                 services.AddTransient<SearchViewModel>();
                 services.AddTransient<DashboardPage>();
