@@ -59,7 +59,9 @@ Goal: find and understand files without needing to move them.
 1. ✅ Incremental local metadata index with root-scoped storage and cascade erasure.
    Completed 2026-09-09; backend only, invoked by tests with generated temporary data.
    Nothing is indexed automatically and no UI calls it yet.
-2. ⬜ Structured search filters over the index.
+2. ✅ Structured search filters over the index.
+   Completed 2026-09-09; backend only, invoked by tests with generated temporary data.
+   Filters are validated in Core and applied by the store; no UI calls them yet.
 3. ⬜ Natural-language query translation into a constrained local query model.
 4. ⬜ Smart Collections as saved virtual queries.
 5. ⬜ Storage summaries, large/old downloads, archive and installer views.

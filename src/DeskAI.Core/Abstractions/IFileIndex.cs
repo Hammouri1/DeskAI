@@ -1,4 +1,5 @@
 using DeskAI.Core.Indexing;
+using DeskAI.Core.Search;
 
 namespace DeskAI.Core.Abstractions;
 
@@ -22,6 +23,20 @@ public interface IFileIndex
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<IndexedFile>> ListForRootAsync(Guid rootId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Returns the remembered entries for one root that match <paramref name="query"/>,
+    /// ordered by path and capped at the query's limit.
+    /// </summary>
+    /// <remarks>
+    /// The root is a separate argument rather than part of the query so that a query built
+    /// from untrusted input cannot select a root the caller did not authorize. This is a
+    /// read of remembered metadata only: it touches no file and produces no plan.
+    /// </remarks>
+    Task<IReadOnlyList<IndexedFile>> SearchRootAsync(
+        Guid rootId,
+        SearchQuery query,
+        CancellationToken cancellationToken = default);
 
     Task<FileIndexStatistics> GetStatisticsAsync(Guid rootId, CancellationToken cancellationToken = default);
 

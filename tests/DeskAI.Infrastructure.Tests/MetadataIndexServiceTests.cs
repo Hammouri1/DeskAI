@@ -3,6 +3,7 @@ using DeskAI.Core.Classification;
 using DeskAI.Core.Files;
 using DeskAI.Core.Indexing;
 using DeskAI.Core.Roots;
+using DeskAI.Core.Search;
 using DeskAI.Infrastructure.Indexing;
 using DeskAI.Infrastructure.Scanning;
 using DeskAI.Safety;
@@ -198,6 +199,18 @@ public sealed class MetadataIndexServiceTests
         private readonly Dictionary<Guid, List<IndexedFile>> _entries = [];
 
         public int SynchronizeCalls { get; private set; }
+
+        /// <summary>
+        /// Deliberately unsupported. This fake exists to observe synchronization, and
+        /// re-implementing the filter rules here would create a second copy that could
+        /// silently disagree with the real one. Search behaviour is covered against the
+        /// real store in <see cref="SqliteFileIndexTests"/>.
+        /// </summary>
+        public Task<IReadOnlyList<IndexedFile>> SearchRootAsync(
+            Guid rootId,
+            SearchQuery query,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException("This fake does not implement search.");
 
         public Task<FileIndexSyncResult> SynchronizeRootAsync(
             Guid rootId,

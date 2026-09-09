@@ -2,6 +2,7 @@ using DeskAI.Core.Classification;
 using DeskAI.Core.Files;
 using DeskAI.Core.Indexing;
 using DeskAI.Core.Roots;
+using DeskAI.Core.Search;
 using DeskAI.Infrastructure.Persistence;
 using DeskAI.Infrastructure.Time;
 using Microsoft.Data.Sqlite;
@@ -199,15 +200,252 @@ public sealed class SqliteFileIndexTests
         }
     }
 
-    private static IndexedFile Entry(Guid rootId, int seed, string relativePath, long sizeBytes = 10) => new(
+    [Fact]
+    public async Task SearchRootAsync_MatchesTextAnywhereInThePath()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [
+                Entry(rootId, 1, @"Study\budget notes.txt"),
+                Entry(rootId, 2, @"Budget\summary.txt"),
+                Entry(rootId, 3, "holiday.txt"),
+            ],
+            TestContext.Current.CancellationToken);
+
+        var results = await fixture.Index.SearchRootAsync(
+            rootId,
+            new SearchQuery(pathContains: "budget"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            [@"Budget\summary.txt", @"Study\budget notes.txt"],
+            results.Select(file => file.RelativePath));
+    }
+
+    /// <summary>
+    /// The root is a separate argument precisely so a query cannot widen its own scope.
+    /// This is the test that would fail if search ever leaked across authorized folders.
+    /// </summary>
+    [Fact]
+    public async Task SearchRootAsync_NeverReturnsAnotherRootsFiles()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var mine = await fixture.AddRootAsync("Mine");
+        var theirs = await fixture.AddRootAsync("Theirs");
+        await fixture.Index.SynchronizeRootAsync(
+            mine,
+            [Entry(mine, 1, "budget.txt")],
+            TestContext.Current.CancellationToken);
+        await fixture.Index.SynchronizeRootAsync(
+            theirs,
+            [Entry(theirs, 2, "budget.txt")],
+            TestContext.Current.CancellationToken);
+
+        var results = await fixture.Index.SearchRootAsync(
+            mine,
+            new SearchQuery(pathContains: "budget"),
+            TestContext.Current.CancellationToken);
+
+        Assert.All(results, file => Assert.Equal(mine, file.RootId));
+        Assert.Single(results);
+    }
+
+    /// <summary>
+    /// A file genuinely named with an underscore must not turn into a single-character
+    /// wildcard, which would silently widen the search.
+    /// </summary>
+    [Fact]
+    public async Task SearchRootAsync_TreatsLikeWildcardsInSearchTextAsLiteralCharacters()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [Entry(rootId, 1, "report_final.txt"), Entry(rootId, 2, "reportXfinal.txt")],
+            TestContext.Current.CancellationToken);
+
+        var results = await fixture.Index.SearchRootAsync(
+            rootId,
+            new SearchQuery(pathContains: "report_final"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(["report_final.txt"], results.Select(file => file.RelativePath));
+    }
+
+    [Fact]
+    public async Task SearchRootAsync_FiltersByFileEnding()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [
+                Entry(rootId, 1, "notes.txt"),
+                Entry(rootId, 2, "photo.PNG"),
+                Entry(rootId, 3, "sheet.xlsx"),
+            ],
+            TestContext.Current.CancellationToken);
+
+        var results = await fixture.Index.SearchRootAsync(
+            rootId,
+            new SearchQuery(extensions: ["png", ".XLSX"]),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(["photo.PNG", "sheet.xlsx"], results.Select(file => file.RelativePath));
+    }
+
+    [Fact]
+    public async Task SearchRootAsync_FiltersByCategoryAndKind()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [
+                Entry(rootId, 1, "notes.txt"),
+                Entry(rootId, 2, "photo.png", kind: FileKind.Image, category: FileCategory.Images),
+                Entry(rootId, 3, "clip.mp4", kind: FileKind.Video, category: FileCategory.Videos),
+            ],
+            TestContext.Current.CancellationToken);
+
+        var byCategory = await fixture.Index.SearchRootAsync(
+            rootId,
+            new SearchQuery(categories: [FileCategory.Images, FileCategory.Videos]),
+            TestContext.Current.CancellationToken);
+        var byKind = await fixture.Index.SearchRootAsync(
+            rootId,
+            new SearchQuery(kinds: [FileKind.Image]),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(["clip.mp4", "photo.png"], byCategory.Select(file => file.RelativePath));
+        Assert.Equal(["photo.png"], byKind.Select(file => file.RelativePath));
+    }
+
+    [Fact]
+    public async Task SearchRootAsync_FiltersBySizeRangeInclusively()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [
+                Entry(rootId, 1, "small.txt", sizeBytes: 100),
+                Entry(rootId, 2, "medium.txt", sizeBytes: 500),
+                Entry(rootId, 3, "large.txt", sizeBytes: 900),
+            ],
+            TestContext.Current.CancellationToken);
+
+        var results = await fixture.Index.SearchRootAsync(
+            rootId,
+            new SearchQuery(minSizeBytes: 100, maxSizeBytes: 500),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(["medium.txt", "small.txt"], results.Select(file => file.RelativePath));
+    }
+
+    /// <summary>
+    /// Stored timestamps keep the offset the file carried, so comparing the raw strings
+    /// would rank "09:00+02:00" (07:00 UTC) after "08:00+00:00". The range must be judged
+    /// in UTC, which is what this test pins down.
+    /// </summary>
+    [Fact]
+    public async Task SearchRootAsync_ComparesDatesInUtcEvenWhenStoredOffsetsDiffer()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        var earlyInUtcButLaterOnTheClock = new DateTimeOffset(2026, 9, 9, 9, 0, 0, TimeSpan.FromHours(2));
+        var lateInUtc = new DateTimeOffset(2026, 9, 9, 10, 0, 0, TimeSpan.Zero);
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [
+                Entry(rootId, 1, "early.txt", modifiedAtUtc: earlyInUtcButLaterOnTheClock),
+                Entry(rootId, 2, "late.txt", modifiedAtUtc: lateInUtc),
+            ],
+            TestContext.Current.CancellationToken);
+
+        var results = await fixture.Index.SearchRootAsync(
+            rootId,
+            new SearchQuery(modifiedAfterUtc: new DateTimeOffset(2026, 9, 9, 8, 0, 0, TimeSpan.Zero)),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(["late.txt"], results.Select(file => file.RelativePath));
+    }
+
+    [Fact]
+    public async Task SearchRootAsync_CapsResultsAtTheQueryLimit()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        var entries = Enumerable
+            .Range(1, 10)
+            .Select(index => Entry(rootId, index, $"file{index:D2}.txt"))
+            .ToArray();
+        await fixture.Index.SynchronizeRootAsync(rootId, entries, TestContext.Current.CancellationToken);
+
+        var results = await fixture.Index.SearchRootAsync(
+            rootId,
+            new SearchQuery(limit: 3),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(3, results.Count);
+        Assert.Equal(["file01.txt", "file02.txt", "file03.txt"], results.Select(file => file.RelativePath));
+    }
+
+    [Fact]
+    public async Task SearchRootAsync_WithNoFiltersReturnsTheWholeRootUpToTheLimit()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [Entry(rootId, 1, "a.txt"), Entry(rootId, 2, "b.txt")],
+            TestContext.Current.CancellationToken);
+
+        var results = await fixture.Index.SearchRootAsync(
+            rootId,
+            new SearchQuery(),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(["a.txt", "b.txt"], results.Select(file => file.RelativePath));
+    }
+
+    [Fact]
+    public async Task SearchRootAsync_ReturnsNothingForARootThatWasForgotten()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [Entry(rootId, 1, "budget.txt")],
+            TestContext.Current.CancellationToken);
+
+        await fixture.Index.ClearRootAsync(rootId, TestContext.Current.CancellationToken);
+        var results = await fixture.Index.SearchRootAsync(
+            rootId,
+            new SearchQuery(pathContains: "budget"),
+            TestContext.Current.CancellationToken);
+
+        Assert.Empty(results);
+    }
+
+    private static IndexedFile Entry(
+        Guid rootId,
+        int seed,
+        string relativePath,
+        long sizeBytes = 10,
+        FileKind kind = FileKind.Document,
+        FileCategory category = FileCategory.Documents,
+        DateTimeOffset? modifiedAtUtc = null) => new(
         rootId,
         new Guid(seed, 0, 0, [0, 0, 0, 0, 0, 0, 0, 0]),
         relativePath,
-        FileKind.Document,
-        FileCategory.Documents,
+        kind,
+        category,
         sizeBytes,
         Moment,
-        Moment,
+        modifiedAtUtc ?? Moment,
         Moment);
 
     private sealed class IndexFixture : IAsyncDisposable

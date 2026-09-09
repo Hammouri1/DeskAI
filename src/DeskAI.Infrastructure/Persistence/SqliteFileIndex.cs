@@ -1,8 +1,10 @@
 using System.Globalization;
+using System.Text;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Classification;
 using DeskAI.Core.Files;
 using DeskAI.Core.Indexing;
+using DeskAI.Core.Search;
 using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
 
@@ -105,6 +107,97 @@ public sealed class SqliteFileIndex(IOptions<DatabaseOptions> options) : IFileIn
             ORDER BY relative_path COLLATE NOCASE;
             """;
         command.Parameters.AddWithValue("$rootId", rootId.ToString("D"));
+
+        var files = new List<IndexedFile>();
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+        while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+        {
+            files.Add(Read(rootId, reader));
+        }
+
+        return files.AsReadOnly();
+    }
+
+    public async Task<IReadOnlyList<IndexedFile>> SearchRootAsync(
+        Guid rootId,
+        SearchQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+
+        await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+
+        // The clause text is assembled from fixed fragments and every value is bound as a
+        // parameter, so no part of a query string ever comes from user or AI input.
+        var where = new StringBuilder("WHERE root_id = $rootId");
+        command.Parameters.AddWithValue("$rootId", rootId.ToString("D"));
+
+        if (query.PathContains is { } text)
+        {
+            where.Append(" AND relative_path LIKE $pathPattern ESCAPE '\\'");
+            command.Parameters.AddWithValue("$pathPattern", $"%{EscapeLike(text)}%");
+        }
+
+        if (query.Extensions.Count > 0)
+        {
+            where.Append(" AND (");
+            var index = 0;
+            foreach (var extension in query.Extensions)
+            {
+                if (index > 0)
+                {
+                    where.Append(" OR ");
+                }
+
+                var name = $"$ext{index}";
+                where.Append(CultureInfo.InvariantCulture, $"lower(relative_path) LIKE {name} ESCAPE '\\'");
+                command.Parameters.AddWithValue(name, $"%{EscapeLike(extension)}");
+                index++;
+            }
+
+            where.Append(')');
+        }
+
+        AppendEnumFilter(where, command, "category", query.Categories.Select(category => (int)category));
+        AppendEnumFilter(where, command, "kind", query.Kinds.Select(kind => (int)kind));
+
+        if (query.MinSizeBytes is { } minSize)
+        {
+            where.Append(" AND size_bytes >= $minSize");
+            command.Parameters.AddWithValue("$minSize", minSize);
+        }
+
+        if (query.MaxSizeBytes is { } maxSize)
+        {
+            where.Append(" AND size_bytes <= $maxSize");
+            command.Parameters.AddWithValue("$maxSize", maxSize);
+        }
+
+        // Stored timestamps keep whatever offset the file carried, so a raw string compare
+        // would order "+02:00" against "+00:00" incorrectly. Normalizing both sides to UTC
+        // through SQLite keeps the range honest without a schema change.
+        if (query.ModifiedAfterUtc is { } after)
+        {
+            where.Append(" AND strftime('%Y-%m-%dT%H:%M:%SZ', modified_at_utc) >= $modifiedAfter");
+            command.Parameters.AddWithValue("$modifiedAfter", FormatUtcBoundary(after));
+        }
+
+        if (query.ModifiedBeforeUtc is { } before)
+        {
+            where.Append(" AND strftime('%Y-%m-%dT%H:%M:%SZ', modified_at_utc) <= $modifiedBefore");
+            command.Parameters.AddWithValue("$modifiedBefore", FormatUtcBoundary(before));
+        }
+
+        command.CommandText = $"""
+            SELECT file_id, relative_path, kind, category, size_bytes,
+                   created_at_utc, modified_at_utc, indexed_at_utc
+            FROM indexed_files
+            {where}
+            ORDER BY relative_path COLLATE NOCASE
+            LIMIT $limit;
+            """;
+        command.Parameters.AddWithValue("$limit", query.Limit);
 
         var files = new List<IndexedFile>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
@@ -224,6 +317,46 @@ public sealed class SqliteFileIndex(IOptions<DatabaseOptions> options) : IFileIn
         ParseTimestamp(reader.GetString(5)),
         ParseTimestamp(reader.GetString(6)),
         ParseTimestamp(reader.GetString(7)));
+
+    /// <summary>
+    /// Adds an <c>IN</c> filter for one integer column, binding each value separately.
+    /// Does nothing when the caller asked for no values, which means "any".
+    /// </summary>
+    private static void AppendEnumFilter(
+        StringBuilder where,
+        SqliteCommand command,
+        string column,
+        IEnumerable<int> values)
+    {
+        var index = 0;
+        var names = new List<string>();
+        foreach (var value in values)
+        {
+            var name = $"${column}{index}";
+            names.Add(name);
+            command.Parameters.AddWithValue(name, value);
+            index++;
+        }
+
+        if (names.Count > 0)
+        {
+            where.Append(CultureInfo.InvariantCulture, $" AND {column} IN ({string.Join(", ", names)})");
+        }
+    }
+
+    /// <summary>
+    /// Neutralizes the LIKE wildcards so a search for "report_final" cannot silently widen
+    /// into a pattern match. Paired with <c>ESCAPE '\'</c> in every LIKE clause.
+    /// </summary>
+    private static string EscapeLike(string value) => value
+        .Replace("\\", "\\\\", StringComparison.Ordinal)
+        .Replace("%", "\\%", StringComparison.Ordinal)
+        .Replace("_", "\\_", StringComparison.Ordinal);
+
+    /// <summary>Matches the shape produced by the strftime call used on the stored column.</summary>
+    private static string FormatUtcBoundary(DateTimeOffset moment) => moment
+        .ToUniversalTime()
+        .ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", CultureInfo.InvariantCulture);
 
     private static DateTimeOffset ParseTimestamp(string value) => DateTimeOffset.Parse(
         value,

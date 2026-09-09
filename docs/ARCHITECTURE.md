@@ -143,6 +143,19 @@ Content extraction is a separate, permission-gated pipeline with file-size/type 
 
 The index is a cache, not authority. It proves only how a file looked when last scanned, so a future executor must still revalidate live state before mutating anything. No code path lets an index row become an approved operation, and nothing indexes automatically in this slice.
 
+### Structured search filters (V0.4 step 2)
+
+`SearchQuery` is a Core value describing what to look for: text matched anywhere in the root-relative path, file endings, categories, kinds, a size range, a modification-date range, and a result limit. It is validated in its constructor, so an invalid query cannot exist. Two rules matter more than the rest:
+
+- **A query carries no root ID.** The root is a separate argument to `IFileIndex.SearchRootAsync`, so a query assembled from untrusted input — a natural-language translation in step 3, for instance — cannot select a folder the caller did not authorize.
+- **A contradictory filter refuses rather than widens.** A minimum larger than a maximum, or a range that starts after it ends, throws. Degrading silently into "match everything" would turn a mistake into an unintended full listing.
+
+The limit is mandatory and capped, so there is no unlimited search. Text is bounded in length, and file endings are rejected if they look like a path or a pattern rather than a suffix.
+
+`SqliteFileIndex.SearchRootAsync` assembles its `WHERE` clause from fixed fragments and binds every value as a parameter, so no query string ever contains caller text. `LIKE` wildcards inside search text are escaped, which keeps a file genuinely named `report_final` from matching `reportXfinal`. Date ranges normalize both the stored column and the boundary to UTC through `strftime`, because stored timestamps keep whatever offset the file carried and a raw string comparison would order them wrongly.
+
+Search is a read of remembered metadata. It opens no file, produces no plan, and cannot become an operation.
+
 ## Deterministic Classification and Recipes
 
 `IFileClassifier` accepts a `FileItem` and returns one immutable `Classification`. `DeterministicFileClassifier` matches case-insensitive, dot-prefixed rules from `FileTypeRuleSet`; longer compound extensions win. A narrow filename heuristic separates common screenshot names from other images. Results always include a closed `FileCategory`, `FileKind`, provenance, bounded confidence, and explanation. Unknown is an explicit valid outcome.
