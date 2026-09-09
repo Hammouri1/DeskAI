@@ -237,6 +237,33 @@ the word, so a match can only come from reading the contents.
 9. Allow reading again, then choose "Disconnect". Confirm the folder disconnects properly —
    a permission you can give must stay one you can take back.
 
+## V0.5 — Rules and the Practice Run
+
+Use a temporary folder of generated dummy files. Connect it in Search first, so the rules
+have something to look at. Never connect a personal folder for this.
+
+1. Build Release and run the complete suite. Expected result: **490 passing tests**, none
+   skipped, and zero build warnings/errors.
+2. Open **Automatic tasks**. Confirm the page says plainly that nothing runs on its own and
+   that DeskAI cannot move a file from that page.
+3. Write a rule: name it, set "when the name contains" to a word that appears in some of
+   your dummy files, and set a destination such as `Sorted`. Save it. Confirm the rule
+   appears written out as one sentence, and that the sentence matches what you typed.
+4. Try to save a rule with a name but **no** conditions. Confirm it is refused with a plain
+   explanation, not an error code — a rule with no conditions would match every file.
+5. Try a destination of `..\..\Windows` or `C:\Windows`. Confirm it is refused.
+6. Press **Try a practice run**. Confirm it lists the files that would move and where, and
+   that it says nothing has moved. Check the folder on disk: **nothing has changed.**
+7. Write a second rule matching the same files but with a different destination. Run the
+   practice again. Those files must now appear under **Left alone**, with no proposal — two
+   rules disagreeing means DeskAI refuses to guess.
+8. Turn one of the two rules off and practise again. The conflict must resolve and the files
+   move to the remaining rule's destination. Confirm the rule stays off after you close and
+   reopen DeskAI.
+9. Confirm there is **no** button anywhere on the page that carries a rule out. There must
+   not be one: a rule still has to go through the ordinary preview and approval.
+10. Delete a rule. Confirm it disappears and no file was touched.
+
 ## Bring Your Own Key — Any Supported Service
 
 1. Build Release and run the full suite. Expected: **202 passing tests**, none skipped,

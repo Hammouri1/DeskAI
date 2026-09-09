@@ -130,13 +130,17 @@ Exit criteria: results are scoped to authorized roots, index deletion/privacy co
 
 Goal: turn repeated intent into deterministic, auditable behavior.
 
-- ◐ Typed conditions/actions, rule simulator, conflict detection, versioning, and manual rule editor.
-  Domain completed 2026-09-09: a closed set of typed conditions and one action, evaluation
-  that is pure and order-independent, conflict detection that refuses rather than guesses,
-  and versioning. Rules are Core only — nothing stores, schedules, or runs one yet, and
-  evaluation returns proposals rather than plan operations so there is no shortcut from
-  "a rule matched" to "a file moved". The simulator and the manual editor are UI and come
-  next. See `docs/decisions/0016-typed-rule-domain-and-approval-scope.md`.
+- ✅ Typed conditions/actions, rule simulator, conflict detection, versioning, and manual rule editor.
+  Completed 2026-09-09: a closed set of typed conditions and one action, evaluation that is
+  pure and order-independent, conflict detection that refuses rather than guesses, and
+  versioning. Rules are stored in schema version 9, and the Automatic tasks page can write
+  one, turn it on and off, delete it, and show a practice run of exactly what the rules would
+  do — including the files two rules disagreed about, which are left alone. Evaluation
+  returns proposals rather than plan operations, and there is deliberately no button that
+  carries a rule out: that would be a way around the preview. Nothing runs in the background
+  and the page says so. The editor is basic on purpose — a name, a name-contains, an optional
+  file ending, and a destination. See
+  `docs/decisions/0016-typed-rule-domain-and-approval-scope.md`.
 - ✅ Explicit approval scope and invalidation when rules change.
   Completed 2026-09-09; an approval stores each rule at its version plus a fingerprint of the
   exact moves shown, so editing, adding, removing, or disabling a rule invalidates it — and
