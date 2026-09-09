@@ -1,0 +1,231 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+        DeskAI visual system: "instrument panel".
+
+        The single rule that keeps this system honest is that the accent colour means
+        "safe or confirmed" and is never used as decoration. A person should be able to
+        learn one thing - green means DeskAI is allowed to do this - and have it hold on
+        every screen. Anything that is merely structure uses the neutral line colour.
+
+        Palettes are declared per theme rather than borrowed from the OS accent, because
+        the OS accent is an arbitrary user colour that cannot carry a fixed meaning.
+        High contrast falls back to the system brushes so accessibility settings win.
+    -->
+
+    <ResourceDictionary.ThemeDictionaries>
+
+        <!-- "Default" is the dark theme in WinUI theme dictionaries. -->
+        <ResourceDictionary x:Key="Default">
+            <SolidColorBrush x:Key="DeskGroundBrush" Color="#FF0F1216" />
+            <SolidColorBrush x:Key="DeskSurfaceBrush" Color="#FF161B21" />
+            <SolidColorBrush x:Key="DeskSurfaceRaisedBrush" Color="#FF1D242C" />
+            <SolidColorBrush x:Key="DeskLineBrush" Color="#FF272E38" />
+            <SolidColorBrush x:Key="DeskLineStrongBrush" Color="#FF38414D" />
+
+            <SolidColorBrush x:Key="DeskAccentBrush" Color="#FF4DD8A8" />
+            <SolidColorBrush x:Key="DeskAccentSoftBrush" Color="#264DD8A8" />
+            <SolidColorBrush x:Key="DeskCautionBrush" Color="#FFE8955A" />
+            <SolidColorBrush x:Key="DeskCautionSoftBrush" Color="#26E8955A" />
+            <SolidColorBrush x:Key="DeskDangerBrush" Color="#FFF0685C" />
+
+            <SolidColorBrush x:Key="DeskTextPrimaryBrush" Color="#FFE7EBF0" />
+            <SolidColorBrush x:Key="DeskTextSecondaryBrush" Color="#FF8C97A5" />
+            <SolidColorBrush x:Key="DeskTextTertiaryBrush" Color="#FF5F6B7A" />
+
+            <!--
+                Hero panels are no longer filled with the accent, so text that used to sit
+                on top of the accent is remapped to ordinary text colours. Remapping here
+                means every page inherits the fix without per-page edits.
+            -->
+            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FFE7EBF0" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#FF8C97A5" />
+
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FF4DD8A8" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E64DD8A8" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#CC4DD8A8" />
+
+            <!-- Dark ink on the light-green accent keeps accent buttons legible. -->
+            <SolidColorBrush x:Key="AccentButtonForeground" Color="#FF08130E" />
+            <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="#FF08130E" />
+            <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="#DD08130E" />
+
+            <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="#FF4DD8A8" />
+            <SolidColorBrush x:Key="SystemFillColorCautionBrush" Color="#FFE8955A" />
+            <SolidColorBrush x:Key="SystemFillColorCriticalBrush" Color="#FFF0685C" />
+
+            <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#FF161B21" />
+            <SolidColorBrush x:Key="CardBackgroundFillColorSecondaryBrush" Color="#FF12171C" />
+            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="#FF272E38" />
+            <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FFE7EBF0" />
+            <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FF8C97A5" />
+            <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF5F6B7A" />
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="DeskGroundBrush" Color="#FFF6F7F9" />
+            <SolidColorBrush x:Key="DeskSurfaceBrush" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="DeskSurfaceRaisedBrush" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="DeskLineBrush" Color="#FFE1E5EA" />
+            <SolidColorBrush x:Key="DeskLineStrongBrush" Color="#FFC7CED6" />
+
+            <SolidColorBrush x:Key="DeskAccentBrush" Color="#FF0E8C64" />
+            <SolidColorBrush x:Key="DeskAccentSoftBrush" Color="#1A0E8C64" />
+            <SolidColorBrush x:Key="DeskCautionBrush" Color="#FFA8541B" />
+            <SolidColorBrush x:Key="DeskCautionSoftBrush" Color="#1AA8541B" />
+            <SolidColorBrush x:Key="DeskDangerBrush" Color="#FFC0392B" />
+
+            <SolidColorBrush x:Key="DeskTextPrimaryBrush" Color="#FF10161D" />
+            <SolidColorBrush x:Key="DeskTextSecondaryBrush" Color="#FF5A6572" />
+            <SolidColorBrush x:Key="DeskTextTertiaryBrush" Color="#FF7C8794" />
+
+            <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FF10161D" />
+            <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#FF5A6572" />
+
+            <SolidColorBrush x:Key="AccentFillColorDefaultBrush" Color="#FF0E8C64" />
+            <SolidColorBrush x:Key="AccentFillColorSecondaryBrush" Color="#E60E8C64" />
+            <SolidColorBrush x:Key="AccentFillColorTertiaryBrush" Color="#CC0E8C64" />
+
+            <SolidColorBrush x:Key="AccentButtonForeground" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="#DDFFFFFF" />
+
+            <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="#FF0E8C64" />
+            <SolidColorBrush x:Key="SystemFillColorCautionBrush" Color="#FFA8541B" />
+            <SolidColorBrush x:Key="SystemFillColorCriticalBrush" Color="#FFC0392B" />
+
+            <SolidColorBrush x:Key="CardBackgroundFillColorDefaultBrush" Color="#FFFFFFFF" />
+            <SolidColorBrush x:Key="CardBackgroundFillColorSecondaryBrush" Color="#FFF0F2F5" />
+            <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="#FFE1E5EA" />
+            <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FF10161D" />
+            <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FF5A6572" />
+            <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF7C8794" />
+        </ResourceDictionary>
+
+        <!-- High contrast defers entirely to the user's Windows settings. -->
+        <ResourceDictionary x:Key="HighContrast">
+            <SolidColorBrush x:Key="DeskGroundBrush" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="DeskSurfaceBrush" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="DeskSurfaceRaisedBrush" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="DeskLineBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="DeskLineStrongBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="DeskAccentBrush" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="DeskAccentSoftBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="DeskCautionBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="DeskCautionSoftBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="DeskDangerBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="DeskTextPrimaryBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="DeskTextSecondaryBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="DeskTextTertiaryBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+        </ResourceDictionary>
+
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!--
+        Retired decoration. Kept as a transparent brush so pages that still reference the
+        old gradient wash render nothing instead of failing to load.
+    -->
+    <SolidColorBrush x:Key="HeroSheenBrush" Color="Transparent" />
+
+    <!--
+        A readout, not a banner. The 3px left rail is the state indicator, and the corner
+        is square on the rail edge so the rail reads as an edge marker, not a pill.
+    -->
+    <Style x:Key="HeroPanelStyle" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource DeskSurfaceRaisedBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource DeskAccentBrush}" />
+        <Setter Property="BorderThickness" Value="3,0,0,0" />
+        <Setter Property="CornerRadius" Value="0,6,6,0" />
+        <Setter Property="Padding" Value="26,22" />
+    </Style>
+
+    <Style x:Key="CardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource DeskSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="20" />
+    </Style>
+
+    <Style x:Key="SoftCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="16" />
+    </Style>
+
+    <Style x:Key="RowCardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource DeskSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="16,14" />
+        <Setter Property="Margin" Value="0,0,0,6" />
+    </Style>
+
+    <!-- A quiet chip, not an accent dot. The accent is reserved for safety state. -->
+    <Style x:Key="StepBadgeStyle" TargetType="Border">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Background" Value="{ThemeResource DeskSurfaceRaisedBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="DeskDisplayStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Display" />
+        <Setter Property="FontSize" Value="34" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CharacterSpacing" Value="-25" />
+        <Setter Property="LineHeight" Value="40" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{ThemeResource DeskTextPrimaryBrush}" />
+    </Style>
+
+    <Style x:Key="PageTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Display" />
+        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CharacterSpacing" Value="-15" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{ThemeResource DeskTextPrimaryBrush}" />
+    </Style>
+
+    <Style x:Key="SectionTitleStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Display" />
+        <Setter Property="FontSize" Value="17" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CharacterSpacing" Value="-5" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{ThemeResource DeskTextPrimaryBrush}" />
+    </Style>
+
+    <!-- Metrics are set large and light so the number reads before its label. -->
+    <Style x:Key="MetricStyle" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="Segoe UI Variable Display" />
+        <Setter Property="FontSize" Value="30" />
+        <Setter Property="FontWeight" Value="Light" />
+        <Setter Property="CharacterSpacing" Value="-20" />
+        <Setter Property="Foreground" Value="{ThemeResource DeskTextPrimaryBrush}" />
+    </Style>
+
+    <Style x:Key="BodySecondaryStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="LineHeight" Value="21" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{ThemeResource DeskTextSecondaryBrush}" />
+    </Style>
+
+    <Style x:Key="CaptionStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="LineHeight" Value="17" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{ThemeResource DeskTextTertiaryBrush}" />
+    </Style>
+
+</ResourceDictionary>

@@ -37,10 +37,10 @@
                 A permanent, quiet reminder of scope. It stays visible on every page because
                 "which files can this app touch" should never require navigating to find out.
             -->
-            <Border Margin="12,0,12,12" Padding="12" CornerRadius="10"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1">
+            <Border Margin="12,0,12,12" Padding="12,10" CornerRadius="0,4,4,0"
+                    Background="{ThemeResource DeskSurfaceBrush}"
+                    BorderBrush="{ThemeResource DeskAccentBrush}"
+                    BorderThickness="3,0,0,0">
                 <StackPanel Spacing="6">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon FontSize="14" Glyph="&#xE72E;"

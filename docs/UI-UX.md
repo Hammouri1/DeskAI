@@ -105,14 +105,42 @@ Use a readable “When / If / Then / Scope” editor. When AI drafts a rule, sho
 
 ## Implemented Visual System
 
-A small shared vocabulary lives in `App.xaml` so pages stay consistent and no page invents its own colours:
+The shared vocabulary lives in `src/DeskAI.App/Themes/DeskAITheme.xaml`, merged from `App.xaml` after `XamlControlsResources` so DeskAI's palette wins. No page invents its own colours.
 
-- `HeroPanelStyle` — a rounded accent header, used once at the top of Home, Organize, and Privacy and AI. Depth comes from `HeroSheenBrush`, a translucent white wash over the system accent, so the header is correct in light, dark, and high contrast without a hand-picked palette.
-- `CardStyle`, `SoftCardStyle`, `RowCardStyle` — bordered, rounded surfaces built only from `CardBackgroundFillColor*` and `CardStrokeColorDefaultBrush`.
-- `PageTitleStyle`, `SectionTitleStyle`, `BodySecondaryStyle`, `CaptionStyle` — one type ramp instead of ad-hoc font sizes.
-- `StepBadgeStyle` — the numbered circles in the Organize steps.
+The system is called **instrument panel**, and it has one governing rule:
 
-The window uses a Mica backdrop, and the navigation pane footer carries a permanent Practice-mode reminder, because "which files can this app touch" should never require navigating to find out.
+> The accent colour means "safe or confirmed". It is never used as decoration.
+
+A person should be able to learn one thing — green means DeskAI is allowed to do this — and have it hold on every screen. Anything that is merely structure uses the neutral line colour instead. This is why the palette is declared per theme rather than borrowed from the Windows accent: an arbitrary user-chosen accent cannot carry a fixed meaning.
+
+Palette tokens are defined for both themes in `ResourceDictionary.ThemeDictionaries`:
+
+| Token | Dark (`Default`) | Light |
+| --- | --- | --- |
+| `DeskGroundBrush` | `#0F1216` | `#F6F7F9` |
+| `DeskSurfaceBrush` | `#161B21` | `#FFFFFF` |
+| `DeskSurfaceRaisedBrush` | `#1D242C` | `#FFFFFF` |
+| `DeskLineBrush` | `#272E38` | `#E1E5EA` |
+| `DeskAccentBrush` | `#4DD8A8` | `#0E8C64` |
+| `DeskCautionBrush` | `#E8955A` | `#A8541B` |
+| `DeskDangerBrush` | `#F0685C` | `#C0392B` |
+| `DeskTextPrimaryBrush` | `#E7EBF0` | `#10161D` |
+| `DeskTextSecondaryBrush` | `#8C97A5` | `#5A6572` |
+
+The `HighContrast` dictionary maps every token back to `SystemColor*` brushes, so Windows high contrast overrides the palette entirely.
+
+Shared styles:
+
+- `HeroPanelStyle` — a status readout, not a banner. A 3px left rail in the accent carries the state; the corner is square on the rail edge (`CornerRadius="0,6,6,0"`) so the rail reads as an edge marker rather than a pill. Used once at the top of Home, Organize, and Privacy and AI.
+- `CardStyle`, `SoftCardStyle`, `RowCardStyle` — surfaces at 6px/6px/4px radius, differentiated by fill weight rather than all sharing one radius. `SoftCardStyle` is transparent with a hairline only.
+- `DeskDisplayStyle`, `PageTitleStyle`, `SectionTitleStyle`, `MetricStyle`, `BodySecondaryStyle`, `CaptionStyle` — one type ramp on Segoe UI Variable Display for headings and Segoe UI Variable Text for body, with negative tracking on the display sizes. `MetricStyle` sets numbers large and light so the value reads before its label.
+- `StepBadgeStyle` — a quiet bordered chip. It is deliberately **not** accent-filled, because the accent is reserved for safety state.
+
+`HeroSheenBrush` is retired. It remains defined as a transparent brush so any page still referencing the old gradient wash renders nothing rather than failing to load.
+
+Three treatments were removed as generic and meaningless here: the all-caps eyebrow labels (`LOCAL AND PRIVATE`, `PRACTICE MODE`), the translucent gradient wash over the accent, and the 56–72px decorative icons in the page headers. Metrics that belong to one reading now share a single panel divided by hairlines instead of being split into identical repeated cards.
+
+The window uses a Mica backdrop, pages paint `DeskGroundBrush`, and the navigation pane footer carries a permanent Practice-mode reminder on the same accent rail, because "which files can this app touch" should never require navigating to find out.
 
 Status is expressed through `PreviewStatusLevel` (`Ready`, `Attention`, `Blocked`) mapped by converters to a system semantic brush, a paired Segoe Fluent glyph, and a tinted badge background. Colour is never alone: every badge carries an icon **and** the status word, so a blocked row still reads as blocked in greyscale or high contrast. `PreviewStatusLevel` is presentation severity only — Safety decides what is blocked, and the enum merely chooses how that decision is drawn.
 
@@ -120,8 +148,8 @@ Empty states stay truthful rather than becoming decorative. Search shows its fut
 
 ## Visual Direction
 
-- Use WinUI/Fluent conventions, system typography, spacing, rounded surfaces, and light/dark themes.
-- Favor calm neutrals with one accent; reserve warning/error colors for meaning.
+- Use WinUI/Fluent conventions and Windows system typefaces, with DeskAI's own declared palette for both light and dark. High contrast defers to Windows.
+- Favor calm neutrals with one accent. The accent is reserved for "safe or confirmed" and is never decorative; warning and error colors likewise carry meaning only.
 - Use density appropriate for file lists with optional comfortable mode.
 - File icons/thumbnails must not leak content to cloud services.
 - Animations are subtle, respect reduced-motion settings, and never delay confirmation.
