@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 8;
+    public const int CurrentSchemaVersion = 9;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -41,8 +41,52 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplyAiUsageMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyFileIndexMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplySavedSearchMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplyAutomationRuleMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
+    }
+
+    /// <summary>
+    /// Adds automation rules.
+    /// </summary>
+    /// <remarks>
+    /// Like saved searches, a rule stores no root reference. A rule must not outlive or
+    /// widen an authorization, so which folders it could ever touch is resolved from the
+    /// connected folders when it runs rather than captured when it is written. Conditions
+    /// are stored as a JSON array of plain kind/value pairs and rebuilt through the closed
+    /// set in <c>RuleCodec</c>, so a stored row can never name a type to construct. The
+    /// unique index is case-insensitive so two rules cannot be told apart only by
+    /// capitalisation.
+    /// </remarks>
+    private static async Task ApplyAutomationRuleMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = """
+            CREATE TABLE IF NOT EXISTS automation_rules (
+                rule_id         TEXT NOT NULL PRIMARY KEY,
+                name            TEXT NOT NULL,
+                version         INTEGER NOT NULL,
+                is_enabled      INTEGER NOT NULL,
+                conditions_json TEXT NOT NULL,
+                action_kind     TEXT NOT NULL,
+                action_value    TEXT NOT NULL,
+                created_at_utc  TEXT NOT NULL,
+                updated_at_utc  TEXT NOT NULL
+            );
+
+            CREATE UNIQUE INDEX IF NOT EXISTS ix_automation_rules_name
+                ON automation_rules(name COLLATE NOCASE);
+
+            INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (9, $appliedAtUtc);
+            """;
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
