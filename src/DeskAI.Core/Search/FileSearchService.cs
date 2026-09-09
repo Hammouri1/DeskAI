@@ -62,12 +62,7 @@ public sealed class FileSearchService(IAuthorizedRootRepository roots, IFileInde
     /// folder the person never connected for that purpose. Anything that counts folders
     /// must use this predicate so the count and the list can never disagree.
     /// </remarks>
-    public static bool IsSearchable(AuthorizedRoot root)
-    {
-        ArgumentNullException.ThrowIfNull(root);
-        return root.Permission == RootAccessLevel.Allowed
-            && root.AuthorizationScope == RootAuthorizationScope.MetadataOnly;
-    }
+    public static bool IsSearchable(AuthorizedRoot root) => RootCapabilities.CanReadMetadata(root);
 
     /// <summary>
     /// Reads <paramref name="phrase"/> and returns what matched. <paramref name="nowUtc"/>

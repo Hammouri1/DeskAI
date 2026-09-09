@@ -172,6 +172,25 @@ Pictures, or a cloud-sync folder for this check.
 Note: file categories are stored when a folder is indexed, so a widened rule set only
 reaches a folder that is refreshed in Search afterwards.
 
+## V0.4 Step 8, Stage 1 — Content-Access Gate
+
+This slice is a permission gate with no UI. Nothing in the app can grant content access and
+no file is opened, so it is verified by tests and by confirming nothing changed on screen.
+
+1. Build Release and run the complete suite. Expected result: **373 passing tests**, none
+   skipped, and zero build warnings/errors.
+2. Launch the new Release build. Confirm Home, Organize, Search, Automatic tasks, and
+   Privacy and AI all behave exactly as before. Nothing should offer to read inside files.
+3. Confirm no new prompt asks for content permission. There must not be one yet.
+4. Review `RootCapabilitiesTests`, in particular the whole scope matrix, that metadata
+   consent is not content consent, that content access never becomes permission to change
+   files, that a restricted or protected folder grants nothing at any scope, and that the
+   stored scope numbers are pinned.
+5. Review `PlanValidatorTests.Validate_BlocksEveryMutationForAScopeThatWasNotConnectedForChanges`.
+   A folder connected for reading contents must still be refused every file change.
+6. Read `docs/security/2026-09-09-content-access-gate-review.md`. Extraction itself is
+   explicitly **not** accepted yet; that needs its own review before any file is opened.
+
 ## Bring Your Own Key — Any Supported Service
 
 1. Build Release and run the full suite. Expected: **202 passing tests**, none skipped,

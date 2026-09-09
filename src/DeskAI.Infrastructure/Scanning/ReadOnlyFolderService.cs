@@ -82,7 +82,7 @@ public sealed class ReadOnlyFolderService(
 
     public async Task<IReadOnlyList<AuthorizedRoot>> ListAuthorizedAsync(CancellationToken cancellationToken = default) =>
         (await rootRepository.ListAsync(cancellationToken).ConfigureAwait(false))
-        .Where(root => root.AuthorizationScope == RootAuthorizationScope.MetadataOnly)
+        .Where(RootCapabilities.CanReadMetadata)
         .ToArray();
 
     public Task RevokeAsync(Guid rootId, CancellationToken cancellationToken = default) =>

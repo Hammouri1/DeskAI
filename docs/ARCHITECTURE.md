@@ -176,6 +176,16 @@ Files below 4 KB are ignored, because small files collide on size constantly and
 
 **Stage 2, confirming by hash, is deliberately absent.** Hashing reads the bytes of a file. These folders are authorized `MetadataOnly`, which does not permit that, so confirming duplicates belongs with the permission-gated content work in step 8 rather than being slipped in behind a size check. Everything the UI says is therefore hedged: "possible duplicates", "might be duplicated", "up to" a saving. `ReclaimableBytes` is a ceiling on what could be freed if the copies turn out identical, never a promise. A test asserts the service reads no content at all.
 
+### Content-access capability gate (V0.4 step 8, stage 1)
+
+`RootCapabilities` is the single place that decides what an authorized folder permits: `CanReadMetadata`, `CanReadContent`, `CanMutate`. Each lists the scopes that grant it and denies everything else, and each checks permission alongside scope so a restricted or protected folder grants nothing whatever it was connected for.
+
+This replaces direct comparisons such as `scope == MetadataOnly`, which decided both "may be searched" and "may not be changed". That pattern fails open: adding a fourth scope would have dropped it out of the mutation block and made it changeable, with no line of the check appearing to change. Capabilities fail closed instead — a scope added later arrives with no rights until it is granted them deliberately, and a test breaks if a scope is added without a row in the capability matrix.
+
+`RootAuthorizationScope.MetadataAndContent` is appended as value 3. Scopes persist as integers, so values are only ever appended; inserting one would re-label folders a person already connected. It grants metadata plus permission to open files, and no permission to change them. The separation runs both ways: a folder connected for organizing may not have its contents read either.
+
+**No extraction code, no UI, and no way to grant the scope exist yet.** The three places that construct an authorized root produce `ControlledDemo` and `MetadataOnly` only. The gate is built and tested before the capability it guards, which is the order `SECURITY.md` asks for. See ADR 0014 and the gate review in `docs/security/`.
+
 ### Organization health score (V0.4 step 7)
 
 `OrganizationHealthCalculator.Evaluate` turns the storage summary and the possible-duplicate report into a score out of 100. It is a static, pure calculation: no dependencies, no I/O, no clock, no AI. It reaches no folder, so it can only ever describe what the two readings it is handed were already allowed to see.

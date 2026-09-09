@@ -76,6 +76,42 @@ public sealed class PlanValidatorTests
         Assert.Contains(result.Operations, item => item.Result.ReasonCode == ValidationReasonCode.Collision);
     }
 
+    /// <summary>
+    /// A folder connected so DeskAI may read what is inside its files still grants no
+    /// permission to move, rename, or delete them. Reading and changing are separate
+    /// consents, and a plan must not be able to borrow one for the other.
+    /// </summary>
+    [Theory]
+    [InlineData(RootAuthorizationScope.MetadataOnly)]
+    [InlineData(RootAuthorizationScope.MetadataAndContent)]
+    public void Validate_BlocksEveryMutationForAScopeThatWasNotConnectedForChanges(
+        RootAuthorizationScope scope)
+    {
+        var root = AuthorizedRoot.Create(
+            Guid.NewGuid(),
+            @"C:\DeskAITests\ReadOnly",
+            "Read-only test root",
+            RootAccessLevel.Allowed,
+            scope);
+        var plan = OrganizationPlan.CreateDraft(
+            Guid.NewGuid(),
+            root.Id,
+            1,
+            DateTimeOffset.UtcNow,
+            PlanValidator.CurrentPolicyVersion,
+            [new MoveFileOperation(
+                Guid.NewGuid(),
+                "source.txt",
+                @"Documents\source.txt",
+                "Generated test operation",
+                OperationProvenance.Rule)]);
+
+        var result = new PlanValidator(new WindowsPathPolicy()).Validate(plan, root);
+
+        Assert.False(result.CanBeApproved);
+        Assert.Equal(ValidationReasonCode.InvalidOperation, Assert.Single(result.Operations).Result.ReasonCode);
+    }
+
     [Fact]
     public void Validate_BlocksEveryMutationForMetadataOnlyRoot()
     {

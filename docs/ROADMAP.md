@@ -92,7 +92,18 @@ Goal: find and understand files without needing to move them.
    charged a folder points for file types DeskAI had simply never learned. Age is now weak
    and generous, unrecognised types are a stated limit on the reading instead of a penalty,
    and the classifier covers many more everyday extensions.
-8. ⬜ Optional permission-gated content extraction, followed later by local embeddings/semantic search.
+8. ◐ Optional permission-gated content extraction, followed later by local embeddings/semantic search.
+   Stage 1 completed 2026-09-09: the permission gate only. `RootCapabilities` is now the
+   single answer to what a connected folder permits, and it denies any scope not explicitly
+   listed, so extending the model fails closed instead of open. A `MetadataAndContent` scope
+   exists and grants reading inside files and nothing else — not mutation, and not the
+   reverse either. Nothing in the product can produce that scope yet and no file is opened
+   anywhere; the refusal path is deliberately built and tested before the capability it
+   guards. See `docs/decisions/0014-content-access-capability-gate.md` and
+   `docs/security/2026-09-09-content-access-gate-review.md`.
+   Stage 2, actually extracting text, is NOT accepted yet. It needs its own consent step,
+   format and bounds decisions, hostile-document handling, storage and deletion rules, and a
+   further security review before any file is opened.
 
 Exit criteria: results are scoped to authorized roots, index deletion/privacy controls work, score is explainable, and no cleanup action bypasses preview.
 

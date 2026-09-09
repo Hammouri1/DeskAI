@@ -21,13 +21,16 @@ public sealed class PlanValidator(IPathPolicy pathPolicy)
                     "The plan is not bound to this authorized root."));
         }
 
-        if (root.AuthorizationScope == RootAuthorizationScope.MetadataOnly)
+        // Asked as a capability rather than compared to one scope. The old comparison
+        // blocked exactly MetadataOnly, so any scope added later would have fallen straight
+        // through it and become changeable without this line appearing to change.
+        if (!RootCapabilities.CanMutate(root))
         {
             return PlanValidationReport.ForWholePlan(
                 plan.Id,
                 ValidationResult.Blocked(
                     ValidationReasonCode.InvalidOperation,
-                    "This folder grants metadata-only access and cannot be changed."));
+                    "This folder was not connected for changes, so nothing here can be changed."));
         }
 
         if (!string.Equals(plan.PolicyVersion, CurrentPolicyVersion, StringComparison.Ordinal))
