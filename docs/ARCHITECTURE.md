@@ -198,6 +198,18 @@ Reads are bounded to 64 KB from the beginning of the file — enough to tell wha
 
 Plain-text formats only; PDF and Office are excluded because parsing them runs a third-party parser over attacker-controlled binary structure (ADR 0015). Extracted text is untrusted input exactly like a file name: a test feeds prompt-injection wording through and asserts it comes back as inert text. **The extractor is registered in no container and called by nothing**, so it is unreachable from the running application until the consent step in stage 3 exists.
 
+### Rule domain (V0.5)
+
+V0.5 is where DeskAI first acts without someone watching, so the domain is built for that from the first commit. `DeskAI.Core.Rules` is pure: no clock, no filesystem, no database, no AI.
+
+`RuleCondition` and `RuleAction` are closed sets of types, not an expression language. Everything a rule can test and do is readable in two files, and a rule assembled from untrusted text — typed today, model-drafted later — can only ever be a combination of them. Moving into a folder is the only action; deleting is absent and stays absent. Rules see a `RuleSubject` (name, ending, category, kind, size, modified time) rather than a `FileItem`, so no condition added later can reach an absolute path or file content.
+
+Several refusals are load-bearing. A rule with no conditions is rejected rather than treated as "match all". Conditions are capped at eight and joined with AND only. Destinations are validated when the rule is written, not at run time, so a stored rule never holds something that would be refused every time it fires. Age conditions take the moment as an argument, so a simulation and the run after it answer identically.
+
+`RuleSetEvaluator` returns `RuleRunPreview` — proposals, conflicts, and counts. **Conflicts are refused rather than resolved:** when two rules want a file in different places, picking the first or the most specific would be a guess about intent, so the file is left alone and the disagreement is reported. Rules agreeing on a destination are agreement, not conflict. The result does not depend on rule order, and a test asserts it. The evaluator returns proposals rather than plan operations on purpose: turning one into something executable goes through the ordinary planner, validation, preview, and approval.
+
+`RuleApproval` scopes permission to rules *as worded* and an outcome *as shown*. It stores each enabled rule at its version plus a SHA-256 fingerprint of the ordered "this file goes there" pairs. Editing, adding, removing, or disabling a rule invalidates it; so does a different folder. The fingerprint catches what version checks miss — nobody edits anything, a new file appears, and an untouched rule now wants to move it. `RuleApprovalStatus` keeps the reasons separate because "you edited a rule" and "there are new files to move" need different words in front of a person. Rule names are excluded from the fingerprint: renaming a rule changes nothing about anyone's files.
+
 ### Content consent and inside-file search (V0.4 step 8, stage 3)
 
 `ConnectedFolderService.AllowContentAsync` and `StopContentAsync` move a connected folder between `MetadataOnly` and `MetadataAndContent`. Only those two scopes may be swapped between: the practice workspace and any organize-scoped folder are refused, so a consent belonging to the folder list cannot reach a scope that grants changes. Connecting a folder still grants metadata only, and a test asserts a freshly connected folder has no content permission — reading inside is a separate question, asked with its own dialog naming what is opened, what is not, and that nothing read is saved or sent.

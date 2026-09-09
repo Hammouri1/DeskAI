@@ -130,12 +130,23 @@ Exit criteria: results are scoped to authorized roots, index deletion/privacy co
 
 Goal: turn repeated intent into deterministic, auditable behavior.
 
-- Typed conditions/actions, rule simulator, conflict detection, versioning, and manual rule editor.
-- Natural-language-to-rule drafting with review.
-- Explicit approval scope and invalidation when rules change.
-- Folder watchers and/or scheduler selected through an ADR.
-- Run history, notifications, pause/disable controls, missed-run behavior, and safe concurrency.
-- Safe default: risky or novel outcomes return to preview.
+- ◐ Typed conditions/actions, rule simulator, conflict detection, versioning, and manual rule editor.
+  Domain completed 2026-09-09: a closed set of typed conditions and one action, evaluation
+  that is pure and order-independent, conflict detection that refuses rather than guesses,
+  and versioning. Rules are Core only — nothing stores, schedules, or runs one yet, and
+  evaluation returns proposals rather than plan operations so there is no shortcut from
+  "a rule matched" to "a file moved". The simulator and the manual editor are UI and come
+  next. See `docs/decisions/0016-typed-rule-domain-and-approval-scope.md`.
+- ✅ Explicit approval scope and invalidation when rules change.
+  Completed 2026-09-09; an approval stores each rule at its version plus a fingerprint of the
+  exact moves shown, so editing, adding, removing, or disabling a rule invalidates it — and
+  so does the same untouched rules wanting to move different files.
+- ✅ Safe default: risky or novel outcomes return to preview.
+  Completed 2026-09-09 as part of the approval check above: an outcome that differs from the
+  one approved is reported as needing review rather than carried out.
+- ⬜ Natural-language-to-rule drafting with review.
+- ⬜ Folder watchers and/or scheduler selected through an ADR.
+- ⬜ Run history, notifications, pause/disable controls, missed-run behavior, and safe concurrency.
 
 Exit criteria: rules can be explained and simulated; background execution cannot widen scope; each run is recoverable/auditable.
 
