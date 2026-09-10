@@ -100,7 +100,7 @@
                                Text="{x:Bind ViewModel.SummaryTitle, Mode=OneWay}" />
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBlock Style="{StaticResource CaptionStyle}" VerticalAlignment="Center"
-                                   Text="Suggestions from: DeskAI and your rules" />
+                                   Text="{x:Bind ViewModel.SuggestionsFromText, Mode=OneWay}" />
                         <controls:HelpButton Topic="organize.suggestions" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource CaptionStyle}"
@@ -118,7 +118,7 @@
                                         <CheckBox IsThreeState="True" MinWidth="0" VerticalAlignment="Center"
                                                   AutomationProperties.Name="{x:Bind DisplayName}"
                                                   IsChecked="{x:Bind IsIncluded, Mode=TwoWay}" />
-                                        <FontIcon Grid.Column="1" FontSize="16" Glyph="&#xE8B7;"
+                                        <FontIcon Grid.Column="1" FontSize="16" Glyph="{x:Bind Glyph}"
                                                   Foreground="{ThemeResource DeskTextSecondaryBrush}" />
                                         <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"
                                                    Foreground="{ThemeResource DeskTextPrimaryBrush}"
@@ -127,6 +127,11 @@
                                                    Style="{StaticResource CaptionStyle}"
                                                    Text="{x:Bind CountText}" />
                                     </Grid>
+                                    <!-- Only the "AI isn't sure" group has a note: its files wait to be ticked. -->
+                                    <TextBlock Style="{StaticResource CaptionStyle}"
+                                               Foreground="{ThemeResource DeskCautionBrush}"
+                                               Visibility="{x:Bind HasNote}"
+                                               Text="{x:Bind Note}" />
                                     <Expander Header="Show files" HorizontalAlignment="Stretch">
                                         <ItemsControl ItemsSource="{x:Bind Items}">
                                             <ItemsControl.ItemTemplate>
@@ -163,6 +168,45 @@
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
             </StackPanel>
+
+            <!--
+                Asking AI. Nothing here sends anything: the button opens a dialog showing exactly
+                what the AI would see, and only Send in that dialog sends it. The button is a
+                plain one, because pressing it confirms nothing; the answer appears right below.
+            -->
+            <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasAiPanel, Mode=OneWay}">
+                <StackPanel Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon FontSize="16" Glyph="&#xE945;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Ask AI" />
+                        <controls:HelpButton Topic="organize.askAi" />
+                    </StackPanel>
+                    <RadioButtons Header="Which files may AI suggest a place for?"
+                                  SelectedIndex="{x:Bind ViewModel.SuggestionModeIndex, Mode=TwoWay}">
+                        <RadioButton Content="Only files DeskAI doesn't know" />
+                        <RadioButton Content="Every file my rules don't place"
+                                     IsEnabled="{x:Bind ViewModel.CanUseAiForEveryFile, Mode=OneWay}" />
+                    </RadioButtons>
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Text="{x:Bind ViewModel.AskAiPrompt, Mode=OneWay}" />
+                    <StackPanel Orientation="Horizontal" Spacing="12"
+                                Visibility="{x:Bind ViewModel.HasAskable, Mode=OneWay}">
+                        <Button Content="{x:Bind ViewModel.AskAiText, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.CanAskAi, Mode=OneWay}"
+                                Click="OnAskAiClick" />
+                        <ProgressRing Width="18" Height="18" IsActive="{x:Bind ViewModel.IsAskingAi, Mode=OneWay}" />
+                        <Button Content="Stop" Command="{x:Bind ViewModel.StopAiCommand}"
+                                Visibility="{x:Bind ViewModel.IsAskingAi, Mode=OneWay}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource CaptionStyle}"
+                               Text="{x:Bind ViewModel.AiSharingNote, Mode=OneWay}" />
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Visibility="{x:Bind ViewModel.HasAiMessage, Mode=OneWay}"
+                               Text="{x:Bind ViewModel.AiMessage, Mode=OneWay}" />
+                </StackPanel>
+            </Border>
 
             <!-- What DeskAI will not touch, and why. Listed rather than silently dropped. -->
             <Expander HorizontalAlignment="Stretch" Visibility="{x:Bind ViewModel.HasLeftAlone, Mode=OneWay}">

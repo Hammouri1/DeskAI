@@ -31,9 +31,13 @@ public sealed class TidyItemViewModel : ObservableObject
         Reason = suggestion.Reason;
         MoveOperationId = suggestion.MoveOperationId;
         HasSameName = suggestion.HasSameName;
+        IsUnsure = suggestion.IsUnsure;
+        IsFromAi = suggestion.Source == TidySuggestionSource.Ai;
         Destination = "Goes to " + suggestion.DestinationRelativePath.Replace("\\", " › ", StringComparison.Ordinal);
         _keepBoth = suggestion.Choice == SameNameChoice.KeepBoth;
-        _isIncluded = MoveOperationId is not null;
+
+        // An idea the AI itself was unsure about waits for the person to tick it.
+        _isIncluded = MoveOperationId is not null && !IsUnsure;
         _selectionChanged = selectionChanged;
         _keepBothChanged = keepBothChanged;
     }
@@ -44,6 +48,8 @@ public sealed class TidyItemViewModel : ObservableObject
     public string Destination { get; }
     public Guid? MoveOperationId { get; }
     public bool HasSameName { get; }
+    public bool IsUnsure { get; }
+    public bool IsFromAi { get; }
 
     /// <summary>A skipped same-name file has nothing to move until "Keep both" is chosen.</summary>
     public bool CanBeIncluded => MoveOperationId is not null;
@@ -78,15 +84,31 @@ public sealed class TidyItemViewModel : ObservableObject
 /// <summary>The files that would go into one folder.</summary>
 public sealed class TidyGroupViewModel : ObservableObject
 {
-    public TidyGroupViewModel(string folder, IEnumerable<TidyItemViewModel> items)
+    public const string UnsureTitle = "AI isn't sure";
+
+    public TidyGroupViewModel(string folder, IEnumerable<TidyItemViewModel> items, bool isUnsure = false)
     {
         Folder = folder;
-        DisplayName = folder.Replace("\\", " › ", StringComparison.Ordinal);
+        IsUnsure = isUnsure;
+        DisplayName = isUnsure ? UnsureTitle : folder.Replace("\\", " › ", StringComparison.Ordinal);
         Items = new ObservableCollection<TidyItemViewModel>(items);
     }
 
+    /// <summary>The destination folder, or <see cref="UnsureTitle"/> for the unsure group.</summary>
     public string Folder { get; }
     public string DisplayName { get; }
+
+    /// <summary>
+    /// The group of AI ideas the AI was not confident about. Its files go to different folders,
+    /// so each row says where, and they all start unticked.
+    /// </summary>
+    public bool IsUnsure { get; }
+
+    /// <summary>A folder, or a question mark for ideas that need checking.</summary>
+    public string Glyph => IsUnsure ? "\uE9CE" : "\uE8B7";
+
+    public string Note => IsUnsure ? "These start unticked. Tick the ones you agree with." : string.Empty;
+    public bool HasNote => IsUnsure;
     public ObservableCollection<TidyItemViewModel> Items { get; }
 
     public int IncludedCount => Items.Count(item => item.IsIncluded);
@@ -135,12 +157,18 @@ public sealed class TidyGroupViewModel : ObservableObject
 /// note saying so, because a button that looked ready and did nothing would be worse than an
 /// honest "not yet". Nothing on this page can move a file.
 /// </remarks>
-public sealed class TidyViewModel : ObservableObject
+public sealed class TidyViewModel : ObservableObject, IDisposable
 {
     private readonly ConnectedFolderService _folders;
     private readonly TidyPermissionService _permission;
     private readonly TidySuggestionService _suggestions;
+    private readonly TidyAiService _ai;
     private readonly Dictionary<Guid, SameNameChoice> _choices = [];
+
+    // What AI said, by file. Kept across reloads of the list so ticking "Keep both" or looking
+    // again does not throw away an answer the person may have paid for; each idea still
+    // expires by itself if its file changes.
+    private readonly Dictionary<Guid, TidyAiAdvice> _aiAdvice = [];
     private TidyFolderOption? _selectedFolder;
     private Guid _planId = Guid.NewGuid();
     private int _revision;
@@ -150,17 +178,26 @@ public sealed class TidyViewModel : ObservableObject
     private string _summaryTitle = string.Empty;
     private string _limitNote = string.Empty;
     private Task _pending = Task.CompletedTask;
+    private TidySuggestionMode _mode = TidySuggestionMode.TypesAndRules;
+    private TidyAiStatus? _aiStatus;
+    private TidyPreview? _preview;
+    private bool _isAskingAi;
+    private string _aiMessage = string.Empty;
+    private CancellationTokenSource? _aiCancellation;
 
     public TidyViewModel(
         ConnectedFolderService folders,
         TidyPermissionService permission,
-        TidySuggestionService suggestions)
+        TidySuggestionService suggestions,
+        TidyAiService ai)
     {
         _folders = folders;
         _permission = permission;
         _suggestions = suggestions;
+        _ai = ai;
         StopTidyingCommand = new AsyncRelayCommand(StopTidyingAsync, () => SelectedFolder?.CanTidy == true && !IsBusy);
         RefreshCommand = new AsyncRelayCommand(() => _pending = LoadAsync(), () => SelectedFolder is not null && !IsBusy);
+        StopAiCommand = new RelayCommand(() => _aiCancellation?.Cancel(), () => IsAskingAi);
     }
 
     public ObservableCollection<TidyFolderOption> Folders { get; } = [];
@@ -169,6 +206,97 @@ public sealed class TidyViewModel : ObservableObject
 
     public AsyncRelayCommand StopTidyingCommand { get; }
     public AsyncRelayCommand RefreshCommand { get; }
+    public RelayCommand StopAiCommand { get; }
+
+    /// <summary>
+    /// 0 for "DeskAI and my rules", 1 for "Ask AI about every file". Choosing 1 is ignored
+    /// while AI is not set up, because the page shows that choice switched off.
+    /// </summary>
+    public int SuggestionModeIndex
+    {
+        get => (int)_mode;
+        set
+        {
+            var mode = value == 1 && CanUseAiForEveryFile
+                ? TidySuggestionMode.AiForEveryFile
+                : TidySuggestionMode.TypesAndRules;
+            if (mode != _mode)
+            {
+                _mode = mode;
+                OnPropertyChanged();
+                _pending = LoadAsync();
+            }
+            else if (value != (int)_mode)
+            {
+                // Tell the page its radio button was not accepted, so it springs back.
+                OnPropertyChanged();
+            }
+        }
+    }
+
+    public bool CanUseAiForEveryFile => _aiStatus?.IsSetUp == true && _aiStatus.CanShareAnything;
+
+    /// <summary>The AI card appears once a folder that may be tidied has been looked at.</summary>
+    public bool HasAiPanel => _preview is { CanTidy: true, FolderProblem: null } && !NeedsPermission;
+
+    public int AskableCount => _preview?.AskableFiles.Count ?? 0;
+
+    public bool HasAskable => AskableCount > 0;
+
+    public bool CanAskAi => CanUseAiForEveryFile && AskableCount > 0 && !IsAskingAi && !IsBusy;
+
+    public string AskAiText => AskableCount switch
+    {
+        > TidyAiService.MaxFilesPerRequest => $"Ask AI about the first {TidyAiService.MaxFilesPerRequest} files",
+        1 => "Ask AI about 1 file",
+        var count => $"Ask AI about {count} files",
+    };
+
+    /// <summary>What there is to ask about, in one line, before anything is pressed.</summary>
+    public string AskAiPrompt => (AskableCount, _mode) switch
+    {
+        (0, _) when _aiAdvice.Count > 0 => "AI has given its ideas. They are in the list above.",
+        (0, TidySuggestionMode.TypesAndRules) => "DeskAI knows where every file here goes, so there is nothing to ask AI.",
+        (0, _) => "Your rules already place every file here, so there is nothing to ask AI.",
+        (1, TidySuggestionMode.TypesAndRules) => "DeskAI doesn't know where 1 file goes. AI can suggest a place.",
+        (var count, TidySuggestionMode.TypesAndRules) => $"DeskAI doesn't know where {count} files go. AI can suggest a place.",
+        (1, _) => "AI can suggest a place for 1 file your rules don't place.",
+        (var count, _) => $"AI can suggest a place for {count} files your rules don't place.",
+    };
+
+    /// <summary>Who would see what, or how to turn AI on. Shown before the button is pressed.</summary>
+    public string AiSharingNote => _aiStatus?.Explanation ?? string.Empty;
+
+    public bool IsAskingAi
+    {
+        get => _isAskingAi;
+        private set
+        {
+            if (SetProperty(ref _isAskingAi, value))
+            {
+                RaiseAiChanges();
+            }
+        }
+    }
+
+    /// <summary>The answer to pressing Ask, shown beside the button.</summary>
+    public string AiMessage
+    {
+        get => _aiMessage;
+        private set
+        {
+            if (SetProperty(ref _aiMessage, value))
+            {
+                OnPropertyChanged(nameof(HasAiMessage));
+            }
+        }
+    }
+
+    public bool HasAiMessage => !string.IsNullOrEmpty(AiMessage);
+
+    public string SuggestionsFromText => Groups.Any(group => group.Items.Any(item => item.IsFromAi))
+        ? "Suggestions from: DeskAI, your rules, and AI"
+        : "Suggestions from: DeskAI and your rules";
 
     public TidyFolderOption? SelectedFolder
     {
@@ -178,6 +306,8 @@ public sealed class TidyViewModel : ObservableObject
             if (SetProperty(ref _selectedFolder, value))
             {
                 _choices.Clear();
+                _aiAdvice.Clear();
+                AiMessage = string.Empty;
                 _planId = Guid.NewGuid();
                 _revision = 0;
                 OnPropertyChanged(nameof(PermissionTitle));
@@ -354,12 +484,82 @@ public sealed class TidyViewModel : ObservableObject
         }
     }
 
+    /// <summary>
+    /// Builds the question for AI and returns it for the page to show. Sends nothing.
+    /// </summary>
+    /// <returns>The question to show, or null with the reason in <see cref="AiMessage"/>.</returns>
+    public async Task<TidyAiQuestion?> PrepareAiQuestionAsync()
+    {
+        if (SelectedFolder is not { } folder || _preview is null || !CanAskAi)
+        {
+            return null;
+        }
+
+        try
+        {
+            var prepared = await _ai.PrepareAsync(folder.Id, _preview.AskableFiles).ConfigureAwait(true);
+            AiMessage = prepared.Question is null ? prepared.Explanation : string.Empty;
+            return prepared.Question;
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            AiMessage = $"AI stayed off: {exception.Message}";
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Sends the question the person just saw, after they pressed Send in the page's dialog.
+    /// </summary>
+    public async Task AskAiAsync(TidyAiQuestion question)
+    {
+        ArgumentNullException.ThrowIfNull(question);
+        if (IsAskingAi || SelectedFolder?.Id != question.RootId)
+        {
+            return;
+        }
+
+        IsAskingAi = true;
+        var cancellation = new CancellationTokenSource();
+        _aiCancellation = cancellation;
+        AiMessage = $"Asking {question.ServiceName}…";
+        try
+        {
+            var answer = await _ai.AskAsync(question, cancellation.Token).ConfigureAwait(true);
+            foreach (var (fileId, advice) in answer.Advice)
+            {
+                _aiAdvice[fileId] = advice;
+            }
+
+            AiMessage = answer.Message;
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            AiMessage = $"AI stayed off: {exception.Message}";
+        }
+        finally
+        {
+            // Leaving the page may already have disposed it; disposing twice is harmless.
+            cancellation.Dispose();
+            if (ReferenceEquals(_aiCancellation, cancellation))
+            {
+                _aiCancellation = null;
+            }
+
+            IsAskingAi = false;
+        }
+
+        _pending = LoadAsync();
+        await _pending.ConfigureAwait(true);
+    }
+
     private async Task LoadAsync()
     {
         Groups.Clear();
         LeftAlone.Clear();
         LimitNote = string.Empty;
         SummaryTitle = string.Empty;
+        _preview = null;
         NeedsPermission = SelectedFolder is { CanTidy: false };
         RaiseListChanges();
         if (SelectedFolder is not { CanTidy: true } folder)
@@ -370,8 +570,16 @@ public sealed class TidyViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            var preview = await _suggestions.PreviewAsync(
-                folder.Id, _planId, ++_revision, _choices, TidySuggestionMode.TypesAndRules, new Dictionary<Guid, TidyAiAdvice>())
+            // Read fresh each time: the person may have changed their AI choice in Privacy and
+            // AI since this page opened, and the page must never offer what is now off.
+            _aiStatus = await _ai.GetStatusAsync().ConfigureAwait(true);
+            if (!CanUseAiForEveryFile && _mode == TidySuggestionMode.AiForEveryFile)
+            {
+                _mode = TidySuggestionMode.TypesAndRules;
+                OnPropertyChanged(nameof(SuggestionModeIndex));
+            }
+
+            var preview = await _suggestions.PreviewAsync(folder.Id, _planId, ++_revision, _choices, _mode, _aiAdvice)
                 .ConfigureAwait(true);
             if (preview is null)
             {
@@ -385,6 +593,7 @@ public sealed class TidyViewModel : ObservableObject
                 return;
             }
 
+            _preview = preview;
             Apply(preview);
         }
         catch (Exception exception) when (IsExpectedFailure(exception))
@@ -400,13 +609,25 @@ public sealed class TidyViewModel : ObservableObject
 
     private void Apply(TidyPreview preview)
     {
+        // Ideas the AI was unsure about are gathered at the end rather than mixed into the
+        // folders they would go to, so they can be checked together.
         foreach (var group in preview.Suggestions
+                     .Where(item => !item.IsUnsure)
                      .GroupBy(item => item.DestinationFolder, StringComparer.OrdinalIgnoreCase)
                      .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase))
         {
             Groups.Add(new TidyGroupViewModel(
                 group.Key,
                 group.Select(item => new TidyItemViewModel(item, OnSelectionChanged, OnKeepBothChanged))));
+        }
+
+        var unsure = preview.Suggestions.Where(item => item.IsUnsure).ToArray();
+        if (unsure.Length > 0)
+        {
+            Groups.Add(new TidyGroupViewModel(
+                TidyGroupViewModel.UnsureTitle,
+                unsure.Select(item => new TidyItemViewModel(item, OnSelectionChanged, OnKeepBothChanged)),
+                isUnsure: true));
         }
 
         foreach (var item in preview.LeftAlone.OrderBy(item => item.FileName, StringComparer.OrdinalIgnoreCase))
@@ -449,7 +670,29 @@ public sealed class TidyViewModel : ObservableObject
         OnPropertyChanged(nameof(HasLeftAlone));
         OnPropertyChanged(nameof(LeftAloneTitle));
         OnPropertyChanged(nameof(CanStopTidying));
+        OnPropertyChanged(nameof(SuggestionsFromText));
+        RaiseAiChanges();
         OnSelectionChanged();
+    }
+
+    private void RaiseAiChanges()
+    {
+        OnPropertyChanged(nameof(HasAiPanel));
+        OnPropertyChanged(nameof(CanUseAiForEveryFile));
+        OnPropertyChanged(nameof(HasAskable));
+        OnPropertyChanged(nameof(AskableCount));
+        OnPropertyChanged(nameof(CanAskAi));
+        OnPropertyChanged(nameof(AskAiText));
+        OnPropertyChanged(nameof(AskAiPrompt));
+        OnPropertyChanged(nameof(AiSharingNote));
+        StopAiCommand.NotifyCanExecuteChanged();
+    }
+    /// <summary>Leaving the page stops a request that is still waiting for an answer.</summary>
+    public void Dispose()
+    {
+        _aiCancellation?.Cancel();
+        _aiCancellation?.Dispose();
+        _aiCancellation = null;
     }
 
     private static bool IsExpectedFailure(Exception exception) =>

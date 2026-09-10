@@ -260,7 +260,7 @@ public sealed class TidyAiService(
             Uri.TryCreate(settings.Endpoint, UriKind.Absolute, out var local) &&
             local.IsLoopback)
         {
-            return (true, "Local AI", $"this computer ({local.Authority})");
+            return (true, "Local AI", $"{local.Authority} on this computer");
         }
 
         if (settings.Mode == AiMode.Cloud &&

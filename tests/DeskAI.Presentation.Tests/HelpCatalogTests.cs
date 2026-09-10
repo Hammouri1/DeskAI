@@ -71,6 +71,7 @@ public sealed class HelpCatalogTests
     [InlineData("organize.permission")]
     [InlineData("organize.suggestions")]
     [InlineData("organize.leftAlone")]
+    [InlineData("organize.askAi")]
     [InlineData("search.searching")]
     [InlineData("search.connect")]
     [InlineData("search.readInside")]

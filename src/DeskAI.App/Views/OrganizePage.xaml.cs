@@ -102,6 +102,64 @@ public sealed partial class OrganizePage : Page
         }
     }
 
+    /// <summary>
+    /// Shows exactly what the AI would see about each file and where it would go, and sends
+    /// only if the person presses Send. Cancelling sends nothing.
+    /// </summary>
+    private async void OnAskAiClick(object sender, RoutedEventArgs e)
+    {
+        var question = await ViewModel.PrepareAiQuestionAsync();
+        if (question is null)
+        {
+            return;
+        }
+
+        var files = new StackPanel { Spacing = 4 };
+        foreach (var line in question.FileLines)
+        {
+            files.Children.Add(new TextBlock { Text = line, TextWrapping = TextWrapping.Wrap });
+        }
+
+        var content = new StackPanel { Spacing = 12, MaxWidth = 480 };
+        content.Children.Add(new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            Text = $"{question.ServiceName}, at {question.Destination}, will see this about each file, and nothing else:",
+        });
+        content.Children.Add(new ScrollViewer { MaxHeight = 240, Content = files });
+        if (question.LeftOutCount > 0)
+        {
+            content.Children.Add(new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Text = question.LeftOutCount == 1
+                    ? "1 more file is not included this time."
+                    : $"{question.LeftOutCount} more files are not included this time.",
+            });
+        }
+
+        content.Children.Add(new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            Text = "Each file also gets a random number so DeskAI can match the answers. What is inside your files, "
+                + "where they are on your computer, and folder names are never sent. AI only suggests; nothing moves.",
+        });
+
+        var confirm = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = $"Send this to {question.ServiceName}?",
+            Content = content,
+            PrimaryButtonText = "Send",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await confirm.ShowAsync() == ContentDialogResult.Primary)
+        {
+            await ViewModel.AskAiAsync(question);
+        }
+    }
+
     private void OnPracticeClick(object sender, RoutedEventArgs e) => _navigation.Navigate("practice");
 
     private async Task ShowAsync(string title, string content) =>
