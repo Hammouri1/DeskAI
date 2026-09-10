@@ -51,6 +51,10 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<TemporaryDemoPlanExecutor>();
         services.AddSingleton<IPlanExecutor>(provider => provider.GetRequiredService<TemporaryDemoPlanExecutor>());
         services.AddSingleton<IUndoService>(provider => provider.GetRequiredService<TemporaryDemoPlanExecutor>());
+
+        // The only executor that may change a folder someone connected. It acts only while that
+        // folder may be tidied, checking again before every file. See ADR 0021.
+        services.AddSingleton<IFolderTidyExecutor, FolderTidyExecutor>();
         return services;
     }
 }

@@ -105,7 +105,7 @@ public sealed class TidySuggestionService(
 
         if (folderProblem is not null)
         {
-            return new TidyPreview(root, BuildPlan(root.Id, planId, revision, now, []), [], [], false, false, canTidy, folderProblem, []);
+            return new TidyPreview(root, BuildPlan(root.Id, planId, revision, now, []), [], [], false, false, canTidy, folderProblem, [], new Dictionary<Guid, FileItem>());
         }
 
         var occupied = new HashSet<string>(scanned.Select(file => file.RelativePath), StringComparer.OrdinalIgnoreCase);
@@ -142,6 +142,7 @@ public sealed class TidySuggestionService(
         var suggestions = new List<TidySuggestion>();
         var moves = new List<MoveFileOperation>();
         var askable = new List<FileItem>();
+        var sources = new Dictionary<Guid, FileItem>();
         foreach (var (file, classification) in candidates)
         {
             var name = file.RelativePath;
@@ -236,6 +237,7 @@ public sealed class TidySuggestionService(
                         _ => OperationProvenance.Rule,
                     }));
                 taken.Add(target);
+                sources[moveId.Value] = file;
             }
 
             suggestions.Add(new TidySuggestion(file.Id, name, folder, target, source, reason, moveId, sameName, choice, unsure));
@@ -256,7 +258,9 @@ public sealed class TidySuggestionService(
             }
         }
 
-        return new TidyPreview(root, plan, suggestions, leftAlone, reachedLimit, incomplete, canTidy, null, askable);
+        var kept = plan.Operations.OfType<MoveFileOperation>().Select(move => move.Id).ToHashSet();
+        return new TidyPreview(root, plan, suggestions, leftAlone, reachedLimit, incomplete, canTidy, null, askable,
+            sources.Where(pair => kept.Contains(pair.Key)).ToDictionary(pair => pair.Key, pair => pair.Value));
     }
 
     private static TidyLeftAlone? WhyLeftAlone(FileItem file, DateTimeOffset now)

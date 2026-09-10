@@ -90,6 +90,8 @@ public sealed record TidyAiAdvice(
 /// <remarks>
 /// <see cref="AskableFiles"/> are the files AI could still be asked about in the chosen mode:
 /// never a file left alone, never one a rule places, and never one AI already answered for.
+/// <see cref="MoveSources"/> holds, for each move in <see cref="Plan"/>, the file as it was when this list was made;
+/// tidying checks each file against it again right before moving it.
 /// </remarks>
 public sealed record TidyPreview(
     AuthorizedRoot Root,
@@ -100,4 +102,5 @@ public sealed record TidyPreview(
     bool ScanWasIncomplete,
     bool CanTidy,
     string? FolderProblem,
-    IReadOnlyList<FileItem> AskableFiles);
+    IReadOnlyList<FileItem> AskableFiles,
+    IReadOnlyDictionary<Guid, FileItem> MoveSources);
