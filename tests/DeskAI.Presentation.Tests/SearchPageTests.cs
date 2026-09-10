@@ -1,0 +1,245 @@
+using DeskAI.App.ViewModels;
+
+namespace DeskAI.Presentation.Tests;
+
+/// <summary>
+/// The Search page as a person uses it: connect a generated folder, search it, save a
+/// search, allow reading inside, and disconnect.
+/// </summary>
+public sealed class SearchPageTests
+{
+    [Fact]
+    public async Task Connecting_a_folder_lists_it_with_how_many_files_were_remembered()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Coursework", "notes.txt", "essay.docx", "photo.jpg");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+
+        await search.ConnectFolderAsync(folder);
+
+        var row = Assert.Single(search.Folders);
+        Assert.Equal("Coursework", row.Name);
+        Assert.Equal("3 files remembered", row.Remembered);
+        Assert.False(row.CanReadContent);
+        Assert.Contains("Remembered 3 file(s)", search.FolderMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Searching_finds_matching_files_and_says_which_folders_were_searched()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Coursework", "notes.txt", "essay.docx", "holiday.jpg");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+
+        search.Phrase = "photos";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        var result = Assert.Single(search.Results);
+        Assert.Equal("holiday.jpg", result.Name);
+        Assert.NotEmpty(search.Chips);
+        Assert.Equal("1 file found", search.StatusTitle);
+        Assert.Equal("Searched 1 connected folder.", search.ScopeMessage);
+    }
+
+    [Fact]
+    public async Task A_word_no_file_name_contains_shows_nothing_rather_than_everything()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Coursework", "notes.txt", "holiday.jpg");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+
+        search.Phrase = "zzqx";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Empty(search.Results);
+        Assert.Equal("Nothing matched", search.StatusTitle);
+        Assert.True(search.ShowsNothingFound);
+    }
+
+    [Fact]
+    public async Task A_phrase_with_nothing_to_search_for_is_refused_rather_than_listing_everything()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Coursework", "notes.txt", "holiday.jpg");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+
+        search.Phrase = "the";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Empty(search.Results);
+        Assert.Equal("I did not understand that", search.StatusTitle);
+    }
+
+    [Fact]
+    public async Task Searching_with_nothing_connected_points_to_where_folders_are_connected()
+    {
+        await using var app = await TestApp.StartAsync();
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+
+        search.Phrase = "photos";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Equal("No folders connected yet", search.StatusTitle);
+        // The Connect button is on this page, so the message must not send people elsewhere.
+        Assert.DoesNotContain("Organize", search.StatusMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task A_saved_search_can_be_run_again_and_deleted()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Coursework", "holiday.jpg", "notes.txt");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        search.Phrase = "photos";
+
+        await search.SaveCurrentSearchAsync("My photos");
+        var saved = Assert.Single(search.SavedSearches);
+        Assert.Equal("My photos", saved.Name);
+
+        search.Phrase = string.Empty;
+        await search.RunSavedSearchCommand.ExecuteAsync(saved.Id);
+        Assert.Equal("photos", search.Phrase);
+        Assert.Single(search.Results);
+
+        await search.DeleteSavedSearchCommand.ExecuteAsync(saved.Id);
+        Assert.Empty(search.SavedSearches);
+    }
+
+    [Fact]
+    public async Task Saved_searches_survive_reopening_the_page()
+    {
+        await using var app = await TestApp.StartAsync();
+        var first = app.Get<SearchViewModel>();
+        await first.InitializeAsync();
+        first.Phrase = "photos";
+        await first.SaveCurrentSearchAsync("My photos");
+
+        var reopened = app.Get<SearchViewModel>();
+        await reopened.InitializeAsync();
+
+        Assert.Equal("My photos", Assert.Single(reopened.SavedSearches).Name);
+    }
+
+    [Fact]
+    public async Task Allowing_reading_inside_finds_words_in_text_files_and_says_how_many_were_opened()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Notes");
+        app.Directory.CreateDummyFile(Path.Combine("folders", "Notes", "shopping.txt"), "buy bananas and bread");
+        app.Directory.CreateDummyFile(Path.Combine("folders", "Notes", "todo.txt"), "call the dentist");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        var rootId = Assert.Single(search.Folders).Id;
+
+        await search.SetContentPermissionAsync(rootId, allow: true);
+        Assert.True(Assert.Single(search.Folders).CanReadContent);
+
+        search.Phrase = "bananas";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.True(search.ShowsInsideFiles);
+        var hit = Assert.Single(search.InsideResults);
+        Assert.Equal("shopping.txt", hit.Name);
+        Assert.Contains("bananas", hit.Snippet, StringComparison.Ordinal);
+        Assert.Contains("2 text files", search.InsideMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Without_permission_DeskAI_does_not_look_inside_files()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Notes");
+        app.Directory.CreateDummyFile(Path.Combine("folders", "Notes", "shopping.txt"), "buy bananas");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+
+        search.Phrase = "bananas";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.False(search.ShowsInsideFiles);
+        Assert.Empty(search.InsideResults);
+    }
+
+    [Fact]
+    public async Task Taking_back_reading_permission_stops_looking_inside()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Notes");
+        app.Directory.CreateDummyFile(Path.Combine("folders", "Notes", "shopping.txt"), "buy bananas");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        var rootId = Assert.Single(search.Folders).Id;
+        await search.SetContentPermissionAsync(rootId, allow: true);
+
+        await search.SetContentPermissionAsync(rootId, allow: false);
+        search.Phrase = "bananas";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.False(Assert.Single(search.Folders).CanReadContent);
+        Assert.Empty(search.InsideResults);
+    }
+
+    [Fact]
+    public async Task Refreshing_picks_up_a_file_added_since_connecting()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Coursework", "notes.txt");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        app.Directory.CreateDummyFile(Path.Combine("folders", "Coursework", "later.txt"));
+
+        await search.RefreshFolderCommand.ExecuteAsync(Assert.Single(search.Folders).Id);
+
+        Assert.Equal("2 files remembered", Assert.Single(search.Folders).Remembered);
+    }
+
+    [Fact]
+    public async Task Disconnecting_forgets_the_folder_and_clears_results_but_leaves_files_alone()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Coursework", "holiday.jpg");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        search.Phrase = "photos";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        await search.DisconnectFolderCommand.ExecuteAsync(Assert.Single(search.Folders).Id);
+
+        Assert.Empty(search.Folders);
+        Assert.Empty(search.Results);
+        Assert.True(File.Exists(Path.Combine(folder, "holiday.jpg")));
+
+        await search.SearchCommand.ExecuteAsync(null);
+        Assert.Empty(search.Results);
+    }
+
+    [Fact]
+    public async Task A_protected_folder_is_refused_with_a_reason()
+    {
+        await using var app = await TestApp.StartAsync();
+        var protectedFolder = app.Directory.CreateDummyDirectory("protected");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+
+        await search.ConnectFolderAsync(protectedFolder);
+
+        Assert.Empty(search.Folders);
+        Assert.False(string.IsNullOrWhiteSpace(search.FolderMessage));
+        Assert.NotEqual("No folders connected yet.", search.FolderMessage);
+    }
+}

@@ -531,8 +531,10 @@ public sealed class SearchViewModel : ObservableObject
         if (outcome.FoldersSearched == 0)
         {
             StatusTitle = "No folders connected yet";
+            // The Connect button is on this page. Sending people to Organize pointed them at
+            // a read-only preview that never fills search.
             StatusMessage =
-                "Connect a folder in Organize first. DeskAI can only search folders you have chosen.";
+                "Press \"Connect a folder\" below first. DeskAI can only search folders you have chosen.";
             ScopeMessage = string.Empty;
         }
         else if (outcome.UnderstoodNothing)
