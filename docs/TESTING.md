@@ -53,6 +53,7 @@ Native picker behavior is verified manually only with a newly generated Windows 
 - Cancellation before/during scan and between execution operations.
 - Partial execution, restart/recovery, repeated execution attempt, and journal write failure.
 - Undo when destination changed, old path is occupied, created folder is nonempty, or only part of a plan can reverse.
+- Undo never removes a folder that existed before the run, even an empty one, including after an interrupted run is recovered. (Found and fixed 2026-09-10: the demo executor recorded an already-existing folder as created, so undo deleted it if empty.)
 - No permanent-delete command exists; blocked operation types remain blocked.
 
 Platform-specific cases may require Windows and privileges. Skip only with an explicit reason and cover policy logic with a platform-neutral fake as well.

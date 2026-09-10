@@ -50,4 +50,11 @@ public enum JournalOperationState
     Completed,
     Failed,
     Cancelled,
+
+    /// <summary>
+    /// A folder the plan needed already existed, so nothing was created. Undo must leave it
+    /// alone: it belonged to the person before DeskAI ran. Appended last because states are
+    /// stored as integers.
+    /// </summary>
+    AlreadyPresent,
 }

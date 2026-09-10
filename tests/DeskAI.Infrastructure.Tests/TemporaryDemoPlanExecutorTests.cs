@@ -183,6 +183,51 @@ public sealed class TemporaryDemoPlanExecutorTests
     }
 
     [Fact]
+    public async Task UndoAsync_NeverRemovesAFolderThatExistedBeforeTheRun()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var executor = CreateExecutor(sandbox);
+        await executor.PrepareAsync(TestContext.Current.CancellationToken);
+        // An empty folder the person already had. The plan asks for it to exist, which it
+        // does, so nothing is created — and undo therefore has nothing of its own to remove.
+        var existing = Path.Combine(executor.Root.CanonicalPath, "Sorted");
+        Directory.CreateDirectory(existing);
+        var create = new CreateDirectoryOperation(Guid.NewGuid(), "Sorted", "Demo folder", OperationProvenance.Rule);
+        var move = new MoveFileOperation(Guid.NewGuid(), "semester-budget.xlsx", @"Sorted\semester-budget.xlsx", "Demo move", OperationProvenance.Rule);
+        var plan = Plan(executor, create, move);
+        var execution = await executor.ExecuteAsync(plan, Approve(plan, create.Id, move.Id), TestContext.Current.CancellationToken);
+        Assert.All(execution.Operations, item => Assert.Equal(ExecutionOutcome.Completed, item.Outcome));
+
+        var undo = await executor.UndoAsync(execution.TransactionId, TestContext.Current.CancellationToken);
+
+        Assert.All(undo.Operations, item => Assert.Equal(ExecutionOutcome.Completed, item.Outcome));
+        Assert.True(File.Exists(Path.Combine(executor.Root.CanonicalPath, "semester-budget.xlsx")));
+        Assert.True(Directory.Exists(existing));
+    }
+
+    [Fact]
+    public async Task UndoAsync_ReportsCompleteWhenAPreExistingFolderIsLeftInPlace()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var journal = new InMemoryOperationJournal();
+        var executor = CreateExecutor(sandbox, journal);
+        await executor.PrepareAsync(TestContext.Current.CancellationToken);
+        // The sample workspace already has Documents\reading-list.md.
+        var create = new CreateDirectoryOperation(Guid.NewGuid(), "Documents", "Demo folder", OperationProvenance.Rule);
+        var move = new MoveFileOperation(Guid.NewGuid(), "semester-budget.xlsx", @"Documents\semester-budget.xlsx", "Demo move", OperationProvenance.Rule);
+        var plan = Plan(executor, create, move);
+        var execution = await executor.ExecuteAsync(plan, Approve(plan, create.Id, move.Id), TestContext.Current.CancellationToken);
+
+        var undo = await executor.UndoAsync(execution.TransactionId, TestContext.Current.CancellationToken);
+
+        var undoEntry = await journal.FindAsync(undo.UndoTransactionId, TestContext.Current.CancellationToken);
+        Assert.Equal(ExecutionTransactionState.Completed, undoEntry!.State);
+        var original = await journal.FindAsync(execution.TransactionId, TestContext.Current.CancellationToken);
+        Assert.Equal(ExecutionTransactionState.Undone, original!.State);
+        Assert.True(File.Exists(Path.Combine(executor.Root.CanonicalPath, "Documents", "reading-list.md")));
+    }
+
+    [Fact]
     public async Task UndoAsync_RefusesFileChangedAfterExecution()
     {
         using var sandbox = new TemporaryDirectory();

@@ -147,10 +147,10 @@ public sealed class TemporaryDemoPlanExecutor : IPlanExecutor, IUndoService
                 await _journal.UpdateOperationAsync(
                     transactionId, operation.Id, JournalOperationState.InProgress, null, cancellationToken).ConfigureAwait(false);
                 VerifyOwnedRoot();
-                ExecuteOperation(operation);
+                var finishedState = ExecuteOperation(operation);
                 results.Add(new OperationExecutionResult(operation.Id, ExecutionOutcome.Completed, null));
                 await _journal.UpdateOperationAsync(
-                    transactionId, operation.Id, JournalOperationState.Completed, null, CancellationToken.None).ConfigureAwait(false);
+                    transactionId, operation.Id, finishedState, null, CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
             {
@@ -272,10 +272,18 @@ public sealed class TemporaryDemoPlanExecutor : IPlanExecutor, IUndoService
                 }
                 else if (operation.State == JournalOperationState.InProgress)
                 {
-                    var recoveredState = transaction.Kind == ExecutionTransactionKind.Execute && DidOperationFinish(operation)
-                        ? JournalOperationState.Completed
-                        : JournalOperationState.Failed;
-                    var explanation = recoveredState == JournalOperationState.Completed
+                    var finished = transaction.Kind == ExecutionTransactionKind.Execute && DidOperationFinish(operation);
+
+                    // An interrupted folder creation cannot show whether the folder was made
+                    // by DeskAI or was already there, so it is assumed to have been there.
+                    // The cost is an empty folder undo leaves behind; the alternative risks
+                    // undo deleting a folder that belonged to the person.
+                    var recoveredState = !finished
+                        ? JournalOperationState.Failed
+                        : operation.Kind == PlanOperationKind.CreateDirectory
+                            ? JournalOperationState.AlreadyPresent
+                            : JournalOperationState.Completed;
+                    var explanation = finished
                         ? "Recovered by verifying the resulting filesystem state."
                         : "Could not prove that the interrupted operation completed; manual review is required.";
                     await _journal.UpdateOperationAsync(
@@ -285,7 +293,8 @@ public sealed class TemporaryDemoPlanExecutor : IPlanExecutor, IUndoService
 
             var refreshed = await _journal.FindAsync(transaction.Id, cancellationToken).ConfigureAwait(false)
                 ?? throw new InvalidOperationException("The recovery journal disappeared.");
-            var completed = refreshed.Operations.Count(item => item.State == JournalOperationState.Completed);
+            var completed = refreshed.Operations.Count(item =>
+                item.State is JournalOperationState.Completed or JournalOperationState.AlreadyPresent);
             var state = completed == refreshed.Operations.Count
                 ? ExecutionTransactionState.Completed
                 : completed > 0
@@ -336,19 +345,24 @@ public sealed class TemporaryDemoPlanExecutor : IPlanExecutor, IUndoService
         return null;
     }
 
-    private void ExecuteOperation(PlanOperation operation)
+    /// <summary>Carries out one operation and says what the journal should record for it.</summary>
+    private JournalOperationState ExecuteOperation(PlanOperation operation)
     {
         switch (operation)
         {
             case CreateDirectoryOperation create:
-                CreateDirectory(create.DestinationRelativePath);
-                break;
+                // A folder that was already there is recorded as such, never as created.
+                // Recording it as created once let undo delete an empty folder the person
+                // had before the run.
+                return CreateDirectory(create.DestinationRelativePath)
+                    ? JournalOperationState.Completed
+                    : JournalOperationState.AlreadyPresent;
             case MoveFileOperation move:
                 MoveFile(move.SourceRelativePath, move.DestinationRelativePath);
-                break;
+                return JournalOperationState.Completed;
             case RenameFileOperation rename:
                 MoveFile(rename.SourceRelativePath, rename.DestinationRelativePath);
-                break;
+                return JournalOperationState.Completed;
             default:
                 throw new InvalidOperationException("The operation type is not supported by the demo executor.");
         }
@@ -485,7 +499,8 @@ public sealed class TemporaryDemoPlanExecutor : IPlanExecutor, IUndoService
             : ExecutionTransactionState.Failed;
     }
 
-    private void CreateDirectory(string relativePath)
+    /// <returns>True if this call created the folder; false if it already existed.</returns>
+    private bool CreateDirectory(string relativePath)
     {
         var destination = Resolve(relativePath);
         var parent = Path.GetDirectoryName(destination) ?? throw new InvalidOperationException("The destination has no parent.");
@@ -500,10 +515,13 @@ public sealed class TemporaryDemoPlanExecutor : IPlanExecutor, IUndoService
             throw new IOException("A file already occupies the requested folder path.");
         }
 
-        if (!Directory.Exists(destination))
+        if (Directory.Exists(destination))
         {
-            Directory.CreateDirectory(destination);
+            return false;
         }
+
+        Directory.CreateDirectory(destination);
+        return true;
     }
 
     private void MoveFile(string sourceRelativePath, string destinationRelativePath)
