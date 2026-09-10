@@ -172,7 +172,19 @@ Goal: turn repeated intent into deterministic, auditable behavior.
   produces that mode and it is absent from the UI. It is the remaining half, and it needs
   its own security review because a process running while nobody is present is a different
   threat case.
-- ⬜ Run history, notifications, pause/disable controls, missed-run behavior, and safe concurrency.
+- ✅ Run history, notifications, pause/disable controls, missed-run behavior, and safe concurrency.
+  Completed 2026-09-10. Every check that actually ran is recorded — including the ones that
+  were stopped part-way and the ones that failed, because a history that omitted those would
+  be reassuring rather than accurate. A check that was not due is not recorded, since it did
+  not happen. The history is bounded to the last 50 runs and pruned inside the same
+  transaction as the insert, so there is no moment where the bound is untrue; it can also be
+  cleared outright. It is deliberately not the operation journal: the journal makes file
+  changes auditable and undoable, and a check changes nothing.
+  Missed runs are reported rather than replayed. DeskAI closed for two days owes one check,
+  and that check says "First check after DeskAI was closed or paused" instead of leaving a
+  history that looks as though it had been watching all along.
+  Notifications, the pause switch, and single-flight concurrency shipped with the previous
+  item; pausing also cancels a check already in flight.
 
 Exit criteria: rules can be explained and simulated; background execution cannot widen scope; each run is recoverable/auditable.
 

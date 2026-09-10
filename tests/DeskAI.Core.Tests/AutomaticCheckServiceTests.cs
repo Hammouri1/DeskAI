@@ -186,7 +186,7 @@ public sealed class AutomaticCheckServiceTests
         var world = new World();
         world.AddFolder("Study");
         world.Index.Gate = new TaskCompletionSource();
-        using var coordinator = new AutomaticCheckCoordinator(world.Service);
+        using var coordinator = world.Coordinator();
 
         var first = coordinator.RunNowAsync(TestContext.Current.CancellationToken);
         var second = await coordinator.RunNowAsync(TestContext.Current.CancellationToken);
@@ -208,7 +208,7 @@ public sealed class AutomaticCheckServiceTests
         var world = new World();
         world.AddFolder("Study");
         world.Index.Gate = new TaskCompletionSource();
-        using var coordinator = new AutomaticCheckCoordinator(world.Service);
+        using var coordinator = world.Coordinator();
 
         var running = coordinator.RunNowAsync(TestContext.Current.CancellationToken);
         coordinator.StopRunningCheck();
@@ -224,7 +224,7 @@ public sealed class AutomaticCheckServiceTests
         var study = world.AddFolder("Study");
         world.AddFile(study, "invoice-march.pdf");
         world.AddRule("Invoices", "Documents", new NameContainsCondition("invoice"));
-        using var coordinator = new AutomaticCheckCoordinator(world.Service);
+        using var coordinator = world.Coordinator();
         AutomaticCheckResult? announced = null;
         coordinator.Checked += (_, result) => announced = result;
 
@@ -233,6 +233,86 @@ public sealed class AutomaticCheckServiceTests
         Assert.NotNull(announced);
         Assert.Equal(1, announced.ProposalCount);
         Assert.Same(announced, coordinator.Latest);
+    }
+
+    [Fact]
+    public async Task Coordinator_RecordsWhatEachCheckFound()
+    {
+        var world = new World();
+        var study = world.AddFolder("Study");
+        world.AddFile(study, "invoice-march.pdf");
+        world.AddRule("Invoices", "Documents", new NameContainsCondition("invoice"));
+        using var coordinator = world.Coordinator();
+
+        await coordinator.RunNowAsync(TestContext.Current.CancellationToken);
+
+        var run = Assert.Single(world.History.Runs);
+        Assert.Equal(AutomaticCheckOutcome.Completed, run.Outcome);
+        Assert.Equal(1, run.ProposalCount);
+        Assert.Contains("Nothing was moved", run.Describe(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A history that quietly omitted the interrupted runs would be a reassuring record
+    /// rather than an accurate one.
+    /// </summary>
+    [Fact]
+    public async Task Coordinator_RecordsACheckThatWasStopped()
+    {
+        var world = new World();
+        world.AddFolder("Study");
+        world.Index.Gate = new TaskCompletionSource();
+        using var coordinator = world.Coordinator();
+
+        var running = coordinator.RunNowAsync(TestContext.Current.CancellationToken);
+        coordinator.StopRunningCheck();
+        await running;
+
+        var run = Assert.Single(world.History.Runs);
+        Assert.Equal(AutomaticCheckOutcome.Stopped, run.Outcome);
+        Assert.Contains("Nothing was changed", run.Describe(), StringComparison.Ordinal);
+    }
+
+    /// <summary>A check that was not due did not happen, so it is not part of the history.</summary>
+    [Fact]
+    public async Task Coordinator_RecordsNothingWhenNoCheckWasDue()
+    {
+        var world = new World();
+        world.AddFolder("Study");
+        await world.Settings.RecordCheckedAtAsync(Now.AddMinutes(-1), TestContext.Current.CancellationToken);
+        using var coordinator = world.Coordinator();
+
+        await coordinator.RunIfDueAsync(TestContext.Current.CancellationToken);
+
+        Assert.Empty(world.History.Runs);
+    }
+
+    /// <summary>
+    /// Missed checks are never replayed, so the long gap has to be said out loud instead.
+    /// Otherwise a history would look as though DeskAI had been watching the whole time.
+    /// </summary>
+    [Fact]
+    public async Task RunAsync_MarksTheFirstCheckAfterALongGapAsCatchUp()
+    {
+        var world = new World();
+        world.AddFolder("Study");
+        await world.Settings.RecordCheckedAtAsync(Now.AddDays(-2), TestContext.Current.CancellationToken);
+
+        var result = await world.Service.RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(result.WasCatchUp);
+    }
+
+    [Fact]
+    public async Task RunAsync_DoesNotCallAnOrdinaryCheckACatchUp()
+    {
+        var world = new World();
+        world.AddFolder("Study");
+        await world.Settings.RecordCheckedAtAsync(Now.AddMinutes(-16), TestContext.Current.CancellationToken);
+
+        var result = await world.Service.RunAsync(TestContext.Current.CancellationToken);
+
+        Assert.False(result.WasCatchUp);
     }
 
     private sealed class World
@@ -250,6 +330,11 @@ public sealed class AutomaticCheckServiceTests
         public FakeIndex Index { get; }
 
         public FakeCheckSettings Settings { get; } = new();
+
+        public FakeCheckHistory History { get; } = new();
+
+        public AutomaticCheckCoordinator Coordinator() =>
+            new(Service, History, new FixedClock(Now));
 
         public AutomaticCheckService Service => new(
             new ConnectedFolderService(_folders, Index, _roots),
@@ -296,6 +381,29 @@ public sealed class AutomaticCheckServiceTests
         public Task RecordCheckedAtAsync(DateTimeOffset checkedAtUtc, CancellationToken cancellationToken = default)
         {
             _lastChecked = checkedAtUtc;
+            return Task.CompletedTask;
+        }
+    }
+
+    private sealed class FakeCheckHistory : IAutomaticCheckHistoryRepository
+    {
+        public List<AutomaticCheckRun> Runs { get; } = [];
+
+        public Task AppendAsync(AutomaticCheckRun run, CancellationToken cancellationToken = default)
+        {
+            Runs.Add(run);
+            return Task.CompletedTask;
+        }
+
+        public Task<IReadOnlyList<AutomaticCheckRun>> ListRecentAsync(
+            int limit,
+            CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<AutomaticCheckRun>>(
+                Runs.AsEnumerable().Reverse().Take(limit).ToList().AsReadOnly());
+
+        public Task ClearAsync(CancellationToken cancellationToken = default)
+        {
+            Runs.Clear();
             return Task.CompletedTask;
         }
     }

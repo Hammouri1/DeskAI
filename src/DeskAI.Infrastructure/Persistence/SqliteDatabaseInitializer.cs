@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 10;
+    public const int CurrentSchemaVersion = 11;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -43,8 +43,49 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplySavedSearchMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyAutomationRuleMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyAutomaticCheckMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplyAutomaticCheckHistoryMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
+    }
+
+    /// <summary>
+    /// Adds a short history of the checks that happened.
+    /// </summary>
+    /// <remarks>
+    /// Kept apart from the operation journal on purpose. The journal exists to make file
+    /// changes auditable and undoable; a check changes nothing, and recording checks in the
+    /// journal would suggest otherwise. This table is also bounded — the repository discards
+    /// all but a recent window — because a permanent record of when someone's folders were
+    /// looked at is not a neutral thing to keep.
+    /// </remarks>
+    private static async Task ApplyAutomaticCheckHistoryMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = """
+            CREATE TABLE IF NOT EXISTS automatic_check_runs (
+                run_id           TEXT NOT NULL PRIMARY KEY,
+                started_at_utc   TEXT NOT NULL,
+                finished_at_utc  TEXT NOT NULL,
+                outcome          INTEGER NOT NULL,
+                folders_checked  INTEGER NOT NULL,
+                proposal_count   INTEGER NOT NULL,
+                conflict_count   INTEGER NOT NULL,
+                was_catch_up     INTEGER NOT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS ix_automatic_check_runs_started
+                ON automatic_check_runs(started_at_utc DESC);
+
+            INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (11, $appliedAtUtc);
+            """;
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -20,6 +20,12 @@ public sealed record RuleProposalViewModel(string Folder, string File, string De
 /// <summary>Files the rules disagreed about, which are therefore left alone.</summary>
 public sealed record RuleConflictViewModel(string Folder, string File, string Explanation);
 
+/// <summary>One past check, written out for the history list.</summary>
+public sealed record CheckRunViewModel(string When, string What, string? Note)
+{
+    public bool HasNote => !string.IsNullOrEmpty(Note);
+}
+
 /// <summary>One choice of how often DeskAI looks, in the words it is offered by.</summary>
 public sealed record CheckFrequencyOption(AutomaticCheckFrequency Value, string Label)
 {
@@ -46,6 +52,7 @@ public sealed class AutomationViewModel : ObservableObject
     private readonly IRuleRepository _rules;
     private readonly RuleSimulationService _simulation;
     private readonly IAutomaticCheckSettingsRepository _checkSettings;
+    private readonly IAutomaticCheckHistoryRepository _checkHistory;
     private readonly AutomaticCheckCoordinator _checks;
     private readonly IClock _clock;
     private CheckFrequencyOption _selectedFrequency;
@@ -69,16 +76,19 @@ public sealed class AutomationViewModel : ObservableObject
         IRuleRepository rules,
         RuleSimulationService simulation,
         IAutomaticCheckSettingsRepository checkSettings,
+        IAutomaticCheckHistoryRepository checkHistory,
         AutomaticCheckCoordinator checks,
         IClock clock)
     {
         _rules = rules;
         _simulation = simulation;
         _checkSettings = checkSettings;
+        _checkHistory = checkHistory;
         _checks = checks;
         _clock = clock;
         _selectedFrequency = FrequencyOptions[1];
         CheckNowCommand = new AsyncRelayCommand(CheckNowAsync, () => !IsBusy);
+        ClearHistoryCommand = new AsyncRelayCommand(ClearHistoryAsync, () => !IsBusy);
         AddRuleCommand = new AsyncRelayCommand(AddRuleAsync, () => !IsBusy);
         DraftFromSentenceCommand = new RelayCommand(DraftFromSentence, () => !IsBusy);
         PractiseCommand = new AsyncRelayCommand(PractiseAsync, () => !IsBusy);
@@ -103,6 +113,22 @@ public sealed class AutomationViewModel : ObservableObject
     public AsyncRelayCommand<Guid> DeleteRuleCommand { get; }
 
     public AsyncRelayCommand CheckNowCommand { get; }
+
+    public AsyncRelayCommand ClearHistoryCommand { get; }
+
+    /// <summary>
+    /// The checks that have happened, most recent first.
+    /// </summary>
+    /// <remarks>
+    /// Shown because automatic behaviour a person cannot look back at is automatic behaviour
+    /// they have to take on trust. Interrupted and failed checks appear here too: a history
+    /// that quietly omitted them would be a reassuring one rather than an accurate one.
+    /// </remarks>
+    public ObservableCollection<CheckRunViewModel> RecentChecks { get; } = [];
+
+    public bool HasRecentChecks => RecentChecks.Count > 0;
+
+    public bool HasNoRecentChecks => RecentChecks.Count == 0;
 
     /// <summary>
     /// How often DeskAI may look, offered in words rather than in minutes.
@@ -320,6 +346,7 @@ public sealed class AutomationViewModel : ObservableObject
             {
                 AddRuleCommand.NotifyCanExecuteChanged();
                 CheckNowCommand.NotifyCanExecuteChanged();
+                ClearHistoryCommand.NotifyCanExecuteChanged();
                 PractiseCommand.NotifyCanExecuteChanged();
                 ToggleRuleCommand.NotifyCanExecuteChanged();
                 DeleteRuleCommand.NotifyCanExecuteChanged();
@@ -369,6 +396,46 @@ public sealed class AutomationViewModel : ObservableObject
         }
 
         DescribeLastCheck(lastChecked);
+        await ReloadHistoryAsync().ConfigureAwait(true);
+    }
+
+    /// <summary>How many past checks the page shows. The store keeps no more than 50.</summary>
+    private const int RecentChecksShown = 10;
+
+    private async Task ReloadHistoryAsync()
+    {
+        var runs = await _checkHistory.ListRecentAsync(RecentChecksShown).ConfigureAwait(true);
+        RecentChecks.Clear();
+        foreach (var run in runs)
+        {
+            var when = run.StartedAtUtc.ToLocalTime();
+            RecentChecks.Add(new CheckRunViewModel(
+                $"{when:t} on {when:d}",
+                run.Describe(),
+                run.CatchUpNote));
+        }
+
+        OnPropertyChanged(nameof(HasRecentChecks));
+        OnPropertyChanged(nameof(HasNoRecentChecks));
+    }
+
+    private async Task ClearHistoryAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            await _checkHistory.ClearAsync().ConfigureAwait(true);
+            await ReloadHistoryAsync().ConfigureAwait(true);
+            Message = "Check history cleared.";
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            Message = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private void DescribeLastCheck(DateTimeOffset? lastCheckedUtc)
@@ -435,6 +502,7 @@ public sealed class AutomationViewModel : ObservableObject
             }
 
             DescribeLastCheck(result.CheckedAtUtc);
+            await ReloadHistoryAsync().ConfigureAwait(true);
             Message = result.HasSomethingToReview
                 ? $"Your rules match {result.ProposalCount} file(s). Try a practice run to see them. "
                     + "Nothing has moved."

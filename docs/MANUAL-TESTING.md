@@ -339,3 +339,14 @@ by unit tests. Use a temporary folder with generated files — never a personal 
    the summary sentence changes to say DeskAI is not looking on its own.
 8. Close DeskAI entirely, add another matching file, and confirm nothing happens: no
    notification, no process left running, and nothing added to Windows startup.
+
+### Check history
+
+9. Open **Recent checks** under Checking for you. Confirm each past check shows a time and a
+   plain sentence, and that one saying files matched also says nothing was moved.
+10. Press **Check now**, then pause DeskAI mid-check if you can catch it. Confirm the stopped
+    check still appears in the history rather than vanishing.
+11. Close DeskAI for a while, reopen it, and wait for the first check. Confirm it is marked
+    "First check after DeskAI was closed or paused" and that only **one** catch-up check
+    appears, not one per missed period.
+12. Press **Clear this history** and confirm the list empties and the button disappears.

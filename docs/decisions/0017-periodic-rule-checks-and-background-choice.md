@@ -31,6 +31,13 @@ Nothing in DeskAI can currently move a file in a folder someone connected. ADR 0
 
 **Pausing stops checks now.** The pause switch cancels a check already running rather than waiting for it to finish, because a person reaching for a stop control means the current activity too.
 
+**A run history, kept apart from the operation journal and bounded.** Every check that ran is
+recorded, interrupted and failed ones included; a check that was not due is not, because it
+did not happen. The journal exists to make file changes auditable and undoable, and a check
+has no file change to undo — recording checks there would suggest they were operations. The
+history keeps the last 50 runs, pruned in the same transaction as the insert. A permanent
+record of when someone's folders were looked at is not a neutral thing to keep.
+
 ## Consequences
 
 DeskAI notices a new file in minutes rather than seconds. For a feature whose entire output is "there is something to review", that is an acceptable trade for removing an event source that fails quietly.

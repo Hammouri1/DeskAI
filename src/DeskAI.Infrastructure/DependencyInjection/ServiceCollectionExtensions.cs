@@ -43,6 +43,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<ISavedSearchRepository, SqliteSavedSearchRepository>();
         services.AddSingleton<IRuleRepository, SqliteRuleRepository>();
         services.AddSingleton<IAutomaticCheckSettingsRepository, SqliteAutomaticCheckSettingsRepository>();
+        services.AddSingleton<IAutomaticCheckHistoryRepository, SqliteAutomaticCheckHistoryRepository>();
         services.AddSingleton<IAiSettingsRepository, SqliteAiSettingsRepository>();
         services.AddSingleton<IAiUsageBudget, SqliteAiUsageBudget>();
         services.AddSingleton<IPlanRepository, SqlitePlanRepository>();

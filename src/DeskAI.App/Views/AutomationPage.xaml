@@ -89,6 +89,52 @@
                                    HorizontalAlignment="Left"
                                    Text="Checking happens only while DeskAI is open. Closing it stops everything, and DeskAI does not add itself to Windows startup. A check re-reads the names, sizes, and dates of files in the folders you connected — it does not open them, and it does not move anything." />
                     </Expander>
+
+                    <!--
+                        Automatic behaviour someone cannot look back at is behaviour they
+                        have to take on trust. Interrupted and failed checks are listed too;
+                        a history that omitted them would be reassuring rather than accurate.
+                    -->
+                    <Expander Header="Recent checks" HorizontalAlignment="Stretch">
+                        <StackPanel Spacing="10">
+                            <TextBlock Style="{StaticResource CaptionStyle}"
+                                       Visibility="{x:Bind ViewModel.HasRecentChecks, Mode=OneWay}"
+                                       Text="DeskAI keeps the last 50 checks and forgets older ones." />
+
+                            <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                       TextWrapping="Wrap"
+                                       Visibility="{x:Bind ViewModel.HasNoRecentChecks, Mode=OneWay}"
+                                       Text="No checks yet. One will appear here after DeskAI looks." />
+
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.RecentChecks, Mode=OneWay}"
+                                          AutomationProperties.Name="Recent checks">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:CheckRunViewModel">
+                                        <Border Style="{StaticResource RowCardStyle}">
+                                            <StackPanel Spacing="3">
+                                                <TextBlock FontWeight="SemiBold" FontSize="12"
+                                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                           Text="{x:Bind When}" />
+                                                <TextBlock Style="{StaticResource CaptionStyle}"
+                                                           TextWrapping="Wrap"
+                                                           Text="{x:Bind What}" />
+                                                <TextBlock Style="{StaticResource CaptionStyle}"
+                                                           TextWrapping="Wrap"
+                                                           Visibility="{x:Bind HasNote}"
+                                                           Foreground="{ThemeResource DeskCautionBrush}"
+                                                           Text="{x:Bind Note}" />
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <Button Content="Clear this history"
+                                    HorizontalAlignment="Left"
+                                    Visibility="{x:Bind ViewModel.HasRecentChecks, Mode=OneWay}"
+                                    Command="{x:Bind ViewModel.ClearHistoryCommand}" />
+                        </StackPanel>
+                    </Expander>
                 </StackPanel>
             </Border>
 

@@ -13,7 +13,8 @@ public sealed record AutomaticCheckResult(
     int FoldersChecked,
     int ProposalCount,
     int ConflictCount,
-    DateTimeOffset CheckedAtUtc)
+    DateTimeOffset CheckedAtUtc,
+    bool WasCatchUp = false)
 {
     public static AutomaticCheckResult Nothing(DateTimeOffset checkedAtUtc) => new(0, 0, 0, checkedAtUtc);
 
@@ -69,6 +70,7 @@ public sealed class AutomaticCheckService(
     public async Task<AutomaticCheckResult> RunAsync(CancellationToken cancellationToken = default)
     {
         var checkedAt = _clock.UtcNow;
+        var wasCatchUp = await WasOverdueAsync(checkedAt, cancellationToken).ConfigureAwait(false);
 
         var searchable = (await _roots.ListAsync(cancellationToken).ConfigureAwait(false))
             .Where(FileSearchService.IsSearchable)
@@ -87,7 +89,28 @@ public sealed class AutomaticCheckService(
             searchable.Length,
             found.ProposalCount,
             found.ConflictCount,
-            checkedAt);
+            checkedAt,
+            wasCatchUp);
+    }
+
+    /// <summary>
+    /// Whether this check is arriving late — the first one after DeskAI was closed or paused.
+    /// </summary>
+    /// <remarks>
+    /// Missed checks are never replayed, so this is how the gap gets reported instead of
+    /// hidden. "Late" means more than two intervals since the last check: one interval is
+    /// simply the normal wait, and a little drift is not worth remarking on.
+    /// </remarks>
+    private async Task<bool> WasOverdueAsync(DateTimeOffset nowUtc, CancellationToken cancellationToken)
+    {
+        var chosen = await _settings.LoadAsync(cancellationToken).ConfigureAwait(false);
+        if (AutomaticCheckSchedule.IntervalFor(chosen.Frequency) is not { } interval)
+        {
+            return false;
+        }
+
+        var last = await _settings.ReadLastCheckedAtUtcAsync(cancellationToken).ConfigureAwait(false);
+        return last is { } previous && previous <= nowUtc && nowUtc - previous > interval + interval;
     }
 
     /// <summary>Checks only if the schedule says one is due, and reports whether it did.</summary>
