@@ -123,7 +123,12 @@ changes a feature.
 | Organize | Same name: skip by default, keep both adds a number | `TidyPageTests`, `TidySuggestionTests` |
 | Organize | Left alone with reasons: downloading, recent, online-only, hidden, unknown | `TidyPageTests`, `TidySuggestionTests` |
 | Organize | Only loose top-level files; at most 500; safety check on every move | `TidySuggestionTests` |
-| Organize | Tidy button off and says nothing moves yet | `TidyPageTests` |
+| Organize | Tidy button on only while something is ticked; says it can be undone | `TidyPageTests` |
+| Organize | Tidy moves exactly the ticked files; result line; skipped files with reasons | `TidyRunPageTests`, `TidyRunTests` |
+| Organize | Re-checked before each file: changed, replaced, gone, name taken, busy, online-only, link, permission withdrawn, disconnected, protected, escaping plan, stale approval | `TidyRunTests`, `FolderTidyExecutorTests` |
+| Organize | Undo: files back, folders that were there kept, changed or blocked files refused, once only, asks for permission again | `TidyRunPageTests`, `TidyRunTests` |
+| Organize | Neither executor acts on the other's folder or undoes its records | `TidyRunTests` |
+| Side menu | Says which folders DeskAI may tidy | `HomeAndShellTests` |
 | Organize | Ask AI: off until set up, preview before Send, cancel sends nothing, answer beside the button | `TidyAiPageTests`, `TidyAiTests` |
 | Organize | Only files DeskAI doesn't know, or every file rules don't place; rules still win | `TidyAiPageTests`, `TidyAiTests` |
 | Organize | AI isn't sure: own group, unticked; refused answers change nothing | `TidyAiPageTests`, `TidyAiTests` |

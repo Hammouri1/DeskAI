@@ -284,6 +284,25 @@ What is deliberately not built: animations, custom title bar, per-file-type icon
 Next small task: V0.4 step 2 — the typed structured search query executed as parameterized SQL over the index.
 ```
 
+## V0.6 Steps 2b and 3 Learning Log — 2026-09-10
+
+```text
+What became usable: On "Tidy a folder", AI can suggest where files go (only after the person sees exactly what it will be told and presses Send), and the Tidy button really moves the ticked files in a folder the person allowed DeskAI to tidy, with a result line, every skipped file and why, and Undo.
+Main data flow (AI): TidyPreview.AskableFiles → TidyAiService.PrepareAsync (random stand-in IDs, sharing capped, protected dropped) → dialog → AskAsync (re-check) → IOrganizationSuggestionProvider → strict parser → TidyAiAdvice → TidySuggestionService (rules > AI > type) → list.
+Main data flow (tidy): ticked moves → TidyRunService (exact approval + ExpectedFile facts) → FolderTidyExecutor (live folder trust) → FileOperationRunner (journal first, per-file re-check, move without overwrite) → result → Undo through the same runner.
+Classes/interfaces I can explain: TidyAiService, TidyAiQuestion, TidyAiAdvice, IPlanSafetyCheck.IsProtected, IFolderTidyExecutor, FolderTidyExecutor, FileOperationRunner, IRootTrust, ExpectedFile, TidyRunService.
+New concept and my own explanation: Two-step confirmation. Building a request and sending it are separate calls with the person in between, and the second re-checks that nothing changed since the first. What was shown is exactly what is sent.
+New concept and my own explanation (2): Strategy by composition. One runner holds the move rules; each executor plugs in only "how do I know I may still touch this folder?". The practice page therefore rehearses the exact code real tidying uses.
+New concept and my own explanation (3): Time-of-check versus time-of-use, per file. The list can be minutes old, so each file's size and last-changed time are compared again right before it moves, and File.Move(overwrite: false) makes the last check atomic.
+Hardest thing to get right: Proving the tests test something. Several controls were removed on purpose (sending real file IDs, full paths, skipping the re-check before Send, the changed-file check, the per-file trust check, link checks, online-only check) and each made a test fail. Without the link checks a file genuinely moved through a link out of the folder.
+Security cases tested: see docs/security/2026-09-10-real-folder-ai-disclosure-review.md and 2026-09-10-real-folder-tidy-review.md — every row has a named test, plus a sentinel file outside the folder that must never change.
+Build/test evidence: Release build with zero warnings; 813 tests passed, none skipped; dotnet format clean.
+AI containment check: DeskAI.AI still references Core only and receives only a request record. TidyAiService holds no scanner, reader, index, journal, or executor, and AutomaticCheckService and TidyAiService tests fail if either is given the real-folder executor.
+Trade-off/ADR: ADR 0020 (preview-then-send; no full paths from real folders), ADR 0021 (one executor, live trust, undo ships with tidy).
+What is deliberately not built: finding the last tidy after reopening DeskAI, recovery of an interrupted real tidy (step 4), review from automatic checks (step 5), delete or Recycle Bin, moving out of the folder.
+Next small task: V0.6 step 4 — "Last tidy" with Undo after restart, and the interrupted-tidy prompt.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

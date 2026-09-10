@@ -75,8 +75,11 @@ top-level files, leaves busy, recent, online-only, hidden, and unknown files alo
 reasons, applies the person's rules ahead of file type (`TidyFolderRecipe`), resolves
 same-name destinations, and returns a `TidyPreview` containing an `OrganizationPlan`. It asks
 Safety about that plan through `IPlanSafetyCheck`, a Core contract Safety implements
-(`PlanSafetyCheck`), so Core still never references Safety. Nothing in this module moves a
-file; as of step 2a no executor accepts a plan for a connected folder.
+(`PlanSafetyCheck`), so Core still never references Safety. The suggestion and AI services move
+nothing. Step 3 adds `TidyRunService`, which turns the ticked moves into an `Approval` covering
+exactly them and the folders they need, bound to the plan revision on screen, passes each
+file's listed size and last-changed time as `ExpectedFile`, calls `IFolderTidyExecutor`, and
+words the result without calling a partial run done; it also undoes a tidy on request.
 
 Step 2b adds AI as a suggestion source (ADR 0020). `TidySuggestionService.PreviewAsync` takes a
 `TidySuggestionMode` and a dictionary of `TidyAiAdvice` by file ID; it still sends nothing.
@@ -151,6 +154,17 @@ Undo is a compensating transaction, not time travel. It verifies that the destin
 The V0.2 step-5 implementation is intentionally narrower than the future production executor. `TemporaryDemoPlanExecutor` generates its own unique root beneath a configured base that must itself be contained by the Windows temporary directory. It seeds only known dummy files and requires an unpredictable ownership marker. Before every selected operation it rechecks root identity, containment, existing path components for reparse points, current Safety results, approval identity/revision/policy, source existence, destination availability, and parent existence. It never overwrites. No executor API accepts the root chosen by the step-8 picker; that picker feeds only the metadata preview service.
 
 Step 7 places `IOperationJournal.CreateAsync` before the first mutation, after persisting the exact root and plan revision. Each operation transitions from Pending to InProgress and then Completed, Failed, or Cancelled. Transaction summaries distinguish completed, partially completed, failed, and cancelled outcomes. Recovery checks an InProgress operation against live size/timestamp/path facts only when the current executor still owns the same marked demo root. Records from an older process remain `RecoveryRequired`; the new process does not touch an old temporary workspace it cannot authenticate.
+
+**Since V0.6 step 3 (ADR 0021) the rules above live in one place, `FileOperationRunner`,** and two
+executors use them. `TemporaryDemoPlanExecutor` trusts its workspace by marker as described;
+`FolderTidyExecutor` trusts a connected folder by a live check before the run and before every
+operation — still connected, `CanTidy`, same canonical path, and `CheckStillSafeAsync`. Each
+move also re-checks the file against the size and last-changed time recorded from the list,
+refuses online-only, hidden, and system files and any link in the path, reports a sharing
+violation as "open in another program", and moves with `overwrite: false`. Undo checks that the
+record's plan belongs to the executor's own folder, so neither executor can undo the other's
+work, and practice recovery leaves a connected folder's interrupted record for that folder's own
+recovery (V0.6 step 4). The real-folder executor runs one tidy or undo at a time.
 
 Undo reads completed journal operations in reverse order. A moved file returns only if its current size and modification time still match the recorded pre-move facts and its original path is free. A created directory is removed only if it was recorded, remains inside the owned root, is not a link, and is empty after file reversals. Undo creates its own journal transaction. In this demo implementation, undo is offered only during the same application session; durable cross-restart ownership is deliberately unresolved.
 

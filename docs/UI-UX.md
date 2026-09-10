@@ -80,8 +80,14 @@ stacked together — impossible to understand. Top to bottom:
    the confirming act.
 6. **Left alone**, collapsed, listing every file DeskAI will not touch with its reason.
 7. **The action bar**, the page's one bold element: the number of ticked files, the Tidy
-   button, and one honest line. Until step 3 the button is shown off and the line says
-   "Tidying arrives in the next update. Nothing moves yet — this is what it would do."
+   button, and one honest line: "Nothing moves until you press it. You can undo it." The button
+   is on only while something is ticked (in step 2a it was shown off, with a line saying so).
+   After pressing, a result card sits right under it: one line ("Done. Downloads: 12 files
+   tidied into 3 folders." only when everything moved; otherwise "10 of 12 files …"), every
+   file that stayed with its reason in the caution colour, and **Undo**, whose answer appears
+   under it. If the tidy permission was taken back, Undo shows the permission dialog again,
+   because undo moves files too. The side menu counts folders DeskAI may tidy, and Home says
+   files move only in such a folder, only when Tidy is pressed, and never get deleted.
 8. **"Nervous? Try it on example files first"**, leading to the practice page.
 
 Removed from this page on purpose: plan revision numbers, "Needs attention", "Recent

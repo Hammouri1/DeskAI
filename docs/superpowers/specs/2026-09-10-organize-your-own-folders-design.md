@@ -292,7 +292,8 @@ recorded in new ADRs when built.
    with reasons and "left alone" items. The Tidy button is shown disabled with "Coming in the
    next step".
 3. **Tidying for real:** executor for real folders, live checks, same-name choices, busy and
-   online-only handling, 500 limit, result line.
+   online-only handling, 500 limit, result line. (Amended when built, ADR 0021: Undo of the
+   tidy just done ships here too, because real moves must not arrive without undo.)
 4. **Undo after restart** and the interruption prompt.
 5. **Review in Organize** from automatic checks, and the practice link.
 6. **Security review record** (`docs/security/`), ADRs, roadmap, README, UI-UX, and

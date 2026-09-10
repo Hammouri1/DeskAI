@@ -221,9 +221,17 @@ Progress (build order from the design):
   Send. At most type, size and date, and name leave the computer, each only if allowed; never
   locations, folder names, contents, or DeskAI's file IDs. AI names a category, DeskAI names
   the folder. Nothing moves.
-- Next — step 3: tidying for real (executor for real folders, live checks, same-name choices,
-  busy and online-only handling, result line).
-- Then step 4 (undo after restart), step 5 (review from automatic checks), step 6 (security
+- ✅ Step 3, 2026-09-10: tidying for real (ADR 0021, review
+  `docs/security/2026-09-10-real-folder-tidy-review.md`). One shared set of move rules for the
+  practice folder and real folders; a real folder is trusted only while it is still connected,
+  may be tidied, is at the same place, and passes its safety re-check, asked before every
+  file. Each file must match the list the person saw; busy, online-only, hidden, changed, or
+  blocked files stay with a reason. The result says what happened, and **Undo** for that tidy
+  ships in the same step, needing the same permission.
+- Next — step 4: finding the last tidy again after DeskAI is reopened, and the prompt for a tidy
+  interrupted by a crash ("7 of 12 files moved" with Undo those / Keep them). Until then an
+  interrupted record is left untouched.
+- Then step 5 (review from automatic checks and the practice link), step 6 (the final security
   review record).
 
 1. Design and security review before code: a separate "allow DeskAI to organize this folder"

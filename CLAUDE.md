@@ -10,8 +10,11 @@ completely. Treat those documents as the source of truth. If instructions confli
 
 - Milestones V0.1, V0.2, and V0.3 are complete. V0.4 is complete except confirming
   duplicates by content. V0.5 is complete except checks after the window is closed.
-- No connected folder can be changed yet. V0.6 "Organize Your Own Folders" is the
-  recommended next milestone and starts with a design and security review, not code.
+- V0.6 "Organize Your Own Folders" is in progress. Steps 1, 2a, 2b, and 3 are done: a
+  connected folder with its own tidy permission can be tidied and the tidy undone in the same
+  visit (ADR 0019–0021). Next is step 4: "Last tidy" with Undo after DeskAI is reopened, and the
+  interrupted-tidy prompt. It changes recovery of real-folder files, so it starts with a short
+  security review.
 - As of 2026-09-10 every page has page tests in `DeskAI.Presentation.Tests`; keep the
   Feature Coverage Map in `docs/TESTING.md` complete.
 - Do not rebuild finished milestones or implement the whole remaining roadmap at once.

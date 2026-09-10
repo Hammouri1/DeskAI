@@ -368,12 +368,45 @@ Use a new folder under Windows Temp filled with made-up files — for example a 
 6. Find `report.pdf`. Expected: "A file called report.pdf is already there" and a switch set
    to "Skip this file". Turn on "Keep both". Expected: it now goes to `report (2).pdf`.
 7. Open **Left alone**. Expected: the `.crdownload` file with "still downloading".
-8. Look at the Tidy button. Expected: switched off, with "Tidying arrives in the next update.
-   Nothing moves yet". Check in File Explorer that **no file has moved**.
+8. (Step 2a only; since step 3 the button works — see the checklist below.) Check in File
+   Explorer that opening the page and allowing tidying moved **no file**.
 9. Press **Stop tidying this folder**. Expected: the permission card returns and the folder is
    still listed in Search.
 10. Press the practice link, then **Back to Tidy a folder**. Expected: both pages work.
 11. Press each new "?" on this page and check the explanations read clearly.
+
+## Tidying for real (V0.6 step 3, added 2026-09-10)
+
+This is the first step that really moves files. Use **only** a new folder under Windows Temp
+filled with made-up files — for example `%TEMP%\DeskAI-Tidy-Test` holding `invoice.pdf`,
+`notes.pdf`, `holiday.jpg`, `setup.exe`, `mystery.zzz`, and a subfolder `Old\keep.txt`. Put one
+more file **next to** that folder (for example `%TEMP%\sentinel.txt`) and note its date. Never
+test on Desktop, Downloads, Documents, Pictures, or a cloud-sync folder.
+
+1. Open **Organize**, pick the test folder, and allow tidying. Expected: the Tidy button reads
+   "Tidy 4 files" and the line under it says "Nothing moves until you press it. You can undo it."
+2. Untick the **Installers** group. Expected: "Tidy 3 files".
+3. Press **Tidy**. Expected: a card under the button: "Done. DeskAI-Tidy-Test: 3 files tidied into
+   2 folders." and an **Undo** button. In File Explorer: `Documents` holds the two PDFs,
+   `Pictures` holds the photo, `setup.exe` and `mystery.zzz` are still loose, `Old\keep.txt` is
+   untouched, and `sentinel.txt` beside the folder is unchanged.
+4. Look at the side menu. Expected: it says you have let DeskAI tidy 1 folder.
+5. Press **Undo**. Expected: "Undone. 3 files went back where they were." In File Explorer:
+   every file is back, and the `Documents` and `Pictures` folders DeskAI made are gone.
+6. Create a `Documents` folder yourself, then tidy again and undo. Expected: your own
+   `Documents` folder is **kept** even though it is empty again.
+7. Tidy again, but before pressing Tidy open `notes.pdf` in a program that keeps it locked (or
+   edit and save it). Expected: the result says "1 of 2 files …" or similar, and lists
+   `notes.pdf` with a plain reason ("open in another program" or "changed after the list was
+   made"). It stays where it was.
+8. After a tidy, press **Stop tidying this folder**, then **Undo**. Expected: the permission
+   dialog appears. Cancel: nothing moves. Press Undo again and allow: the files go back.
+9. Put a file named `invoice.pdf` inside `Documents` yourself, then tidy with that file ticked
+   and "Keep both" on. Expected: yours is untouched, and the other arrives as
+   `invoice (2).pdf`.
+10. Press the "?" next to **Undo** and check it reads clearly.
+11. Close DeskAI after a tidy and reopen it. Expected **for now**: the Undo button is not shown
+    again after reopening — that arrives in step 4. Nothing moves when DeskAI opens.
 
 ## Ask AI on Tidy a folder (V0.6 step 2b, added 2026-09-10)
 

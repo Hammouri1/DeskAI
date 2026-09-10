@@ -6,7 +6,7 @@
   mutation"), ADR 0010 and ADR 0019 (real-folder changes need their own executor and review).
 - Threat design: Part 2 of `docs/superpowers/specs/2026-09-10-organize-your-own-folders-design.md`.
   This review states how each threat is controlled and which test proves it.
-- Status: written before the code; the result section is completed when the step is built.
+- Status: accepted as built (see Result). Written before the code; result added when built.
 
 ## What changes
 
@@ -60,4 +60,28 @@ rather than guessed at.
 
 ## Result
 
-To be completed when the step is built.
+Accepted, 2026-09-10, with every control in the table built and tested (ADR 0021):
+
+- `FileOperationRunner` holds the shared rules; `TemporaryDemoPlanExecutor` delegates to it
+  and all its existing tests still pass; `FolderTidyExecutor` is the real-folder executor;
+  `TidyRunService` builds the exact approval; the page's Tidy and Undo buttons use them.
+- Tests: `TidyRunTests` (21, through the whole app), `FolderTidyExecutorTests` (3: folder
+  disconnected part-way, protected entry, failed safety re-check), `TidyRunPageTests` (7), and
+  the updated `TidyPageTests` and `HomeAndShellTests`. `AutomaticCheckServiceTests` and
+  `TidyAiServiceTests` now fail if either service is given the real-folder executor.
+- Controls removed on purpose to check the tests notice: the changed-file check, the per-file
+  trust check, the link checks on destinations, and the online-only check. Each made its test
+  fail and was restored. Without the link checks a test file really did move through a link out
+  of the folder, which is exactly what they exist to stop.
+- Full suite: 813 tests pass, none skipped (the link test runs on this machine), Release build
+  with no warnings, formatting clean.
+
+Text that stopped being true was rewritten in the same change: Home no longer says DeskAI
+cannot move anything in connected folders; connect dialogs say connecting alone never allows
+changes; the side menu counts folders DeskAI may tidy.
+
+## Not accepted by this review
+
+Deleting or sending anything to the Recycle Bin; moving files out of the chosen folder or out
+of subfolders; renaming except the " (2)" a person chose; automatic checks moving anything;
+and recovering an interrupted real-folder tidy, which is step 4 with its own checks.
