@@ -39,6 +39,25 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Takes someone to the page that explains the finding. It changes nothing on the way.
+    /// </summary>
+    private void OnReviewFindingClicked(object sender, RoutedEventArgs args)
+    {
+        _shell?.DismissFindingCommand.Execute(null);
+        _navigationService?.Navigate("automation");
+        foreach (var item in RootNavigation.MenuItems)
+        {
+            if (item is NavigationViewItem { Tag: "automation" } automation)
+            {
+                RootNavigation.SelectedItem = automation;
+                break;
+            }
+        }
+
+        _ = RefreshScopeAsync();
+    }
+
     private MainWindow()
     {
         InitializeComponent();

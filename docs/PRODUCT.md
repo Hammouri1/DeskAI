@@ -146,4 +146,7 @@ Telemetry is off unless deliberately designed, documented, consented to, and pri
 - Exact local model runtime and whether any model is bundled; licensing must be reviewed.
 - Whether content extraction ships in V1 and which formats are supported safely.
 - Retention policy for index and operation history.
-- How scheduled automation behaves while the app is closed.
+- How scheduled automation behaves while the app is closed. Partly settled: ADR 0017 makes
+  this a person's choice with the narrow answer as the default, and today DeskAI does nothing
+  at all once its window is closed. What running while closed would actually look like — tray
+  presence, startup registration, uninstall behaviour — is still open.

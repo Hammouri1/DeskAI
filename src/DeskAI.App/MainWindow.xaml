@@ -54,6 +54,31 @@
             </Border>
         </NavigationView.PaneFooter>
 
-        <Frame x:Name="ContentFrame" />
+        <Grid>
+            <Frame x:Name="ContentFrame" />
+
+            <!--
+                The notice a finished check leaves behind. Top-right and over the page rather
+                than inside it, because a check can finish while someone is on any page, and
+                the whole point is that they notice it when they come back.
+
+                It reports a count and says nothing has moved, in the same sentence. It has
+                no action that changes anything: "Review" is navigation.
+            -->
+            <InfoBar Margin="0,12,16,0"
+                     MaxWidth="360"
+                     HorizontalAlignment="Right"
+                     VerticalAlignment="Top"
+                     IsClosable="True"
+                     IsOpen="{Binding HasFinding, Mode=OneWay}"
+                     Severity="Informational"
+                     Title="Something to look at"
+                     Message="{Binding FindingMessage}"
+                     CloseButtonCommand="{Binding DismissFindingCommand}">
+                <InfoBar.ActionButton>
+                    <Button Content="Review" Click="OnReviewFindingClicked" />
+                </InfoBar.ActionButton>
+            </InfoBar>
+        </Grid>
     </NavigationView>
 </Window>

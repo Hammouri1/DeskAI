@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 9;
+    public const int CurrentSchemaVersion = 10;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -42,8 +42,44 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplyFileIndexMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplySavedSearchMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyAutomationRuleMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplyAutomaticCheckMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
+    }
+
+    /// <summary>
+    /// Adds how often DeskAI looks for rule matches, and when it last looked.
+    /// </summary>
+    /// <remarks>
+    /// A single row, because there is one answer per installation. The frequency is stored
+    /// as the choice a person made rather than as a number of minutes, so a later change to
+    /// what "every hour" means cannot silently rewrite what they agreed to. Defaults are
+    /// written here rather than assumed by the reader: the quiet settings — while the app is
+    /// open, no notifications — must be what a fresh database actually contains.
+    /// </remarks>
+    private static async Task ApplyAutomaticCheckMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = """
+            CREATE TABLE IF NOT EXISTS automatic_check_settings (
+                singleton_id       INTEGER NOT NULL PRIMARY KEY CHECK (singleton_id = 1),
+                mode               INTEGER NOT NULL,
+                frequency          INTEGER NOT NULL,
+                is_paused          INTEGER NOT NULL,
+                notify_on_findings INTEGER NOT NULL,
+                last_checked_at_utc TEXT NULL
+            );
+
+            INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (10, $appliedAtUtc);
+            """;
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

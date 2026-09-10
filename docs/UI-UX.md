@@ -152,7 +152,11 @@ The window uses a Mica backdrop, pages paint `DeskGroundBrush`, and the navigati
 
 Status is expressed through `PreviewStatusLevel` (`Ready`, `Attention`, `Blocked`) mapped by converters to a system semantic brush, a paired Segoe Fluent glyph, and a tinted badge background. Colour is never alone: every badge carries an icon **and** the status word, so a blocked row still reads as blocked in greyscale or high contrast. `PreviewStatusLevel` is presentation severity only — Safety decides what is blocked, and the enum merely chooses how that decision is drawn.
 
-Empty states stay truthful rather than becoming decorative. Automatic tasks states outright that DeskAI is doing nothing in the background, and no page implies a capability that does not exist.
+Empty states stay truthful rather than becoming decorative, and no page implies a capability that does not exist.
+
+Automatic tasks used to state outright that DeskAI was doing nothing in the background. That sentence expired when automatic checks arrived: DeskAI now looks by itself. The card was rewritten to "DeskAI never moves a file on its own" — the narrower claim that is still true — rather than kept because it was reassuring. The same rule as the scope label applies: a promise about what DeskAI does is the one sentence that must never outlive its truth.
+
+A finished check leaves a quiet notice in the top-right corner of the window, over the page rather than inside it, because a check can finish while someone is on any page or away from the machine. It reports a count and says nothing has moved in the same sentence, stays until it is reviewed or dismissed rather than fading, and its only action is navigation. A check that found nothing says nothing at all: announcing "nothing matched" every fifteen minutes would train someone to ignore the one time it says something did.
 
 The navigation pane always states the current scope, and that text is derived from what is actually connected rather than written as a fixed string. An earlier version hard-coded "Sample files only. Your personal folders are not connected.", which stayed on screen after a real folder was connected: the one label that promises what DeskAI can reach was the label that lied. It now reads "Practice mode" only while nothing is connected, and otherwise reports the folder and file counts. If the scope cannot be read it says so, and never falls back to the reassuring wording.
 

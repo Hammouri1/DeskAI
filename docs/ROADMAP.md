@@ -155,7 +155,23 @@ Goal: turn repeated intent into deterministic, auditable behavior.
   as someone agreeing to what was understood — and every part understood is stated back. A
   bare "word files" is only read as a file ending when the word is a type DeskAI knows, so
   "invoice files" becomes a name to look for rather than an ending of ".invoice".
-- ⬜ Folder watchers and/or scheduler selected through an ADR.
+- ◐ Folder watchers and/or scheduler selected through an ADR.
+  Decided and half built on 2026-09-10. ADR 0017 chose a periodic check over a folder
+  watcher: `FileSystemWatcher` holds a handle on a real personal folder, drops events under
+  load without saying so, and storms during a cloud-sync pass, and rules read remembered
+  metadata rather than the live disk, so instant reaction buys very little. While DeskAI is
+  open it refreshes what it remembers, runs the existing practice run, and shows a count in
+  the top corner — it holds no executor and a test asserts one cannot be added without
+  failing. How often is chosen in words, there is a pause switch that also stops a check
+  already running, and a Windows notification is opt-in and off by default. The Automatic
+  tasks page no longer claims nothing runs on its own, because that stopped being true; it
+  says instead that DeskAI never moves a file on its own, which is the promise that holds.
+  See `docs/decisions/0017-periodic-rule-checks-and-background-choice.md` and
+  `docs/security/2026-09-10-automatic-check-review.md`.
+  Checking after the window is closed is decided in the same ADR but NOT built: no code
+  produces that mode and it is absent from the UI. It is the remaining half, and it needs
+  its own security review because a process running while nobody is present is a different
+  threat case.
 - ⬜ Run history, notifications, pause/disable controls, missed-run behavior, and safe concurrency.
 
 Exit criteria: rules can be explained and simulated; background execution cannot widen scope; each run is recoverable/auditable.

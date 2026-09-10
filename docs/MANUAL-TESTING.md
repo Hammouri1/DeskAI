@@ -315,3 +315,27 @@ have something to look at. Never connect a personal folder for this.
 9. On Search and Automatic tasks, confirm the pages plainly say the feature is not
    finished. The Search filter buttons must appear **disabled**, not clickable.
 10. Confirm no page claims a capability that does not exist yet.
+
+## Automatic checks (V0.5, added 2026-09-10)
+
+These need a real launch, because the timer and the Windows notification cannot be verified
+by unit tests. Use a temporary folder with generated files — never a personal folder.
+
+1. Open **Automatic tasks**. Confirm the first card says DeskAI never moves a file on its own,
+   and that it no longer claims nothing runs in the background.
+2. Confirm the **Checking for you** card shows "Every 15 minutes" and that both switches are
+   off: notifications off, checks not paused.
+3. Connect a temporary folder from Search, write a rule that matches something in it, then
+   press **Check now**. Expected: a count appears and "Nothing has moved".
+4. Set the frequency to **Only when I ask**, wait, and confirm the last-looked time does not
+   advance on its own.
+5. Set it back to every 15 minutes, add a matching file to the temporary folder, and leave
+   DeskAI open. Within about 15 minutes the top-right notice should appear. Confirm it names
+   a count and no filenames, and that **Review** navigates to Automatic tasks.
+6. Turn **Tell me with a Windows notification** on and repeat step 5. Expected: a Windows
+   notification carrying a count only. DeskAI runs unpackaged, so notifications may be
+   unavailable on some machines — if none appears, the in-app notice must still work.
+7. Turn on **Pause all automatic checks** while a check is running. Expected: it stops, and
+   the summary sentence changes to say DeskAI is not looking on its own.
+8. Close DeskAI entirely, add another matching file, and confirm nothing happens: no
+   notification, no process left running, and nothing added to Windows startup.

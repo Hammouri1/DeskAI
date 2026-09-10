@@ -16,7 +16,12 @@
 
             <!--
                 Said plainly and first. A rules page is exactly where someone would assume
-                things run on their own, so the page has to answer that before anything else.
+                things happen on their own, so the page answers that before anything else.
+
+                The wording changed when automatic checks arrived. It used to say nothing ran
+                on its own, which stopped being true: DeskAI now looks by itself. What it
+                still cannot do is move anything, and that is the promise worth making
+                precisely rather than the comfortable one worth keeping.
             -->
             <Border Style="{StaticResource SoftCardStyle}">
                 <StackPanel Spacing="10">
@@ -25,11 +30,65 @@
                                  Fill="{ThemeResource DeskAccentBrush}" />
                         <TextBlock FontWeight="SemiBold" FontSize="13"
                                    Foreground="{ThemeResource DeskAccentBrush}"
-                                   Text="Nothing runs on its own" />
+                                   Text="DeskAI never moves a file on its own" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
                                HorizontalAlignment="Left"
-                               Text="Rules do not run in the background and nothing is scheduled. A practice run only shows you what would happen; DeskAI cannot move a file from this page. Anything real still goes through the preview where you approve it." />
+                               Text="DeskAI can look at your connected folders for you and tell you when your rules match something. Looking is all it does: it cannot move, rename, or delete anything from this page. Anything real still goes through the preview where you approve it first." />
+                </StackPanel>
+            </Border>
+
+            <!--
+                The automatic-check controls. Deliberately placed above the rules rather than
+                at the bottom: how often DeskAI looks at someone's folders is a bigger
+                decision than any individual rule, and it should not be something they scroll
+                past. See ADR 0017.
+            -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="14">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Checking for you" />
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
+                                   HorizontalAlignment="Left"
+                                   Text="{x:Bind ViewModel.AutomaticCheckSummary, Mode=OneWay}" />
+                    </StackPanel>
+
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16" VerticalAlignment="Center">
+                        <ComboBox Header="How often"
+                                  MinWidth="200"
+                                  ItemsSource="{x:Bind ViewModel.FrequencyOptions}"
+                                  SelectedItem="{x:Bind ViewModel.SelectedFrequency, Mode=TwoWay}"
+                                  AutomationProperties.Name="How often DeskAI checks" />
+                        <Button Grid.Column="1" VerticalAlignment="Bottom"
+                                Content="Check now"
+                                Command="{x:Bind ViewModel.CheckNowCommand}" />
+                    </Grid>
+
+                    <TextBlock Style="{StaticResource CaptionStyle}"
+                               Text="{x:Bind ViewModel.LastCheckedDescription, Mode=OneWay}" />
+
+                    <ToggleSwitch Header="Pause all automatic checks"
+                                  OnContent="Paused" OffContent="Running"
+                                  IsOn="{x:Bind ViewModel.IsPaused, Mode=TwoWay}"
+                                  AutomationProperties.Name="Pause all automatic checks" />
+
+                    <StackPanel Spacing="4">
+                        <ToggleSwitch Header="Tell me with a Windows notification"
+                                      OnContent="On" OffContent="Off"
+                                      IsOn="{x:Bind ViewModel.NotifyWhenSomethingIsFound, Mode=TwoWay}"
+                                      AutomationProperties.Name="Show a Windows notification when something is found" />
+                        <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="560"
+                                   TextWrapping="Wrap"
+                                   HorizontalAlignment="Left"
+                                   Text="Off unless you turn it on. With it off, DeskAI shows a quiet message inside the app instead." />
+                    </StackPanel>
+
+                    <Expander Header="More details" HorizontalAlignment="Stretch">
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="600"
+                                   TextWrapping="Wrap"
+                                   HorizontalAlignment="Left"
+                                   Text="Checking happens only while DeskAI is open. Closing it stops everything, and DeskAI does not add itself to Windows startup. A check re-reads the names, sizes, and dates of files in the folders you connected — it does not open them, and it does not move anything." />
+                    </Expander>
                 </StackPanel>
             </Border>
 

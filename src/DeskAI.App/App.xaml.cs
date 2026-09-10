@@ -13,6 +13,7 @@ using DeskAI.Infrastructure.Content;
 using DeskAI.Infrastructure.DependencyInjection;
 using DeskAI.Infrastructure.Logging;
 using DeskAI.Infrastructure.Persistence;
+using DeskAI.Infrastructure.Time;
 using DeskAI.Safety;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -81,6 +82,7 @@ public partial class App : Application
                 services.AddSingleton<DemoOrganizationPlanFactory>();
                 services.AddSingleton<INavigationService, NavigationService>();
                 services.AddSingleton<IFolderPickerService, WindowsFolderPickerService>();
+                services.AddSingleton<IFindingNotifier, WindowsFindingNotifier>();
                 services.AddTransient<ShellViewModel>();
                 services.AddTransient<OrganizeViewModel>();
                 services.AddSingleton<FileSearchService>();
@@ -92,6 +94,12 @@ public partial class App : Application
                 services.AddSingleton<StorageSummaryService>();
                 services.AddSingleton<DuplicateFinderService>();
                 services.AddSingleton<RuleSimulationService>();
+                services.AddSingleton<AutomaticCheckService>();
+                services.AddSingleton<AutomaticCheckCoordinator>();
+                // The only background work DeskAI does. It runs while the app runs and
+                // stops when it stops; nothing is registered with Windows to start it
+                // again. See ADR 0017.
+                services.AddHostedService<AutomaticCheckTimer>();
                 services.AddTransient<SettingsViewModel>();
                 services.AddTransient<SearchViewModel>();
                 services.AddTransient<DashboardViewModel>();

@@ -20,6 +20,12 @@ public sealed record RuleProposalViewModel(string Folder, string File, string De
 /// <summary>Files the rules disagreed about, which are therefore left alone.</summary>
 public sealed record RuleConflictViewModel(string Folder, string File, string Explanation);
 
+/// <summary>One choice of how often DeskAI looks, in the words it is offered by.</summary>
+public sealed record CheckFrequencyOption(AutomaticCheckFrequency Value, string Label)
+{
+    public override string ToString() => Label;
+}
+
 /// <summary>
 /// Drives the Automatic tasks page: write rules, and see what they would do.
 /// </summary>
@@ -39,7 +45,14 @@ public sealed class AutomationViewModel : ObservableObject
 {
     private readonly IRuleRepository _rules;
     private readonly RuleSimulationService _simulation;
+    private readonly IAutomaticCheckSettingsRepository _checkSettings;
+    private readonly AutomaticCheckCoordinator _checks;
     private readonly IClock _clock;
+    private CheckFrequencyOption _selectedFrequency;
+    private bool _isPaused;
+    private bool _notifyWhenSomethingIsFound;
+    private bool _isApplyingStoredSettings;
+    private string _lastCheckedDescription = "DeskAI has not checked yet.";
     private string _sentence = string.Empty;
     private string _newRuleName = string.Empty;
     private string _newRuleNameContains = string.Empty;
@@ -52,11 +65,20 @@ public sealed class AutomationViewModel : ObservableObject
     private bool _hasPractised;
     private bool _isBusy;
 
-    public AutomationViewModel(IRuleRepository rules, RuleSimulationService simulation, IClock clock)
+    public AutomationViewModel(
+        IRuleRepository rules,
+        RuleSimulationService simulation,
+        IAutomaticCheckSettingsRepository checkSettings,
+        AutomaticCheckCoordinator checks,
+        IClock clock)
     {
         _rules = rules;
         _simulation = simulation;
+        _checkSettings = checkSettings;
+        _checks = checks;
         _clock = clock;
+        _selectedFrequency = FrequencyOptions[1];
+        CheckNowCommand = new AsyncRelayCommand(CheckNowAsync, () => !IsBusy);
         AddRuleCommand = new AsyncRelayCommand(AddRuleAsync, () => !IsBusy);
         DraftFromSentenceCommand = new RelayCommand(DraftFromSentence, () => !IsBusy);
         PractiseCommand = new AsyncRelayCommand(PractiseAsync, () => !IsBusy);
@@ -79,6 +101,107 @@ public sealed class AutomationViewModel : ObservableObject
     public AsyncRelayCommand<Guid> ToggleRuleCommand { get; }
 
     public AsyncRelayCommand<Guid> DeleteRuleCommand { get; }
+
+    public AsyncRelayCommand CheckNowCommand { get; }
+
+    /// <summary>
+    /// How often DeskAI may look, offered in words rather than in minutes.
+    /// </summary>
+    /// <remarks>
+    /// "Only when I ask" is first because it is the choice that promises the least, and a
+    /// list of automatic options with no way out reads as though there were none.
+    /// </remarks>
+    public IReadOnlyList<CheckFrequencyOption> FrequencyOptions { get; } =
+    [
+        new(AutomaticCheckFrequency.OnlyWhenIAsk, "Only when I ask"),
+        new(AutomaticCheckFrequency.EveryFifteenMinutes, "Every 15 minutes"),
+        new(AutomaticCheckFrequency.EveryHour, "Every hour"),
+        new(AutomaticCheckFrequency.ACoupleOfTimesADay, "A few times a day"),
+    ];
+
+    public CheckFrequencyOption SelectedFrequency
+    {
+        get => _selectedFrequency;
+        set
+        {
+            if (SetProperty(ref _selectedFrequency, value))
+            {
+                OnPropertyChanged(nameof(AutomaticCheckSummary));
+                SaveCheckSettings();
+            }
+        }
+    }
+
+    /// <summary>The kill switch. Stops the next check and the one happening now.</summary>
+    public bool IsPaused
+    {
+        get => _isPaused;
+        set
+        {
+            if (SetProperty(ref _isPaused, value))
+            {
+                if (value)
+                {
+                    // Someone reaching for a stop control means the activity happening now,
+                    // not merely the next one.
+                    _checks.StopRunningCheck();
+                }
+
+                OnPropertyChanged(nameof(AutomaticCheckSummary));
+                SaveCheckSettings();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Whether Windows should show a notification when a check finds something.
+    /// </summary>
+    /// <remarks>
+    /// Off unless someone turns it on. A notification arrives without being asked for, so it
+    /// is not something a person should have to discover and switch off.
+    /// </remarks>
+    public bool NotifyWhenSomethingIsFound
+    {
+        get => _notifyWhenSomethingIsFound;
+        set
+        {
+            if (SetProperty(ref _notifyWhenSomethingIsFound, value))
+            {
+                SaveCheckSettings();
+            }
+        }
+    }
+
+    public string LastCheckedDescription
+    {
+        get => _lastCheckedDescription;
+        private set => SetProperty(ref _lastCheckedDescription, value);
+    }
+
+    /// <summary>
+    /// What DeskAI is actually doing, in one sentence, derived from the current choice.
+    /// </summary>
+    /// <remarks>
+    /// Written rather than assembled from the label so each case reads naturally, and so
+    /// every one of them ends by saying nothing is moved. That sentence is the point: a
+    /// screen that says DeskAI is watching your folders has to say in the same breath what
+    /// watching is allowed to lead to.
+    /// </remarks>
+    public string AutomaticCheckSummary => IsPaused
+        ? "Automatic checks are paused. DeskAI is not looking at anything on its own."
+        : SelectedFrequency.Value switch
+        {
+            AutomaticCheckFrequency.OnlyWhenIAsk =>
+                "DeskAI only looks when you press Check now. It never moves anything by itself.",
+            AutomaticCheckFrequency.EveryFifteenMinutes =>
+                "While DeskAI is open it looks every 15 minutes and tells you if your rules "
+                    + "match anything. It never moves anything by itself.",
+            AutomaticCheckFrequency.EveryHour =>
+                "While DeskAI is open it looks every hour and tells you if your rules match "
+                    + "anything. It never moves anything by itself.",
+            _ => "While DeskAI is open it looks a few times a day and tells you if your rules "
+                + "match anything. It never moves anything by itself.",
+        };
 
     /// <summary>A sentence someone typed, waiting to be read into the form.</summary>
     public string Sentence
@@ -196,6 +319,7 @@ public sealed class AutomationViewModel : ObservableObject
             if (SetProperty(ref _isBusy, value))
             {
                 AddRuleCommand.NotifyCanExecuteChanged();
+                CheckNowCommand.NotifyCanExecuteChanged();
                 PractiseCommand.NotifyCanExecuteChanged();
                 ToggleRuleCommand.NotifyCanExecuteChanged();
                 DeleteRuleCommand.NotifyCanExecuteChanged();
@@ -211,10 +335,118 @@ public sealed class AutomationViewModel : ObservableObject
         try
         {
             await ReloadAsync().ConfigureAwait(true);
+            await LoadCheckSettingsAsync().ConfigureAwait(true);
         }
         catch (Exception exception) when (IsExpectedFailure(exception))
         {
             Message = $"DeskAI could not read your rules: {exception.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Reads the stored choice into the boxes without treating that as someone changing it.
+    /// </summary>
+    /// <remarks>
+    /// The flag matters: assigning to the properties raises their setters, and without it
+    /// simply opening the page would write the settings back and count as a fresh decision.
+    /// </remarks>
+    private async Task LoadCheckSettingsAsync()
+    {
+        var stored = await _checkSettings.LoadAsync().ConfigureAwait(true);
+        var lastChecked = await _checkSettings.ReadLastCheckedAtUtcAsync().ConfigureAwait(true);
+
+        _isApplyingStoredSettings = true;
+        try
+        {
+            SelectedFrequency = FrequencyOptions.FirstOrDefault(option => option.Value == stored.Frequency)
+                ?? FrequencyOptions[1];
+            IsPaused = stored.IsPaused;
+            NotifyWhenSomethingIsFound = stored.NotifyWhenSomethingIsFound;
+        }
+        finally
+        {
+            _isApplyingStoredSettings = false;
+        }
+
+        DescribeLastCheck(lastChecked);
+    }
+
+    private void DescribeLastCheck(DateTimeOffset? lastCheckedUtc)
+    {
+        if (lastCheckedUtc is not { } checkedAt)
+        {
+            LastCheckedDescription = "DeskAI has not looked yet.";
+            return;
+        }
+
+        var elapsed = _clock.UtcNow - checkedAt;
+        LastCheckedDescription = elapsed < TimeSpan.FromMinutes(2)
+            ? "Last looked: just now."
+            : $"Last looked: {checkedAt.ToLocalTime():t} on {checkedAt.ToLocalTime():d}.";
+    }
+
+    /// <summary>
+    /// Stores the choice as soon as it is made, so nothing has to be confirmed.
+    /// </summary>
+    /// <remarks>
+    /// A failure to save is shown rather than swallowed. Silently keeping an on-screen
+    /// setting that did not persist would leave someone believing checks were paused when
+    /// the next launch would resume them.
+    /// </remarks>
+    private async void SaveCheckSettings()
+    {
+        if (_isApplyingStoredSettings)
+        {
+            return;
+        }
+
+        try
+        {
+            await _checkSettings.SaveAsync(new AutomaticCheckSettings(
+                AutomaticCheckMode.WhileAppIsOpen,
+                SelectedFrequency.Value,
+                IsPaused,
+                NotifyWhenSomethingIsFound)).ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            Message = $"DeskAI could not save that setting: {exception.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Looks now because someone asked. Still only looks.
+    /// </summary>
+    /// <remarks>
+    /// This refreshes what DeskAI remembers about each connected folder and runs the same
+    /// practice run the button below does. It ends at a count on this page; there is no
+    /// path from here to a file moving.
+    /// </remarks>
+    private async Task CheckNowAsync()
+    {
+        IsBusy = true;
+        try
+        {
+            var result = await _checks.RunNowAsync().ConfigureAwait(true);
+            if (result is null)
+            {
+                Message = "DeskAI is already looking. One moment.";
+                return;
+            }
+
+            DescribeLastCheck(result.CheckedAtUtc);
+            Message = result.HasSomethingToReview
+                ? $"Your rules match {result.ProposalCount} file(s). Try a practice run to see them. "
+                    + "Nothing has moved."
+                : $"Nothing in your {result.FoldersChecked} connected folder(s) matches your rules right now.";
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            Message = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
         }
     }
 

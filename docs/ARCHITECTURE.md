@@ -58,6 +58,8 @@ Pure and deterministic policy logic where practical: canonical path checks, root
 
 Filesystem adapters, known-folder integration, SQLite migrations/repositories, indexing, content-hash implementation, Recycle Bin integration, credential-store adapter, transaction journal, and the sole concrete file-operation executor. Windows and persistence details stay here.
 
+It also holds `AutomaticCheckTimer`, the one clock in DeskAI that makes something happen without a person pressing anything. It owns no policy: every tick it asks Core whether a check is due. Whether one is due, and what a check may do, are decided in `AutomaticCheckSchedule` and `AutomaticCheckService` and tested there — the timer exists only because a timer cannot be a pure function.
+
 ### `DeskAI.AI`
 
 Provider-neutral orchestration plus adapters for local or cloud endpoints. It constructs minimal data envelopes, requests structured results, validates syntax/schema, maps output to Core proposals, and returns errors without filesystem side effects. Provider SDK response types never escape this project.
