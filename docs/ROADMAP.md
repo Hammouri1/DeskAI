@@ -205,6 +205,9 @@ ADR 0010 and the 2026-09-07 capability audit both required "a later real-folder 
 milestone", but none was ever scheduled, so rules, automatic checks, and AI suggestions could
 never lead to a file moving. Added 2026-09-10 after the owner found this while testing.
 
+Design agreed with the owner on 2026-09-10, including a rebuilt Organize page and "?" help
+on every page: `docs/superpowers/specs/2026-09-10-organize-your-own-folders-design.md`.
+
 1. Design and security review before code: a separate "allow DeskAI to organize this folder"
    permission, how it is shown and withdrawn, what happens when a file changes between preview
    and move, locked and cloud-only files, and recovery after a crash. Recorded as an ADR and a
