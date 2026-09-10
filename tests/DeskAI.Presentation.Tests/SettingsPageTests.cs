@@ -176,7 +176,7 @@ public sealed class SettingsPageTests
         settings.CloudConsent = true;
         settings.DailyRequestLimit = 1;
         await settings.SaveProviderAsync("generated-test-key-not-real");
-        var organize = app.Get<OrganizeViewModel>();
+        var organize = app.Get<PracticeViewModel>();
         await organize.InitializeAsync();
 
         await organize.GetAiSuggestionsCommand.ExecuteAsync(null);

@@ -22,7 +22,7 @@ public sealed partial class AiJourneyTests
         app.Internet.Reply = SuggestEverythingAsDocuments;
         await TurnOnOpenRouterAsync(app);
 
-        var organize = app.Get<OrganizeViewModel>();
+        var organize = app.Get<PracticeViewModel>();
         await organize.InitializeAsync();
         await organize.GetAiSuggestionsCommand.ExecuteAsync(null);
 
@@ -41,7 +41,7 @@ public sealed partial class AiJourneyTests
         app.Internet.Reply = SuggestEverythingAsDocuments;
         await TurnOnOpenRouterAsync(app);
 
-        var organize = app.Get<OrganizeViewModel>();
+        var organize = app.Get<PracticeViewModel>();
         await organize.InitializeAsync();
         await organize.GetAiSuggestionsCommand.ExecuteAsync(null);
 
@@ -56,7 +56,7 @@ public sealed partial class AiJourneyTests
     public async Task With_AI_off_asking_for_ideas_sends_nothing_and_says_so()
     {
         await using var app = await TestApp.StartAsync();
-        var organize = app.Get<OrganizeViewModel>();
+        var organize = app.Get<PracticeViewModel>();
         await organize.InitializeAsync();
 
         await organize.GetAiSuggestionsCommand.ExecuteAsync(null);
@@ -73,7 +73,7 @@ public sealed partial class AiJourneyTests
         app.Internet.Reply = _ => new AiHttpResponse(HttpStatusCode.Unauthorized, "{}");
         await TurnOnOpenRouterAsync(app);
 
-        var organize = app.Get<OrganizeViewModel>();
+        var organize = app.Get<PracticeViewModel>();
         await organize.InitializeAsync();
         await organize.GetAiSuggestionsCommand.ExecuteAsync(null);
 
@@ -106,7 +106,7 @@ public sealed partial class AiJourneyTests
         await settings.RemoveCloudKeyAsync();
 
         Assert.Null(await app.Vault.RetrieveAsync("DeskAI/OpenRouter", TestContext.Current.CancellationToken));
-        var organize = app.Get<OrganizeViewModel>();
+        var organize = app.Get<PracticeViewModel>();
         await organize.InitializeAsync();
         await organize.GetAiSuggestionsCommand.ExecuteAsync(null);
         Assert.Empty(app.Internet.Requests);

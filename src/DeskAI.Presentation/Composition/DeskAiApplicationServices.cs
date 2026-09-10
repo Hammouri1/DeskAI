@@ -67,7 +67,8 @@ public static class DeskAiApplicationServices
         // it stops; nothing is registered with Windows to start it again. See ADR 0017.
         services.AddHostedService<AutomaticCheckTimer>();
         services.AddTransient<ShellViewModel>();
-        services.AddTransient<OrganizeViewModel>();
+        services.AddTransient<PracticeViewModel>();
+        services.AddTransient<TidyViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<SearchViewModel>();
         services.AddTransient<DashboardViewModel>();
