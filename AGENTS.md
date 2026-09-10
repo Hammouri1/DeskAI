@@ -96,6 +96,8 @@ Do not hide complexity, but introduce it step by step. When a new concept is req
 
 A change is done only when it is scoped to the milestone, respects all security boundaries, builds where the environment supports it, has proportionate tests, updates affected docs, introduces no real-user-folder test access, and has an honest completion summary.
 
+Proportionate tests always include a page test in `DeskAI.Presentation.Tests` for anything a person can see or do, listed in the Feature Coverage Map in `docs/TESTING.md`. Engine tests alone do not make a feature done. A bug the owner finds by hand gets a page test that fails before the fix.
+
 ## First Build Instruction
 
 If this repository contains documentation but no solution yet, follow **First Build** in `docs/DEVELOPMENT.md`. Build only the foundation milestone. Do not organize the owner's computer and do not implement broad AI, automation, search, wallpaper, or plugin features yet.

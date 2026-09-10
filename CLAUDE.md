@@ -8,11 +8,14 @@ completely. Treat those documents as the source of truth. If instructions confli
 
 ## Current Handoff
 
-- Milestones V0.1, V0.2, and V0.3 are complete.
-- The implementation baseline before this handoff is commit `02df1b1`.
-- V0.4 Search and Storage Intelligence is the next roadmap milestone.
+- Milestones V0.1, V0.2, and V0.3 are complete. V0.4 is complete except confirming
+  duplicates by content. V0.5 is complete except checks after the window is closed.
+- No connected folder can be changed yet. V0.6 "Organize Your Own Folders" is the
+  recommended next milestone and starts with a design and security review, not code.
+- As of 2026-09-10 every page has page tests in `DeskAI.Presentation.Tests`; keep the
+  Feature Coverage Map in `docs/TESTING.md` complete.
 - Do not rebuild finished milestones or implement the whole remaining roadmap at once.
-- Before starting V0.4, inspect Git history, the current tree, tests, and the roadmap.
+- Before starting work, inspect Git history, the current tree, tests, and the roadmap.
 - Work in small coherent tasks and commit every completed task with a descriptive message.
 
 ## Product Safety
@@ -49,7 +52,9 @@ For each task:
 1. Inspect Git status and preserve unrelated changes.
 2. Confirm the task belongs to the active roadmap milestone.
 3. Identify relevant threat cases before implementation.
-4. Add or update focused tests using only generated temporary data and fakes.
+4. Add or update focused tests using only generated temporary data and fakes. Anything a
+   person can see or do also gets a page test in `DeskAI.Presentation.Tests` and a row in
+   the Feature Coverage Map in `docs/TESTING.md`.
 5. Implement the smallest complete vertical slice.
 6. Build the full Release solution and run all tests.
 7. Update affected documentation in the same change.

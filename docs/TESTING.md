@@ -14,9 +14,32 @@ Fast, deterministic tests for Core planning/rules and pure Safety policies. Use 
 
 Exercise SQLite repositories/migrations, scanner adapters, and eventually the executor against a unique generated temporary directory. Use fake AI/network and fake credential storage unless a specifically isolated platform contract test is intended.
 
-### UI tests
+### Page tests (`DeskAI.Presentation.Tests`)
 
-Test view-model state/commands without UI where possible. Add a small number of Windows UI automation tests for navigation, folder permission communication, plan review, warning/blocked states, keyboard access, approval, partial failure, and undo. Keep selectors stable and accessibility-driven.
+Every feature a person can reach is tested the way a person uses it: fill in what the page
+asks for, press the command, and check what the page then says and what happened on disk.
+`TestApp` builds DeskAI through the same `AddDeskAiApplication` call the app uses, with a real
+SQLite database, the real scanner, planner, safety checks, and demo executor, all inside a
+generated temp folder. Only the credential store, the network, and Windows notifications are
+replaced, so no key is written to Windows and no request leaves the machine.
+
+These exist because unit tests alone were not enough. Until 2026-09-10 the engine had 545
+tests and the pages had none, and every bug the owner found by hand was on a page. The first
+pass of page tests immediately found four more: the Search page sending people to Organize to
+connect a folder, Home implying connected folders could be changed after a preview, undo
+reporting "partly completed" after a clean practice run, and undo deleting an empty folder
+that existed before the run.
+
+A page test asserts the words a person reads where those words are the point — a refusal, a
+count, a promise about what DeskAI can or cannot do — and asserts the files on disk whenever
+the feature could plausibly have touched them.
+
+### Windows UI tests
+
+Confirmation dialogs, the folder picker, and navigation are WinUI objects and are checked by
+hand using `MANUAL-TESTING.md`. The view-model method each dialog calls is page-tested. Add
+Windows UI automation only for what page tests cannot reach, keeping selectors stable and
+accessibility-driven.
 
 ### End-to-end safety scenarios
 
@@ -79,10 +102,40 @@ opened.
 
 Test fresh schema, every supported migration path, foreign keys, transaction rollback, concurrent access policy, enum/version compatibility, retention deletion, interrupted execution records, and that credentials are never stored in tables. Each test uses an isolated database.
 
+## Feature Coverage Map
+
+Every feature a person can reach, and the page tests that use it. A feature missing from this
+table, or listed with no test, is not done. Update the table in the same change that adds or
+changes a feature.
+
+| Page | Feature | Page tests |
+|---|---|---|
+| Home | Totals, categories, largest files, last checked | `HomeAndShellTests` |
+| Home | Possible copies (same size, never "confirmed") | `HomeAndShellTests` |
+| Home | Health score with its parts | `HomeAndShellTests` |
+| Home | Honest wording about what can change | `HomeAndShellTests` |
+| Side menu | What is connected and whether files are read | `HomeAndShellTests` |
+| Side menu | Notice when a check finds something; opt-in notification | `HomeAndShellTests` |
+| Organize | Practice preview, select/clear, run, undo | `OrganizePageTests` |
+| Organize | Read-only folder preview and disconnect | `OrganizePageTests` |
+| Organize | Get AI ideas (sends, shares only what was agreed, refusals) | `AiJourneyTests`, `SettingsPageTests` |
+| Search | Connect, refresh, disconnect, protected-folder refusal | `SearchPageTests` |
+| Search | Typed search, chips, scope, not-understood, nothing matched | `SearchPageTests` |
+| Search | Saved searches | `SearchPageTests` |
+| Search | Reading inside text files: allow, search, withdraw | `SearchPageTests` |
+| Automatic tasks | Write, draft from a sentence, turn off, delete rules | `AutomationPageTests` |
+| Automatic tasks | Practice run (moves nothing) | `AutomationPageTests` |
+| Automatic tasks | Check now, history, how often, pause, notifications | `AutomationPageTests` |
+| Privacy and AI | Sharing choices, AI modes, key storage and removal, daily limit | `SettingsPageTests`, `AiJourneyTests` |
+
 ## Quality Gates
 
-For each milestone:
+For each milestone, and for each task inside one:
 
+- every user-visible feature added or changed has a page test that uses it the way a person
+  does, and the Feature Coverage Map above lists it;
+- every bug the owner finds by hand gets a page test that fails before the fix and passes
+  after it;
 - solution builds with no unexplained warnings;
 - focused and full relevant tests pass;
 - new safety branch has positive and negative coverage;

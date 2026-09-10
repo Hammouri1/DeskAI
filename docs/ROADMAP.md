@@ -4,6 +4,12 @@
 
 Build one vertical, verifiable slice at a time. Every milestone ends with a compiling application, passing relevant tests, documentation updates, and an honest demonstration. Future items are not implemented merely because their interfaces are imaginable.
 
+Every milestone's exit criteria include, whether or not they say so: each feature a person can
+reach has a page test that uses it the way a person does (see the Feature Coverage Map in
+`TESTING.md`), and every bug found by hand has a test that failed before its fix. A milestone
+whose features only have engine tests is not complete. This rule was added on 2026-09-10,
+after the first page tests found four bugs that 545 engine tests had missed.
+
 Status legend: **Now** = next work, **Planned** = sequenced, **Future** = direction only.
 
 ## V0.1 — Safe Foundation (**Complete — 2026-09-07**)
@@ -218,7 +224,9 @@ Out of scope here: deleting files, running rules without approval, and sending r
 names to an AI provider (that needs its own disclosure review).
 
 Exit criteria: a person can connect a folder, allow organizing, approve a preview, see files
-move, and undo it after a restart; every refusal case is tested with generated temporary data.
+move, and undo it after a restart; every refusal case is tested with generated temporary data;
+and each of those steps has a page test that performs it through the page, not only through
+the executor.
 
 ## V0.7 — Workspace Profiles and Design (**Future**)
 
