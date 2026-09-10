@@ -51,6 +51,32 @@ The score is now on the page, and it is never shown as a bare number. The two pa
 
 ## Organize Flow
 
+### Tidy a folder (built, V0.6 step 2a)
+
+The Organize page does one job. It was rebuilt on 2026-09-10 after the owner found the old
+page — a practice run, AI ideas about made-up files, a history box, and a read-only folder list
+stacked together — impossible to understand. Top to bottom:
+
+1. **Tidy a folder**, with one sentence: pick a folder, DeskAI suggests, nothing moves until
+   you say so.
+2. **Folder bar**: a list of connected folders (the first is picked automatically) and
+   "Choose another folder", which goes through the Windows picker and a connect dialog.
+3. **Permission card** when the folder may not be tidied yet: three promises on the green
+   rail and one accent button, "Allow tidying", which opens a dialog naming the folder.
+4. **Suggestions grouped by destination folder**, each group a row with a three-state
+   checkbox and a count, opening to its files. Every file shows why ("PDF file", "Your rule:
+   …") and where it goes. A same-name clash shows a caution line and a switch between "Skip
+   this file" (default) and "Keep both (adds a number)".
+5. **Left alone**, collapsed, listing every file DeskAI will not touch with its reason.
+6. **The action bar**, the page's one bold element: the number of ticked files, the Tidy
+   button, and one honest line. In step 2a the button is shown off and the line says
+   "Tidying arrives in the next update. Nothing moves yet — this is what it would do."
+7. **"Nervous? Try it on example files first"**, leading to the practice page.
+
+Removed from this page on purpose: plan revision numbers, "Needs attention", "Recent
+activity", "More details", the AI ideas card (AI returns as a suggestion source in step 2b),
+and the read-only folder preview.
+
 ### Select and scan
 
 Show selected root, permission badge, exclusions, scan depth, metadata/content scope, and cloud/local processing state. Progress is cancellable and reports files scanned, skipped, and errors without blocking the UI.

@@ -351,6 +351,30 @@ by unit tests. Use a temporary folder with generated files — never a personal 
     appears, not one per missed period.
 12. Press **Clear this history** and confirm the list empties and the button disappears.
 
+## Tidy a folder (V0.6 step 2a, added 2026-09-10)
+
+Use a new folder under Windows Temp filled with made-up files — for example a few `.pdf`,
+`.jpg`, and `.exe` files, one `report.pdf` plus a `Documents\report.pdf`, and a file ending
+`.crdownload`. Never test on a personal folder.
+
+1. Open **Organize**. Expected: "Tidy a folder", a folder list or a "Pick a folder to tidy"
+   card, and a small "Nervous? Try it on example files first" link at the bottom.
+2. Press **Choose another folder**, pick the test folder, and confirm. Expected: the folder is
+   selected and a green-edged card asks "Allow DeskAI to tidy …?" with three promises.
+3. Press **Allow tidying** and read the dialog. Cancel once and confirm nothing changed; then
+   allow. Expected: suggestions grouped by folder (Documents, Pictures, Installers).
+4. Open a group. Expected: every file shows why ("PDF file") and where it would go.
+5. Untick a group, then one file. Expected: the big number and the button text follow.
+6. Find `report.pdf`. Expected: "A file called report.pdf is already there" and a switch set
+   to "Skip this file". Turn on "Keep both". Expected: it now goes to `report (2).pdf`.
+7. Open **Left alone**. Expected: the `.crdownload` file with "still downloading".
+8. Look at the Tidy button. Expected: switched off, with "Tidying arrives in the next update.
+   Nothing moves yet". Check in File Explorer that **no file has moved**.
+9. Press **Stop tidying this folder**. Expected: the permission card returns and the folder is
+   still listed in Search.
+10. Press the practice link, then **Back to Tidy a folder**. Expected: both pages work.
+11. Press each new "?" on this page and check the explanations read clearly.
+
 ## Help pop-ups (V0.6 step 1, added 2026-09-10)
 
 1. On every page, find the small round **?** buttons: Home (score, space, possible

@@ -65,6 +65,19 @@ It also holds `AutomaticCheckTimer`, the one clock in DeskAI that makes somethin
 
 Provider-neutral orchestration plus adapters for local or cloud endpoints. It constructs minimal data envelopes, requests structured results, validates syntax/schema, maps output to Core proposals, and returns errors without filesystem side effects. Provider SDK response types never escape this project.
 
+### Tidying (V0.6)
+
+`DeskAI.Core.Tidy` holds the tidy-a-folder use cases. `TidyPermissionService` grants and
+withdraws the per-folder tidy permission (ADR 0019) after asking `IReadOnlyFolderService` to
+re-check the folder. `TidySuggestionService` scans the folder fresh through `IFileScanner` —
+never the index, which records how a folder looked rather than how it is — keeps loose
+top-level files, leaves busy, recent, online-only, hidden, and unknown files alone with
+reasons, applies the person's rules ahead of file type (`TidyFolderRecipe`), resolves
+same-name destinations, and returns a `TidyPreview` containing an `OrganizationPlan`. It asks
+Safety about that plan through `IPlanSafetyCheck`, a Core contract Safety implements
+(`PlanSafetyCheck`), so Core still never references Safety. Nothing in this module moves a
+file; as of step 2a no executor accepts a plan for a connected folder.
+
 ### `DeskAI.Presentation`
 
 The logic behind every page: view models, commands, the sample-plan factory, and

@@ -168,7 +168,12 @@ Everything here implements `docs/SECURITY.md`; where this document is silent, th
 
 ### 2. Allowed operations
 
-Only: create a folder directly inside the chosen folder; move a loose top-level file into
+(Amended during step 2a: "directly inside" became "inside", because the person's own rules
+already use nested destinations such as `Documents\Invoices`. Every destination is still
+relative and is validated to stay inside the chosen folder. AI suggestions moved to their own
+step, 2b, because they are the first time real file information could go to an AI service.)
+
+Only: create a folder inside the chosen folder; move a loose top-level file into
 one of those folders; the same move with a " (2)"-style unique name when the person chose
 Keep both. No delete, no move outside, no touching files in subfolders, no other rename.
 

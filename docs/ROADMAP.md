@@ -208,6 +208,17 @@ never lead to a file moving. Added 2026-09-10 after the owner found this while t
 Design agreed with the owner on 2026-09-10, including a rebuilt Organize page and "?" help
 on every page: `docs/superpowers/specs/2026-09-10-organize-your-own-folders-design.md`.
 
+Progress (build order from the design):
+- ✅ Step 1, 2026-09-10: "?" help next to every feature, tested for completeness, length, and
+  plain words.
+- ✅ Step 2a, 2026-09-10: the separate tidy permission (ADR 0019), a scanner that notices
+  hidden, system, and online-only files, the tidy suggestion engine, and the new "Tidy a
+  folder" page. The Tidy button is shown switched off; nothing in a connected folder can move.
+- Next — step 2b: AI as a suggestion source on real folders ("DeskAI + my rules, AI for files
+  it does not know", or "Ask AI about every file"), with its own disclosure review.
+- Then step 3 (tidying for real), step 4 (undo after restart), step 5 (review from automatic
+  checks), step 6 (security review record).
+
 1. Design and security review before code: a separate "allow DeskAI to organize this folder"
    permission, how it is shown and withdrawn, what happens when a file changes between preview
    and move, locked and cloud-only files, and recovery after a crash. Recorded as an ADR and a

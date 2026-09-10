@@ -68,6 +68,8 @@ Access begins through a user selection flow. Store a stable authorization record
 
 In V0.2, a picker grant is `MetadataOnly`: after a second plain-language confirmation, DeskAI may enumerate bounded names, sizes, dates, and attributes. It may not open content or authorize mutation. The Safety validator rejects an entire organization plan bound to this scope. Disconnect removes the authorization record without touching the selected folder. Only the separately owned Windows Temp practice root has `ControlledDemo` mutation scope.
 
+Since V0.6 step 2a a connected folder can also hold a separate **tidy permission** (ADR 0019). It is stored in its own table, cascade-erased on disconnect, never written when a folder's reading scope is saved, and granted only by `TidyPermissionService` after a dialog naming the folder — at which moment the folder is re-checked (present, not a network or whole-drive location, no link in its path, not protected). `RootCapabilities.CanTidy` holds only for an allowed reading-scope folder with the grant. It lets plans for that folder pass validation, but **no executor acts on a connected folder yet**: the only executor is bound to the practice workspace and a test proves it refuses such a plan. Real tidying needs its own executor and review (V0.6 step 3). `AuthorizedRoot.Create` has no default scope, because its former default was the changeable one.
+
 ### Path validation
 
 - Reject empty, relative-to-current-directory, malformed, device, UNC/network, alternate data stream, or other unsupported path forms unless later explicitly designed.

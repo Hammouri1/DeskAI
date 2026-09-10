@@ -116,9 +116,16 @@ changes a feature.
 | Home | Honest wording about what can change | `HomeAndShellTests` |
 | Side menu | What is connected and whether files are read | `HomeAndShellTests` |
 | Side menu | Notice when a check finds something; opt-in notification | `HomeAndShellTests` |
-| Organize | Practice preview, select/clear, run, undo | `OrganizePageTests` |
-| Organize | Read-only folder preview and disconnect | `OrganizePageTests` |
-| Organize | Get AI ideas (sends, shares only what was agreed, refusals) | `AiJourneyTests`, `SettingsPageTests` |
+| Organize | Pick or connect a folder; protected folder refused | `TidyPageTests` |
+| Organize | Tidy permission: asked first, allowed, taken back, erased on disconnect | `TidyPageTests`, `SqliteAuthorizedRootRepositoryTests`, `RootCapabilitiesTests` |
+| Organize | Suggestions grouped by folder with reasons; rules win over type | `TidyPageTests`, `TidySuggestionTests` |
+| Organize | Untick a group or a file; count and button text follow | `TidyPageTests` |
+| Organize | Same name: skip by default, keep both adds a number | `TidyPageTests`, `TidySuggestionTests` |
+| Organize | Left alone with reasons: downloading, recent, online-only, hidden, unknown | `TidyPageTests`, `TidySuggestionTests` |
+| Organize | Only loose top-level files; at most 500; safety check on every move | `TidySuggestionTests` |
+| Organize | Tidy button off and says nothing moves yet | `TidyPageTests` |
+| Practice | Practice preview, select/clear, run, undo | `PracticePageTests` |
+| Practice | Get AI ideas (sends, shares only what was agreed, refusals) | `AiJourneyTests`, `SettingsPageTests` |
 | Search | Connect, refresh, disconnect, protected-folder refusal | `SearchPageTests` |
 | Search | Typed search, chips, scope, not-understood, nothing matched | `SearchPageTests` |
 | Search | Saved searches | `SearchPageTests` |
@@ -128,7 +135,7 @@ changes a feature.
 | Automatic tasks | Check now, history, how often, pause, notifications | `AutomationPageTests` |
 | Privacy and AI | Sharing choices, AI modes, key storage and removal, daily limit | `SettingsPageTests`, `AiJourneyTests` |
 | Privacy and AI | Pasted key trimmed, spaced key refused, wrong-looking key warned | `SettingsPageTests` |
-| Organize | Rejected key vs refused request, with the service's own reason | `AiJourneyTests`, `CloudSuggestionProviderTests` |
+| Practice | Rejected key vs refused request, with the service's own reason | `AiJourneyTests`, `CloudSuggestionProviderTests` |
 | Every page | "?" help next to each feature: complete, short, no jargon, placed | `HelpCatalogTests`, `HelpPlacementTests` |
 
 ## Quality Gates
