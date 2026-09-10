@@ -52,14 +52,25 @@ public sealed class TidySuggestionService(
 
     private static readonly FolderRecipe Recipe = TidyFolderRecipe.Create();
 
+    /// <summary>Works out the list for one folder.</summary>
+    /// <param name="aiAdvice">
+    /// What AI said about files, by file ID. It is only ever input here: this service sends
+    /// nothing anywhere. Where a file lands is decided in this order — the person's rules,
+    /// then AI when <paramref name="mode"/> asks it about every file, then the file type, then
+    /// AI for a file DeskAI cannot place — and advice about a file that has changed since is
+    /// ignored.
+    /// </param>
     public async Task<TidyPreview?> PreviewAsync(
         Guid rootId,
         Guid planId,
         int revision,
         IReadOnlyDictionary<Guid, SameNameChoice> choices,
+        TidySuggestionMode mode,
+        IReadOnlyDictionary<Guid, TidyAiAdvice> aiAdvice,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(choices);
+        ArgumentNullException.ThrowIfNull(aiAdvice);
         var root = await roots.FindAsync(rootId, cancellationToken).ConfigureAwait(false);
         if (root is null || !RootCapabilities.CanReadMetadata(root))
         {
@@ -94,7 +105,7 @@ public sealed class TidySuggestionService(
 
         if (folderProblem is not null)
         {
-            return new TidyPreview(root, BuildPlan(root.Id, planId, revision, now, []), [], [], false, false, canTidy, folderProblem);
+            return new TidyPreview(root, BuildPlan(root.Id, planId, revision, now, []), [], [], false, false, canTidy, folderProblem, []);
         }
 
         var occupied = new HashSet<string>(scanned.Select(file => file.RelativePath), StringComparer.OrdinalIgnoreCase);
@@ -130,6 +141,7 @@ public sealed class TidySuggestionService(
         var taken = new HashSet<string>(occupied, StringComparer.OrdinalIgnoreCase);
         var suggestions = new List<TidySuggestion>();
         var moves = new List<MoveFileOperation>();
+        var askable = new List<FileItem>();
         foreach (var (file, classification) in candidates)
         {
             var name = file.RelativePath;
@@ -139,9 +151,20 @@ public sealed class TidySuggestionService(
                 continue;
             }
 
+            // Advice only counts while the file is the one AI was told about.
+            var advice = aiAdvice.TryGetValue(file.Id, out var said) && said.StillAppliesTo(file) ? said : null;
+            var aiFolder = advice is null ? null : Recipe.FindDestination(advice.Category);
+            var typeFolder = Recipe.FindDestination(classification.Category);
+            var isRulePlaced = ruleByPath.ContainsKey(name);
+            if (!isRulePlaced && advice is null && (mode == TidySuggestionMode.AiForEveryFile || typeFolder is null))
+            {
+                askable.Add(file);
+            }
+
             string folder;
             TidySuggestionSource source;
             string reason;
+            var unsure = false;
             if (ruleByPath.TryGetValue(name, out var proposal))
             {
                 folder = proposal.DestinationRelativeDirectory;
@@ -150,7 +173,20 @@ public sealed class TidySuggestionService(
                     ? $"Your rule: {proposal.RuleNames[0]}"
                     : $"Your rules: {string.Join(", ", proposal.RuleNames)}";
             }
-            else if (Recipe.FindDestination(classification.Category) is { } typeFolder)
+            else if (aiFolder is not null && (mode == TidySuggestionMode.AiForEveryFile || typeFolder is null))
+            {
+                folder = aiFolder;
+                source = TidySuggestionSource.Ai;
+                unsure = advice!.IsUnsure;
+
+                // DeskAI's own words, never the AI's: a reason the AI wrote is untrusted text,
+                // and a file name built to make it "explain" something alarming must not be
+                // able to put that on the screen.
+                reason = unsure
+                    ? $"AI idea from {advice.ServiceName}, but it wasn't sure"
+                    : $"AI idea from {advice.ServiceName}";
+            }
+            else if (typeFolder is not null)
             {
                 folder = typeFolder;
                 source = TidySuggestionSource.FileType;
@@ -158,7 +194,9 @@ public sealed class TidySuggestionService(
             }
             else
             {
-                leftAlone.Add(new(name, LeftAloneReason.UnknownType, "DeskAI does not know this kind of file yet, so it stays where it is."));
+                leftAlone.Add(new(name, LeftAloneReason.UnknownType, advice is null
+                    ? "DeskAI does not know this kind of file yet, so it stays where it is."
+                    : "Neither DeskAI nor AI could tell what this is, so it stays where it is."));
                 continue;
             }
 
@@ -191,11 +229,16 @@ public sealed class TidySuggestionService(
                     name,
                     target,
                     reason,
-                    source == TidySuggestionSource.Rule ? OperationProvenance.User : OperationProvenance.Rule));
+                    source switch
+                    {
+                        TidySuggestionSource.Rule => OperationProvenance.User,
+                        TidySuggestionSource.Ai => advice!.Provenance,
+                        _ => OperationProvenance.Rule,
+                    }));
                 taken.Add(target);
             }
 
-            suggestions.Add(new TidySuggestion(file.Id, name, folder, target, source, reason, moveId, sameName, choice));
+            suggestions.Add(new TidySuggestion(file.Id, name, folder, target, source, reason, moveId, sameName, choice, unsure));
         }
 
         var plan = BuildPlan(root.Id, planId, revision, now, moves);
@@ -213,7 +256,7 @@ public sealed class TidySuggestionService(
             }
         }
 
-        return new TidyPreview(root, plan, suggestions, leftAlone, reachedLimit, incomplete, canTidy, null);
+        return new TidyPreview(root, plan, suggestions, leftAlone, reachedLimit, incomplete, canTidy, null, askable);
     }
 
     private static TidyLeftAlone? WhyLeftAlone(FileItem file, DateTimeOffset now)

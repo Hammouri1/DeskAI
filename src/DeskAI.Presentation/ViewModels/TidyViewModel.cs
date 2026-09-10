@@ -370,7 +370,9 @@ public sealed class TidyViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            var preview = await _suggestions.PreviewAsync(folder.Id, _planId, ++_revision, _choices).ConfigureAwait(true);
+            var preview = await _suggestions.PreviewAsync(
+                folder.Id, _planId, ++_revision, _choices, TidySuggestionMode.TypesAndRules, new Dictionary<Guid, TidyAiAdvice>())
+                .ConfigureAwait(true);
             if (preview is null)
             {
                 Message = "That folder is no longer connected.";

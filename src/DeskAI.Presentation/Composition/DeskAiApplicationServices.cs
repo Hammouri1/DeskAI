@@ -1,4 +1,4 @@
-using DeskAI.AI;
+﻿using DeskAI.AI;
 using DeskAI.AI.Transport;
 using DeskAI.App.Preview;
 using DeskAI.App.ViewModels;
@@ -51,6 +51,9 @@ public static class DeskAiApplicationServices
         services.AddSingleton<IPlanSafetyCheck, PlanSafetyCheck>();
         services.AddSingleton<TidyPermissionService>();
         services.AddSingleton<TidySuggestionService>();
+        // Talks to AI about your own folders. It holds nothing that can look in a folder or
+        // change a file, and it sends only after the page has shown what would be sent.
+        services.AddSingleton<TidyAiService>();
         services.AddSingleton<DemoOrganizationPlanFactory>();
         services.AddSingleton<FileSearchService>();
         services.AddSingleton<ConnectedFolderService>();

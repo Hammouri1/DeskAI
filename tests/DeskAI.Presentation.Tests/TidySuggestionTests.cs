@@ -1,4 +1,4 @@
-using DeskAI.App.ViewModels;
+﻿using DeskAI.App.ViewModels;
 using DeskAI.Core.Tidy;
 
 namespace DeskAI.Presentation.Tests;
@@ -166,5 +166,6 @@ public sealed class TidySuggestionTests
         Guid rootId,
         IReadOnlyDictionary<Guid, SameNameChoice>? choices = null) =>
         (await app.Get<TidySuggestionService>().PreviewAsync(
-            rootId, Guid.NewGuid(), 1, choices ?? NoChoices, TestContext.Current.CancellationToken))!;
+            rootId, Guid.NewGuid(), 1, choices ?? NoChoices, TidySuggestionMode.TypesAndRules,
+            new Dictionary<Guid, TidyAiAdvice>(), TestContext.Current.CancellationToken))!;
 }
