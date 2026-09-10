@@ -6,6 +6,7 @@ using DeskAI.Core.Abstractions;
 using DeskAI.Core.Ai;
 using DeskAI.Core.Rules;
 using DeskAI.Core.Search;
+using DeskAI.Core.Tidy;
 using DeskAI.Infrastructure.Content;
 using DeskAI.Infrastructure.DependencyInjection;
 using DeskAI.Infrastructure.Execution;
@@ -47,6 +48,9 @@ public static class DeskAiApplicationServices
         services.AddSingleton<IOrganizationSuggestionProvider, ConfiguredSuggestionProvider>();
         services.AddSingleton<IPathPolicy>(_ => new WindowsPathPolicy(protectedList));
         services.AddSingleton<PlanValidator>();
+        services.AddSingleton<IPlanSafetyCheck, PlanSafetyCheck>();
+        services.AddSingleton<TidyPermissionService>();
+        services.AddSingleton<TidySuggestionService>();
         services.AddSingleton<DemoOrganizationPlanFactory>();
         services.AddSingleton<FileSearchService>();
         services.AddSingleton<ConnectedFolderService>();

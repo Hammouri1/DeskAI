@@ -70,10 +70,24 @@ internal sealed class TestApp : IAsyncDisposable
         var folder = Directory.CreateDummyDirectory(System.IO.Path.Combine("folders", name));
         foreach (var file in files)
         {
-            Directory.CreateDummyFile(System.IO.Path.Combine("folders", name, file));
+            MakeFile(name, file);
         }
 
         return folder;
+    }
+
+    /// <summary>
+    /// Creates one file in a generated folder, last changed <paramref name="age"/> ago.
+    /// </summary>
+    /// <remarks>
+    /// Backdated by default: a file changed in the last few minutes is deliberately left alone
+    /// by tidying, and every freshly generated file would otherwise look exactly like that.
+    /// </remarks>
+    public string MakeFile(string folder, string name, string content = "Generated DeskAI test data", TimeSpan? age = null)
+    {
+        var path = Directory.CreateDummyFile(System.IO.Path.Combine("folders", folder, name), content);
+        File.SetLastWriteTimeUtc(path, DateTime.UtcNow - (age ?? TimeSpan.FromDays(3)));
+        return path;
     }
 
     public async ValueTask DisposeAsync()
