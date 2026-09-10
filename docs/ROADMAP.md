@@ -188,7 +188,39 @@ Goal: turn repeated intent into deterministic, auditable behavior.
 
 Exit criteria: rules can be explained and simulated; background execution cannot widen scope; each run is recoverable/auditable.
 
-## V0.6 — Workspace Profiles and Design (**Future**)
+## V0.6 — Organize Your Own Folders (**Planned — recommended next**)
+
+Goal: let DeskAI actually move and rename files in a folder someone connected, after they
+approve each change in the preview.
+
+Why this milestone exists: until now every connected folder has been look-only, and the
+move, approval, journal, and undo loop has worked only inside the generated practice folder.
+ADR 0010 and the 2026-09-07 capability audit both required "a later real-folder execution
+milestone", but none was ever scheduled, so rules, automatic checks, and AI suggestions could
+never lead to a file moving. Added 2026-09-10 after the owner found this while testing.
+
+1. Design and security review before code: a separate "allow DeskAI to organize this folder"
+   permission, how it is shown and withdrawn, what happens when a file changes between preview
+   and move, locked and cloud-only files, and recovery after a crash. Recorded as an ADR and a
+   security review.
+2. The organize permission as its own scope, granted only through its own dialog. It never
+   silently replaces or widens look-only or read-text consent, and withdrawing it leaves the
+   folder look-only.
+3. Rule matches and Organize suggestions become an `OrganizationPlan` for that folder and open
+   in the existing preview, where each change is chosen and approved. Automatic checks still
+   only look.
+4. The executor runs approved plans in an organize-permitted folder with live containment,
+   link, collision, and stale-plan checks, write-ahead journaling, and new negative tests.
+5. Undo that survives closing and reopening DeskAI, refusing safely when a file has changed
+   since it was moved.
+
+Out of scope here: deleting files, running rules without approval, and sending real file
+names to an AI provider (that needs its own disclosure review).
+
+Exit criteria: a person can connect a folder, allow organizing, approve a preview, see files
+move, and undo it after a restart; every refusal case is tested with generated temporary data.
+
+## V0.7 — Workspace Profiles and Design (**Future**)
 
 Goal: turn organization/search into tailored workspaces.
 
@@ -198,7 +230,7 @@ Goal: turn organization/search into tailored workspaces.
 - Themes and wallpapers; local image generation only after hardware/license/privacy design.
 - No direct desktop-shell mutation without a dedicated security/recovery design.
 
-## V0.7 — Extensibility and Distribution (**Future**)
+## V0.8 — Extensibility and Distribution (**Future**)
 
 - Capability-scoped plugin contracts and manifest.
 - Isolation, signing/trust, compatibility, permissions, update, and revocation model before community plugins.
@@ -208,7 +240,7 @@ Goal: turn organization/search into tailored workspaces.
 ## V1.0 — Stable Release (**Planned target**)
 
 - Supported Windows versions and hardware guidance documented.
-- Polished organizer loop, undo/history, protected items, rule-only mode, privacy controls, and at least one well-supported optional AI path.
+- Polished organizer loop that works on folders people connect (V0.6), undo/history, protected items, rule-only mode, privacy controls, and at least one well-supported optional AI path.
 - Security threat review; destructive/escape scenarios tested.
 - Accessibility and keyboard navigation reviewed.
 - Clean install/update/uninstall and data-retention behavior verified.
