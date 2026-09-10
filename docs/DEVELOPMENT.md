@@ -16,6 +16,7 @@ Record chosen target framework, minimum Windows version, Windows App SDK, archit
 ```text
 DeskAI.sln
 src/DeskAI.App/
+src/DeskAI.Presentation/        view models, free of WinUI (added 2026-09-10)
 src/DeskAI.Core/
 src/DeskAI.Safety/
 src/DeskAI.Infrastructure/
@@ -23,6 +24,8 @@ src/DeskAI.AI/
 tests/DeskAI.Core.Tests/
 tests/DeskAI.Safety.Tests/
 tests/DeskAI.Infrastructure.Tests/
+tests/DeskAI.AI.Tests/
+tests/DeskAI.Presentation.Tests/
 docs/decisions/
 test-data/README.md             optional documentation only; generated data ignored
 ```

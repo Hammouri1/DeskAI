@@ -52,7 +52,8 @@ If documents conflict, security rules win. Update documentation in the same chan
 
 ```text
 src/
-  DeskAI.App              WinUI views, view models, navigation, composition root
+  DeskAI.App              WinUI views, dialogs, navigation, Windows adapters, composition root
+  DeskAI.Presentation     View models and the shared service registration, free of WinUI
   DeskAI.Core             Domain types, use cases, rules, provider-neutral contracts
   DeskAI.Safety           Policy evaluation and plan validation
   DeskAI.Infrastructure   Filesystem, SQLite, Windows integration, indexing
@@ -61,9 +62,11 @@ tests/
   DeskAI.Core.Tests
   DeskAI.Safety.Tests
   DeskAI.Infrastructure.Tests
+  DeskAI.AI.Tests
+  DeskAI.Presentation.Tests   Page tests: each feature used the way a person uses it
 ```
 
-`Core` must not reference App, Infrastructure, AI-provider SDKs, WinUI, or SQLite. `Safety` may depend on Core. Infrastructure and AI implement Core contracts. App composes the system and must not contain filesystem business logic.
+`Core` must not reference App, Infrastructure, AI-provider SDKs, WinUI, or SQLite. `Safety` may depend on Core. Infrastructure and AI implement Core contracts. Presentation must not reference WinUI. App composes the system and must not contain filesystem business logic.
 
 ## Engineering Rules
 

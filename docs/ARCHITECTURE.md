@@ -37,11 +37,12 @@ The V0.2 planner receives already classified `FileItem` values plus one versione
 ## Projects and Dependencies
 
 ```text
-DeskAI.App ───────────────→ DeskAI.Core
-    │                           ↑
-    ├────────→ DeskAI.Safety ───┘
-    ├────────→ DeskAI.Infrastructure ─→ Core contracts
-    └────────→ DeskAI.AI ─────────────→ Core contracts
+DeskAI.App ───────────────→ DeskAI.Presentation
+                                │
+                                ├────────→ DeskAI.Core
+                                ├────────→ DeskAI.Safety ───→ Core
+                                ├────────→ DeskAI.Infrastructure ─→ Core contracts
+                                └────────→ DeskAI.AI ─────────────→ Core contracts
 
 DeskAI.Infrastructure ────→ DeskAI.Safety only when an adapter needs policy services
 ```
@@ -64,9 +65,27 @@ It also holds `AutomaticCheckTimer`, the one clock in DeskAI that makes somethin
 
 Provider-neutral orchestration plus adapters for local or cloud endpoints. It constructs minimal data envelopes, requests structured results, validates syntax/schema, maps output to Core proposals, and returns errors without filesystem side effects. Provider SDK response types never escape this project.
 
+### `DeskAI.Presentation`
+
+The logic behind every page: view models, commands, the sample-plan factory, and
+`AddDeskAiApplication`, the one registration of everything DeskAI is made of apart from the
+window. It references no WinUI type, so each page can be tested the way a person uses it.
+Its namespaces stay `DeskAI.App.*` because these are the app's view models, compiled
+separately.
+
+It was split out on 2026-09-10. Until then view models lived inside the WinUI project, which
+tests cannot load, so none of the 545 engine tests covered a single page — and every bug the
+owner found by hand was in that untested layer. `DeskAI.Presentation.Tests` builds DeskAI
+through the same `AddDeskAiApplication` call the app uses, with a real SQLite database and
+real safety checks in a generated temp folder, replacing only the credential store, the
+network, and Windows notifications.
+
 ### `DeskAI.App`
 
-WinUI 3 views, reusable controls, view models, commands, navigation, accessibility, and the composition root. View models call application use cases/interfaces; code-behind is limited to view behavior. App must not manipulate files or call provider HTTP APIs directly.
+WinUI 3 views, reusable controls, converters, dialogs, navigation, Windows adapters (folder
+picker, notifications), and the composition root, which calls `AddDeskAiApplication` and adds
+only the Windows-facing pieces. Code-behind is limited to view behavior and confirmation
+dialogs. App must not manipulate files or call provider HTTP APIs directly.
 
 ## Initial Domain Model
 

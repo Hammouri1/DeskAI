@@ -4,7 +4,6 @@ using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Rules;
 using DeskAI.Core.Search;
-using Microsoft.UI.Dispatching;
 
 namespace DeskAI.App.ViewModels;
 
@@ -29,7 +28,7 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
     private readonly AutomaticCheckCoordinator _checks;
     private readonly IAutomaticCheckSettingsRepository _checkSettings;
     private readonly IFindingNotifier _notifier;
-    private readonly DispatcherQueue? _dispatcher;
+    private readonly SynchronizationContext? _uiContext;
     private string _scopeTitle = "Practice mode";
     private string _scopeMessage = "No folders connected. DeskAI cannot see any of your files.";
     private string _findingMessage = string.Empty;
@@ -48,8 +47,10 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
         _notifier = notifier;
 
         // Captured here because this view model is built on the UI thread, while a check
-        // finishes on a background one. Every property set below has to come back.
-        _dispatcher = DispatcherQueue.GetForCurrentThread();
+        // finishes on a background one. Every property set below has to come back. On the
+        // WinUI thread this is the dispatcher's context; in a test it is null and the
+        // notice is shown directly.
+        _uiContext = SynchronizationContext.Current;
         _checks.Checked += OnChecked;
         DismissFindingCommand = new RelayCommand(() => HasFinding = false);
     }
@@ -102,13 +103,13 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
             _ = NotifyIfAskedAsync(message);
         }
 
-        if (_dispatcher is null || _dispatcher.HasThreadAccess)
+        if (_uiContext is null || SynchronizationContext.Current == _uiContext)
         {
             Show();
             return;
         }
 
-        _dispatcher.TryEnqueue(Show);
+        _uiContext.Post(_ => Show(), null);
     }
 
     private async Task NotifyIfAskedAsync(string message)

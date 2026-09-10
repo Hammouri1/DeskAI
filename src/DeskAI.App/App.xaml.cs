@@ -1,20 +1,9 @@
-using DeskAI.AI;
-using DeskAI.AI.Transport;
+using DeskAI.App.Composition;
 using DeskAI.App.Navigation;
-using DeskAI.App.Preview;
 using DeskAI.App.Services;
-using DeskAI.App.ViewModels;
 using DeskAI.App.Views;
-using DeskAI.Core.Abstractions;
-using DeskAI.Core.Ai;
-using DeskAI.Core.Rules;
-using DeskAI.Core.Search;
-using DeskAI.Infrastructure.Content;
-using DeskAI.Infrastructure.DependencyInjection;
 using DeskAI.Infrastructure.Logging;
 using DeskAI.Infrastructure.Persistence;
-using DeskAI.Infrastructure.Time;
-using DeskAI.Safety;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -67,43 +56,14 @@ public partial class App : Application
                     Path.Combine(localAppData, "Microsoft", "Credentials"),
                     Path.Combine(localAppData, "Google", "Chrome", "User Data"),
                     Path.Combine(localAppData, "Microsoft", "Edge", "User Data"),
-                }.Where(path => !string.IsNullOrWhiteSpace(path));
+                };
 
-                services.AddDeskAiInfrastructure(options =>
-                    options.DatabasePath = Path.Combine(appStateDirectory, "deskai.db"));
-                services.AddSingleton<IAiHttpTransport>(_ => new HttpClientAiTransport(
-                    new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
-                    {
-                        Timeout = Timeout.InfiniteTimeSpan,
-                    }));
-                services.AddSingleton<IOrganizationSuggestionProvider, ConfiguredSuggestionProvider>();
-                services.AddSingleton<IPathPolicy>(_ => new WindowsPathPolicy(protectedPaths));
-                services.AddSingleton<PlanValidator>();
-                services.AddSingleton<DemoOrganizationPlanFactory>();
+                // Everything except the window lives in one shared registration, which the
+                // page tests also use. Only the Windows-facing pieces are added here.
+                services.AddDeskAiApplication(Path.Combine(appStateDirectory, "deskai.db"), protectedPaths);
                 services.AddSingleton<INavigationService, NavigationService>();
                 services.AddSingleton<IFolderPickerService, WindowsFolderPickerService>();
                 services.AddSingleton<IFindingNotifier, WindowsFindingNotifier>();
-                services.AddTransient<ShellViewModel>();
-                services.AddTransient<OrganizeViewModel>();
-                services.AddSingleton<FileSearchService>();
-                services.AddSingleton<ConnectedFolderService>();
-                // The only service that opens a file. It refuses any folder that was not
-                // connected for reading inside, so registering it grants nothing on its own.
-                services.AddSingleton<IContentTextExtractor, PlainTextExtractor>();
-                services.AddSingleton<ContentSearchService>();
-                services.AddSingleton<StorageSummaryService>();
-                services.AddSingleton<DuplicateFinderService>();
-                services.AddSingleton<RuleSimulationService>();
-                services.AddSingleton<AutomaticCheckService>();
-                services.AddSingleton<AutomaticCheckCoordinator>();
-                // The only background work DeskAI does. It runs while the app runs and
-                // stops when it stops; nothing is registered with Windows to start it
-                // again. See ADR 0017.
-                services.AddHostedService<AutomaticCheckTimer>();
-                services.AddTransient<SettingsViewModel>();
-                services.AddTransient<SearchViewModel>();
-                services.AddTransient<DashboardViewModel>();
-                services.AddTransient<AutomationViewModel>();
                 services.AddTransient<DashboardPage>();
                 services.AddTransient<OrganizePage>();
                 services.AddTransient<SearchPage>();

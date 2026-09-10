@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!--
+    The logic behind every page, kept free of WinUI so it can be tested the way a person
+    uses the app. The namespace stays DeskAI.App.*: these are the app's view models, compiled
+    separately. Only views, converters, dialogs, and Windows adapters remain in DeskAI.App.
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RootNamespace>DeskAI.App</RootNamespace>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DeskAI.Core\DeskAI.Core.csproj" />
+    <ProjectReference Include="..\DeskAI.Safety\DeskAI.Safety.csproj" />
+    <ProjectReference Include="..\DeskAI.Infrastructure\DeskAI.Infrastructure.csproj" />
+    <ProjectReference Include="..\DeskAI.AI\DeskAI.AI.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" />
+  </ItemGroup>
+</Project>

@@ -17,6 +17,7 @@
     <ProjectReference Include="..\DeskAI.Safety\DeskAI.Safety.csproj" />
     <ProjectReference Include="..\DeskAI.Infrastructure\DeskAI.Infrastructure.csproj" />
     <ProjectReference Include="..\DeskAI.AI\DeskAI.AI.csproj" />
+    <ProjectReference Include="..\DeskAI.Presentation\DeskAI.Presentation.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" />

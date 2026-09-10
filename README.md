@@ -66,6 +66,7 @@ DeskAI/
 ├── docs/
 ├── src/
 │   ├── DeskAI.App/
+│   ├── DeskAI.Presentation/
 │   ├── DeskAI.Core/
 │   ├── DeskAI.Safety/
 │   ├── DeskAI.Infrastructure/
