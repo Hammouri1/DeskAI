@@ -454,6 +454,12 @@ public sealed class AutomaticCheckServiceTests
 
         public Task RemoveAsync(Guid rootId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task AllowTidyAsync(Guid rootId, DateTimeOffset grantedAtUtc, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task StopTidyAsync(Guid rootId, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 
     private sealed class FakeFolders(FakeRoots roots) : IReadOnlyFolderService
@@ -471,6 +477,9 @@ public sealed class AutomaticCheckServiceTests
 
         public Task RevokeAsync(Guid rootId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task<string?> CheckStillSafeAsync(AuthorizedRoot root, CancellationToken cancellationToken = default) =>
+            Task.FromResult<string?>(null);
     }
 
     /// <summary>

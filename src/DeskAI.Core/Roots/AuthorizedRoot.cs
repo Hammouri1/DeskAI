@@ -7,13 +7,15 @@ public sealed record AuthorizedRoot
         string canonicalPath,
         string displayName,
         RootAccessLevel permission,
-        RootAuthorizationScope authorizationScope)
+        RootAuthorizationScope authorizationScope,
+        DateTimeOffset? tidyAllowedSinceUtc)
     {
         Id = id;
         CanonicalPath = canonicalPath;
         DisplayName = displayName;
         Permission = permission;
         AuthorizationScope = authorizationScope;
+        TidyAllowedSinceUtc = tidyAllowedSinceUtc;
     }
 
     public Guid Id { get; }
@@ -25,12 +27,29 @@ public sealed record AuthorizedRoot
     public RootAccessLevel Permission { get; }
     public RootAuthorizationScope AuthorizationScope { get; }
 
+    /// <summary>
+    /// When the person allowed DeskAI to tidy this folder, or null if they have not.
+    /// </summary>
+    /// <remarks>
+    /// Kept apart from <see cref="AuthorizationScope"/>, which says what may be <em>read</em>.
+    /// Tidying is a separate yes, stored in its own table, so switching reading inside files on
+    /// or off can neither drop nor grant it. Ask <see cref="RootCapabilities.CanTidy"/>.
+    /// </remarks>
+    public DateTimeOffset? TidyAllowedSinceUtc { get; }
+
+    public AuthorizedRoot WithTidyAllowedSince(DateTimeOffset? sinceUtc) =>
+        new(Id, CanonicalPath, DisplayName, Permission, AuthorizationScope, sinceUtc);
+
+    /// <remarks>
+    /// There is deliberately no default scope. A default is what a caller gets by forgetting,
+    /// and the old default was the scope that may be changed.
+    /// </remarks>
     public static AuthorizedRoot Create(
         Guid id,
         string canonicalPath,
         string displayName,
         RootAccessLevel permission,
-        RootAuthorizationScope authorizationScope = RootAuthorizationScope.Organize)
+        RootAuthorizationScope authorizationScope)
     {
         if (id == Guid.Empty)
         {
@@ -45,7 +64,7 @@ public sealed record AuthorizedRoot
             throw new ArgumentException("An authorized root must be an absolute path.", nameof(canonicalPath));
         }
 
-        return new AuthorizedRoot(id, canonicalPath, displayName, permission, authorizationScope);
+        return new AuthorizedRoot(id, canonicalPath, displayName, permission, authorizationScope, null);
     }
 }
 

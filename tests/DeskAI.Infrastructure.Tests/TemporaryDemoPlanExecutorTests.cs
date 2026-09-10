@@ -293,6 +293,32 @@ public sealed class TemporaryDemoPlanExecutorTests
         Assert.False(File.Exists(Path.Combine(executor.Root.CanonicalPath, "Sorted", "semester-budget.xlsx")));
     }
 
+    /// <summary>
+    /// The practice mover is not a way into real folders. Allowing tidying lets a plan pass
+    /// validation, but this executor is bound to its own generated workspace and must still
+    /// refuse a plan for any other folder. Real tidying gets its own executor and review.
+    /// </summary>
+    [Fact]
+    public async Task ExecuteAsync_RefusesAPlanForARealFolderEvenWhenTidyingIsAllowed()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var executor = CreateExecutor(sandbox);
+        await executor.PrepareAsync(TestContext.Current.CancellationToken);
+        var realFolder = sandbox.CreateDummyDirectory("RealFolder");
+        sandbox.CreateDummyFile(@"RealFolder\notes.pdf");
+        var real = DeskAI.Core.Roots.AuthorizedRoot.Create(Guid.NewGuid(), realFolder, "RealFolder",
+                DeskAI.Core.Roots.RootAccessLevel.Allowed, DeskAI.Core.Roots.RootAuthorizationScope.MetadataOnly)
+            .WithTidyAllowedSince(DateTimeOffset.UnixEpoch);
+        var move = new MoveFileOperation(Guid.NewGuid(), "notes.pdf", @"Documents\notes.pdf", "PDF file", OperationProvenance.Rule);
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), real.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, [move]);
+
+        var result = await executor.ExecuteAsync(plan, Approve(plan, move.Id), TestContext.Current.CancellationToken);
+
+        Assert.Equal(ExecutionOutcome.Failed, Assert.Single(result.Operations).Outcome);
+        Assert.True(File.Exists(Path.Combine(realFolder, "notes.pdf")));
+        Assert.False(Directory.Exists(Path.Combine(realFolder, "Documents")));
+    }
+
     private static TemporaryDemoPlanExecutor CreateExecutor(
         TemporaryDirectory sandbox,
         InMemoryOperationJournal? journal = null) =>

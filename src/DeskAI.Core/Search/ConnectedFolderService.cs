@@ -16,7 +16,8 @@ public sealed record ConnectedFolder(
     string Path,
     int FileCount,
     DateTimeOffset? LastCheckedUtc,
-    bool CanReadContent);
+    bool CanReadContent,
+    bool CanTidy = false);
 
 /// <summary>
 /// The outcome of connecting or refreshing a folder, including a refusal reason.
@@ -133,7 +134,8 @@ public sealed class ConnectedFolderService(
                 root.CanonicalPath,
                 statistics.FileCount,
                 statistics.LastIndexedAtUtc,
-                RootCapabilities.CanReadContent(root)));
+                RootCapabilities.CanReadContent(root),
+                RootCapabilities.CanTidy(root)));
         }
 
         return described.AsReadOnly();
@@ -238,6 +240,7 @@ public sealed class ConnectedFolderService(
             root.CanonicalPath,
             statistics.FileCount,
             statistics.LastIndexedAtUtc,
-            RootCapabilities.CanReadContent(root));
+            RootCapabilities.CanReadContent(root),
+            RootCapabilities.CanTidy(root));
     }
 }

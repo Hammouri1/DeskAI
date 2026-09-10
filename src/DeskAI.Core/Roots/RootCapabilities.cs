@@ -69,6 +69,26 @@ public static class RootCapabilities
         {
             RootAuthorizationScope.ControlledDemo => true,
             RootAuthorizationScope.Organize => true,
+            _ => CanTidy(root),
+        };
+    }
+
+    /// <summary>
+    /// May DeskAI tidy this folder: move its loose files into folders inside it?
+    /// </summary>
+    /// <remarks>
+    /// Only a folder connected for reading can hold this permission, and only once the person
+    /// allowed it. The practice workspace and the legacy organize scope are answered by
+    /// <see cref="CanMutate"/> directly and never by a tidy grant. The scope list is explicit,
+    /// so a scope added later cannot inherit tidying by falling through.
+    /// </remarks>
+    public static bool CanTidy(AuthorizedRoot root)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        return IsUsable(root) && root.TidyAllowedSinceUtc is not null && root.AuthorizationScope switch
+        {
+            RootAuthorizationScope.MetadataOnly => true,
+            RootAuthorizationScope.MetadataAndContent => true,
             _ => false,
         };
     }

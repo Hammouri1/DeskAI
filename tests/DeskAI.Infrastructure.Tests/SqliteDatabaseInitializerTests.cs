@@ -33,7 +33,7 @@ public sealed class SqliteDatabaseInitializerTests
 
         // Every migration must record its own number so the upgrade path stays auditable.
         command.CommandText = "SELECT group_concat(version, ',') FROM (SELECT version FROM schema_migrations ORDER BY version);";
-        Assert.Equal("1,2,3,4,5,6,7,8,9,10,11", await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("1,2,3,4,5,6,7,8,9,10,11,12", await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]

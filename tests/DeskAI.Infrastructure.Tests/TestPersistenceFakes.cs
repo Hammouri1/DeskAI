@@ -109,6 +109,27 @@ internal sealed class InMemoryAuthorizedRootRepository : IAuthorizedRootReposito
         _roots.Remove(rootId);
         return Task.CompletedTask;
     }
+
+    public Task AllowTidyAsync(Guid rootId, DateTimeOffset grantedAtUtc, CancellationToken cancellationToken = default)
+    {
+        if (_roots.TryGetValue(rootId, out var root) &&
+            root.AuthorizationScope is RootAuthorizationScope.MetadataOnly or RootAuthorizationScope.MetadataAndContent)
+        {
+            _roots[rootId] = root.WithTidyAllowedSince(grantedAtUtc);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    public Task StopTidyAsync(Guid rootId, CancellationToken cancellationToken = default)
+    {
+        if (_roots.TryGetValue(rootId, out var root))
+        {
+            _roots[rootId] = root.WithTidyAllowedSince(null);
+        }
+
+        return Task.CompletedTask;
+    }
 }
 
 internal sealed class InMemoryPlanRepository : IPlanRepository

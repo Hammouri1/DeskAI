@@ -109,6 +109,45 @@ public sealed class RootCapabilitiesTests
         Assert.Equal(4, Enum.GetValues<RootAuthorizationScope>().Length);
     }
 
+    /// <summary>
+    /// Tidying is its own yes. A folder connected for reading cannot be changed until someone
+    /// allows tidying it, and allowing it changes nothing about what may be read.
+    /// </summary>
+    [Theory]
+    [InlineData(RootAuthorizationScope.MetadataOnly, false)]
+    [InlineData(RootAuthorizationScope.MetadataAndContent, true)]
+    public void AReadingFolderCanBeTidiedOnlyAfterTidyingIsAllowed(RootAuthorizationScope scope, bool content)
+    {
+        var root = Root(scope);
+        Assert.False(RootCapabilities.CanTidy(root));
+        Assert.False(RootCapabilities.CanMutate(root));
+
+        var allowed = root.WithTidyAllowedSince(DateTimeOffset.UnixEpoch);
+
+        Assert.True(RootCapabilities.CanTidy(allowed));
+        Assert.True(RootCapabilities.CanMutate(allowed));
+        Assert.True(RootCapabilities.CanReadMetadata(allowed));
+        Assert.Equal(content, RootCapabilities.CanReadContent(allowed));
+    }
+
+    [Theory]
+    [InlineData(RootAuthorizationScope.ControlledDemo)]
+    [InlineData(RootAuthorizationScope.Organize)]
+    public void ATidyPermissionMeansNothingOnAFolderThatWasNotConnectedForReading(RootAuthorizationScope scope)
+    {
+        Assert.False(RootCapabilities.CanTidy(Root(scope).WithTidyAllowedSince(DateTimeOffset.UnixEpoch)));
+    }
+
+    [Theory]
+    [InlineData(RootAccessLevel.Restricted)]
+    [InlineData(RootAccessLevel.Protected)]
+    public void ATidyPermissionOnAFolderThatIsNotAllowedGrantsNothing(RootAccessLevel permission)
+    {
+        var root = Root(RootAuthorizationScope.MetadataOnly, permission).WithTidyAllowedSince(DateTimeOffset.UnixEpoch);
+        Assert.False(RootCapabilities.CanTidy(root));
+        Assert.False(RootCapabilities.CanMutate(root));
+    }
+
     private static AuthorizedRoot Root(
         RootAuthorizationScope scope,
         RootAccessLevel permission = RootAccessLevel.Allowed) =>

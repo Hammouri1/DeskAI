@@ -88,6 +88,24 @@ public sealed class ReadOnlyFolderService(
     public Task RevokeAsync(Guid rootId, CancellationToken cancellationToken = default) =>
         rootRepository.RemoveAsync(rootId, cancellationToken);
 
+    /// <remarks>
+    /// Run when tidying is allowed, not only when the folder was connected. Between the two a
+    /// folder can be moved, replaced by a link, or come to overlap a protected location, and a
+    /// permission to change files must be given for the folder as it is now.
+    /// </remarks>
+    public Task<string?> CheckStillSafeAsync(AuthorizedRoot root, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        cancellationToken.ThrowIfCancellationRequested();
+        var problem =
+            IsUnsupportedRoot(root.CanonicalPath) ? "Network, device, and whole-drive locations cannot be tidied."
+            : !Directory.Exists(root.CanonicalPath) ? "That folder is no longer available."
+            : ContainsReparsePoint(root.CanonicalPath) ? "This folder crosses a link or shortcut, so DeskAI will not tidy it."
+            : pathPolicy.ValidateRoot(root).Status == ValidationStatus.Blocked ? "This location is protected and cannot be tidied."
+            : null;
+        return Task.FromResult(problem);
+    }
+
     private static bool IsUnsupportedRoot(string path)
     {
         if (path.StartsWith("\\\\", StringComparison.Ordinal) ||

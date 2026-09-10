@@ -9,7 +9,7 @@ public sealed class AiRequestBuilderTests
     [Fact]
     public void Build_IncludesOnlyExplicitlyAllowedFieldsAndOmitsProtectedFiles()
     {
-        var root = AuthorizedRoot.Create(Guid.NewGuid(), @"C:\DeskAITests\Synthetic", "Synthetic", RootAccessLevel.Allowed);
+        var root = AuthorizedRoot.Create(Guid.NewGuid(), @"C:\DeskAITests\Synthetic", "Synthetic", RootAccessLevel.Allowed, RootAuthorizationScope.Organize);
         var visible = CreateFile(@"Study\report.private.pdf");
         var protectedFile = CreateFile(@"Private\secret.txt");
 
@@ -33,7 +33,7 @@ public sealed class AiRequestBuilderTests
     [Fact]
     public void Build_RespectsMaximumFileCount()
     {
-        var root = AuthorizedRoot.Create(Guid.NewGuid(), @"C:\DeskAITests\Synthetic", "Synthetic", RootAccessLevel.Allowed);
+        var root = AuthorizedRoot.Create(Guid.NewGuid(), @"C:\DeskAITests\Synthetic", "Synthetic", RootAccessLevel.Allowed, RootAuthorizationScope.Organize);
         var limits = AiRequestLimits.Default with { MaximumFiles = 1 };
 
         var request = AiRequestBuilder.Build(

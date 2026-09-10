@@ -37,13 +37,18 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
     {
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
         await using var command = connection.CreateCommand();
-        command.CommandText = "SELECT canonical_path, display_name, permission, authorization_scope FROM authorized_roots WHERE id = $id;";
+        command.CommandText = """
+            SELECT r.canonical_path, r.display_name, r.permission, r.authorization_scope, t.granted_at_utc
+            FROM authorized_roots r LEFT JOIN tidy_permissions t ON t.root_id = r.id
+            WHERE r.id = $id;
+            """;
         command.Parameters.AddWithValue("$id", rootId.ToString("D"));
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         return await reader.ReadAsync(cancellationToken).ConfigureAwait(false)
             ? AuthorizedRoot.Create(
-                rootId, reader.GetString(0), reader.GetString(1),
-                (RootAccessLevel)reader.GetInt32(2), (RootAuthorizationScope)reader.GetInt32(3))
+                    rootId, reader.GetString(0), reader.GetString(1),
+                    (RootAccessLevel)reader.GetInt32(2), (RootAuthorizationScope)reader.GetInt32(3))
+                .WithTidyAllowedSince(ReadGrant(reader, 4))
             : null;
     }
 
@@ -52,16 +57,18 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT id, canonical_path, display_name, permission, authorization_scope
-            FROM authorized_roots ORDER BY display_name COLLATE NOCASE;
+            SELECT r.id, r.canonical_path, r.display_name, r.permission, r.authorization_scope, t.granted_at_utc
+            FROM authorized_roots r LEFT JOIN tidy_permissions t ON t.root_id = r.id
+            ORDER BY r.display_name COLLATE NOCASE;
             """;
         var roots = new List<AuthorizedRoot>();
         await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
         while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
         {
             roots.Add(AuthorizedRoot.Create(
-                Guid.Parse(reader.GetString(0)), reader.GetString(1), reader.GetString(2),
-                (RootAccessLevel)reader.GetInt32(3), (RootAuthorizationScope)reader.GetInt32(4)));
+                    Guid.Parse(reader.GetString(0)), reader.GetString(1), reader.GetString(2),
+                    (RootAccessLevel)reader.GetInt32(3), (RootAuthorizationScope)reader.GetInt32(4))
+                .WithTidyAllowedSince(ReadGrant(reader, 5)));
         }
 
         return roots;
@@ -85,4 +92,39 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
         command.Parameters.AddWithValue("$contentScope", (int)RootAuthorizationScope.MetadataAndContent);
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
+
+    public async Task AllowTidyAsync(Guid rootId, DateTimeOffset grantedAtUtc, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        // Only a folder connected for reading can be tidied. Selecting the row through that
+        // condition means a grant for any other folder simply inserts nothing.
+        command.CommandText = """
+            INSERT OR IGNORE INTO tidy_permissions(root_id, granted_at_utc)
+            SELECT id, $granted FROM authorized_roots
+            WHERE id = $id AND authorization_scope IN ($metadataScope, $contentScope);
+            """;
+        command.Parameters.AddWithValue("$id", rootId.ToString("D"));
+        command.Parameters.AddWithValue("$granted", grantedAtUtc.ToString("O"));
+        command.Parameters.AddWithValue("$metadataScope", (int)RootAuthorizationScope.MetadataOnly);
+        command.Parameters.AddWithValue("$contentScope", (int)RootAuthorizationScope.MetadataAndContent);
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task StopTidyAsync(Guid rootId, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "DELETE FROM tidy_permissions WHERE root_id = $id;";
+        command.Parameters.AddWithValue("$id", rootId.ToString("D"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private static DateTimeOffset? ReadGrant(SqliteDataReader reader, int ordinal) =>
+        reader.IsDBNull(ordinal)
+            ? null
+            : DateTimeOffset.Parse(
+                reader.GetString(ordinal),
+                System.Globalization.CultureInfo.InvariantCulture,
+                System.Globalization.DateTimeStyles.RoundtripKind);
 }

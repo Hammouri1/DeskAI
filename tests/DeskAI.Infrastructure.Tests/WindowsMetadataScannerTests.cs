@@ -145,7 +145,7 @@ public sealed class WindowsMetadataScannerTests
     public async Task ScanAsync_RefusesProtectedRoot()
     {
         using var sandbox = new TemporaryDirectory();
-        var root = AuthorizedRoot.Create(Guid.NewGuid(), sandbox.Path, "Protected test root", RootAccessLevel.Protected);
+        var root = AuthorizedRoot.Create(Guid.NewGuid(), sandbox.Path, "Protected test root", RootAccessLevel.Protected, RootAuthorizationScope.Organize);
 
         var events = await CollectAsync(new WindowsMetadataScanner(new WindowsPathPolicy()), root, TestContext.Current.CancellationToken);
 
@@ -211,7 +211,7 @@ public sealed class WindowsMetadataScannerTests
         Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
         path,
         "Generated test root",
-        RootAccessLevel.Allowed);
+        RootAccessLevel.Allowed, RootAuthorizationScope.Organize);
 
     private static async Task<IReadOnlyList<ScanEvent>> CollectAsync(
         WindowsMetadataScanner scanner,

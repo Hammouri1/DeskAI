@@ -9,7 +9,7 @@ public sealed class WindowsPathPolicyTests
         Guid.Parse("aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa"),
         @"C:\DeskAITests\AuthorizedRoot",
         "Synthetic root",
-        RootAccessLevel.Allowed);
+        RootAccessLevel.Allowed, RootAuthorizationScope.Organize);
 
     [Theory]
     [InlineData(@"Documents\report.pdf")]
@@ -83,7 +83,7 @@ public sealed class WindowsPathPolicyTests
             Guid.NewGuid(),
             @"C:\DeskAITests\AuthorizedRoot",
             "Protected synthetic root",
-            RootAccessLevel.Protected);
+            RootAccessLevel.Protected, RootAuthorizationScope.Organize);
 
         var result = new WindowsPathPolicy().ValidateRelativePath(protectedRoot, "file.txt");
 

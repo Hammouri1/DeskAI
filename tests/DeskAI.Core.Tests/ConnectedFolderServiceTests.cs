@@ -288,6 +288,32 @@ public sealed class ConnectedFolderServiceTests
 
         public Task RemoveAsync(Guid rootId, CancellationToken cancellationToken = default) =>
             RevokeAsync(rootId, cancellationToken);
+
+        public Task<string?> CheckStillSafeAsync(AuthorizedRoot root, CancellationToken cancellationToken = default) =>
+            Task.FromResult<string?>(null);
+
+        public Task AllowTidyAsync(Guid rootId, DateTimeOffset grantedAtUtc, CancellationToken cancellationToken = default)
+        {
+            var index = _roots.FindIndex(root => root.Id == rootId);
+            if (index >= 0 && _roots[index].AuthorizationScope
+                    is RootAuthorizationScope.MetadataOnly or RootAuthorizationScope.MetadataAndContent)
+            {
+                _roots[index] = _roots[index].WithTidyAllowedSince(grantedAtUtc);
+            }
+
+            return Task.CompletedTask;
+        }
+
+        public Task StopTidyAsync(Guid rootId, CancellationToken cancellationToken = default)
+        {
+            var index = _roots.FindIndex(root => root.Id == rootId);
+            if (index >= 0)
+            {
+                _roots[index] = _roots[index].WithTidyAllowedSince(null);
+            }
+
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class FakeIndex : IMetadataIndexService

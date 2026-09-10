@@ -225,6 +225,12 @@ public sealed class FileSearchServiceTests
 
         public Task RemoveAsync(Guid rootId, CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
+
+        public Task AllowTidyAsync(Guid rootId, DateTimeOffset grantedAtUtc, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task StopTidyAsync(Guid rootId, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 
     /// <summary>
