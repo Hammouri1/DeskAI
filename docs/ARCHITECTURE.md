@@ -78,6 +78,18 @@ Safety about that plan through `IPlanSafetyCheck`, a Core contract Safety implem
 (`PlanSafetyCheck`), so Core still never references Safety. Nothing in this module moves a
 file; as of step 2a no executor accepts a plan for a connected folder.
 
+Step 2b adds AI as a suggestion source (ADR 0020). `TidySuggestionService.PreviewAsync` takes a
+`TidySuggestionMode` and a dictionary of `TidyAiAdvice` by file ID; it still sends nothing.
+Authority runs rules → AI (every-file mode) → file type → AI (default mode), and advice whose
+file has a different size or last-changed time is ignored. The preview lists `AskableFiles`.
+`TidyAiService` is the only code that sends real-folder information to AI, in two calls with
+the person between them: `PrepareAsync` builds an `OrganizationSuggestionRequest` through the
+existing `AiRequestBuilder` — random stand-in IDs, sharing choices capped at
+`RealFolderShareable`, protected paths dropped via `IPlanSafetyCheck.IsProtected` — and
+describes it line by line; `AskAsync` re-checks permission and settings, sends that same
+request through `IOrganizationSuggestionProvider`, and maps answers back to advice. It holds
+no scanner, reader, index, journal, or executor, and a test asserts that.
+
 ### `DeskAI.Presentation`
 
 The logic behind every page: view models, commands, the sample-plan factory, and
@@ -325,7 +337,7 @@ The AI layer receives a minimized DTO, not a filesystem service. Its response pa
 
 Prompt text is usability guidance, never enforcement. See `AI-PROVIDERS.md`.
 
-V0.3 implements this boundary as `AiRequestBuilder → ConfiguredSuggestionProvider → local/OpenRouter adapter → StructuredSuggestionParser`. The builder excludes protected IDs and emits only fields permitted by the saved category set. Providers receive no filesystem, shell, executor, plan, root repository, or credential-enumeration capability. Responses can express only `{fileId, category, confidence, reason}` and remain advisory in the sample preview.
+V0.3 implements this boundary as `AiRequestBuilder → ConfiguredSuggestionProvider → local/OpenRouter adapter → StructuredSuggestionParser`. The builder excludes protected IDs and emits only fields permitted by the saved category set. Providers receive no filesystem, shell, executor, plan, root repository, or credential-enumeration capability. Responses can express only `{fileId, category, confidence, reason}` and remain advisory: on the practice page they are displayed, and on Tidy a folder (V0.6 step 2b) `TidyAiService` turns the category into a folder through DeskAI's own recipe.
 
 Local addresses must be explicit HTTP(S) loopback URLs without embedded credentials, query strings, or fragments. Cloud routing resolves the saved provider ID through `CloudProviderCatalog`, a closed compile-time allow-list; each entry carries one fixed HTTPS chat-completions address, its own credential reference, and a model hint. `CloudChatCompletionsSuggestionProvider` serves every listed service because they share the OpenAI-style request and response shape. An unrecognized provider ID is refused rather than guessed at. Redirects and automatic retries are disabled, and one provider failure never triggers another provider. Windows Credential Manager stores each key under that provider's own reference; SQLite holds only the reference string. Daily request reservations are atomic, counted per provider, and happen before cloud transport.
 

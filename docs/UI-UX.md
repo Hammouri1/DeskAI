@@ -67,15 +67,26 @@ stacked together — impossible to understand. Top to bottom:
    checkbox and a count, opening to its files. Every file shows why ("PDF file", "Your rule:
    …") and where it goes. A same-name clash shows a caution line and a switch between "Skip
    this file" (default) and "Keep both (adds a number)".
-5. **Left alone**, collapsed, listing every file DeskAI will not touch with its reason.
-6. **The action bar**, the page's one bold element: the number of ticked files, the Tidy
-   button, and one honest line. In step 2a the button is shown off and the line says
+5. **Ask AI** (step 2b), a quiet card with a plain button. A two-way choice says which files AI
+   may suggest a place for: "Only files DeskAI doesn't know" (default) or "Every file my rules
+   don't place" (switched off until AI is set up in Privacy and AI). One line says what there is
+   to ask about, the button reads "Ask AI about N files", and a caption states who would see
+   what ("OpenRouter would see: file types."). Pressing it opens a dialog naming the service
+   and its address and listing each file exactly as the AI will see it; only **Send** sends,
+   and the answer appears under the button. AI ideas show "AI idea from OpenRouter", never
+   the AI's own words. Ideas the AI was unsure about go into an "AI isn't sure" group at the
+   end, with a question-mark icon and a caution note, and start unticked. No percentage is
+   shown. The button is plain rather than accent because pressing it confirms nothing; Send is
+   the confirming act.
+6. **Left alone**, collapsed, listing every file DeskAI will not touch with its reason.
+7. **The action bar**, the page's one bold element: the number of ticked files, the Tidy
+   button, and one honest line. Until step 3 the button is shown off and the line says
    "Tidying arrives in the next update. Nothing moves yet — this is what it would do."
-7. **"Nervous? Try it on example files first"**, leading to the practice page.
+8. **"Nervous? Try it on example files first"**, leading to the practice page.
 
 Removed from this page on purpose: plan revision numbers, "Needs attention", "Recent
-activity", "More details", the AI ideas card (AI returns as a suggestion source in step 2b),
-and the read-only folder preview.
+activity", "More details", the old AI ideas card about made-up files (AI returned in step 2b
+as the Ask AI card above), and the read-only folder preview.
 
 ### Select and scan
 

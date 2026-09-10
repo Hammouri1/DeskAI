@@ -375,6 +375,35 @@ Use a new folder under Windows Temp filled with made-up files — for example a 
 10. Press the practice link, then **Back to Tidy a folder**. Expected: both pages work.
 11. Press each new "?" on this page and check the explanations read clearly.
 
+## Ask AI on Tidy a folder (V0.6 step 2b, added 2026-09-10)
+
+Use a new folder under Windows Temp with made-up files only: a `notes.pdf`, a `photo.jpg`, and
+two files DeskAI cannot recognise, such as `mystery.zzz` and `oddity.qqq`. Never use a personal
+folder. An online AI request costs a little of your own credit; one or two presses is enough.
+
+1. With AI off in Privacy and AI, open **Organize**, pick the test folder, and allow tidying.
+   Expected: an "Ask AI" card saying DeskAI doesn't know where 2 files go, the Ask button
+   switched off, "Turn on AI in Privacy and AI first.", and the "Every file my rules don't
+   place" choice switched off.
+2. In Privacy and AI, turn on your AI service with only **File type** shared. Come back to
+   Organize. Expected: the caption reads "<your service> would see: file types."
+3. Press **Ask AI about 2 files**. Expected: a dialog titled "Send this to <your service>?",
+   naming its web address, with two lines "A .zzz file" and "A .qqq file" — **no file names**
+   — and a sentence saying contents, locations, and folder names are never sent.
+4. Press **Cancel**. Expected: nothing changes, and no answer line appears.
+5. Press it again and **Send**. Expected: a line under the button such as "OpenRouter suggested
+   a place for 2 of 2 files. Nothing has moved." Files it placed show "AI idea from
+   <service>". If it was unsure about any, they are in an "AI isn't sure" group at the end,
+   with a question-mark icon, unticked. No percentages anywhere.
+6. Check File Explorer: **no file has moved**.
+7. Choose **Every file my rules don't place**. Expected: the button now offers `notes.pdf` and
+   `photo.jpg` too. Switch back and confirm the list returns to file types.
+8. In Privacy and AI, turn on **Full location on your computer**, ask again, and confirm the
+   dialog still shows no location or folder name. Turn that switch off again afterwards.
+9. Start a request and press **Stop** if you can catch it. Expected: the answer line says it
+   stopped, and nothing else is tried.
+10. Press the new "?" next to **Ask AI** and check it reads clearly and truthfully.
+
 ## Help pop-ups (V0.6 step 1, added 2026-09-10)
 
 1. On every page, find the small round **?** buttons: Home (score, space, possible

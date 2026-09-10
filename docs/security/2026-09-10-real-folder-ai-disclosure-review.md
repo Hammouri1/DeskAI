@@ -7,7 +7,8 @@
   transmission") and the deferred gate in `2026-09-08-v0.3-ai-privacy-review.md`, which said
   sending any user-selected folder metadata needs "a new disclosure review, protected-item
   integration, UI preview of the exact real request, and additional tests".
-- Status: design written before the code; the result section is completed when the step is built.
+- Status: accepted for real-folder AI suggestions as built (see Result). Design written before
+  the code; result added when the step was built.
 
 ## What changes
 
@@ -101,4 +102,22 @@ to the Ask button before it is pressed. Help topic `organize.askAi` explains the
 
 ## Result
 
-To be completed when the step is built.
+Accepted, 2026-09-10, with every control above built and tested:
+
+- Engine: `TidyAiService` (Core), `TidySuggestionService` taking mode and advice,
+  `IPlanSafetyCheck.IsProtected` (Safety). Tests: `TidyAiTests` (18), `TidyAiServiceTests`
+  (reach and the sendable ceiling), `PlanSafetyCheckTests` (protected check).
+- Page: the "Ask AI" card and preview dialog on Tidy a folder. Tests: `TidyAiPageTests` (7).
+- Three controls were removed on purpose to check the tests notice: sending scanned IDs,
+  honouring the full-location switch, and skipping the re-check before Send. Each made its
+  test fail, and was restored.
+- Full suite: 777 tests pass, Release build with no warnings, formatting clean.
+
+The preview dialog itself is a WinUI object and is checked by hand
+(`docs/MANUAL-TESTING.md`). Decision recorded in ADR 0020.
+
+## Still not accepted
+
+Sending text from inside files, images, full locations, or folder names to any AI; asking AI
+without the preview; and any path from an AI answer to a moved file other than the ordinary
+plan, safety check, preview, and approval that step 3 will add.

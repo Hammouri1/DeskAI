@@ -124,6 +124,10 @@ changes a feature.
 | Organize | Left alone with reasons: downloading, recent, online-only, hidden, unknown | `TidyPageTests`, `TidySuggestionTests` |
 | Organize | Only loose top-level files; at most 500; safety check on every move | `TidySuggestionTests` |
 | Organize | Tidy button off and says nothing moves yet | `TidyPageTests` |
+| Organize | Ask AI: off until set up, preview before Send, cancel sends nothing, answer beside the button | `TidyAiPageTests`, `TidyAiTests` |
+| Organize | Only files DeskAI doesn't know, or every file rules don't place; rules still win | `TidyAiPageTests`, `TidyAiTests` |
+| Organize | AI isn't sure: own group, unticked; refused answers change nothing | `TidyAiPageTests`, `TidyAiTests` |
+| Organize | What AI may see: no names unless allowed, no locations, no file IDs, no left-alone or protected files; re-checked before Send | `TidyAiTests`, `PlanSafetyCheckTests`, `TidyAiServiceTests` |
 | Practice | Practice preview, select/clear, run, undo | `PracticePageTests` |
 | Practice | Get AI ideas (sends, shares only what was agreed, refusals) | `AiJourneyTests`, `SettingsPageTests` |
 | Search | Connect, refresh, disconnect, protected-folder refusal | `SearchPageTests` |

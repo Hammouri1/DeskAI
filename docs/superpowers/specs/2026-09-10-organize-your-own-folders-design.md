@@ -88,6 +88,12 @@ The flow:
   the option is shown disabled with "Turn on AI in Privacy and AI first". The person's rules
   still win over AI, because a rule is something they wrote on purpose.
 
+(Amended in step 2b, ADR 0020: AI is never asked by itself when the list loads. The switch
+decides which files may be asked about; an "Ask AI about N files" button opens a dialog showing
+exactly what the AI will see, and only Send sends. The V0.3 AI review requires a preview of
+the exact real request, and a request on page load has no moment for one. The two choices are
+worded on the page as "Only files DeskAI doesn't know" and "Every file my rules don't place".)
+
 AI suggestions DeskAI's AI is not sure about (confidence below a named threshold, initially
 0.7) are shown as "AI isn't sure" and start **unticked**. Percentages are never shown.
 

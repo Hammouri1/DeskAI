@@ -130,4 +130,22 @@ Store provider ID, endpoint (where allowed), model ID, capability cache, timeout
 - JSON output is versioned, byte/count bounded, duplicate-property checked, unknown-field rejecting, and limited to requested IDs and known categories.
 - Requests have a user-configurable timeout and daily cloud-request cap. There are no automatic retries or provider fallbacks.
 - Provider-reported token counts are displayed when available. DeskAI does not guess dollar cost; the user checks provider billing/pricing.
-- The Organize AI preview currently uses only six generated sample records and cannot modify the deterministic plan.
+- The practice page's AI ideas use only six generated sample records and cannot modify the plan.
+
+## V0.6 Step 2b: Your Own Folders
+
+- On "Tidy a folder", AI can suggest a category for files in a connected, tidy-permitted
+  folder: by default only files DeskAI cannot place by type, or, if chosen, every file the
+  person's rules do not place. Rules always win; left-alone files are never asked about.
+- `TidyAiService` prepares the request and the page shows it before anything is sent; only
+  Send sends that same request. Send re-checks tidy permission, the AI choice, its
+  destination, and the sharing choices, and refuses without sending if any changed.
+- From a real folder at most file type, size and date, and name can be sent
+  (`TidyAiService.RealFolderShareable`), each only if allowed. Full locations and folder names
+  are never sent. Each file carries a random per-request number, not DeskAI's file ID.
+- The answer goes through the same strict parser; the service checks again that every number
+  was one it sent. A category maps to a folder through `TidyFolderRecipe`, so AI never names a
+  folder. The AI's reason text is not displayed. Confidence below 0.7 shows as "AI isn't sure"
+  and starts unticked; no percentage is shown.
+- At most 100 files per request; one press is one request against the daily limit.
+- See ADR 0020 and `docs/security/2026-09-10-real-folder-ai-disclosure-review.md`.

@@ -214,10 +214,17 @@ Progress (build order from the design):
 - ✅ Step 2a, 2026-09-10: the separate tidy permission (ADR 0019), a scanner that notices
   hidden, system, and online-only files, the tidy suggestion engine, and the new "Tidy a
   folder" page. The Tidy button is shown switched off; nothing in a connected folder can move.
-- Next — step 2b: AI as a suggestion source on real folders ("DeskAI + my rules, AI for files
-  it does not know", or "Ask AI about every file"), with its own disclosure review.
-- Then step 3 (tidying for real), step 4 (undo after restart), step 5 (review from automatic
-  checks), step 6 (security review record).
+- ✅ Step 2b, 2026-09-10: AI as a suggestion source on your own folders (ADR 0020, disclosure
+  review `docs/security/2026-09-10-real-folder-ai-disclosure-review.md`). AI may be asked only
+  about files DeskAI cannot place, or about every file the person's rules do not place.
+  Nothing is sent until a dialog has shown exactly what the AI will see and the person pressed
+  Send. At most type, size and date, and name leave the computer, each only if allowed; never
+  locations, folder names, contents, or DeskAI's file IDs. AI names a category, DeskAI names
+  the folder. Nothing moves.
+- Next — step 3: tidying for real (executor for real folders, live checks, same-name choices,
+  busy and online-only handling, result line).
+- Then step 4 (undo after restart), step 5 (review from automatic checks), step 6 (security
+  review record).
 
 1. Design and security review before code: a separate "allow DeskAI to organize this folder"
    permission, how it is shown and withdrawn, what happens when a file changes between preview
@@ -234,8 +241,8 @@ Progress (build order from the design):
 5. Undo that survives closing and reopening DeskAI, refusing safely when a file has changed
    since it was moved.
 
-Out of scope here: deleting files, running rules without approval, and sending real file
-names to an AI provider (that needs its own disclosure review).
+Out of scope here: deleting files and running rules without approval. Sending real file
+information to AI was reviewed and built in step 2b, behind a preview of each request.
 
 Exit criteria: a person can connect a folder, allow organizing, approve a preview, see files
 move, and undo it after a restart; every refusal case is tested with generated temporary data;
