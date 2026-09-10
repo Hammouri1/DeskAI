@@ -80,26 +80,42 @@ public sealed partial class OrganizePage : Page
 
     private async void OnAllowTidyClick(object sender, RoutedEventArgs e)
     {
-        if (ViewModel.SelectedFolder is not { } folder)
+        if (ViewModel.SelectedFolder is { } folder && await ConfirmTidyPermissionAsync(folder))
         {
-            return;
+            await ViewModel.AllowTidyAsync();
         }
+    }
 
+    /// <summary>
+    /// Undo moves files too, so after the tidy permission was taken back it asks for it again,
+    /// with the same dialog, before trying once more.
+    /// </summary>
+    private async void OnUndoClick(object sender, RoutedEventArgs e)
+    {
+        var result = await ViewModel.UndoLastTidyAsync();
+        if (result is { NeedsPermission: true } &&
+            ViewModel.SelectedFolder is { } folder &&
+            await ConfirmTidyPermissionAsync(folder))
+        {
+            await ViewModel.AllowTidyAsync();
+            await ViewModel.UndoLastTidyAsync();
+        }
+    }
+
+    private async Task<bool> ConfirmTidyPermissionAsync(TidyFolderOption folder)
+    {
         var confirm = new ContentDialog
         {
             XamlRoot = XamlRoot,
             Title = $"Allow DeskAI to tidy {folder.Name}?",
             Content = $"{folder.Path}\n\nDeskAI may move loose files at the top of this folder into folders inside it.\n"
                 + "It never deletes anything, never touches files in subfolders, and never moves anything out of this folder.\n"
-                + "Nothing moves until you press Tidy.\n\nYou can take this back at any time.",
+                + "Nothing moves until you press Tidy or Undo.\n\nYou can take this back at any time.",
             PrimaryButtonText = "Allow tidying",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
         };
-        if (await confirm.ShowAsync() == ContentDialogResult.Primary)
-        {
-            await ViewModel.AllowTidyAsync();
-        }
+        return await confirm.ShowAsync() == ContentDialogResult.Primary;
     }
 
     /// <summary>

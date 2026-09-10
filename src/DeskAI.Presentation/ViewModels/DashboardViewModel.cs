@@ -424,12 +424,13 @@ public sealed class DashboardViewModel(
         HeroTitle = $"{DescribeSize(summary.TotalSizeBytes)} across {summary.TotalFiles:N0} files";
         // Not "it has not opened any of them": that reassurance would expire silently the
         // moment someone allowed reading inside a folder, and this page cannot see that.
-        // Nor "without showing you first": no connected folder can be changed at all yet,
-        // and wording that implies a preview-and-approve path would promise one that does
-        // not exist. Revisit when organizing connected folders ships (roadmap V0.6).
+        // Since V0.6 step 3 a folder someone allowed DeskAI to tidy can change, so the old
+        // "cannot move anything" became untrue and was replaced by the narrower promise that
+        // still holds: only in such a folder, only when Tidy is pressed, and never a delete.
         HeroMessage =
             "DeskAI remembers names, sizes, and dates for these files. It opens a file only if you "
-            + "allowed that for its folder, and it cannot move, rename, or delete anything in them.";
+            + "allowed that for its folder. It moves files only in a folder you allowed it to tidy, "
+            + "only when you press Tidy, and it never deletes anything.";
 
         TotalSize = DescribeSize(summary.TotalSizeBytes);
 

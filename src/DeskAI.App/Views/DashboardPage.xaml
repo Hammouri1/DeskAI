@@ -288,7 +288,7 @@
                                            Text="Look inside a folder, safely" />
                                 <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="600"
                                            HorizontalAlignment="Left"
-                                           Text="Connect a folder for a read-only preview. DeskAI lists names, sizes, and dates. It cannot move, rename, delete, or open what is inside." />
+                                           Text="Connect a folder for a read-only preview. DeskAI lists names, sizes, and dates. Connecting never lets it move, rename, delete, or open what is inside." />
                             </StackPanel>
                         </Grid>
 

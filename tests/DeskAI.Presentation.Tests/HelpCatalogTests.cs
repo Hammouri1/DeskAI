@@ -72,6 +72,7 @@ public sealed class HelpCatalogTests
     [InlineData("organize.suggestions")]
     [InlineData("organize.leftAlone")]
     [InlineData("organize.askAi")]
+    [InlineData("organize.undo")]
     [InlineData("search.searching")]
     [InlineData("search.connect")]
     [InlineData("search.readInside")]
@@ -95,8 +96,12 @@ public sealed class HelpCatalogTests
     public void An_unknown_topic_is_not_found() =>
         Assert.Null(HelpCatalog.Find("no.such.topic"));
 
+    /// <summary>
+    /// Files in a connected folder move only when the person presses Tidy, so no help text may
+    /// read as DeskAI tidying or moving someone's files for them.
+    /// </summary>
     [Fact]
-    public void No_help_text_suggests_a_connected_folder_can_be_changed()
+    public void No_help_text_says_DeskAI_changes_your_files_for_you()
     {
         foreach (var topic in HelpCatalog.All)
         {

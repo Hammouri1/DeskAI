@@ -58,7 +58,7 @@ public sealed class TidyPageTests
     }
 
     [Fact]
-    public async Task The_Tidy_button_is_off_in_this_version_and_says_so()
+    public async Task The_Tidy_button_is_on_only_while_something_is_ticked_and_says_it_can_be_undone()
     {
         await using var app = await TestApp.StartAsync();
         var folder = app.MakeFolder("Downloads", "invoice.pdf");
@@ -67,8 +67,13 @@ public sealed class TidyPageTests
         await page.ConnectAndSelectAsync(folder);
         await page.AllowTidyAsync();
 
+        Assert.True(page.CanPressTidy);
+        Assert.Equal("Nothing moves until you press it. You can undo it.", page.TidyNote);
+
+        page.Groups.Single().IsIncluded = false;
+
         Assert.False(page.CanPressTidy);
-        Assert.Contains("Nothing moves yet", page.TidyNote, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(folder, "invoice.pdf")));
     }
 
     [Fact]

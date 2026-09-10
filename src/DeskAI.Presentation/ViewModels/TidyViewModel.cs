@@ -153,9 +153,10 @@ public sealed class TidyGroupViewModel : ObservableObject
 /// Drives the Organize page: pick a folder, allow tidying, and see what tidying would do.
 /// </summary>
 /// <remarks>
-/// In this version the page stops at the list. The Tidy button is shown switched off with a
-/// note saying so, because a button that looked ready and did nothing would be worse than an
-/// honest "not yet". Nothing on this page can move a file.
+/// Pressing Tidy moves exactly the ticked files, each checked again right before it moves,
+/// and the result says what happened, including every file that stayed and why. Undo is offered
+/// for that tidy and, like tidying, needs the folder's tidy permission. Nothing else on this
+/// page changes a file; asking AI only adds suggestions.
 /// </remarks>
 public sealed class TidyViewModel : ObservableObject, IDisposable
 {
@@ -163,6 +164,7 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     private readonly TidyPermissionService _permission;
     private readonly TidySuggestionService _suggestions;
     private readonly TidyAiService _ai;
+    private readonly TidyRunService _run;
     private readonly Dictionary<Guid, SameNameChoice> _choices = [];
 
     // What AI said, by file. Kept across reloads of the list so ticking "Keep both" or looking
@@ -184,17 +186,26 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     private bool _isAskingAi;
     private string _aiMessage = string.Empty;
     private CancellationTokenSource? _aiCancellation;
+    private TidyRunResult? _lastRun;
+    private Guid? _lastRunFolderId;
+    private bool _isTidying;
+    private string _resultSummary = string.Empty;
+    private string _undoSummary = string.Empty;
 
     public TidyViewModel(
         ConnectedFolderService folders,
         TidyPermissionService permission,
         TidySuggestionService suggestions,
-        TidyAiService ai)
+        TidyAiService ai,
+        TidyRunService run)
     {
         _folders = folders;
         _permission = permission;
         _suggestions = suggestions;
         _ai = ai;
+        _run = run;
+        TidyCommand = new AsyncRelayCommand(TidyAsync, () => CanPressTidy);
+        UndoCommand = new AsyncRelayCommand(() => UndoLastTidyAsync(), () => CanUndo && !IsTidying);
         StopTidyingCommand = new AsyncRelayCommand(StopTidyingAsync, () => SelectedFolder?.CanTidy == true && !IsBusy);
         RefreshCommand = new AsyncRelayCommand(() => _pending = LoadAsync(), () => SelectedFolder is not null && !IsBusy);
         StopAiCommand = new RelayCommand(() => _aiCancellation?.Cancel(), () => IsAskingAi);
@@ -207,6 +218,11 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     public AsyncRelayCommand StopTidyingCommand { get; }
     public AsyncRelayCommand RefreshCommand { get; }
     public RelayCommand StopAiCommand { get; }
+    public AsyncRelayCommand TidyCommand { get; }
+    public AsyncRelayCommand UndoCommand { get; }
+
+    /// <summary>Files the last tidy or undo did not move, each with its reason.</summary>
+    public ObservableCollection<TidyLeftAloneViewModel> ResultSkipped { get; } = [];
 
     /// <summary>
     /// 0 for "DeskAI and my rules", 1 for "Ask AI about every file". Choosing 1 is ignored
@@ -305,6 +321,13 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         {
             if (SetProperty(ref _selectedFolder, value))
             {
+                // The last result belongs to its folder. Re-selecting the same folder, as
+                // allowing tidying again does, keeps it so Undo stays one press away.
+                if (value?.Id != _lastRunFolderId)
+                {
+                    ClearResult();
+                }
+
                 _choices.Clear();
                 _aiAdvice.Clear();
                 AiMessage = string.Empty;
@@ -329,14 +352,60 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     public int IncludedCount => Groups.Sum(group => group.IncludedCount);
     public string TidyButtonText => IncludedCount == 1 ? "Tidy 1 file" : $"Tidy {IncludedCount} files";
 
-    /// <summary>Always false in this version: tidying itself arrives in the next update.</summary>
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static",
-        Justification = "Bound by the page like every other property; it becomes state when tidying ships.")]
-    public bool CanPressTidy => false;
+    /// <summary>Ticked files, a folder that may be tidied, and nothing else running.</summary>
+    public bool CanPressTidy =>
+        IncludedCount > 0 && _preview is { CanTidy: true } && SelectedFolder?.CanTidy == true && !IsBusy && !IsTidying && !IsAskingAi;
 
     [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static",
-        Justification = "Bound by the page like every other property; it changes when tidying ships.")]
-    public string TidyNote => "Tidying arrives in the next update. Nothing moves yet — this is what it would do.";
+        Justification = "Bound by the page like every other property.")]
+    public string TidyNote => "Nothing moves until you press it. You can undo it.";
+
+    public bool IsTidying
+    {
+        get => _isTidying;
+        private set
+        {
+            if (SetProperty(ref _isTidying, value))
+            {
+                OnPropertyChanged(nameof(CanPressTidy));
+                TidyCommand.NotifyCanExecuteChanged();
+                UndoCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    /// <summary>What the last press of Tidy did, in one line.</summary>
+    public string ResultSummary
+    {
+        get => _resultSummary;
+        private set
+        {
+            if (SetProperty(ref _resultSummary, value))
+            {
+                OnPropertyChanged(nameof(HasResult));
+            }
+        }
+    }
+
+    public bool HasResult => !string.IsNullOrEmpty(ResultSummary);
+    public bool HasResultSkipped => ResultSkipped.Count > 0;
+
+    /// <summary>The answer to pressing Undo, shown under the Undo button.</summary>
+    public string UndoSummary
+    {
+        get => _undoSummary;
+        private set
+        {
+            if (SetProperty(ref _undoSummary, value))
+            {
+                OnPropertyChanged(nameof(HasUndoSummary));
+            }
+        }
+    }
+
+    public bool HasUndoSummary => !string.IsNullOrEmpty(UndoSummary);
+
+    public bool CanUndo => _lastRun?.CanUndo == true;
 
     public bool IsBusy
     {
@@ -553,6 +622,115 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         await _pending.ConfigureAwait(true);
     }
 
+    /// <summary>
+    /// Moves exactly the ticked files. Each is checked again right before it moves; any that
+    /// are not safe to move stay where they are and are listed with the reason.
+    /// </summary>
+    private async Task TidyAsync()
+    {
+        if (!CanPressTidy || _preview is not { } preview || SelectedFolder is not { } folder)
+        {
+            return;
+        }
+
+        var ticked = Groups
+            .SelectMany(group => group.Items)
+            .Where(item => item.IsIncluded && item.MoveOperationId is not null)
+            .Select(item => item.MoveOperationId!.Value)
+            .ToArray();
+        IsTidying = true;
+        ClearResult();
+        try
+        {
+            var result = await _run.TidyAsync(preview, ticked).ConfigureAwait(true);
+            _lastRun = result;
+            _lastRunFolderId = folder.Id;
+            foreach (var skipped in result.Skipped)
+            {
+                ResultSkipped.Add(new TidyLeftAloneViewModel(skipped.FileName, skipped.Reason));
+            }
+
+            ResultSummary = result.Summary;
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            ResultSummary = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            IsTidying = false;
+            RaiseResultChanges();
+        }
+
+        // Moved files now sit in folders, so the list is worked out again from the disk.
+        _choices.Clear();
+        _pending = LoadAsync();
+        await _pending.ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Puts back what the last tidy moved. Returns the result so the page can ask to allow
+    /// tidying again when undo was refused for want of that permission.
+    /// </summary>
+    public async Task<TidyUndoResult?> UndoLastTidyAsync()
+    {
+        if (_lastRun is not { TransactionId: { } transactionId } run || _lastRunFolderId is not { } folderId || IsTidying)
+        {
+            return null;
+        }
+
+        IsTidying = true;
+        UndoSummary = string.Empty;
+        TidyUndoResult result;
+        try
+        {
+            result = await _run.UndoAsync(folderId, transactionId, run.MovedFiles).ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            result = new TidyUndoResult(false, false, 0, [], $"DeskAI stopped safely: {exception.Message}");
+        }
+        finally
+        {
+            IsTidying = false;
+        }
+
+        UndoSummary = result.Summary;
+        if (result.Finished)
+        {
+            // An undo is done once; the Undo button goes away and what stayed is listed.
+            _lastRun = null;
+            ResultSkipped.Clear();
+            foreach (var item in result.NotRestored)
+            {
+                ResultSkipped.Add(new TidyLeftAloneViewModel(item.FileName, item.Reason));
+            }
+
+            RaiseResultChanges();
+            _pending = LoadAsync();
+            await _pending.ConfigureAwait(true);
+        }
+
+        return result;
+    }
+
+    private void ClearResult()
+    {
+        _lastRun = null;
+        _lastRunFolderId = null;
+        ResultSkipped.Clear();
+        ResultSummary = string.Empty;
+        UndoSummary = string.Empty;
+        RaiseResultChanges();
+    }
+
+    private void RaiseResultChanges()
+    {
+        OnPropertyChanged(nameof(HasResultSkipped));
+        OnPropertyChanged(nameof(CanUndo));
+        UndoCommand.NotifyCanExecuteChanged();
+    }
+
     private async Task LoadAsync()
     {
         Groups.Clear();
@@ -655,6 +833,8 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
 
         OnPropertyChanged(nameof(IncludedCount));
         OnPropertyChanged(nameof(TidyButtonText));
+        OnPropertyChanged(nameof(CanPressTidy));
+        TidyCommand.NotifyCanExecuteChanged();
     }
 
     /// <summary>Changing a same-name choice changes the plan, so the list is worked out again.</summary>
@@ -686,7 +866,10 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(AskAiPrompt));
         OnPropertyChanged(nameof(AiSharingNote));
         StopAiCommand.NotifyCanExecuteChanged();
+        OnPropertyChanged(nameof(CanPressTidy));
+        TidyCommand.NotifyCanExecuteChanged();
     }
+
     /// <summary>Leaving the page stops a request that is still waiting for an answer.</summary>
     public void Dispose()
     {

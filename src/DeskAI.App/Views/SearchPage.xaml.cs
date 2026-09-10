@@ -124,7 +124,7 @@ public sealed partial class SearchPage : Page
             Title = "Let DeskAI search this folder?",
             Content = $"{path}\n\nDeskAI will remember file names, sizes, and dates so you can search them. "
                 + "It will not read what is inside your files unless you allow that separately afterwards, "
-                + "and it cannot move, rename, or delete anything.\n\n"
+                + "and connecting never lets it move, rename, or delete anything. Tidying is a separate yes you give on Organize.\n\n"
                 + "You can disconnect this folder at any time, which immediately forgets everything remembered about it.",
             PrimaryButtonText = "Connect folder",
             CloseButtonText = "Cancel",
@@ -176,7 +176,7 @@ public sealed partial class SearchPage : Page
                 + "DeskAI will open plain text files here — notes, lists, and settings files — and read the "
                 + "beginning of each one, so you can search for words written inside them.\n\n"
                 + "It will not open PDFs, Word documents, spreadsheets, photos, or programs.\n"
-                + "It still cannot move, rename, or delete anything.\n"
+                + "Reading inside never lets it move, rename, or delete anything.\n"
                 + "What it reads is never saved and never sent anywhere.\n\n"
                 + "You can turn this off at any time.",
             PrimaryButtonText = "Allow reading",

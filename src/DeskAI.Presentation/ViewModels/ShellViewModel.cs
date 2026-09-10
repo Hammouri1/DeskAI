@@ -191,5 +191,15 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
             ? $"DeskAI remembers names, sizes, and dates for {files} file(s). It has not opened any of them."
             : $"DeskAI remembers names, sizes, and dates for {files} file(s). You have let it read inside "
                 + (reading == 1 ? "1 folder." : $"{reading} folders.");
+
+        // Moving files is the permission that matters most, so it is counted here too rather
+        // than being visible only on the page where it was given.
+        var tidying = connected.Count(folder => folder.CanTidy);
+        if (tidying > 0)
+        {
+            ScopeMessage += tidying == 1
+                ? " You have let it tidy 1 folder when you press Tidy."
+                : $" You have let it tidy {tidying} folders when you press Tidy.";
+        }
     }
 }

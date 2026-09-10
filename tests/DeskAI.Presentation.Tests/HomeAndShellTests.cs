@@ -47,7 +47,7 @@ public sealed class HomeAndShellTests
     }
 
     [Fact]
-    public async Task Home_never_suggests_a_connected_folder_can_be_changed()
+    public async Task Home_says_files_move_only_where_tidying_is_allowed_and_only_when_you_press_Tidy()
     {
         await using var app = await TestApp.StartAsync();
         await ConnectAsync(app, app.MakeFolder("Coursework", "notes.txt"));
@@ -56,7 +56,10 @@ public sealed class HomeAndShellTests
         await home.InitializeAsync();
 
         Assert.DoesNotContain("without showing you first", home.HeroMessage, StringComparison.Ordinal);
-        Assert.Contains("cannot move, rename, or delete", home.HeroMessage, StringComparison.Ordinal);
+        Assert.DoesNotContain("cannot move", home.HeroMessage, StringComparison.Ordinal);
+        Assert.Contains("only in a folder you allowed it to tidy", home.HeroMessage, StringComparison.Ordinal);
+        Assert.Contains("only when you press Tidy", home.HeroMessage, StringComparison.Ordinal);
+        Assert.Contains("never deletes anything", home.HeroMessage, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -111,6 +114,21 @@ public sealed class HomeAndShellTests
         await search.SetContentPermissionAsync(Assert.Single(search.Folders).Id, allow: true);
         await shell.RefreshAsync();
         Assert.Contains("let it read inside 1 folder", shell.ScopeMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task The_side_menu_says_which_folders_DeskAI_may_tidy_and_stops_when_that_is_taken_back()
+    {
+        await using var app = await TestApp.StartAsync();
+        var rootId = await TidySuggestionTests.ConnectAndAllowAsync(app, app.MakeFolder("Downloads", "invoice.pdf"));
+        var shell = app.Get<ShellViewModel>();
+
+        await shell.RefreshAsync();
+        Assert.Contains("let it tidy 1 folder when you press Tidy", shell.ScopeMessage, StringComparison.Ordinal);
+
+        await app.Get<DeskAI.Core.Tidy.TidyPermissionService>().StopAsync(rootId, TestContext.Current.CancellationToken);
+        await shell.RefreshAsync();
+        Assert.DoesNotContain("tidy", shell.ScopeMessage, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]

@@ -45,7 +45,7 @@ public static class HelpCatalog
         new("organize.tidy", "Tidying a folder",
             "A way to sort the loose files in one of your folders into neat folders inside it.",
             "Pick a folder and DeskAI suggests where each loose file belongs, like PDFs into Documents. Untick anything you want to keep where it is.",
-            "Nothing moves yet in this version. It will never delete anything or move files out of the folder you picked."),
+            "Nothing moves until you press Tidy, and you can undo it. It never deletes anything or moves files out of the folder you picked."),
         new("organize.permission", "Permission to tidy",
             "Your yes, for one folder, that DeskAI may tidy it.",
             "Without it, DeskAI can only look. You can take it back at any time, and the folder stays connected for searching.",
@@ -58,6 +58,10 @@ public static class HelpCatalog
             "A way to get ideas from the AI you set up about where some files belong.",
             "Before anything is sent, DeskAI shows exactly what the AI would see, such as file types, and you press Send. Ideas the AI is unsure about start unticked.",
             "It never sends what is inside your files or where they are, and AI never moves anything or picks a folder outside this one."),
+        new("organize.undo", "Undo",
+            "A way to put back the files your last tidy moved.",
+            "Each file goes back only if it has not changed since and its old spot is free. Folders DeskAI made are removed once they are empty.",
+            "It never replaces a file, and never removes a folder you had before or one with anything in it."),
         new("organize.leftAlone", "Left alone",
             "Files DeskAI decided not to touch, each with its reason.",
             "For example files still downloading, changed in the last few minutes, stored online only, hidden, or of a kind DeskAI does not know.",
@@ -128,7 +132,7 @@ public static class HelpCatalog
             "DeskAI never retries by itself, so it cannot use up requests without you."),
         new("shell.scope", "What DeskAI can see",
             "A reminder of which of your folders DeskAI is allowed to look at right now.",
-            "It counts the folders you connected and the files DeskAI remembers, and says if you let it read inside any of them.",
+            "It counts the folders you connected and the files DeskAI remembers, and says if you let it read inside or tidy any of them.",
             "DeskAI never looks anywhere you have not chosen."),
     ];
 

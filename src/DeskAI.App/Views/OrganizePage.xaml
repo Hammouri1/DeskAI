@@ -245,11 +245,51 @@
                         <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="420" HorizontalAlignment="Left"
                                    Text="{x:Bind ViewModel.TidyNote}" />
                     </StackPanel>
-                    <Button Grid.Column="2" VerticalAlignment="Center" MinWidth="150"
-                            Style="{StaticResource AccentButtonStyle}"
-                            Content="{x:Bind ViewModel.TidyButtonText, Mode=OneWay}"
-                            IsEnabled="{x:Bind ViewModel.CanPressTidy}" />
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                        <ProgressRing Width="18" Height="18" IsActive="{x:Bind ViewModel.IsTidying, Mode=OneWay}" />
+                        <Button MinWidth="150"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Content="{x:Bind ViewModel.TidyButtonText, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.TidyCommand}" />
+                    </StackPanel>
                 </Grid>
+            </Border>
+
+            <!--
+                What pressing Tidy did, right under the button. Never a plain "done" when anything
+                stayed behind: each file that stayed is listed with its reason. Undo is here too.
+            -->
+            <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasResult, Mode=OneWay}">
+                <StackPanel Spacing="10" MaxWidth="640" HorizontalAlignment="Left">
+                    <TextBlock FontWeight="SemiBold" TextWrapping="Wrap"
+                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Text="{x:Bind ViewModel.ResultSummary, Mode=OneWay}" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.ResultSkipped}"
+                                  AutomationProperties.Name="Files that stayed where they were"
+                                  Visibility="{x:Bind ViewModel.HasResultSkipped, Mode=OneWay}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:TidyLeftAloneViewModel">
+                                <StackPanel Spacing="2" Margin="0,0,0,8">
+                                    <TextBlock FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                               Text="{x:Bind FileName}" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}"
+                                               Foreground="{ThemeResource DeskCautionBrush}"
+                                               Text="{x:Bind Reason}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Undo" Click="OnUndoClick"
+                                Visibility="{x:Bind ViewModel.CanUndo, Mode=OneWay}" />
+                        <controls:HelpButton Topic="organize.undo" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Visibility="{x:Bind ViewModel.HasUndoSummary, Mode=OneWay}"
+                               Text="{x:Bind ViewModel.UndoSummary, Mode=OneWay}" />
+                </StackPanel>
             </Border>
 
             <StackPanel Orientation="Horizontal" Spacing="8">
