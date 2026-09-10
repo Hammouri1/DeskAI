@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:viewmodels="using:DeskAI.App.ViewModels"
+    xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
         <StackPanel Margin="32,28,32,44" MaxWidth="920" HorizontalAlignment="Left" Spacing="24">
@@ -73,7 +74,10 @@
                 other reading here it describes and never proposes.
             -->
             <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasHealth, Mode=OneWay}">
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="How organized this looks" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="How organized this looks" />
+                    <controls:HelpButton Topic="home.health" />
+                </StackPanel>
 
                 <Border Style="{StaticResource CardStyle}">
                     <StackPanel Spacing="18">
@@ -146,7 +150,10 @@
                 button here, because any cleanup still has to go through preview and approval.
             -->
             <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasStorage, Mode=OneWay}">
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Where your space is going" />
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Where your space is going" />
+                    <controls:HelpButton Topic="home.storage" />
+                </StackPanel>
 
                 <Border Style="{StaticResource CardStyle}">
                     <StackPanel Spacing="12">
@@ -188,7 +195,10 @@
             -->
             <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasDuplicates, Mode=OneWay}">
                 <StackPanel Spacing="4">
-                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Possible duplicates" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Possible duplicates" />
+                        <controls:HelpButton Topic="home.duplicates" />
+                    </StackPanel>
                     <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
                                HorizontalAlignment="Left"
                                Text="{x:Bind ViewModel.DuplicateDetail, Mode=OneWay}" />

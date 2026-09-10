@@ -4,12 +4,16 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:viewmodels="using:DeskAI.App.ViewModels"
+    xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
         <StackPanel Margin="32,28,32,44" MaxWidth="920" HorizontalAlignment="Left" Spacing="24">
 
             <StackPanel Spacing="8" MaxWidth="640" HorizontalAlignment="Left">
-                <TextBlock Style="{StaticResource PageTitleStyle}" Text="Search" />
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <TextBlock Style="{StaticResource PageTitleStyle}" Text="Search" />
+                    <controls:HelpButton Topic="search.searching" />
+                </StackPanel>
                 <TextBlock Style="{StaticResource BodySecondaryStyle}"
                            Text="Find files by name, type, size, or date. Searching never moves, renames, or opens anything." />
             </StackPanel>
@@ -92,7 +96,10 @@
                     Visibility="{x:Bind ViewModel.HasSavedSearches, Mode=OneWay}">
                 <StackPanel Spacing="12">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Saved searches" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Saved searches" />
+                            <controls:HelpButton Topic="search.saved" />
+                        </StackPanel>
                         <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="600"
                                    HorizontalAlignment="Left"
                                    Text="These are searches, not folders. Running one looks again in whatever folders are connected at the time. Nothing is moved or changed." />
@@ -162,7 +169,10 @@
             -->
             <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.ShowsInsideFiles, Mode=OneWay}">
                 <StackPanel Spacing="4">
-                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Found inside your files" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Found inside your files" />
+                        <controls:HelpButton Topic="search.readInside" />
+                    </StackPanel>
                     <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="620"
                                HorizontalAlignment="Left"
                                Text="{x:Bind ViewModel.InsideMessage, Mode=OneWay}" />
@@ -199,8 +209,11 @@
                 <StackPanel Spacing="14">
                     <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
                         <StackPanel Spacing="4">
-                            <TextBlock Style="{StaticResource SectionTitleStyle}"
-                                       Text="Folders DeskAI can search" />
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Style="{StaticResource SectionTitleStyle}"
+                                           Text="Folders DeskAI can search" />
+                                <controls:HelpButton Topic="search.connect" />
+                            </StackPanel>
                             <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="560"
                                        HorizontalAlignment="Left"
                                        Text="{x:Bind ViewModel.FolderMessage, Mode=OneWay}" />
@@ -260,9 +273,12 @@
 
             <Border Style="{StaticResource SoftCardStyle}">
                 <StackPanel Spacing="10">
-                    <TextBlock FontWeight="SemiBold" FontSize="13"
-                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                               Text="What search can and cannot do" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                   Text="What search can and cannot do" />
+                        <controls:HelpButton Topic="search.readInside" />
+                    </StackPanel>
                     <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
                                HorizontalAlignment="Left"
                                Text="It looks only inside folders you connected. Normally it uses just the names, sizes, and dates it remembered. If you allow it for a folder, it can also read the beginning of plain text files there to find words written inside — never PDFs, photos, or programs, and nothing it reads is saved or sent anywhere. Disconnecting a folder immediately forgets everything remembered about it." />

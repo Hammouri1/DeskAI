@@ -84,6 +84,22 @@ Avoid vague text such as “The AI has access,” “Everything is safe,” or �
 
 Status colors always pair with icons and text: Allowed, Needs review, Conflict, Blocked. Color alone must not communicate meaning.
 
+## Help Pop-ups
+
+A small round "?" sits right after the title of each feature. Pressing it opens a pop-up with
+three parts, always in this order: **What it is** (one sentence), **What it does** (one or two
+sentences with an example), and **What it never does** (the safety promise). Only the last
+part carries the accent colour and the green left rail, because it is the one line that is a
+safety promise; the "?" button itself is neutral, since asking what something is confirms
+nothing.
+
+All text lives in `HelpCatalog` (`DeskAI.Presentation/Help`), never in a page. Tests hold it to
+20 / 40 / 25 words per part, ban technical words (metadata, endpoint, provider, schema,
+SQLite, deterministic, authorization, telemetry, and similar), and scan the page files so every
+"?" points at a real topic and every topic is placed. Help text describes current behaviour
+and changes in the same commit as the feature it explains. The button is named "Help: <title>"
+for screen readers and has the tooltip "What is this?".
+
 ## Privacy Dashboard
 
 Make active state glanceable:

@@ -4,6 +4,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:viewmodels="using:DeskAI.App.ViewModels"
+    xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
         <StackPanel Margin="32,24,32,40" MaxWidth="880" HorizontalAlignment="Left" Spacing="24">
@@ -47,13 +48,16 @@
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="14">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Checking for you" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Checking for you" />
+                            <controls:HelpButton Topic="automation.checking" />
+                        </StackPanel>
                         <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
                                    HorizontalAlignment="Left"
                                    Text="{x:Bind ViewModel.AutomaticCheckSummary, Mode=OneWay}" />
                     </StackPanel>
 
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16" VerticalAlignment="Center">
+                    <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="16" VerticalAlignment="Center">
                         <ComboBox Header="How often"
                                   MinWidth="200"
                                   ItemsSource="{x:Bind ViewModel.FrequencyOptions}"
@@ -62,21 +66,30 @@
                         <Button Grid.Column="1" VerticalAlignment="Bottom"
                                 Content="Check now"
                                 Command="{x:Bind ViewModel.CheckNowCommand}" />
+                        <controls:HelpButton Grid.Column="2" VerticalAlignment="Bottom" Margin="0,0,0,4"
+                                             HorizontalAlignment="Left"
+                                             Topic="automation.frequency" />
                     </Grid>
 
                     <TextBlock Style="{StaticResource CaptionStyle}"
                                Text="{x:Bind ViewModel.LastCheckedDescription, Mode=OneWay}" />
 
-                    <ToggleSwitch Header="Pause all automatic checks"
-                                  OnContent="Paused" OffContent="Running"
-                                  IsOn="{x:Bind ViewModel.IsPaused, Mode=TwoWay}"
-                                  AutomationProperties.Name="Pause all automatic checks" />
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <ToggleSwitch Header="Pause all automatic checks"
+                                      OnContent="Paused" OffContent="Running"
+                                      IsOn="{x:Bind ViewModel.IsPaused, Mode=TwoWay}"
+                                      AutomationProperties.Name="Pause all automatic checks" />
+                        <controls:HelpButton VerticalAlignment="Top" Topic="automation.pause" />
+                    </StackPanel>
 
                     <StackPanel Spacing="4">
-                        <ToggleSwitch Header="Tell me with a Windows notification"
-                                      OnContent="On" OffContent="Off"
-                                      IsOn="{x:Bind ViewModel.NotifyWhenSomethingIsFound, Mode=TwoWay}"
-                                      AutomationProperties.Name="Show a Windows notification when something is found" />
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <ToggleSwitch Header="Tell me with a Windows notification"
+                                          OnContent="On" OffContent="Off"
+                                          IsOn="{x:Bind ViewModel.NotifyWhenSomethingIsFound, Mode=TwoWay}"
+                                          AutomationProperties.Name="Show a Windows notification when something is found" />
+                            <controls:HelpButton VerticalAlignment="Top" Topic="automation.notifications" />
+                        </StackPanel>
                         <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="560"
                                    TextWrapping="Wrap"
                                    HorizontalAlignment="Left"
@@ -139,9 +152,12 @@
             </Border>
 
             <StackPanel Spacing="12">
-                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                     <StackPanel Spacing="4">
-                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Your rules" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Your rules" />
+                            <controls:HelpButton Topic="automation.rules" />
+                        </StackPanel>
                         <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="560"
                                    HorizontalAlignment="Left"
                                    Text="{x:Bind ViewModel.Message, Mode=OneWay}" />
@@ -150,6 +166,8 @@
                             Style="{StaticResource AccentButtonStyle}"
                             Content="Try a practice run"
                             Command="{x:Bind ViewModel.PractiseCommand}" />
+                    <controls:HelpButton Grid.Column="2" VerticalAlignment="Top" Margin="0,4,0,0"
+                                         Topic="automation.practice" />
                 </Grid>
 
                 <ProgressBar IsIndeterminate="True" Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />
@@ -269,8 +287,11 @@
                                  PlaceholderText="move invoices to Documents"
                                  MaxLength="256"
                                  Text="{x:Bind ViewModel.Sentence, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
-                        <Button Content="Read my sentence" HorizontalAlignment="Left"
-                                Command="{x:Bind ViewModel.DraftFromSentenceCommand}" />
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Button Content="Read my sentence"
+                                    Command="{x:Bind ViewModel.DraftFromSentenceCommand}" />
+                            <controls:HelpButton Topic="automation.sentence" />
+                        </StackPanel>
 
                         <Border Height="1" Margin="0,4" Background="{ThemeResource DeskLineBrush}" />
 

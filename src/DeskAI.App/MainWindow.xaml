@@ -1,7 +1,8 @@
 <Window
     x:Class="DeskAI.App.MainWindow"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:DeskAI.App.Controls">
     <Window.SystemBackdrop>
         <MicaBackdrop />
     </Window.SystemBackdrop>
@@ -45,7 +46,9 @@
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <FontIcon FontSize="14" Glyph="&#xE72E;"
                                   Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
-                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="{Binding ScopeTitle}" />
+                        <TextBlock FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                                   Text="{Binding ScopeTitle}" />
+                        <controls:HelpButton Topic="shell.scope" />
                     </StackPanel>
                     <TextBlock FontSize="11" TextWrapping="Wrap"
                                Foreground="{ThemeResource TextFillColorSecondaryBrush}"

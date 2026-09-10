@@ -251,4 +251,66 @@
         <Setter Property="Foreground" Value="{ThemeResource DeskTextTertiaryBrush}" />
     </Style>
 
+    <!--
+        The "?" button. Neutral on purpose: asking what something is confirms nothing, so it
+        must not wear the accent that means "safe". Small and round so it reads as a hint
+        attached to a title rather than a control that does something.
+    -->
+    <Style x:Key="HelpButtonStyle" TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="Width" Value="24" />
+        <Setter Property="Height" Value="24" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="MinHeight" Value="0" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{ThemeResource DeskLineStrongBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{ThemeResource DeskTextSecondaryBrush}" />
+    </Style>
+
+    <!--
+        The pop-up. Three labelled parts, always in the same order, so after reading one a
+        person knows where to look in every other. Only the last part carries the accent and
+        the same left rail the status readouts use, because it is the one line that is a
+        safety promise, and it is what a cautious person is actually looking for.
+    -->
+    <DataTemplate x:Key="HelpTopicTemplate">
+        <StackPanel MaxWidth="320" Spacing="12">
+            <TextBlock FontFamily="Segoe UI Variable Display" FontSize="16" FontWeight="SemiBold"
+                       TextWrapping="Wrap"
+                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                       Text="{Binding Title}" />
+            <StackPanel Spacing="2">
+                <TextBlock Style="{StaticResource CaptionStyle}" Text="What it is" />
+                <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                           Text="{Binding WhatItIs}" />
+            </StackPanel>
+            <StackPanel Spacing="2">
+                <TextBlock Style="{StaticResource CaptionStyle}" Text="What it does" />
+                <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                           Text="{Binding WhatItDoes}" />
+            </StackPanel>
+            <Border Padding="12,9" CornerRadius="0,4,4,0" BorderThickness="3,0,0,0"
+                    Background="{ThemeResource DeskAccentSoftBrush}"
+                    BorderBrush="{ThemeResource DeskAccentBrush}">
+                <StackPanel Spacing="3">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon FontSize="12" Glyph="&#xE72E;"
+                                  Foreground="{ThemeResource DeskAccentBrush}" />
+                        <TextBlock FontSize="12" FontWeight="SemiBold"
+                                   Foreground="{ThemeResource DeskAccentBrush}"
+                                   Text="What it never does" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Text="{Binding WhatItNeverDoes}" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </DataTemplate>
+
 </ResourceDictionary>

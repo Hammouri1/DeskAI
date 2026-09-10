@@ -350,3 +350,23 @@ by unit tests. Use a temporary folder with generated files — never a personal 
     "First check after DeskAI was closed or paused" and that only **one** catch-up check
     appears, not one per missed period.
 12. Press **Clear this history** and confirm the list empties and the button disappears.
+
+## Help pop-ups (V0.6 step 1, added 2026-09-10)
+
+1. On every page, find the small round **?** buttons: Home (score, space, possible
+   duplicates — these appear once a folder is connected), Organize (Practice mode), Search
+   (title, saved searches, folders, what search can do, found inside files), Automatic tasks
+   (checking for you, how often, pause, notifications, your rules, practice run, read my
+   sentence), Privacy and AI (what online AI may see, choose how AI works, daily limit under
+   More options, where your key is kept), and the reminder at the bottom of the side menu.
+2. Press each one. Expected: a pop-up with the title, "What it is", "What it does", and a
+   green-edged "What it never does". It should read as plain, friendly English with no
+   technical words.
+3. Press **Esc** or click elsewhere. Expected: the pop-up closes.
+4. Use **Tab** to reach a "?" and press **Enter** or **Space**. Expected: it opens.
+5. Hover a "?". Expected: the tooltip "What is this?".
+6. With Narrator on, focus a "?". Expected: it reads "Help:" followed by the feature name.
+7. Switch Windows between dark and light mode (and high contrast if you can). Expected: the
+   pop-up stays readable in each.
+8. Nothing in any pop-up should be untrue about what DeskAI can do today. Report any sentence
+   that promises more than the app does.

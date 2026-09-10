@@ -129,6 +129,7 @@ changes a feature.
 | Privacy and AI | Sharing choices, AI modes, key storage and removal, daily limit | `SettingsPageTests`, `AiJourneyTests` |
 | Privacy and AI | Pasted key trimmed, spaced key refused, wrong-looking key warned | `SettingsPageTests` |
 | Organize | Rejected key vs refused request, with the service's own reason | `AiJourneyTests`, `CloudSuggestionProviderTests` |
+| Every page | "?" help next to each feature: complete, short, no jargon, placed | `HelpCatalogTests`, `HelpPlacementTests` |
 
 ## Quality Gates
 
