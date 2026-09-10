@@ -1,3 +1,4 @@
+using System.Globalization;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Rules;
 using DeskAI.Infrastructure.Persistence;
@@ -126,7 +127,9 @@ public sealed class SqliteAutomaticCheckHistoryRepositoryTests
             await connection.OpenAsync(TestContext.Current.CancellationToken);
             await using var command = connection.CreateCommand();
             command.CommandText = "SELECT COUNT(*) FROM automatic_check_runs;";
-            return Convert.ToInt32(await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+            return Convert.ToInt32(
+                await command.ExecuteScalarAsync(TestContext.Current.CancellationToken),
+                CultureInfo.InvariantCulture);
         }
 
         public async Task ExecuteAsync(string sql)

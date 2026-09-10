@@ -43,8 +43,9 @@ public sealed record CheckFrequencyOption(AutomaticCheckFrequency Value, string 
 /// the preview, not a feature.
 /// </para>
 /// <para>
-/// Nothing runs on a schedule and nothing runs in the background. The page says so, because
-/// a rules screen is exactly where someone would reasonably assume otherwise.
+/// Automatic checks may look on a schedule while DeskAI is open, but looking is all they do.
+/// The page says DeskAI never moves a file on its own, because a rules screen is exactly
+/// where someone would reasonably assume otherwise.
 /// </para>
 /// </remarks>
 public sealed class AutomationViewModel : ObservableObject
@@ -65,7 +66,7 @@ public sealed class AutomationViewModel : ObservableObject
     private string _newRuleNameContains = string.Empty;
     private string _newRuleExtension = string.Empty;
     private string _newRuleDestination = string.Empty;
-    private string _message = "No rules yet. Write one below and try a practice run.";
+    private string _message = string.Empty;
     private string _formMessage = string.Empty;
     private string _practiceHeadline = string.Empty;
     private string _practiceDetail = string.Empty;
@@ -700,10 +701,13 @@ public sealed class AutomationViewModel : ObservableObject
         }
 
         OnPropertyChanged(nameof(HasRules));
-        if (Rules.Count == 0)
-        {
-            Message = "No rules yet. Write one below and try a practice run.";
-        }
+
+        // Always restated from the list itself. Setting it only when the list was empty left
+        // "No rules yet" on screen above rules that had just loaded. Callers that did
+        // something specific overwrite this with their own sentence afterwards.
+        Message = Rules.Count == 0
+            ? "No rules yet. Write one below and try a practice run."
+            : "Try a practice run to see what your rules would do.";
     }
 
     /// <summary>
