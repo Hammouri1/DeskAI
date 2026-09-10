@@ -127,6 +127,8 @@ changes a feature.
 | Automatic tasks | Practice run (moves nothing) | `AutomationPageTests` |
 | Automatic tasks | Check now, history, how often, pause, notifications | `AutomationPageTests` |
 | Privacy and AI | Sharing choices, AI modes, key storage and removal, daily limit | `SettingsPageTests`, `AiJourneyTests` |
+| Privacy and AI | Pasted key trimmed, spaced key refused, wrong-looking key warned | `SettingsPageTests` |
+| Organize | Rejected key vs refused request, with the service's own reason | `AiJourneyTests`, `CloudSuggestionProviderTests` |
 
 ## Quality Gates
 

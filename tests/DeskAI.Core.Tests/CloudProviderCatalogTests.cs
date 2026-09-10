@@ -101,7 +101,7 @@ public sealed class CloudProviderCatalogTests
             ?? throw new InvalidOperationException("CloudProvider.Create was not found.");
         try
         {
-            method.Invoke(null, ["test", "Test", endpoint, "DeskAI/Test", "hint", "example.com"]);
+            method.Invoke(null, ["test", "Test", endpoint, "DeskAI/Test", "hint", "example.com", null]);
         }
         catch (System.Reflection.TargetInvocationException exception) when (exception.InnerException is not null)
         {

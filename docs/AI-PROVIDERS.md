@@ -87,6 +87,14 @@ Reject unknown operations, missing IDs, duplicate IDs, invalid enums, extra-larg
 - Let users set model and optional spending/request limits.
 - Never silently switch provider or send local data to cloud after local failure.
 - Surface offline, authentication, quota, malformed-output, and safety rejection separately.
+- A 401 means the key was not accepted; a 403 means this request was refused (OpenRouter uses
+  it for moderation) and is never reported as a key problem. Both pass on the service's own
+  `error.message`, shown as text only: control characters removed, at most 200 characters,
+  and the saved key replaced if the service echoes it.
+- A pasted key is trimmed at the edges. A key with a space or line break inside (such as a
+  pasted `Bearer ...`) is refused with a reason. A key that does not start the way the chosen
+  service's keys usually do (`sk-or-` for OpenRouter, `gsk_` for Groq) is saved with a
+  warning, never refused, because formats can change.
 
 ## Prompting
 

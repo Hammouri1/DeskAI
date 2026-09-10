@@ -123,6 +123,56 @@ public sealed class CloudSuggestionProviderTests
         Assert.Equal(provider.ChatCompletionsEndpoint, transport.Endpoint);
     }
 
+    [Fact]
+    public async Task SuggestAsync_ARejectedKeyPassesOnWhatTheServiceSaid()
+    {
+        var transport = new FakeAiHttpTransport(
+            HttpStatusCode.Unauthorized,
+            """{"error":{"message":"User not found.","code":401}}""");
+        var adapter = new CloudChatCompletionsSuggestionProvider(
+            transport, new FakeCredentialVault("obvious-test-api-key"), CloudProviderCatalog.All[0], "test/model");
+
+        var response = await adapter.SuggestAsync(CreateRequest(Guid.NewGuid()), TestContext.Current.CancellationToken);
+
+        Assert.Equal(AiProviderStatus.AuthenticationFailed, response.Status);
+        Assert.Contains("did not accept the saved key", response.Message, StringComparison.Ordinal);
+        Assert.Contains("OpenRouter said: \"User not found.\"", response.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SuggestAsync_ARefusedRequestIsNotReportedAsABadKey()
+    {
+        // OpenRouter answers 403 when a request is refused (for example by moderation),
+        // which says nothing about the key. Blaming the key sends people down the wrong path.
+        var transport = new FakeAiHttpTransport(
+            HttpStatusCode.Forbidden,
+            """{"error":{"message":"Your input was flagged.","code":403}}""");
+        var adapter = new CloudChatCompletionsSuggestionProvider(
+            transport, new FakeCredentialVault("obvious-test-api-key"), CloudProviderCatalog.All[0], "test/model");
+
+        var response = await adapter.SuggestAsync(CreateRequest(Guid.NewGuid()), TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain("key", response.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("refused this request", response.Message, StringComparison.Ordinal);
+        Assert.Contains("Your input was flagged.", response.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task SuggestAsync_WhatTheServiceSaidIsBoundedAndNeverRepeatsTheKey()
+    {
+        var hostile = "Bad key obvious-test-api-key\n" + new string('x', 1000);
+        var body = System.Text.Json.JsonSerializer.Serialize(new { error = new { message = hostile } });
+        var transport = new FakeAiHttpTransport(HttpStatusCode.Unauthorized, body);
+        var adapter = new CloudChatCompletionsSuggestionProvider(
+            transport, new FakeCredentialVault("obvious-test-api-key"), CloudProviderCatalog.All[0], "test/model");
+
+        var response = await adapter.SuggestAsync(CreateRequest(Guid.NewGuid()), TestContext.Current.CancellationToken);
+
+        Assert.DoesNotContain("obvious-test-api-key", response.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(response.Message, char.IsControl);
+        Assert.True(response.Message.Length < 400, response.Message);
+    }
+
     private static OrganizationSuggestionRequest CreateRequest(Guid id) => new(
         "1", Guid.NewGuid(),
         [new AiFileCandidate(id, ".pdf", null, null, null, null, null)],

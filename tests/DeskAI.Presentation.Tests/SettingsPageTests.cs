@@ -113,6 +113,59 @@ public sealed class SettingsPageTests
     }
 
     [Fact]
+    public async Task Spaces_and_line_breaks_copied_around_a_key_are_removed_before_saving()
+    {
+        await using var app = await TestApp.StartAsync();
+        var settings = app.Get<SettingsViewModel>();
+        await settings.InitializeAsync();
+        settings.SelectedModeIndex = (int)AiMode.Cloud;
+        settings.CloudModel = "openai/gpt-4o-mini";
+        settings.CloudConsent = true;
+
+        await settings.SaveProviderAsync("  sk-or-generated-test-key \r\n");
+
+        Assert.StartsWith("Saved.", settings.ProviderStatus, StringComparison.Ordinal);
+        Assert.Equal("sk-or-generated-test-key", await app.Vault.RetrieveAsync(
+            "DeskAI/OpenRouter", TestContext.Current.CancellationToken));
+    }
+
+    [Theory]
+    [InlineData("Bearer sk-or-generated-test-key")]
+    [InlineData("sk-or-generated test-key")]
+    public async Task A_key_with_a_space_inside_is_refused_with_a_reason(string pasted)
+    {
+        await using var app = await TestApp.StartAsync();
+        var settings = app.Get<SettingsViewModel>();
+        await settings.InitializeAsync();
+        settings.SelectedModeIndex = (int)AiMode.Cloud;
+        settings.CloudModel = "openai/gpt-4o-mini";
+        settings.CloudConsent = true;
+
+        await settings.SaveProviderAsync(pasted);
+
+        Assert.Contains("space", settings.ProviderStatus, StringComparison.Ordinal);
+        Assert.Null(await app.Vault.RetrieveAsync("DeskAI/OpenRouter", TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task A_key_that_does_not_look_like_the_chosen_services_is_saved_with_a_warning()
+    {
+        await using var app = await TestApp.StartAsync();
+        var settings = app.Get<SettingsViewModel>();
+        await settings.InitializeAsync();
+        settings.SelectedModeIndex = (int)AiMode.Cloud;
+        settings.SelectedCloudProviderIndex = 0;
+        settings.CloudModel = "openai/gpt-4o-mini";
+        settings.CloudConsent = true;
+
+        // Shaped like a key from a different service.
+        await settings.SaveProviderAsync("sk-proj-generated-test-key");
+
+        Assert.StartsWith("Saved.", settings.ProviderStatus, StringComparison.Ordinal);
+        Assert.Contains("usually start with \"sk-or-\"", settings.ProviderStatus, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task The_daily_limit_stops_requests_once_reached()
     {
         await using var app = await TestApp.StartAsync();

@@ -27,6 +27,7 @@ public sealed class SettingsViewModel(
     private string _providerStatus = "Choose whether you want to use AI.";
     private double _timeoutSeconds = 30;
     private double _dailyRequestLimit = 20;
+    private string _keyWarning = string.Empty;
 
     public bool ShareExtension { get => _shareExtension; set => SetProperty(ref _shareExtension, value); }
     public bool ShareMetadata { get => _shareMetadata; set => SetProperty(ref _shareMetadata, value); }
@@ -117,6 +118,7 @@ public sealed class SettingsViewModel(
 
     public async Task SaveProviderAsync(string apiKey)
     {
+        _keyWarning = string.Empty;
         try
         {
             var mode = Enum.IsDefined((AiMode)SelectedModeIndex)
@@ -158,7 +160,7 @@ public sealed class SettingsViewModel(
             {
                 AiMode.RuleEngineOnly => "Saved. DeskAI will work without AI.",
                 AiMode.Local => "Saved. AI will run only on this computer.",
-                _ => $"Saved. {SelectedProvider.DisplayName} is ready with your sharing choices.",
+                _ => $"Saved. {SelectedProvider.DisplayName} is ready with your sharing choices.{_keyWarning}",
             };
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
@@ -201,11 +203,26 @@ public sealed class SettingsViewModel(
         var provider = SelectedProvider;
         var model = ProviderEndpointPolicy.RequireModelId(CloudModel);
 
+        // Copying a key from a web page easily brings a space or line break with it, and
+        // the service then rejects a key that looks right on screen. Edges are trimmed; a
+        // space inside is refused, because no key contains one and guessing which half was
+        // meant (as with a pasted "Bearer ...") would be worse than asking.
+        var key = apiKey.Trim();
+        if (key.Any(char.IsWhiteSpace) || key.Any(char.IsControl))
+        {
+            throw new InvalidOperationException(
+                $"That key has a space in it. Copy only the key from {provider.KeySource}, without \"Bearer\" or anything else.");
+        }
+
         // Each service keeps its own credential entry, so switching services never reuses
         // a key the user saved for a different company.
-        if (!string.IsNullOrWhiteSpace(apiKey))
+        if (key.Length > 0)
         {
-            await credentialVault.SaveAsync(provider.CredentialReference, apiKey);
+            await credentialVault.SaveAsync(provider.CredentialReference, key);
+            _keyWarning = provider.KeyPrefix is { } prefix && !key.StartsWith(prefix, StringComparison.Ordinal)
+                ? $" {provider.DisplayName} keys usually start with \"{prefix}\", and this one does not. "
+                    + "If AI ideas say the key was not accepted, check you copied the key for this service."
+                : string.Empty;
         }
         else if (await credentialVault.RetrieveAsync(provider.CredentialReference) is null)
         {

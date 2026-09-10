@@ -19,7 +19,8 @@ public sealed record CloudProvider
         Uri chatCompletionsEndpoint,
         string credentialReference,
         string modelHint,
-        string keySource)
+        string keySource,
+        string? keyPrefix)
     {
         Id = id;
         DisplayName = displayName;
@@ -27,6 +28,7 @@ public sealed record CloudProvider
         CredentialReference = credentialReference;
         ModelHint = modelHint;
         KeySource = keySource;
+        KeyPrefix = keyPrefix;
     }
 
     /// <summary>Stable identifier persisted in settings. Never shown as the main UI label.</summary>
@@ -47,13 +49,24 @@ public sealed record CloudProvider
     /// <summary>Where a person gets their own key, shown as plain text for them to visit.</summary>
     public string KeySource { get; }
 
+    /// <summary>
+    /// How this service's keys usually begin, when that is stable enough to mention.
+    /// </summary>
+    /// <remarks>
+    /// Used only to warn, never to refuse: a service can change its key format, and DeskAI
+    /// must not lock someone out over a guess. The warning catches the common mistake of
+    /// pasting a key from a different service.
+    /// </remarks>
+    public string? KeyPrefix { get; }
+
     internal static CloudProvider Create(
         string id,
         string displayName,
         string chatCompletionsEndpoint,
         string credentialReference,
         string modelHint,
-        string keySource)
+        string keySource,
+        string? keyPrefix = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(id);
         ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
@@ -77,7 +90,7 @@ public sealed record CloudProvider
                 nameof(chatCompletionsEndpoint));
         }
 
-        return new CloudProvider(id, displayName, endpoint, credentialReference, modelHint, keySource);
+        return new CloudProvider(id, displayName, endpoint, credentialReference, modelHint, keySource, keyPrefix);
     }
 }
 
@@ -100,7 +113,8 @@ public static class CloudProviderCatalog
             "https://openrouter.ai/api/v1/chat/completions",
             "DeskAI/OpenRouter",
             "For example: openai/gpt-4o-mini",
-            "openrouter.ai/keys"),
+            "openrouter.ai/keys",
+            "sk-or-"),
         CloudProvider.Create(
             "openai",
             "OpenAI",
@@ -114,7 +128,8 @@ public static class CloudProviderCatalog
             "https://api.groq.com/openai/v1/chat/completions",
             "DeskAI/Groq",
             "For example: llama-3.1-8b-instant",
-            "console.groq.com/keys"),
+            "console.groq.com/keys",
+            "gsk_"),
         CloudProvider.Create(
             "mistral",
             "Mistral",

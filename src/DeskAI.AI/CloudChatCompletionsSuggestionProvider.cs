@@ -77,7 +77,12 @@ public sealed class CloudChatCompletionsSuggestionProvider(
                 timeout.Token).ConfigureAwait(false);
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                return Failure(MapStatus(response.StatusCode), MessageFor(response.StatusCode, name));
+                var said = ServiceExplanation(response.Body, key);
+                return Failure(
+                    MapStatus(response.StatusCode),
+                    said is null
+                        ? MessageFor(response.StatusCode, name)
+                        : $"{MessageFor(response.StatusCode, name)} {name} said: \"{said}\"");
             }
 
             string? structuredJson;
@@ -139,9 +144,52 @@ public sealed class CloudChatCompletionsSuggestionProvider(
     private static int? ReadInt(JsonElement parent, string name) =>
         parent.TryGetProperty(name, out var value) && value.TryGetInt32(out var number) ? number : null;
 
+    private const int MaximumExplanationLength = 200;
+
+    /// <summary>
+    /// The service's own one-line reason for refusing, made safe to show.
+    /// </summary>
+    /// <remarks>
+    /// "The key was not accepted" has several causes a person can fix — a mistyped key, a
+    /// deleted one, one from another service — and the service's own words usually say
+    /// which. The text is untrusted: it is shown as text only, stripped of control
+    /// characters, shortened, and the saved key is removed in case the service echoes it.
+    /// </remarks>
+    private static string? ServiceExplanation(string body, string key)
+    {
+        string? message;
+        try
+        {
+            using var document = JsonDocument.Parse(body);
+            message = document.RootElement.ValueKind == JsonValueKind.Object &&
+                document.RootElement.TryGetProperty("error", out var error) &&
+                error.ValueKind == JsonValueKind.Object &&
+                error.TryGetProperty("message", out var text) &&
+                text.ValueKind == JsonValueKind.String
+                    ? text.GetString()
+                    : null;
+        }
+        catch (JsonException)
+        {
+            return null;
+        }
+
+        if (string.IsNullOrWhiteSpace(message))
+        {
+            return null;
+        }
+
+        var cleaned = new string(message.Select(character => char.IsControl(character) ? ' ' : character).ToArray())
+            .Replace(key, "[your key]", StringComparison.Ordinal)
+            .Trim();
+        return cleaned.Length <= MaximumExplanationLength
+            ? cleaned
+            : string.Concat(cleaned.AsSpan(0, MaximumExplanationLength), "…");
+    }
+
     private static AiProviderStatus MapStatus(HttpStatusCode status) => status switch
     {
-        HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => AiProviderStatus.AuthenticationFailed,
+        HttpStatusCode.Unauthorized => AiProviderStatus.AuthenticationFailed,
         HttpStatusCode.PaymentRequired => AiProviderStatus.QuotaExceeded,
         HttpStatusCode.TooManyRequests => AiProviderStatus.RateLimited,
         _ => AiProviderStatus.ProviderError,
@@ -149,7 +197,11 @@ public sealed class CloudChatCompletionsSuggestionProvider(
 
     private static string MessageFor(HttpStatusCode status, string name) => status switch
     {
-        HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden => $"{name} did not accept the saved key.",
+        HttpStatusCode.Unauthorized =>
+            $"{name} did not accept the saved key. Paste it again in Privacy and AI, copying only the key.",
+        // A 403 is a refusal of this request (OpenRouter uses it for moderation), not a
+        // verdict on the key, so it must not send people off to replace a working key.
+        HttpStatusCode.Forbidden => $"{name} refused this request.",
         HttpStatusCode.PaymentRequired => $"Your {name} account needs credit before this model can be used.",
         HttpStatusCode.TooManyRequests => $"{name} is receiving too many requests. DeskAI did not try again automatically.",
         _ => $"{name} returned an error. Nothing else was tried.",
