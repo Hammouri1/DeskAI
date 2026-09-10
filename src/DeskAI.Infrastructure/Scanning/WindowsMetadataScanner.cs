@@ -143,7 +143,7 @@ public sealed class WindowsMetadataScanner(IPathPolicy pathPolicy) : IFileScanne
                     continue;
                 }
 
-                var file = TryCreateFileItem(root.Id, relativePath, entry);
+                var file = TryCreateFileItem(root.Id, relativePath, entry, attributes.Value);
                 if (file.Issue is not null)
                 {
                     yield return file.Issue;
@@ -223,7 +223,11 @@ public sealed class WindowsMetadataScanner(IPathPolicy pathPolicy) : IFileScanne
         }
     }
 
-    private static Attempt<FileItem> TryCreateFileItem(Guid rootId, string relativePath, FileSystemInfo entry)
+    private static Attempt<FileItem> TryCreateFileItem(
+        Guid rootId,
+        string relativePath,
+        FileSystemInfo entry,
+        FileAttributes attributes)
     {
         try
         {
@@ -234,7 +238,8 @@ public sealed class WindowsMetadataScanner(IPathPolicy pathPolicy) : IFileScanne
                 FileKind.Unknown,
                 file.Length,
                 new DateTimeOffset(file.CreationTimeUtc),
-                new DateTimeOffset(file.LastWriteTimeUtc)));
+                new DateTimeOffset(file.LastWriteTimeUtc),
+                ToTraits(attributes)));
         }
         catch (Exception exception) when (IsExpectedFileSystemException(exception))
         {
@@ -243,6 +248,35 @@ public sealed class WindowsMetadataScanner(IPathPolicy pathPolicy) : IFileScanne
                 MapIssueCode(exception),
                 "File metadata became unavailable."));
         }
+    }
+
+    // Not named in the FileAttributes enum, but set by Windows on cloud placeholders.
+    private const FileAttributes RecallOnOpen = (FileAttributes)0x00040000;
+    private const FileAttributes RecallOnDataAccess = (FileAttributes)0x00400000;
+
+    /// <summary>
+    /// Reads the facts that decide whether a file should be left alone, from attributes the
+    /// directory listing already returned. Nothing is opened to find them out.
+    /// </summary>
+    private static FileTraits ToTraits(FileAttributes attributes)
+    {
+        var traits = FileTraits.None;
+        if ((attributes & FileAttributes.Hidden) != 0)
+        {
+            traits |= FileTraits.Hidden;
+        }
+
+        if ((attributes & FileAttributes.System) != 0)
+        {
+            traits |= FileTraits.System;
+        }
+
+        if ((attributes & (FileAttributes.Offline | RecallOnOpen | RecallOnDataAccess)) != 0)
+        {
+            traits |= FileTraits.OnlineOnly;
+        }
+
+        return traits;
     }
 
     private static EnumerationOptions CreateEnumerationOptions() => new()

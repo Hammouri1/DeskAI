@@ -207,6 +207,36 @@ public sealed class WindowsMetadataScannerTests
         await Assert.ThrowsAnyAsync<OperationCanceledException>(action);
     }
 
+    [Fact]
+    public async Task ScanAsync_ReportsHiddenSystemAndOnlineOnlyFilesWithoutOpeningThem()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var hidden = sandbox.CreateDummyFile("hidden.txt");
+        var system = sandbox.CreateDummyFile("system.txt");
+        var online = sandbox.CreateDummyFile("online.txt");
+        sandbox.CreateDummyFile("plain.txt");
+        File.SetAttributes(hidden, FileAttributes.Hidden);
+        File.SetAttributes(system, FileAttributes.System);
+        File.SetAttributes(online, FileAttributes.Offline);
+        try
+        {
+            var events = await CollectAsync(new WindowsMetadataScanner(new WindowsPathPolicy()), CreateRoot(sandbox.Path), TestContext.Current.CancellationToken);
+            var files = events.OfType<FileDiscovered>().ToDictionary(item => item.File.RelativePath, item => item.File.Traits);
+
+            Assert.Equal(FileTraits.Hidden, files["hidden.txt"]);
+            Assert.Equal(FileTraits.System, files["system.txt"]);
+            Assert.Equal(FileTraits.OnlineOnly, files["online.txt"]);
+            Assert.Equal(FileTraits.None, files["plain.txt"]);
+        }
+        finally
+        {
+            foreach (var path in new[] { hidden, system, online })
+            {
+                File.SetAttributes(path, FileAttributes.Normal);
+            }
+        }
+    }
+
     private static AuthorizedRoot CreateRoot(string path) => AuthorizedRoot.Create(
         Guid.Parse("bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"),
         path,

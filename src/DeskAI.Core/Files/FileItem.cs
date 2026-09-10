@@ -8,7 +8,8 @@ public sealed record FileItem
         FileKind kind,
         long sizeBytes,
         DateTimeOffset createdAtUtc,
-        DateTimeOffset modifiedAtUtc)
+        DateTimeOffset modifiedAtUtc,
+        FileTraits traits = FileTraits.None)
     {
         if (id == Guid.Empty)
         {
@@ -35,6 +36,7 @@ public sealed record FileItem
         SizeBytes = sizeBytes;
         CreatedAtUtc = createdAtUtc;
         ModifiedAtUtc = modifiedAtUtc;
+        Traits = traits;
     }
 
     public Guid Id { get; }
@@ -43,6 +45,22 @@ public sealed record FileItem
     public long SizeBytes { get; }
     public DateTimeOffset CreatedAtUtc { get; }
     public DateTimeOffset ModifiedAtUtc { get; }
+    public FileTraits Traits { get; }
+}
+
+/// <summary>
+/// Facts about a file that decide whether DeskAI should leave it alone, read from its
+/// attributes without opening it.
+/// </summary>
+[Flags]
+public enum FileTraits
+{
+    None = 0,
+    Hidden = 1,
+    System = 2,
+
+    /// <summary>Stored online only (a cloud placeholder). Moving one can force a download.</summary>
+    OnlineOnly = 4,
 }
 
 public enum FileKind
