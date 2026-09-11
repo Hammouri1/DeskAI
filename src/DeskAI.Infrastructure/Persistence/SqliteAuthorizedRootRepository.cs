@@ -77,20 +77,43 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
     public async Task RemoveAsync(Guid rootId, CancellationToken cancellationToken = default)
     {
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
+        await using var transaction = (SqliteTransaction)await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
         await using var command = connection.CreateCommand();
+        command.Transaction = transaction;
+
         // Only folders connected for reading may be removed here. The practice workspace and
         // any folder connected for organizing are excluded on purpose, so a revoke path
         // meant for the folder list cannot reach a scope that can change files. Both reading
         // scopes are listed, or a folder whose contents someone allowed could never be
         // disconnected again.
-        command.CommandText = """
-            DELETE FROM authorized_roots
-            WHERE id = $id AND authorization_scope IN ($metadataScope, $contentScope);
+        //
+        // Disconnecting forgets everything remembered about the folder, and that includes what
+        // tidying it did: the plans and the journal hold the names of files in it. They are
+        // erased first, in the same transaction, because they refer to the folder and would
+        // otherwise block its removal. Every statement is limited to a folder that passes the
+        // scope condition, so the practice workspace's history is never touched. Undo links go
+        // before the records they join, since a link to an original record forbids removing it.
+        const string removable = """
+            SELECT id FROM authorized_roots
+            WHERE id = $id AND authorization_scope IN ($metadataScope, $contentScope)
+            """;
+        const string records = $"""
+            SELECT t.id FROM execution_transactions t
+            JOIN organization_plans p ON p.id = t.plan_id AND p.revision = t.plan_revision
+            WHERE p.root_id IN ({removable})
+            """;
+        command.CommandText = $"""
+            DELETE FROM undo_transaction_links
+                WHERE undo_transaction_id IN ({records}) OR original_transaction_id IN ({records});
+            DELETE FROM execution_transactions WHERE id IN ({records});
+            DELETE FROM organization_plans WHERE root_id IN ({removable});
+            DELETE FROM authorized_roots WHERE id IN ({removable});
             """;
         command.Parameters.AddWithValue("$id", rootId.ToString("D"));
         command.Parameters.AddWithValue("$metadataScope", (int)RootAuthorizationScope.MetadataOnly);
         command.Parameters.AddWithValue("$contentScope", (int)RootAuthorizationScope.MetadataAndContent);
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task AllowTidyAsync(Guid rootId, DateTimeOffset grantedAtUtc, CancellationToken cancellationToken = default)

@@ -107,6 +107,25 @@ public sealed class TidyRunPageTests
     }
 
     [Fact]
+    public async Task A_folder_that_was_tidied_can_still_be_disconnected_and_nothing_moves()
+    {
+        // Found 2026-09-11: the saved tidy history blocked disconnecting, so the folder stayed
+        // connected while the page said DeskAI "stopped safely", and its search memory was
+        // already gone.
+        await using var app = await TestApp.StartAsync();
+        var (page, folder) = await OpenAsync(app, "invoice.pdf");
+        await page.TidyCommand.ExecuteAsync(null);
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+
+        await search.DisconnectFolderCommand.ExecuteAsync(Assert.Single(search.Folders).Id);
+
+        Assert.Equal("Disconnected. Everything remembered about it has been forgotten.", search.FolderMessage);
+        Assert.Empty(search.Folders);
+        Assert.True(File.Exists(Path.Combine(folder, "Documents", "invoice.pdf")));
+    }
+
+    [Fact]
     public async Task An_unsure_AI_idea_is_not_moved_unless_it_is_ticked()
     {
         await using var app = await TestApp.StartAsync();

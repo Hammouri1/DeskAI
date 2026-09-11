@@ -77,6 +77,7 @@ Native picker behavior is verified manually only with a newly generated Windows 
 - Partial execution, restart/recovery, repeated execution attempt, and journal write failure.
 - Undo when destination changed, old path is occupied, created folder is nonempty, or only part of a plan can reverse.
 - Undo never removes a folder that existed before the run, even an empty one, including after an interrupted run is recovered. (Found and fixed 2026-09-10: the demo executor recorded an already-existing folder as created, so undo deleted it if empty.)
+- Disconnecting a folder that was tidied succeeds and erases that folder's plans and journal, and never the practice workspace's. (Found and fixed 2026-09-11: the saved tidy history blocked the disconnect with a raw database error after the folder's search memory was already gone.)
 - No permanent-delete command exists; blocked operation types remain blocked.
 
 Platform-specific cases may require Windows and privileges. Skip only with an explicit reason and cover policy logic with a platform-neutral fake as well.
@@ -128,6 +129,7 @@ changes a feature.
 | Organize | Re-checked before each file: changed, replaced, gone, name taken, busy, online-only, link, permission withdrawn, disconnected, protected, escaping plan, stale approval | `TidyRunTests`, `FolderTidyExecutorTests` |
 | Organize | Undo: files back, folders that were there kept, changed or blocked files refused, once only, asks for permission again | `TidyRunPageTests`, `TidyRunTests` |
 | Organize | Neither executor acts on the other's folder or undoes its records | `TidyRunTests` |
+| Search | A tidied folder can be disconnected; its tidy history is forgotten, the practice history is not | `TidyRunPageTests`, `SqliteAuthorizedRootRepositoryTests` |
 | Side menu | Says which folders DeskAI may tidy | `HomeAndShellTests` |
 | Organize | Ask AI: off until set up, preview before Send, cancel sends nothing, answer beside the button | `TidyAiPageTests`, `TidyAiTests` |
 | Organize | Only files DeskAI doesn't know, or every file rules don't place; rules still win | `TidyAiPageTests`, `TidyAiTests` |
