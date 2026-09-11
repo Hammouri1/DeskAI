@@ -1,6 +1,7 @@
 # Organize Your Own Folders, and "?" Help — Design
 
-- Status: Proposed, awaiting owner review
+- Status: Built — V0.6 completed 2026-09-11; checked against this document in
+  `docs/security/2026-09-11-v0.6-milestone-review.md`. Amendments are marked where they were made.
 - Date: 2026-09-10
 - Milestone: V0.6 "Organize Your Own Folders" (this document is its step 1: design and
   security review before code)

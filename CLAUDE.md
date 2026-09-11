@@ -10,12 +10,14 @@ completely. Treat those documents as the source of truth. If instructions confli
 
 - Milestones V0.1, V0.2, and V0.3 are complete. V0.4 is complete except confirming
   duplicates by content. V0.5 is complete except checks after the window is closed.
-- V0.6 "Organize Your Own Folders" is in progress. Steps 1–5 are done: a connected folder
-  with its own tidy permission can be tidied, the last tidy undone even after DeskAI is
-  reopened, a tidy interrupted by a crash is checked against the disk and put to the person, and
-  an automatic check's notice can open the folder it found matches in (ADR 0019–0023). The
-  practice page was removed at the owner's request (ADR 0023); `FolderTidyExecutor` is the only
-  executor. Next is step 6: the milestone's final security review record, then closing V0.6.
+- V0.6 "Organize Your Own Folders" is complete in code and tests (2026-09-11; review
+  `docs/security/2026-09-11-v0.6-milestone-review.md`, ADR 0019–0023). The owner's manual
+  "V0.6 sign-off" list in `docs/MANUAL-TESTING.md` is still outstanding. The practice page is
+  gone; `FolderTidyExecutor` is the only code that moves a file.
+- Open items carried by earlier milestones, each needing its own security review first:
+  confirming duplicates by content (V0.4, needs its own consent wording and bounds) and checks
+  after the window is closed (V0.5). V0.7 is still marked Future. Ask the owner which comes next
+  rather than starting one unasked.
 - As of 2026-09-10 every page has page tests in `DeskAI.Presentation.Tests`; keep the
   Feature Coverage Map in `docs/TESTING.md` complete.
 - Do not rebuild finished milestones or implement the whole remaining roadmap at once.

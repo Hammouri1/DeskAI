@@ -340,6 +340,23 @@ What is deliberately not built: a practice or sample mode of any kind; opening m
 Next small task: V0.6 step 6 — the final security review record, checking the built system against the design's threat table.
 ```
 
+## V0.6 Milestone Learning Log — 2026-09-11
+
+```text
+Milestone / date: V0.6 Organize Your Own Folders, completed 2026-09-11.
+What became usable: A person can connect a folder, allow tidying, see where each loose file would go (by type, by their rules, or by AI after a preview of what is sent), untick anything, press Tidy, and undo — even after closing DeskAI or after a crash part-way. An automatic check can open the folder it found matches in. Nothing moves without a press of Tidy.
+Main data flow: picker → connect (names, sizes, dates) → Allow tidying (re-check) → fresh scan → suggestions (rules > AI > type) → plan → Safety → list on the page → exact approval → FolderTidyExecutor (lock, live trust, journal first, per-file re-check, move without overwrite) → result → Undo from the journal.
+Classes/interfaces I can explain: TidyPermissionService, TidySuggestionService, TidyAiService, TidyRunService, IFolderTidyExecutor, FolderTidyExecutor, FileOperationRunner, RunLockFile, IOperationJournal, OrganizeRequest.
+New concept and my own explanation: A review is a search for missing proof, not a reading of the code. Walking each threat to a named test found three controls that looked right in code but that nothing proved — including the one check every tidy relies on, which tests had always replaced with a fake.
+Hardest bug and root cause: A tidied folder could not be disconnected. The saved plans referred to the folder with a RESTRICT foreign key, and the disconnect had already cleared the search index before the delete failed — a half-done revoke with a raw database error on screen.
+Security cases tested: the threat table in docs/security/2026-09-11-v0.6-milestone-review.md, every row with a named test and a sentinel outside the folder.
+Build/test evidence: Release build with zero warnings; 841 tests pass, none skipped; dotnet format clean.
+AI containment check: DeskAI.AI references Core only and has no file, journal, executor, process, or registry code; the AI and automatic-check services fail a test if handed an executor or the journal.
+Trade-off/ADR: ADR 0019 (separate permission), 0020 (preview before AI), 0021 (one executor, live trust), 0022 (recovery by proof), 0023 (practice page retired).
+What is deliberately not built: delete or Recycle Bin, moving out of the folder or out of subfolders, automatic tidying, undoing older tidies, running while closed.
+Next small task: the owner's manual V0.6 sign-off, then choose between confirming duplicates by content (V0.4) and checks after the window is closed (V0.5).
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

@@ -442,6 +442,22 @@ Never test on a personal folder.
 9. After a tidy, disconnect the folder in **Search**. Expected: "Disconnected. Everything
    remembered about it has been forgotten." and the files stay exactly where the tidy put them.
 
+## V0.6 sign-off (added 2026-09-11)
+
+The milestone review (`docs/security/2026-09-11-v0.6-milestone-review.md`) lists what automated
+tests cannot prove. Before calling V0.6 done by hand, with made-up files under Windows Temp only:
+
+1. Walk the three checklists above and below: Tidying for real, Undo after reopening and
+   interrupted tidies, and Review in Organize.
+2. End DeskAI from Task Manager during a tidy of a few hundred generated files, reopen, and answer
+   the interrupted-tidy card both ways (on two separate runs).
+3. Open two DeskAI windows and press Tidy in both on the same folder.
+4. Do one whole tidy and undo using only the keyboard, then again with Narrator on.
+5. Switch Windows between light, dark, and high contrast with Organize open, including the
+   interrupted card and the How tidying works card.
+6. If you use a cloud-sync client, put a generated file there, make it online-only, and check it
+   is left alone. Never use real files for this.
+
 ## Review in Organize, and How tidying works (V0.6 step 5, added 2026-09-11)
 
 Use two new folders under Windows Temp with made-up files: `Alpha` holding `invoice-a.pdf`, and

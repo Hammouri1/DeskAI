@@ -194,7 +194,7 @@ Goal: turn repeated intent into deterministic, auditable behavior.
 
 Exit criteria: rules can be explained and simulated; background execution cannot widen scope; each run is recoverable/auditable.
 
-## V0.6 — Organize Your Own Folders (**Now — steps 1–5 done**)
+## V0.6 — Organize Your Own Folders (**Complete — 2026-09-11; owner's manual sign-off outstanding**)
 
 Goal: let DeskAI actually move and rename files in a folder someone connected, after they
 approve each change in the preview.
@@ -240,8 +240,16 @@ Progress (build order from the design):
   on the folder with the most matches and says what the person's rules place there; the check
   still only looks. The practice page was removed at the owner's request (ADR 0023) and replaced
   by a "How tidying works" card on Organize; its executor went with it, so one executor remains.
-- Next — step 6: the final security review record for the milestone, checking the built system
-  against the design's threat table, then closing V0.6.
+- ✅ Step 6, 2026-09-11: the milestone's security review record,
+  `docs/security/2026-09-11-v0.6-milestone-review.md`. Every row of the design's threat table and
+  every Part 2 rule traced to its control and a named test. It found three controls with no test
+  — the folder re-check behind Allow tidying, system files, and a file turned into a link after
+  the list — and closed them; removing each control makes its new test fail.
+
+Exit criteria met in code and automated tests on 2026-09-11: a page test connects a folder,
+allows tidying, tidies, reopens DeskAI over the same database, and undoes. What only a person
+can check — the dialogs, keyboard and screen-reader use, a real crash, two windows — is the
+"V0.6 sign-off" list in `MANUAL-TESTING.md`, still to be done by the owner.
 
 1. Design and security review before code: a separate "allow DeskAI to organize this folder"
    permission, how it is shown and withdrawn, what happens when a file changes between preview
