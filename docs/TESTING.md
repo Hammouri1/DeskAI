@@ -113,6 +113,7 @@ changes a feature.
 |---|---|---|
 | Home | Totals, categories, largest files, last checked | `HomeAndShellTests` |
 | Home | Possible copies (same size, never "confirmed") | `HomeAndShellTests` |
+| Home | Check if they're really copies: dialog says what is read first, Cancel reads nothing, identical / different / not checked with reasons, nothing kept, sent, or changed | `CopyCheckPageTests`, `DuplicateCheckTests`, `DuplicateCheckServiceTests`, `FileFingerprinterTests` |
 | Home | Health score with its parts | `HomeAndShellTests` |
 | Home | Honest wording about what can change | `HomeAndShellTests` |
 | Side menu | What is connected and whether files are read | `HomeAndShellTests` |

@@ -228,6 +228,53 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+
+                <!--
+                    Checking which are really copies. The button is plain: pressing it only opens
+                    a dialog saying exactly what would be read; Compare in that dialog is the yes.
+                    Results appear right here, and still offer no remove action.
+                -->
+                <StackPanel Spacing="10">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Check if they're really copies"
+                                IsEnabled="{x:Bind ViewModel.CanCheckCopies, Mode=OneWay}"
+                                Click="OnCheckCopiesClick" />
+                        <ProgressRing Width="18" Height="18" IsActive="{x:Bind ViewModel.IsCheckingCopies, Mode=OneWay}" />
+                        <Button Content="Stop" Command="{x:Bind ViewModel.StopCopyCheckCommand}"
+                                Visibility="{x:Bind ViewModel.IsCheckingCopies, Mode=OneWay}" />
+                        <controls:HelpButton Topic="home.copyCheck" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640" HorizontalAlignment="Left"
+                               TextWrapping="Wrap" Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Visibility="{x:Bind ViewModel.HasCopyCheckSummary, Mode=OneWay}"
+                               Text="{x:Bind ViewModel.CopyCheckSummary, Mode=OneWay}" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.CheckedCopyGroups}"
+                                  AutomationProperties.Name="What the copy check found">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:CheckedCopyGroupViewModel">
+                                <Border Style="{StaticResource RowCardStyle}">
+                                    <StackPanel Spacing="4">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                            <TextBlock FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                       Text="{x:Bind Headline}" />
+                                            <TextBlock Grid.Column="1" Style="{StaticResource CaptionStyle}"
+                                                       Text="{x:Bind Verdict}" />
+                                        </Grid>
+                                        <ItemsControl ItemsSource="{x:Bind Lines}">
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="x:String">
+                                                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                                               Text="{x:Bind}" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
             </StackPanel>
 
             <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasStorage, Mode=OneWay}">

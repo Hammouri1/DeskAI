@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Indexing;
 using DeskAI.Core.Search;
@@ -21,6 +22,15 @@ public sealed record LargestFileViewModel(string Name, string Location, string S
 /// point of the row is to let a person recognise the copies, not to browse them.
 /// </remarks>
 public sealed record DuplicateGroupViewModel(string Headline, string Locations, string Reclaimable);
+
+/// <summary>
+/// What a copy check would read, worded for the dialog that asks first. Compare sends
+/// <see cref="Question"/> back unchanged, so what was shown is exactly what is read.
+/// </summary>
+public sealed record CopyCheckQuestionViewModel(DuplicateCheckQuestion Question, string Title, string Body);
+
+/// <summary>One group of same-size files after a copy check: what is identical, what is not, what was not checked.</summary>
+public sealed record CheckedCopyGroupViewModel(string Headline, string Verdict, IReadOnlyList<string> Lines);
 
 /// <summary>
 /// One measured part of the organization health score.
@@ -55,11 +65,164 @@ public sealed record HealthComponentViewModel(
 public sealed class DashboardViewModel(
     StorageSummaryService storage,
     DuplicateFinderService duplicates,
-    IClock clock) : ObservableObject
+    DuplicateCheckService copyCheck,
+    IClock clock) : ObservableObject, IDisposable
 {
     private readonly StorageSummaryService _storage = storage;
     private readonly DuplicateFinderService _duplicates = duplicates;
+    private readonly DuplicateCheckService _copyCheck = copyCheck;
     private readonly IClock _clock = clock;
+    private bool _isCheckingCopies;
+    private string _copyCheckSummary = string.Empty;
+    private CancellationTokenSource? _copyCheckStop;
+    private RelayCommand? _stopCopyCheckCommand;
+
+    /// <summary>The result of the last copy check, group by group.</summary>
+    public ObservableCollection<CheckedCopyGroupViewModel> CheckedCopyGroups { get; } = [];
+
+    /// <summary>One line saying what the copy check found, read, and did not do.</summary>
+    public string CopyCheckSummary
+    {
+        get => _copyCheckSummary;
+        private set
+        {
+            if (SetProperty(ref _copyCheckSummary, value))
+            {
+                OnPropertyChanged(nameof(HasCopyCheckSummary));
+            }
+        }
+    }
+
+    public bool HasCopyCheckSummary => !string.IsNullOrEmpty(CopyCheckSummary);
+
+    public bool IsCheckingCopies
+    {
+        get => _isCheckingCopies;
+        private set
+        {
+            if (SetProperty(ref _isCheckingCopies, value))
+            {
+                OnPropertyChanged(nameof(CanCheckCopies));
+                StopCopyCheckCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    /// <summary>There are possible copies, and no check is running.</summary>
+    public bool CanCheckCopies => HasDuplicates && !IsCheckingCopies;
+
+    public RelayCommand StopCopyCheckCommand =>
+        _stopCopyCheckCommand ??= new(() => _copyCheckStop?.Cancel(), () => IsCheckingCopies);
+
+    /// <summary>
+    /// Works out what a copy check would read and words it for the dialog. Opens no file.
+    /// </summary>
+    /// <returns>The question to show, or null when there is nothing to compare.</returns>
+    public async Task<CopyCheckQuestionViewModel?> PrepareCopyCheckAsync()
+    {
+        DuplicateCheckQuestion question;
+        try
+        {
+            question = await _copyCheck.PrepareAsync().ConfigureAwait(true);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or System.Data.Common.DbException or IOException)
+        {
+            CopyCheckSummary = $"DeskAI could not get the list ready: {exception.Message}";
+            return null;
+        }
+
+        if (!question.HasAnything)
+        {
+            CopyCheckSummary = "There are no possible copies to compare right now.";
+            return null;
+        }
+
+        var files = question.Files.Count == 1 ? "1 file" : $"{question.Files.Count} files";
+        var folders = question.FolderCount == 1 ? "1 folder" : $"{question.FolderCount} folders";
+        var leftOut = question.LeftOut == 0
+            ? string.Empty
+            : $"\n\n{question.LeftOut} more files that might be copies are left for another check.";
+        var body =
+            $"DeskAI will read {files} ({DescribeSize(question.TotalBytes)}) in {folders} from beginning to end, on this computer, "
+            + "to see which are really the same. It starts with the beginning of each file and reads further only when two beginnings match."
+            + leftOut
+            + "\n\nNothing it reads is saved or sent anywhere, and it does not change, move, or delete anything. "
+            + "Files stored online only are not read, because that would download them.";
+        return new CopyCheckQuestionViewModel(question, $"Compare {files}?", body);
+    }
+
+    /// <summary>
+    /// Reads the files in the question the person just agreed to, and shows which are copies.
+    /// Called only after Compare was pressed in the page's dialog.
+    /// </summary>
+    public async Task CompareCopiesAsync(CopyCheckQuestionViewModel question)
+    {
+        ArgumentNullException.ThrowIfNull(question);
+        if (IsCheckingCopies)
+        {
+            return;
+        }
+
+        var stop = new CancellationTokenSource();
+        _copyCheckStop = stop;
+        IsCheckingCopies = true;
+        CheckedCopyGroups.Clear();
+        CopyCheckSummary = "Comparing… Nothing is being changed.";
+        try
+        {
+            var result = await _copyCheck.CompareAsync(question.Question, stop.Token).ConfigureAwait(true);
+            ApplyCopyCheck(result);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or System.Data.Common.DbException or IOException)
+        {
+            CopyCheckSummary = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            stop.Dispose();
+            if (ReferenceEquals(_copyCheckStop, stop))
+            {
+                _copyCheckStop = null;
+            }
+
+            IsCheckingCopies = false;
+        }
+    }
+
+    /// <summary>Leaving the page stops a check that is still reading.</summary>
+    public void Dispose()
+    {
+        _copyCheckStop?.Cancel();
+    }
+
+    private void ApplyCopyCheck(DuplicateCheckResult result)
+    {
+        foreach (var group in result.Groups)
+        {
+            var lines = new List<string>();
+            lines.AddRange(group.IdenticalSets.Select(set => "Identical: " + string.Join(", ", set.Select(file => file.DisplayName))));
+            lines.AddRange(group.Different.Select(file => $"Not a copy of the others: {file.DisplayName}"));
+            lines.AddRange(group.NotCompared.Select(item => $"Not checked: {item.File.DisplayName}. {item.Reason}"));
+            var verdict = (group.IdenticalSets.Count, group.Different.Count, group.NotCompared.Count) switch
+            {
+                ( > 0, 0, 0) => "Identical",
+                (0, > 0, 0) => "Same size, different contents",
+                (0, 0, > 0) => "Not checked",
+                _ => "Some identical",
+            };
+            var count = group.IdenticalCount + group.Different.Count + group.NotCompared.Count;
+            CheckedCopyGroups.Add(new CheckedCopyGroupViewModel(
+                $"{count} files of {DescribeSize(group.SizeBytes)}", verdict, lines.AsReadOnly()));
+        }
+
+        var identical = result.IdenticalCount;
+        var found = identical == 0
+            ? "None of them are identical copies."
+            : $"{identical} files are identical copies. Keeping one of each would free up to {DescribeSize(result.ReclaimableBytes)}.";
+        var notChecked = result.NotComparedCount == 0 ? string.Empty : $" {result.NotComparedCount} could not be checked; each says why.";
+        var read = $" DeskAI read {result.FilesOpened} files ({DescribeSize(result.BytesRead)}). Nothing was saved, sent, or changed.";
+        CopyCheckSummary = (result.Stopped ? "Stopped. " : string.Empty) + found + notChecked + read;
+    }
     private string _duplicateHeadline = "0";
     private string _duplicateDetail = "Connect a folder to look for possible copies.";
     private bool _hasDuplicates;
@@ -184,7 +347,13 @@ public sealed class DashboardViewModel(
     public bool HasDuplicates
     {
         get => _hasDuplicates;
-        private set => SetProperty(ref _hasDuplicates, value);
+        private set
+        {
+            if (SetProperty(ref _hasDuplicates, value))
+            {
+                OnPropertyChanged(nameof(CanCheckCopies));
+            }
+        }
     }
 
     public string FoldersConnected
