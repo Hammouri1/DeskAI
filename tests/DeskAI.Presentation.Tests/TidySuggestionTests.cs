@@ -35,17 +35,21 @@ public sealed class TidySuggestionTests
         app.MakeFile("Downloads", "just-saved.pdf", age: TimeSpan.FromSeconds(10));
         var hidden = app.MakeFile("Downloads", "secret.pdf");
         File.SetAttributes(hidden, FileAttributes.Hidden);
+        var system = app.MakeFile("Downloads", "driver.pdf");
+        File.SetAttributes(system, FileAttributes.System);
         app.MakeFile("Downloads", "mystery.zzz");
         var rootId = await ConnectAndAllowAsync(app, folder);
 
         var preview = await PreviewAsync(app, rootId);
 
         File.SetAttributes(hidden, FileAttributes.Normal);
+        File.SetAttributes(system, FileAttributes.Normal);
         Assert.Empty(preview.Suggestions);
         var reasons = preview.LeftAlone.ToDictionary(item => item.FileName, item => item.Reason);
         Assert.Equal(LeftAloneReason.StillDownloading, reasons["movie.mp4.crdownload"]);
         Assert.Equal(LeftAloneReason.ChangedRecently, reasons["just-saved.pdf"]);
         Assert.Equal(LeftAloneReason.HiddenOrSystem, reasons["secret.pdf"]);
+        Assert.Equal(LeftAloneReason.HiddenOrSystem, reasons["driver.pdf"]);
         Assert.Equal(LeftAloneReason.UnknownType, reasons["mystery.zzz"]);
         Assert.All(preview.LeftAlone, item => Assert.False(string.IsNullOrWhiteSpace(item.Explanation)));
     }

@@ -165,6 +165,59 @@ public sealed class TidyRunTests
         }
     }
 
+    [Theory]
+    [InlineData(FileAttributes.Hidden)]
+    [InlineData(FileAttributes.System)]
+    public async Task A_file_made_hidden_or_system_after_the_list_was_made_is_left_where_it_is(FileAttributes attribute)
+    {
+        await using var app = await TestApp.StartAsync();
+        var (folder, rootId, sentinel) = await SetUpAsync(app, "invoice.pdf", "notes.pdf");
+        var preview = await PreviewAsync(app, rootId);
+        var path = Path.Combine(folder, "notes.pdf");
+        File.SetAttributes(path, attribute);
+        try
+        {
+            var result = await TidyAllAsync(app, preview);
+
+            Assert.Equal(1, result.Moved);
+            Assert.Contains("hidden or system", Assert.Single(result.Skipped).Reason, StringComparison.Ordinal);
+            Assert.True(File.Exists(path));
+            AssertSentinel(sentinel);
+        }
+        finally
+        {
+            File.SetAttributes(path, FileAttributes.Normal);
+        }
+    }
+
+    [Fact]
+    public async Task A_file_replaced_by_a_link_after_the_list_was_made_is_refused_and_what_it_points_to_is_untouched()
+    {
+        await using var app = await TestApp.StartAsync();
+        var (folder, rootId, sentinel) = await SetUpAsync(app, "notes.pdf");
+        var outside = app.Directory.CreateDummyFile(@"outside-target\notes.pdf", "Outside the folder");
+        var preview = await PreviewAsync(app, rootId);
+        var path = Path.Combine(folder, "notes.pdf");
+        File.Delete(path);
+        try
+        {
+            File.CreateSymbolicLink(path, outside);
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or IOException or PlatformNotSupportedException)
+        {
+            Assert.Skip($"This Windows environment cannot create a test symbolic link: {exception.GetType().Name}");
+        }
+
+        var result = await TidyAllAsync(app, preview);
+
+        Assert.Equal(0, result.Moved);
+        Assert.Contains("link or shortcut", Assert.Single(result.Skipped).Reason, StringComparison.Ordinal);
+        Assert.True(File.GetAttributes(path).HasFlag(FileAttributes.ReparsePoint));
+        Assert.False(File.Exists(Path.Combine(folder, "Documents", "notes.pdf")));
+        Assert.Equal("Outside the folder", File.ReadAllText(outside));
+        AssertSentinel(sentinel);
+    }
+
     [Fact]
     public async Task Taking_back_permission_after_the_list_was_made_moves_nothing()
     {
