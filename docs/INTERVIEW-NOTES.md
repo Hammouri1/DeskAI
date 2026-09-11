@@ -357,6 +357,23 @@ What is deliberately not built: delete or Recycle Bin, moving out of the folder 
 Next small task: the owner's manual V0.6 sign-off, then choose between confirming duplicates by content (V0.4) and checks after the window is closed (V0.5).
 ```
 
+## V0.4 Duplicate Confirmation Learning Log — 2026-09-11
+
+```text
+What became usable: "Check if they're really copies" on Home. After a dialog naming how many files, folders, and bytes would be read, DeskAI reads them and says which possible copies are identical, which only share a size, and which it could not check and why.
+Main data flow: DuplicateFinderService size groups → DuplicateCheckService.PrepareAsync (question, opens nothing) → dialog → Compare → CompareAsync (folder re-check, first 64 KB, whole file only when beginnings match) → IFileFingerprinter / FileFingerprinter (checks, read-only, SHA-256 in memory) → groups → Home.
+Classes/interfaces I can explain: DuplicateCheckService, DuplicateCheckQuestion, DuplicateCheckResult, IFileFingerprinter, FileFingerprinter, FileFingerprint.
+New concept and my own explanation: Consent sized to the action. A lasting permission fits something done often; an occasional, heavy read fits a question asked each time, naming exactly what will be read. Nothing stays behind to be forgotten about.
+New concept and my own explanation (2): Staged work. Reading the beginning first rules out most files cheaply; only files that still look alike are read to the end, and what could not be read inside the limits is reported, never guessed.
+Hardest thing to get right: Making the limits testable without gigabyte files. The limits live in the service, which a fake reader can drive with pretend sizes; the real reader is tested separately on small generated files.
+Security cases tested: see docs/security/2026-09-11-duplicate-confirmation-review.md — each row has a named test; six controls were removed on purpose and each made a test fail.
+Build/test evidence: Release build with zero warnings; 881 tests pass, none skipped; dotnet format clean.
+AI containment check: DeskAI.AI is unchanged and references Core only. The new reader is reachable only from DuplicateCheckService, and a test fails if any other Core type takes it; nothing read goes to AI.
+Trade-off/ADR: ADR 0024 — asked each time rather than a stored permission.
+What is deliberately not built: removing copies, storing fingerprints, using confirmed copies in the health score.
+Next small task: the owner's manual checks for V0.6 and this feature, then decide on V0.5's checks after the window is closed or V0.7.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

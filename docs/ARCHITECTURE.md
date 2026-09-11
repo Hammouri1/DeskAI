@@ -254,7 +254,13 @@ Sizes are merged across roots before deciding what repeats. A per-root `HAVING C
 
 Files below 4 KB are ignored, because small files collide on size constantly and would bury real candidates in noise. Groups are capped at 50, largest possible saving first.
 
-**Stage 2, confirming by hash, is deliberately absent.** Hashing reads the bytes of a file. These folders are authorized `MetadataOnly`, which does not permit that, so confirming duplicates belongs with the permission-gated content work in step 8 rather than being slipped in behind a size check. Everything the UI says is therefore hedged: "possible duplicates", "might be duplicated", "up to" a saving. `ReclaimableBytes` is a ceiling on what could be freed if the copies turn out identical, never a promise. A test asserts the service reads no content at all.
+**Stage 2 was deliberately absent from this service, and still is.** Hashing reads the bytes of a file. These folders are authorized `MetadataOnly`, which does not permit that, so confirming duplicates belongs with the permission-gated content work in step 8 rather than being slipped in behind a size check. Everything the UI says is therefore hedged: "possible duplicates", "might be duplicated", "up to" a saving. `ReclaimableBytes` is a ceiling on what could be freed if the copies turn out identical, never a promise. A test asserts the service reads no content at all.
+
+### Confirming duplicates (V0.4 step 6, stage 2 — 2026-09-11, ADR 0024)
+
+`DuplicateCheckService` (Core) confirms copies only when asked, in two calls with the person between them. `PrepareAsync` lists the files in the size groups above — at most 200, whole groups only — and opens nothing; the page shows the count, folders, and size to be read. `CompareAsync` reads only files in that question, after re-checking each folder is connected and searchable. It reads the first 64 KB of each file and reads to the end only files whose beginnings match another's; files over 2 GB and anything past 8 GB per check are reported as not compared. Equal size and equal SHA-256 means identical. Nothing is stored and no permission is kept, so every check asks again.
+
+It reads through `IFileFingerprinter`, implemented by `FileFingerprinter` in Infrastructure — since then the second place DeskAI opens a file, beside `PlainTextExtractor`. It takes the folder as a separate argument and refuses, before opening: a folder not connected for reading, a protected path, a path leaving the folder, a link on the way or at the file, an online-only file, and a file whose size or last-changed time differs from what DeskAI remembered. It opens read-only letting others only read, re-checks for a link after opening and for changes after reading, and returns a fingerprint kept nowhere. A test asserts `DuplicateCheckService` is the only type in Core that can take it.
 
 ### Content-access capability gate (V0.4 step 8, stage 1)
 
@@ -268,7 +274,7 @@ This replaces direct comparisons such as `scope == MetadataOnly`, which decided 
 
 ### Plain-text extraction (V0.4 step 8, stage 2)
 
-`PlainTextExtractor` is the only code in DeskAI that opens a file. `IContentTextExtractor` is deliberately the narrowest interface that can do the job: one file per call, named relative to a root the caller must supply, bounded by options, returning inert text. The root is a separate argument for the same reason a search query carries none — the permission travels with the call and cannot be chosen by whatever assembled the path.
+`PlainTextExtractor` was, until 2026-09-11, the only code in DeskAI that opens a file; `FileFingerprinter` (confirming duplicates, ADR 0024) is now the second. `IContentTextExtractor` is deliberately the narrowest interface that can do the job: one file per call, named relative to a root the caller must supply, bounded by options, returning inert text. The root is a separate argument for the same reason a search query carries none — the permission travels with the call and cannot be chosen by whatever assembled the path.
 
 Checks run in order, first refusal wins. `RootCapabilities.CanReadContent` comes first, before any path work, so an unauthorized folder never reaches a path calculation let alone a handle. Then path policy on root and relative path; then the extension, which is what makes an unsupported file never get touched at all; then canonical containment inside the root, with a separator required after the prefix so a sibling folder with a similar name is not mistaken for a child.
 

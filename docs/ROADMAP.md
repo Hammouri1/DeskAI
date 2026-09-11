@@ -58,7 +58,7 @@ Goal: optional AI improves ambiguous suggestions without changing the safety mod
 
 Exit criteria: disabling AI preserves the organizer; protected/unapproved data never enters requests; malformed/malicious output cannot cause execution; credentials do not appear in database/logs.
 
-## V0.4 — Search and Storage Intelligence (**Complete except duplicate confirmation — 2026-09-09**)
+## V0.4 — Search and Storage Intelligence (**Complete — 2026-09-11**; duplicate confirmation added last)
 
 Goal: find and understand files without needing to move them.
 
@@ -82,15 +82,17 @@ Goal: find and understand files without needing to move them.
    Completed 2026-09-09; Home shows size by category, the largest files, and what has
    not changed in six months, aggregated in SQL and scoped to connected folders only.
    It describes and never proposes: there is no cleanup action that bypasses preview.
-6. ◐ Exact duplicate candidates using staged size/hash checks; possible-duplicate review.
+6. ✅ Exact duplicate candidates using staged size/hash checks; possible-duplicate review.
    Stage 1 completed 2026-09-09: files sharing an exact size are grouped and shown on
    Home as possible duplicates, merged across folders, with no file ever opened.
-   Stage 2, confirming by content hash, is still NOT done, and is the one open item in
-   this milestone. Step 8 has since built a content permission, but that is not enough on
-   its own: hashing must read a whole file, and the consent dialog people actually agree to
-   says DeskAI reads only the beginning of each text file. Confirming duplicates therefore
-   needs its own consent wording and its own bounds, not a quiet reuse of this one. It is
-   carried forward rather than rushed to close a milestone.
+   Stage 2 completed 2026-09-11 (ADR 0024, review
+   `docs/security/2026-09-11-duplicate-confirmation-review.md`): **Check if they're really
+   copies** on Home. It did not reuse the "read inside files" permission, which promises only the
+   beginning of text files. Instead each check asks first, in a dialog naming how many files,
+   folders, and bytes would be read; no permission is stored. It reads the first 64 KB of each
+   file and to the end only when beginnings match (200 files, 2 GB per file, 8 GB per check), and
+   says which files are identical, which only share a size, and which were not checked and why.
+   Nothing is kept, sent, changed, or offered for removal.
 7. ✅ Organization Health score with transparent components.
    Completed 2026-09-09; Home shows a score out of 100 next to the two parts that produced
    it — possible copies and files sitting unused — each with what it measured and how much

@@ -5,7 +5,7 @@
   of the same size are identical.
 - Required by: `docs/SECURITY.md` ("a focused review is required before introducing … content
   extraction") and the roadmap, which requires its own consent wording and bounds.
-- Status: written before the code; the result is added when built.
+- Status: accepted as built (see Result). Written before the code; result added when built.
 
 ## What changes
 
@@ -42,6 +42,35 @@ change, move, or delete anything." with **Compare** and **Cancel**. After: for e
 ## Rollback and recovery
 
 Nothing to roll back: the check writes nothing. Stopping part-way reports what was compared.
+
+## Result
+
+Accepted, 2026-09-11 (ADR 0024). Every row above has a named test:
+
+- `DuplicateCheckTests` (11, whole app, generated files): preparing opens no file even one locked
+  by another program; identical and same-size-different files; large files differing only at the
+  end read whole; files differing at the start read only at the start; no file time or database
+  byte changed by a check; changed, busy, online-only, and link files not compared; a folder
+  disconnected after the question, and a file added after it, not read.
+- `DuplicateCheckServiceTests` (10, fakes): preparing reads nothing; 200 files, whole groups, the
+  rest counted; 2 GB and 8 GB limits; only files in the question read; Stop; a disconnected folder
+  not read; only `DuplicateCheckService` can take the reader.
+- `FileFingerprinterTests` (8): whole and beginning fingerprints match SHA-256 and change nothing;
+  folders not connected for reading, protected files, paths leaving the folder, a subfolder turned
+  link, and a missing file refused (and not created).
+- `CopyCheckPageTests` (7): the dialog's wording, Compare's results and summary, reasons for files
+  not checked, Cancel reads nothing, nothing to check, Stop offered only while running.
+
+Controls removed on purpose to check the tests notice: the folder-permission check, the link check
+on the way, the online-only check, the changed-file check, the beginning-first pruning, and the
+still-connected check. Each made a test fail and was restored. The link tests ran on this machine.
+
+Full suite: 881 tests pass, none skipped; Release build with zero warnings; formatting clean.
+
+Residual: the dialog itself is checked by hand; Stop's effect on a running check is proved at the
+service level, where timing can be controlled; a file changed and changed back to the same size
+and time within one check cannot be detected (accepted — the fingerprint still describes the bytes
+actually read).
 
 ## Not accepted by this review
 

@@ -8,16 +8,16 @@ completely. Treat those documents as the source of truth. If instructions confli
 
 ## Current Handoff
 
-- Milestones V0.1, V0.2, and V0.3 are complete. V0.4 is complete except confirming
-  duplicates by content. V0.5 is complete except checks after the window is closed.
+- Milestones V0.1–V0.4 are complete; V0.4's last item, confirming duplicates by reading files
+  after the person agrees each time, was built on 2026-09-11 (ADR 0024). V0.5 is complete except
+  checks after the window is closed.
 - V0.6 "Organize Your Own Folders" is complete in code and tests (2026-09-11; review
   `docs/security/2026-09-11-v0.6-milestone-review.md`, ADR 0019–0023). The owner's manual
   "V0.6 sign-off" list in `docs/MANUAL-TESTING.md` is still outstanding. The practice page is
   gone; `FolderTidyExecutor` is the only code that moves a file.
-- Open items carried by earlier milestones, each needing its own security review first:
-  confirming duplicates by content (V0.4, needs its own consent wording and bounds) and checks
-  after the window is closed (V0.5). V0.7 is still marked Future. Ask the owner which comes next
-  rather than starting one unasked.
+- The one open item from earlier milestones is checks after the window is closed (V0.5), which
+  needs its own security review first. V0.7 is still marked Future. Ask the owner which comes
+  next rather than starting one unasked.
 - As of 2026-09-10 every page has page tests in `DeskAI.Presentation.Tests`; keep the
   Feature Coverage Map in `docs/TESTING.md` complete.
 - Do not rebuild finished milestones or implement the whole remaining roadmap at once.

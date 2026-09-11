@@ -442,6 +442,28 @@ Never test on a personal folder.
 9. After a tidy, disconnect the folder in **Search**. Expected: "Disconnected. Everything
    remembered about it has been forgotten." and the files stay exactly where the tidy put them.
 
+## Checking for real copies (V0.4 step 6 stage 2, added 2026-09-11)
+
+Use a new folder under Windows Temp with made-up files only: `a.txt` and `b.txt` with the same
+text (at least 5 KB — paste a long line many times), `c.txt` the same length but one letter
+different, and a copy of `a.txt` in a second temp folder. Never use personal files.
+
+1. Connect both folders in **Search**, then open **Home**. Expected: "Possible duplicates" lists
+   one group of 4 files, and a **Check if they're really copies** button with a "?".
+2. Press the button. Expected: a dialog "Compare 4 files?" saying how much DeskAI would read, in
+   2 folders, from beginning to end on this computer, and that nothing it reads is saved, sent,
+   changed, moved, or deleted. Press **Cancel**. Expected: nothing changes on the page.
+3. Press it again and **Compare**. Expected: a line such as "3 files are identical copies…
+   DeskAI read 4 files… Nothing was saved, sent, or changed." and the group marked "Some
+   identical", naming the three identical files and `c.txt` as "Not a copy of the others".
+4. In File Explorer, check every file's "Date modified" is unchanged.
+5. Open `c.txt` in a program that keeps it open for writing, then check again. Expected: `c.txt`
+   listed as "Not checked" with "It's open in another program".
+6. Edit `b.txt` without refreshing the folder in Search, then check again. Expected: `b.txt`
+   "Not checked" with "It changed since DeskAI last looked".
+7. Confirm there is no delete, remove, or keep-one button anywhere on Home.
+8. Press the new "?" and check it reads clearly.
+
 ## V0.6 sign-off (added 2026-09-11)
 
 The milestone review (`docs/security/2026-09-11-v0.6-milestone-review.md`) lists what automated

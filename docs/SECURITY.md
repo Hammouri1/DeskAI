@@ -136,6 +136,8 @@ AI sees one thing: files in a connected folder the person allowed DeskAI to tidy
 
 The implementation uses Windows Credential Manager generic credentials with DeskAI-owned references. Unmanaged and managed byte buffers are zeroed after native writes/reads where possible; managed UI strings cannot be forcibly erased, so the PasswordBox is cleared immediately after saving. Every cloud service has its own reference (`DeskAI/OpenRouter`, `DeskAI/OpenAI`, and so on), so a key saved for one company cannot be read or sent by an adapter configured for another, and removing a key removes only the selected one. SQLite stores only the reference string. Redaction covers authorization bearer values and common API-key labels.
 
+Since 2026-09-11 (ADR 0024, review `docs/security/2026-09-11-duplicate-confirmation-review.md`) DeskAI can also read whole files to confirm duplicates — only files in Home's possible-copy groups, only after a dialog states how many files, folders, and bytes, and only when **Compare** is pressed; no permission is stored, so each check asks again. Reading is bounded (200 files, 64 KB first, 2 GB per file and 8 GB per check in full), refuses protected paths, paths leaving the folder, links, online-only files, and files changed since DeskAI remembered them, and produces a SHA-256 fingerprint held in memory, never stored or sent. Only the duplicate check can reach that reader.
+
 ## Local Metadata Index
 
 The index remembers file metadata so search and storage summaries do not require a fresh
