@@ -40,17 +40,30 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Takes someone to the page that explains the finding. It changes nothing on the way.
+    /// "Review in Organize": opens Tidy a folder on the folder with the most matches, with its
+    /// list ready. It changes nothing on the way; files move only if Tidy is pressed there.
     /// </summary>
-    private void OnReviewFindingClicked(object sender, RoutedEventArgs args)
+    private void OnReviewInOrganizeClicked(object sender, RoutedEventArgs args)
+    {
+        _shell?.ReviewInOrganize();
+        GoTo("organize", fresh: true);
+    }
+
+    /// <summary>Takes someone to the page with the practice run and the check history.</summary>
+    private void OnSeeAutomaticTasksClicked(object sender, RoutedEventArgs args)
     {
         _shell?.DismissFindingCommand.Execute(null);
-        _navigationService?.Navigate("automation");
+        GoTo("automation", fresh: false);
+    }
+
+    private void GoTo(string route, bool fresh)
+    {
+        _navigationService?.Navigate(route, fresh);
         foreach (var item in RootNavigation.MenuItems)
         {
-            if (item is NavigationViewItem { Tag: "automation" } automation)
+            if (item is NavigationViewItem { Tag: string tag } menuItem && tag == route)
             {
-                RootNavigation.SelectedItem = automation;
+                RootNavigation.SelectedItem = menuItem;
                 break;
             }
         }

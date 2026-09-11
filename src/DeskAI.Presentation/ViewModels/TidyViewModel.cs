@@ -172,6 +172,7 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     private readonly TidySuggestionService _suggestions;
     private readonly TidyAiService _ai;
     private readonly TidyRunService _run;
+    private readonly OrganizeRequest _request;
     private readonly Dictionary<Guid, SameNameChoice> _choices = [];
 
     // What AI said, by file. Kept across reloads of the list so ticking "Keep both" or looking
@@ -205,18 +206,24 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     private InterruptedTidy? _interrupted;
     private string _interruptedMessage = string.Empty;
 
+    // The folder an automatic check's notice asked to open, while it is the one shown.
+    private Guid? _reviewFolderId;
+    private string _reviewNote = string.Empty;
+
     public TidyViewModel(
         ConnectedFolderService folders,
         TidyPermissionService permission,
         TidySuggestionService suggestions,
         TidyAiService ai,
-        TidyRunService run)
+        TidyRunService run,
+        OrganizeRequest request)
     {
         _folders = folders;
         _permission = permission;
         _suggestions = suggestions;
         _ai = ai;
         _run = run;
+        _request = request;
         TidyCommand = new AsyncRelayCommand(TidyAsync, () => CanPressTidy);
         UndoCommand = new AsyncRelayCommand(() => UndoLastTidyAsync(), () => CanUndo && !IsTidying);
         StopTidyingCommand = new AsyncRelayCommand(StopTidyingAsync, () => SelectedFolder?.CanTidy == true && !IsBusy);
@@ -541,9 +548,29 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     /// <summary>Lets tests wait for the reload a property change started.</summary>
     public Task WhenIdleAsync() => _pending;
 
+    /// <summary>Said above the list when an automatic check's notice opened this folder.</summary>
+    public string ReviewNote
+    {
+        get => _reviewNote;
+        private set
+        {
+            if (SetProperty(ref _reviewNote, value))
+            {
+                OnPropertyChanged(nameof(HasReviewNote));
+            }
+        }
+    }
+
+    public bool HasReviewNote => !string.IsNullOrEmpty(ReviewNote);
+
+    /// <summary>
+    /// Opens on the folder "Review in Organize" asked for, if there is one and it is still
+    /// connected; otherwise on the first folder, as always.
+    /// </summary>
     public async Task InitializeAsync()
     {
-        await ReloadFoldersAsync(selectId: null).ConfigureAwait(true);
+        _reviewFolderId = _request.Take();
+        await ReloadFoldersAsync(selectId: _reviewFolderId).ConfigureAwait(true);
         await _pending.ConfigureAwait(true);
     }
 
@@ -977,6 +1004,7 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
 
         if (SelectedFolder is not { CanTidy: true } folder)
         {
+            UpdateReviewNote();
             return;
         }
 
@@ -1017,7 +1045,36 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         {
             IsBusy = false;
             RaiseListChanges();
+            UpdateReviewNote();
         }
+    }
+
+    /// <summary>
+    /// When an automatic check's notice opened this folder, says what the person's rules place
+    /// here. A check looks at every remembered file, but tidying moves only loose files at the
+    /// top of the folder, so the check's own number is not repeated as if it were this list's.
+    /// </summary>
+    private void UpdateReviewNote()
+    {
+        if (SelectedFolder is not { } folder || folder.Id != _reviewFolderId)
+        {
+            ReviewNote = string.Empty;
+            return;
+        }
+
+        if (NeedsPermission)
+        {
+            ReviewNote = "Your automatic check found files here that match your rules. Allow tidying to see which ones DeskAI would move.";
+            return;
+        }
+
+        var placed = _preview?.Suggestions.Count(item => item.Source == TidySuggestionSource.Rule) ?? 0;
+        ReviewNote = placed switch
+        {
+            _ when _preview is null => string.Empty,
+            0 => "From your automatic check: the files your rules matched are not loose at the top of this folder, so there is nothing of theirs to tidy here.",
+            _ => $"From your automatic check: your rules place {Files(placed)} here, marked \"Your rule\". Nothing moves until you press Tidy.",
+        };
     }
 
     private void Apply(TidyPreview preview)

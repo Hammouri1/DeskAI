@@ -117,6 +117,7 @@ changes a feature.
 | Home | Honest wording about what can change | `HomeAndShellTests` |
 | Side menu | What is connected and whether files are read | `HomeAndShellTests` |
 | Side menu | Notice when a check finds something; opt-in notification | `HomeAndShellTests` |
+| Notice | Review in Organize: opens the folder with the most matches, says what its rules place there, asks for permission first if needed, used once, moves nothing | `ReviewInOrganizePageTests` |
 | Organize | Pick or connect a folder; protected folder refused | `TidyPageTests` |
 | Organize | Tidy permission: asked first, allowed, taken back, erased on disconnect | `TidyPageTests`, `SqliteAuthorizedRootRepositoryTests`, `RootCapabilitiesTests` |
 | Organize | Suggestions grouped by folder with reasons; rules win over type | `TidyPageTests`, `TidySuggestionTests` |

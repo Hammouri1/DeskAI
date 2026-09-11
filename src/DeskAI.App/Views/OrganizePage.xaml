@@ -44,6 +44,11 @@
                     <TextBlock Style="{StaticResource BodySecondaryStyle}"
                                Visibility="{x:Bind ViewModel.HasMessage, Mode=OneWay}"
                                Text="{x:Bind ViewModel.Message, Mode=OneWay}" />
+                    <!-- Only when an automatic check's notice opened this folder. -->
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Visibility="{x:Bind ViewModel.HasReviewNote, Mode=OneWay}"
+                               Text="{x:Bind ViewModel.ReviewNote, Mode=OneWay}" />
                 </StackPanel>
             </Border>
 

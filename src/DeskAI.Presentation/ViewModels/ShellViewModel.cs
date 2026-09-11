@@ -28,23 +28,27 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
     private readonly AutomaticCheckCoordinator _checks;
     private readonly IAutomaticCheckSettingsRepository _checkSettings;
     private readonly IFindingNotifier _notifier;
+    private readonly OrganizeRequest _organize;
     private readonly SynchronizationContext? _uiContext;
     private string _scopeTitle = "Practice mode";
     private string _scopeMessage = "No folders connected. DeskAI cannot see any of your files.";
     private string _findingMessage = string.Empty;
     private bool _hasFinding;
+    private Guid? _folderToReview;
     private bool _disposed;
 
     public ShellViewModel(
         ConnectedFolderService folders,
         AutomaticCheckCoordinator checks,
         IAutomaticCheckSettingsRepository checkSettings,
-        IFindingNotifier notifier)
+        IFindingNotifier notifier,
+        OrganizeRequest organize)
     {
         _folders = folders;
         _checks = checks;
         _checkSettings = checkSettings;
         _notifier = notifier;
+        _organize = organize;
 
         // Captured here because this view model is built on the UI thread, while a check
         // finishes on a background one. Every property set below has to come back. On the
@@ -77,6 +81,24 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
         private set => SetProperty(ref _findingMessage, value);
     }
 
+    /// <summary>Whether the notice knows which folder its matches are in.</summary>
+    public bool CanReviewInOrganize => _folderToReview is not null;
+
+    /// <summary>
+    /// "Review in Organize": leaves the folder with the most matches for the Organize page to
+    /// open, and puts the notice away. The window then opens the page. Nothing else happens —
+    /// the files move only if the person presses Tidy there.
+    /// </summary>
+    public void ReviewInOrganize()
+    {
+        if (_folderToReview is { } folderId)
+        {
+            _organize.Ask(folderId);
+        }
+
+        HasFinding = false;
+    }
+
     /// <summary>
     /// Puts what a finished check found in front of someone, in the app and — only if they
     /// asked for it — in a Windows notification.
@@ -99,6 +121,8 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
         void Show()
         {
             FindingMessage = $"{message} Nothing has moved.";
+            _folderToReview = result.FolderToReview;
+            OnPropertyChanged(nameof(CanReviewInOrganize));
             HasFinding = true;
             _ = NotifyIfAskedAsync(message);
         }

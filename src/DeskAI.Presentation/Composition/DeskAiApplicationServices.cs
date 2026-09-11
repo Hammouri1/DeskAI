@@ -70,6 +70,8 @@ public static class DeskAiApplicationServices
         // The only background work DeskAI does. It runs while the app runs and stops when
         // it stops; nothing is registered with Windows to start it again. See ADR 0017.
         services.AddHostedService<AutomaticCheckTimer>();
+        // Which folder Organize opens on after "Review in Organize". A folder ID, nothing more.
+        services.AddSingleton<OrganizeRequest>();
         services.AddTransient<ShellViewModel>();
         services.AddTransient<PracticeViewModel>();
         services.AddTransient<TidyViewModel>();

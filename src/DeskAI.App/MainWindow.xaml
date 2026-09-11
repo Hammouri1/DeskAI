@@ -66,7 +66,9 @@
                 the whole point is that they notice it when they come back.
 
                 It reports a count and says nothing has moved, in the same sentence. It has
-                no action that changes anything: "Review" is navigation.
+                no action that changes anything: both buttons are navigation. "Review in
+                Organize" opens the folder with the most matches; tidying is still a press
+                of Tidy there.
             -->
             <InfoBar Margin="0,12,16,0"
                      MaxWidth="360"
@@ -79,8 +81,11 @@
                      Message="{Binding FindingMessage}"
                      CloseButtonCommand="{Binding DismissFindingCommand}">
                 <InfoBar.ActionButton>
-                    <Button Content="Review" Click="OnReviewFindingClicked" />
+                    <Button Content="Review in Organize" Click="OnReviewInOrganizeClicked"
+                            IsEnabled="{Binding CanReviewInOrganize, Mode=OneWay}" />
                 </InfoBar.ActionButton>
+                <HyperlinkButton Margin="0,0,0,8" Padding="0" Content="See it in Automatic tasks"
+                                 Click="OnSeeAutomaticTasksClicked" />
             </InfoBar>
         </Grid>
     </NavigationView>

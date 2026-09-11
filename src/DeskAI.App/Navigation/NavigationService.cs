@@ -20,14 +20,14 @@ public sealed class NavigationService(IServiceProvider serviceProvider) : INavig
 
     public void Initialize(Frame frame) => _frame = frame ?? throw new ArgumentNullException(nameof(frame));
 
-    public bool Navigate(string route)
+    public bool Navigate(string route, bool fresh = false)
     {
         if (_frame is null || !Routes.TryGetValue(route, out var pageType))
         {
             return false;
         }
 
-        if (_frame.Content?.GetType() == pageType)
+        if (!fresh && _frame.Content?.GetType() == pageType)
         {
             return true;
         }

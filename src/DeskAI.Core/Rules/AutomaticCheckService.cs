@@ -6,15 +6,18 @@ namespace DeskAI.Core.Rules;
 
 /// <summary>What one automatic check found.</summary>
 /// <remarks>
-/// A count and a moment. There is deliberately nothing here that could be carried out —
-/// no plan, no operation, no path. Reviewing is a separate thing a person starts.
+/// A count, a moment, and which folder to look at first. There is deliberately nothing here
+/// that could be carried out — no plan, no operation, no path. Reviewing is a separate thing a
+/// person starts, and tidying a separate thing they press.
 /// </remarks>
+/// <param name="FolderToReview">The connected folder with the most matches, if any matched.</param>
 public sealed record AutomaticCheckResult(
     int FoldersChecked,
     int ProposalCount,
     int ConflictCount,
     DateTimeOffset CheckedAtUtc,
-    bool WasCatchUp = false)
+    bool WasCatchUp = false,
+    Guid? FolderToReview = null)
 {
     public static AutomaticCheckResult Nothing(DateTimeOffset checkedAtUtc) => new(0, 0, 0, checkedAtUtc);
 
@@ -85,12 +88,17 @@ public sealed class AutomaticCheckService(
         var found = await _simulation.SimulateAsync(checkedAt, cancellationToken).ConfigureAwait(false);
         await _settings.RecordCheckedAtAsync(checkedAt, cancellationToken).ConfigureAwait(false);
 
+        var mostMatches = found.Folders
+            .Where(folder => folder.Preview.Proposals.Count > 0)
+            .OrderByDescending(folder => folder.Preview.Proposals.Count)
+            .FirstOrDefault();
         return new AutomaticCheckResult(
             searchable.Length,
             found.ProposalCount,
             found.ConflictCount,
             checkedAt,
-            wasCatchUp);
+            wasCatchUp,
+            mostMatches?.RootId);
     }
 
     /// <summary>
