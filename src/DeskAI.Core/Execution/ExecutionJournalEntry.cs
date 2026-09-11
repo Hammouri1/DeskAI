@@ -57,4 +57,11 @@ public enum JournalOperationState
     /// stored as integers.
     /// </summary>
     AlreadyPresent,
+
+    /// <summary>
+    /// DeskAI stopped while this file was moving, and the disk did not prove whether it had
+    /// moved. It is never undone or moved again on a guess; the person is asked to look.
+    /// Appended last because states are stored as integers.
+    /// </summary>
+    NeedsReview,
 }

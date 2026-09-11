@@ -263,6 +263,76 @@ internal sealed class FileOperationRunner(
         }
     }
 
+    /// <summary>
+    /// What an operation under way when DeskAI stopped actually did, read from the disk.
+    /// </summary>
+    /// <remarks>
+    /// Only names, sizes, and dates are read, and nothing is changed. A move counts as done only
+    /// when the file is gone from where it started and the other end holds a file with the
+    /// recorded size and last-changed time; as not done only when it is still where it started
+    /// with those facts. Anything else — changed since, missing from both ends, a link on the
+    /// way — is <see cref="JournalOperationState.NeedsReview"/>, never a guess. A folder being
+    /// made that exists counts as already there, because nothing proves DeskAI made it, so undo
+    /// will never remove it.
+    /// </remarks>
+    /// <param name="kind">A tidy moves a file to its destination; an undo moves it back.</param>
+    public (JournalOperationState State, string Note) CheckInterrupted(
+        AuthorizedRoot root,
+        ExecutionTransactionKind kind,
+        OperationJournalEntry operation)
+    {
+        const string couldNotTell = "DeskAI could not tell whether this file moved, so it left it alone.";
+        try
+        {
+            if (operation.Kind == PlanOperationKind.CreateDirectory)
+            {
+                var directory = Resolve(root, operation.DestinationRelativePath);
+                RejectLinks(root, directory);
+                var exists = Directory.Exists(directory);
+                return kind == ExecutionTransactionKind.Execute
+                    ? exists
+                        ? (JournalOperationState.AlreadyPresent, "The folder is there, so undo will leave it in place.")
+                        : (JournalOperationState.Failed, "The folder had not been made.")
+                    : exists
+                        ? (JournalOperationState.Failed, "The folder was left in place.")
+                        : (JournalOperationState.Completed, "The folder had been removed.");
+            }
+
+            if (operation.SourceRelativePath is null)
+            {
+                return (JournalOperationState.NeedsReview, couldNotTell);
+            }
+
+            var source = Resolve(root, operation.SourceRelativePath);
+            var destination = Resolve(root, operation.DestinationRelativePath);
+            RejectLinks(root, source);
+            RejectLinks(root, destination);
+            var (from, to) = kind == ExecutionTransactionKind.Execute ? (source, destination) : (destination, source);
+            var goneFromStart = !File.Exists(from) && !Directory.Exists(from);
+            if (goneFromStart && MatchesRecordedFile(to, operation))
+            {
+                return (JournalOperationState.Completed, kind == ExecutionTransactionKind.Execute
+                    ? "Checked after DeskAI stopped: it had moved."
+                    : "Checked after DeskAI stopped: it had gone back.");
+            }
+
+            // A move renames, so a file still where it started never left, whatever is at the
+            // other end.
+            if (MatchesRecordedFile(from, operation))
+            {
+                return (JournalOperationState.Failed, kind == ExecutionTransactionKind.Execute
+                    ? "It had not moved yet, so it is where it was."
+                    : "It had not gone back yet, so it is where the tidy put it.");
+            }
+
+            return (JournalOperationState.NeedsReview, couldNotTell);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            return (JournalOperationState.NeedsReview, couldNotTell);
+        }
+    }
+
     public static ExecutionTransactionState DetermineState(
         IReadOnlyCollection<OperationExecutionResult> results,
         int expectedCount)

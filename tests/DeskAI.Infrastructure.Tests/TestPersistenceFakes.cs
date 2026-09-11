@@ -5,9 +5,24 @@ using DeskAI.Core.Roots;
 
 namespace DeskAI.Infrastructure.Tests;
 
-internal class InMemoryOperationJournal : IOperationJournal
+/// <param name="plans">Where to find which folder a record's plan belongs to, if a test needs that.</param>
+internal class InMemoryOperationJournal(InMemoryPlanRepository? plans = null) : IOperationJournal
 {
     private readonly Dictionary<Guid, ExecutionJournalEntry> _entries = [];
+
+    public Task<IReadOnlyList<ExecutionJournalEntry>> ListForRootAsync(
+        Guid rootId,
+        int maximumCount,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        IReadOnlyList<ExecutionJournalEntry> result = _entries.Values
+            .Where(entry => plans?.RootOf(entry.PlanId, entry.PlanRevision) == rootId)
+            .OrderByDescending(entry => entry.StartedAtUtc)
+            .Take(maximumCount)
+            .ToArray();
+        return Task.FromResult(result);
+    }
 
     public virtual Task CreateAsync(ExecutionJournalEntry entry, CancellationToken cancellationToken = default)
     {
@@ -148,4 +163,6 @@ internal sealed class InMemoryPlanRepository : IPlanRepository
         cancellationToken.ThrowIfCancellationRequested();
         return Task.FromResult(_plans.GetValueOrDefault((planId, revision)));
     }
+
+    public Guid? RootOf(Guid planId, int revision) => _plans.GetValueOrDefault((planId, revision))?.RootId;
 }

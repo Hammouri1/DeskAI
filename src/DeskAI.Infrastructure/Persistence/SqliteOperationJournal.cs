@@ -156,6 +156,35 @@ public sealed class SqliteOperationJournal(IOptions<DatabaseOptions> options) : 
         return await ReadEntriesAsync(connection, ids, cancellationToken).ConfigureAwait(false);
     }
 
+    public async Task<IReadOnlyList<ExecutionJournalEntry>> ListForRootAsync(
+        Guid rootId,
+        int maximumCount,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(maximumCount, 1);
+        ArgumentOutOfRangeException.ThrowIfGreaterThan(maximumCount, 100);
+        await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.CommandText = """
+            SELECT t.id FROM execution_transactions t
+            JOIN organization_plans p ON p.id = t.plan_id AND p.revision = t.plan_revision
+            WHERE p.root_id = $root
+            ORDER BY t.started_at_utc DESC LIMIT $maximum;
+            """;
+        command.Parameters.AddWithValue("$root", rootId.ToString("D"));
+        command.Parameters.AddWithValue("$maximum", maximumCount);
+        var ids = new List<Guid>();
+        {
+            await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
+            while (await reader.ReadAsync(cancellationToken).ConfigureAwait(false))
+            {
+                ids.Add(Guid.Parse(reader.GetString(0)));
+            }
+        }
+
+        return await ReadEntriesAsync(connection, ids, cancellationToken).ConfigureAwait(false);
+    }
+
     private static async Task<ExecutionJournalEntry?> FindAsync(
         SqliteConnection connection,
         Guid transactionId,

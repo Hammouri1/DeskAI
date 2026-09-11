@@ -4,8 +4,10 @@ using DeskAI.Core.Files;
 using DeskAI.Core.Plans;
 using DeskAI.Core.Roots;
 using DeskAI.Infrastructure.Execution;
+using DeskAI.Infrastructure.Persistence;
 using DeskAI.Infrastructure.Time;
 using DeskAI.Safety;
+using Microsoft.Extensions.Options;
 
 namespace DeskAI.Infrastructure.Tests;
 
@@ -28,7 +30,7 @@ public sealed class FolderTidyExecutorTests
         // Looked up at the start, before the run, and before each file: disconnected after the first file.
         var roots = new DisconnectingRootRepository(root, disconnectAfter: 3);
         var policy = new WindowsPathPolicy();
-        var executor = Create(roots, policy);
+        var executor = Create(roots, policy, sandbox);
         var moveA = Move("a.pdf");
         var moveB = Move("b.pdf");
         var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, [moveA, moveB]);
@@ -54,7 +56,7 @@ public sealed class FolderTidyExecutorTests
         var secret = sandbox.CreateDummyFile(@"Folder\tax-return.pdf");
         var root = Allowed(folder);
         var roots = new DisconnectingRootRepository(root, disconnectAfter: int.MaxValue);
-        var executor = Create(roots, new WindowsPathPolicy(userProtectedEntries: [secret]));
+        var executor = Create(roots, new WindowsPathPolicy(userProtectedEntries: [secret]), sandbox);
         var move = Move("tax-return.pdf");
         var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, [move]);
 
@@ -83,7 +85,8 @@ public sealed class FolderTidyExecutorTests
             new WindowsPathPolicy(),
             new SystemClock(),
             new InMemoryOperationJournal(),
-            new InMemoryPlanRepository());
+            new InMemoryPlanRepository(),
+            Database(sandbox));
         var move = Move("a.pdf");
         var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, [move]);
 
@@ -97,9 +100,118 @@ public sealed class FolderTidyExecutorTests
         Assert.True(File.Exists(file));
     }
 
-    private static FolderTidyExecutor Create(IAuthorizedRootRepository roots, IPathPolicy policy) =>
+    [Fact]
+    public async Task While_another_window_holds_the_lock_a_tidy_waits_briefly_then_moves_nothing()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var folder = sandbox.CreateDummyDirectory("Folder");
+        sandbox.CreateDummyDirectory(@"Folder\Documents");
+        var file = sandbox.CreateDummyFile(@"Folder\a.pdf");
+        var root = Allowed(folder);
+        var executor = new FolderTidyExecutor(
+            new DisconnectingRootRepository(root, int.MaxValue), new FixedFolderService(null),
+            new PlanValidator(new WindowsPathPolicy()), new WindowsPathPolicy(), new SystemClock(),
+            new InMemoryOperationJournal(), new InMemoryPlanRepository(), Database(sandbox))
+        {
+            BusyWait = TimeSpan.FromMilliseconds(200),
+        };
+        var move = Move("a.pdf");
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, [move]);
+
+        ExecutionResult result;
+        using (HoldLock(sandbox))
+        {
+            result = await executor.ExecuteAsync(
+                plan,
+                Approval.Create(Guid.NewGuid(), plan, [move.Id], DateTimeOffset.UtcNow),
+                new Dictionary<Guid, ExpectedFile> { [move.Id] = Facts(file) },
+                TestContext.Current.CancellationToken);
+        }
+
+        Assert.Contains("another window", Assert.Single(result.Operations).Error, StringComparison.Ordinal);
+        Assert.True(File.Exists(file));
+        await Assert.ThrowsAsync<InvalidOperationException>(async () =>
+        {
+            using (HoldLock(sandbox))
+            {
+                await executor.UndoAsync(Guid.NewGuid(), TestContext.Current.CancellationToken);
+            }
+        });
+    }
+
+    [Fact]
+    public async Task A_record_is_not_checked_while_another_window_holds_the_lock_and_is_checked_once_it_is_free()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var folder = sandbox.CreateDummyDirectory("Folder");
+        var file = sandbox.CreateDummyFile(@"Folder\a.pdf");
+        var root = Allowed(folder);
+        var plans = new InMemoryPlanRepository();
+        var journal = new InMemoryOperationJournal(plans);
+        var move = Move("a.pdf");
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, [move]);
+        await plans.SaveAsync(plan, TestContext.Current.CancellationToken);
+        var facts = Facts(file);
+        var record = new ExecutionJournalEntry(
+            Guid.NewGuid(), plan.Id, 1, Guid.NewGuid(), ExecutionTransactionKind.Execute, null,
+            ExecutionTransactionState.Executing, DateTimeOffset.UtcNow, null,
+            [new OperationJournalEntry(0, move.Id, PlanOperationKind.MoveFile, move.SourceRelativePath, move.DestinationRelativePath,
+                facts.SizeBytes, facts.ModifiedAtUtc, JournalOperationState.InProgress, null)]);
+        await journal.CreateAsync(record, TestContext.Current.CancellationToken);
+        var executor = new FolderTidyExecutor(
+            new DisconnectingRootRepository(root, int.MaxValue), new FixedFolderService(null),
+            new PlanValidator(new WindowsPathPolicy()), new WindowsPathPolicy(), new SystemClock(),
+            journal, plans, Database(sandbox))
+        {
+            BusyWait = TimeSpan.FromMilliseconds(200),
+        };
+
+        using (HoldLock(sandbox))
+        {
+            Assert.Empty(await executor.CheckInterruptedAsync(root.Id, TestContext.Current.CancellationToken));
+        }
+
+        Assert.Equal(ExecutionTransactionState.Executing, (await journal.FindAsync(record.Id, TestContext.Current.CancellationToken))!.State);
+        var checkedRecord = Assert.Single(await executor.CheckInterruptedAsync(root.Id, TestContext.Current.CancellationToken));
+        Assert.Equal(ExecutionTransactionState.RecoveryRequired, checkedRecord.State);
+
+        // The file never left, and the disk says so.
+        Assert.Equal(JournalOperationState.Failed, Assert.Single(checkedRecord.Operations).State);
+    }
+
+    [Fact]
+    public async Task The_lock_is_free_again_once_a_run_is_over()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var folder = sandbox.CreateDummyDirectory("Folder");
+        sandbox.CreateDummyDirectory(@"Folder\Documents");
+        var file = sandbox.CreateDummyFile(@"Folder\a.pdf");
+        var root = Allowed(folder);
+        var executor = Create(new DisconnectingRootRepository(root, int.MaxValue), new WindowsPathPolicy(), sandbox);
+        var move = Move("a.pdf");
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, [move]);
+
+        await executor.ExecuteAsync(
+            plan,
+            Approval.Create(Guid.NewGuid(), plan, [move.Id], DateTimeOffset.UtcNow),
+            new Dictionary<Guid, ExpectedFile> { [move.Id] = Facts(file) },
+            TestContext.Current.CancellationToken);
+
+        using var held = HoldLock(sandbox);
+        Assert.True(File.Exists(Path.Combine(folder, "Documents", "a.pdf")));
+    }
+
+    /// <summary>What another DeskAI window does while it is running a tidy.</summary>
+    private static FileStream HoldLock(TemporaryDirectory sandbox) =>
+        new(FolderTidyExecutor.LockPathFor(Path.Combine(sandbox.Path, "deskai.db")),
+            FileMode.OpenOrCreate, FileAccess.ReadWrite, FileShare.None);
+
+    private static FolderTidyExecutor Create(IAuthorizedRootRepository roots, IPathPolicy policy, TemporaryDirectory sandbox) =>
         new(roots, new FixedFolderService(null), new PlanValidator(policy), policy, new SystemClock(),
-            new InMemoryOperationJournal(), new InMemoryPlanRepository());
+            new InMemoryOperationJournal(), new InMemoryPlanRepository(), Database(sandbox));
+
+    private static IOptions<DatabaseOptions> Database(TemporaryDirectory sandbox) =>
+        Options.Create(new DatabaseOptions { DatabasePath = Path.Combine(sandbox.Path, "deskai.db") });
 
     private static AuthorizedRoot Allowed(string folder) =>
         AuthorizedRoot.Create(Guid.NewGuid(), folder, "Folder", RootAccessLevel.Allowed, RootAuthorizationScope.MetadataOnly)

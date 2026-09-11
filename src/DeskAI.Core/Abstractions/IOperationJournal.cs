@@ -26,4 +26,13 @@ public interface IOperationJournal
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<ExecutionJournalEntry>> ListIncompleteAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// The records of plans made for one folder, newest first. There is no way to list another
+    /// folder's records through this call.
+    /// </summary>
+    Task<IReadOnlyList<ExecutionJournalEntry>> ListForRootAsync(
+        Guid rootId,
+        int maximumCount,
+        CancellationToken cancellationToken = default);
 }

@@ -3,8 +3,96 @@ using System.Net;
 using DeskAI.AI.Transport;
 using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
+using DeskAI.Core.Execution;
 
 namespace DeskAI.Presentation.Tests;
+
+/// <summary>DeskAI "stopping" — the test's stand-in for a crash or a power cut.</summary>
+internal sealed class SimulatedStop : Exception
+{
+    public SimulatedStop()
+        : base("DeskAI stopped here, as if the computer had turned off.")
+    {
+    }
+}
+
+/// <summary>
+/// The real journal, which can stop DeskAI at one chosen moment of a run.
+/// </summary>
+/// <remarks>
+/// A tidy writes "about to move this file" before moving it and "moved" after. Stopping just
+/// before one of those writes, or just after, leaves the journal and the disk exactly as a
+/// crash at that moment would, because the real code ran up to that point. Nothing is faked
+/// but the stop itself.
+/// </remarks>
+internal sealed class StoppingJournal(IOperationJournal inner) : IOperationJournal
+{
+    private Guid? _operation;
+    private JournalOperationState _state;
+    private bool _afterWriting;
+
+    /// <summary>Stops instead of recording that <paramref name="operationId"/> reached <paramref name="state"/>.</summary>
+    public void StopBefore(Guid operationId, JournalOperationState state) => Arm(operationId, state, afterWriting: false);
+
+    /// <summary>Records that <paramref name="operationId"/> reached <paramref name="state"/>, then stops.</summary>
+    public void StopAfter(Guid operationId, JournalOperationState state) => Arm(operationId, state, afterWriting: true);
+
+    public async Task UpdateOperationAsync(
+        Guid transactionId,
+        Guid operationId,
+        JournalOperationState state,
+        string? failureMessage,
+        CancellationToken cancellationToken = default)
+    {
+        var stop = _operation == operationId && _state == state;
+        if (stop && !_afterWriting)
+        {
+            _operation = null;
+            throw new SimulatedStop();
+        }
+
+        await inner.UpdateOperationAsync(transactionId, operationId, state, failureMessage, cancellationToken);
+        if (stop)
+        {
+            _operation = null;
+            throw new SimulatedStop();
+        }
+    }
+
+    public Task CreateAsync(ExecutionJournalEntry entry, CancellationToken cancellationToken = default) =>
+        inner.CreateAsync(entry, cancellationToken);
+
+    public Task UpdateTransactionAsync(
+        Guid transactionId,
+        ExecutionTransactionState state,
+        DateTimeOffset? finishedAtUtc,
+        CancellationToken cancellationToken = default) =>
+        inner.UpdateTransactionAsync(transactionId, state, finishedAtUtc, cancellationToken);
+
+    public Task<ExecutionJournalEntry?> FindAsync(Guid transactionId, CancellationToken cancellationToken = default) =>
+        inner.FindAsync(transactionId, cancellationToken);
+
+    public Task<IReadOnlyList<ExecutionJournalEntry>> ListRecentAsync(
+        int maximumCount,
+        CancellationToken cancellationToken = default) =>
+        inner.ListRecentAsync(maximumCount, cancellationToken);
+
+    public Task<IReadOnlyList<ExecutionJournalEntry>> ListIncompleteAsync(CancellationToken cancellationToken = default) =>
+        inner.ListIncompleteAsync(cancellationToken);
+
+    public Task<IReadOnlyList<ExecutionJournalEntry>> ListForRootAsync(
+        Guid rootId,
+        int maximumCount,
+        CancellationToken cancellationToken = default) =>
+        inner.ListForRootAsync(rootId, maximumCount, cancellationToken);
+
+    private void Arm(Guid operationId, JournalOperationState state, bool afterWriting)
+    {
+        _operation = operationId;
+        _state = state;
+        _afterWriting = afterWriting;
+    }
+}
 
 /// <summary>Stands in for Windows Credential Manager. Holds only generated test strings.</summary>
 internal sealed class InMemoryCredentialVault : ICredentialVault

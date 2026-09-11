@@ -4,6 +4,7 @@ using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
 using DeskAI.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 
 namespace DeskAI.Presentation.Tests;
 
@@ -15,10 +16,16 @@ namespace DeskAI.Presentation.Tests;
 /// real safety checks. Only three things are swapped: the credential store (so no key is
 /// ever written to Windows), the internet (so no request ever leaves the machine), and
 /// Windows notifications. The folders tests connect are generated under <see cref="Sandbox"/>.
+/// A test about crashes can also start one whose real journal can stop a run part-way, and
+/// any test can close DeskAI and open it again over the same database.
 /// </remarks>
 internal sealed class TestApp : IAsyncDisposable
 {
     private readonly ServiceProvider _services;
+
+    // Set once this DeskAI has been "closed" and a new one opened over the same folder, which
+    // then owns the folder and deletes it at the end.
+    private bool _handedOver;
 
     private TestApp(ServiceProvider services, TemporaryDirectory directory)
     {
@@ -27,6 +34,12 @@ internal sealed class TestApp : IAsyncDisposable
     }
 
     public TemporaryDirectory Directory { get; }
+
+    /// <summary>
+    /// The journal, able to stop DeskAI part-way through a run. Only in an app started with
+    /// <see cref="StartStoppableAsync"/>; otherwise the journal is the plain real one.
+    /// </summary>
+    public StoppingJournal Stopping => (StoppingJournal)_services.GetRequiredService<IOperationJournal>();
 
     /// <summary>Where tests put the generated folders they connect.</summary>
     public string Sandbox => System.IO.Path.Combine(Directory.Path, "folders");
@@ -39,13 +52,32 @@ internal sealed class TestApp : IAsyncDisposable
 
     public T Get<T>() where T : notnull => _services.GetRequiredService<T>();
 
-    public static async Task<TestApp> StartAsync()
+    public static Task<TestApp> StartAsync() => StartAsync(new TemporaryDirectory(), stoppable: false);
+
+    /// <summary>
+    /// A DeskAI whose journal can stop it part-way through a run, as a crash would. Everything
+    /// else is the same as <see cref="StartAsync()"/>.
+    /// </summary>
+    public static Task<TestApp> StartStoppableAsync() => StartAsync(new TemporaryDirectory(), stoppable: true);
+
+    /// <summary>
+    /// Closes this DeskAI and opens a new one over the same database and folders — the test's
+    /// version of quitting DeskAI and starting it again. Nothing is carried over in memory.
+    /// </summary>
+    public async Task<TestApp> ReopenAsync()
     {
-        var directory = new TemporaryDirectory();
+        await _services.DisposeAsync();
+        _handedOver = true;
+        return await StartAsync(Directory, stoppable: false);
+    }
+
+    private static async Task<TestApp> StartAsync(TemporaryDirectory directory, bool stoppable)
+    {
         var services = new ServiceCollection();
+        var database = System.IO.Path.Combine(directory.Path, "deskai.db");
         services.AddLogging();
         services.AddDeskAiApplication(
-            System.IO.Path.Combine(directory.Path, "deskai.db"),
+            database,
             [System.IO.Path.Combine(directory.Path, "protected")],
             demo => demo.BasePath = System.IO.Path.Combine(directory.Path, "demos"));
 
@@ -54,6 +86,11 @@ internal sealed class TestApp : IAsyncDisposable
         Replace<ICredentialVault>(services, new InMemoryCredentialVault());
         Replace<IAiHttpTransport>(services, new RecordingAiTransport());
         Replace<IFindingNotifier>(services, new RecordingNotifier());
+        if (stoppable)
+        {
+            Replace<IOperationJournal>(services, new StoppingJournal(
+                new SqliteOperationJournal(Options.Create(new DatabaseOptions { DatabasePath = database }))));
+        }
 
         var provider = services.BuildServiceProvider(new ServiceProviderOptions
         {
@@ -93,7 +130,10 @@ internal sealed class TestApp : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
-        Directory.Dispose();
+        if (!_handedOver)
+        {
+            Directory.Dispose();
+        }
     }
 
     private static void Replace<T>(ServiceCollection services, T instance) where T : class
