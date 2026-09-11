@@ -10,7 +10,6 @@ public sealed class NavigationService(IServiceProvider serviceProvider) : INavig
     {
         ["dashboard"] = typeof(DashboardPage),
         ["organize"] = typeof(OrganizePage),
-        ["practice"] = typeof(PracticePage),
         ["search"] = typeof(SearchPage),
         ["automation"] = typeof(AutomationPage),
         ["settings"] = typeof(SettingsPage),

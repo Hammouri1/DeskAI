@@ -270,10 +270,10 @@
                             <StackPanel Grid.Column="1" Spacing="4">
                                 <TextBlock FontWeight="SemiBold"
                                            Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                           Text="Practice organizing" />
+                                           Text="Tidy a folder" />
                                 <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="600"
                                            HorizontalAlignment="Left"
-                                           Text="Open Organize to see suggested moves for safe sample files, run them, and undo them. Your own files are never used here." />
+                                           Text="Open Organize, pick a folder, and see where DeskAI would put each loose file. Nothing moves until you press Tidy, and you can undo it." />
                             </StackPanel>
                         </Grid>
 

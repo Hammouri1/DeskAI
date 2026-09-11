@@ -13,8 +13,8 @@ namespace DeskAI.Infrastructure.Execution;
 /// </summary>
 /// <remarks>
 /// <para>
-/// The rules for moving are <see cref="FileOperationRunner"/>'s, shared with the practice
-/// workspace. What is particular here is trust: before the run and again before every file,
+/// The rules for moving are <see cref="FileOperationRunner"/>'s. What is particular here is
+/// trust: before the run and again before every file,
 /// the folder must still be connected, still allowed to be tidied, at the same place it was
 /// when the run started, and still pass the same checks as when tidying was allowed — present,
 /// not a network or whole-drive location, no link in its path, not protected. If any of that
@@ -122,7 +122,7 @@ public sealed class FolderTidyExecutor : IFolderTidyExecutor, IDisposable
         var root = await _roots.FindAsync(plan.RootId, cancellationToken).ConfigureAwait(false);
 
         // Undo moves files too, so it needs the same permission as tidying (spec §1). The
-        // practice workspace never holds it, so a practice record cannot be undone here.
+        // retired practice workspace never held it, so an old practice record cannot be undone.
         if (root is null || !RootCapabilities.CanTidy(root))
         {
             throw new InvalidOperationException(root is null

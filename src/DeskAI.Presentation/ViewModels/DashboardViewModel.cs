@@ -77,7 +77,7 @@ public sealed class DashboardViewModel(
     private bool _hasHealth;
     private string _healthCoverage = string.Empty;
     private bool _hasHealthCoverage;
-    private string _heroState = "Practice mode";
+    private string _heroState = "Nothing connected yet";
     private string _heroTitle = "Your files are untouched";
     private string _heroMessage =
         "No folder of yours is connected, so nothing on your computer can be moved, renamed, or deleted.";
@@ -409,7 +409,7 @@ public sealed class DashboardViewModel(
 
         if (!summary.HasAnything)
         {
-            HeroState = "Practice mode";
+            HeroState = "Nothing connected yet";
             HeroTitle = "Your files are untouched";
             HeroMessage =
                 "No folder of yours is connected, so nothing on your computer can be moved, renamed, or deleted.";

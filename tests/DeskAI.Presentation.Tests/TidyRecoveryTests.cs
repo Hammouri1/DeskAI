@@ -1,7 +1,6 @@
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Execution;
 using DeskAI.Core.Tidy;
-using DeskAI.Infrastructure.Execution;
 
 namespace DeskAI.Presentation.Tests;
 
@@ -359,7 +358,7 @@ public sealed class TidyRecoveryTests
     }
 
     [Fact]
-    public async Task A_record_cannot_be_checked_or_closed_from_another_folder_or_the_practice_workspace()
+    public async Task A_record_cannot_be_checked_or_closed_from_another_folder_or_an_old_practice_folder()
     {
         await using var first = await TestApp.StartStoppableAsync();
         var (folder, rootId, _) = await SetUpAsync(first, "a.pdf", "b.pdf");
@@ -368,21 +367,17 @@ public sealed class TidyRecoveryTests
         await Assert.ThrowsAsync<SimulatedStop>(() => TidyAllAsync(first, preview));
         await using var app = await first.ReopenAsync();
         var otherId = await TidySuggestionTests.ConnectAndAllowAsync(app, app.MakeFolder("Desktop", "x.pdf"));
-        var demo = app.Get<TemporaryDemoPlanExecutor>();
-        await demo.PrepareAsync(TestContext.Current.CancellationToken);
-        await app.Get<IAuthorizedRootRepository>().SaveAsync(demo.Root, TestContext.Current.CancellationToken);
+        var practice = await TidyRunTests.OldPracticeFolderAsync(app);
         var executor = app.Get<IFolderTidyExecutor>();
 
         Assert.Empty(await executor.CheckInterruptedAsync(otherId, TestContext.Current.CancellationToken));
-        Assert.Empty(await executor.CheckInterruptedAsync(demo.Root.Id, TestContext.Current.CancellationToken));
+        Assert.Empty(await executor.CheckInterruptedAsync(practice.Id, TestContext.Current.CancellationToken));
         var record = Assert.Single(await executor.CheckInterruptedAsync(rootId, TestContext.Current.CancellationToken));
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             executor.CloseInterruptedAsync(otherId, record.Id, TestContext.Current.CancellationToken));
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            executor.CloseInterruptedAsync(demo.Root.Id, record.Id, TestContext.Current.CancellationToken));
+            executor.CloseInterruptedAsync(practice.Id, record.Id, TestContext.Current.CancellationToken));
 
-        // And practice recovery still leaves the checked record exactly as it is.
-        await demo.RecoverIncompleteAsync(TestContext.Current.CancellationToken);
         Assert.Equal(ExecutionTransactionState.RecoveryRequired,
             (await app.Get<IOperationJournal>().FindAsync(record.Id, TestContext.Current.CancellationToken))!.State);
         Assert.True(File.Exists(Path.Combine(folder, "Documents", "b.pdf")));

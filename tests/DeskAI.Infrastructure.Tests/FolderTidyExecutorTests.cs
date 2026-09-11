@@ -201,6 +201,85 @@ public sealed class FolderTidyExecutorTests
         Assert.True(File.Exists(Path.Combine(folder, "Documents", "a.pdf")));
     }
 
+    // The next three came from the retired practice executor's tests (2026-09-11). They cover
+    // move rules the two executors shared and no real-folder test covered yet.
+
+    [Fact]
+    public async Task An_approval_naming_an_operation_not_in_the_plan_moves_nothing()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var (executor, root, file, _) = Folder(sandbox, new InMemoryOperationJournal());
+        var move = Move("a.pdf");
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, [move]);
+        var approval = new Approval(
+            Guid.NewGuid(), plan.Id, plan.Revision, plan.PolicyVersion,
+            new HashSet<Guid> { move.Id, Guid.NewGuid() }, DateTimeOffset.UtcNow);
+
+        var result = await executor.ExecuteAsync(
+            plan, approval, new Dictionary<Guid, ExpectedFile> { [move.Id] = Facts(file) }, TestContext.Current.CancellationToken);
+
+        Assert.Equal(ExecutionOutcome.Failed, Assert.Single(result.Operations).Outcome);
+        Assert.True(File.Exists(file));
+    }
+
+    [Fact]
+    public async Task If_the_journal_cannot_be_written_first_no_file_changes()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var (executor, root, file, folder) = Folder(sandbox, new FailingCreateOperationJournal());
+        var move = Move("a.pdf");
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, [move]);
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() => executor.ExecuteAsync(
+            plan,
+            Approval.Create(Guid.NewGuid(), plan, [move.Id], DateTimeOffset.UtcNow),
+            new Dictionary<Guid, ExpectedFile> { [move.Id] = Facts(file) },
+            TestContext.Current.CancellationToken));
+
+        Assert.True(File.Exists(file));
+        Assert.False(File.Exists(Path.Combine(folder, "Documents", "a.pdf")));
+    }
+
+    [Fact]
+    public async Task Every_move_is_journaled_with_the_file_facts_before_and_its_outcome_after()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var journal = new InMemoryOperationJournal();
+        var (executor, root, file, _) = Folder(sandbox, journal);
+        var facts = Facts(file);
+        var move = Move("a.pdf");
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, [move]);
+
+        var result = await executor.ExecuteAsync(
+            plan,
+            Approval.Create(Guid.NewGuid(), plan, [move.Id], DateTimeOffset.UtcNow),
+            new Dictionary<Guid, ExpectedFile> { [move.Id] = facts },
+            TestContext.Current.CancellationToken);
+
+        var entry = await journal.FindAsync(result.TransactionId, TestContext.Current.CancellationToken);
+        Assert.Equal(ExecutionTransactionState.Completed, entry!.State);
+        var recorded = Assert.Single(entry.Operations);
+        Assert.Equal(JournalOperationState.Completed, recorded.State);
+        Assert.Equal(facts.SizeBytes, recorded.BeforeSizeBytes);
+        Assert.Equal(facts.ModifiedAtUtc, recorded.BeforeModifiedAtUtc);
+    }
+
+    /// <summary>A tidy-permitted folder holding a.pdf and an empty Documents folder.</summary>
+    private static (FolderTidyExecutor Executor, AuthorizedRoot Root, string File, string Folder) Folder(
+        TemporaryDirectory sandbox,
+        InMemoryOperationJournal journal)
+    {
+        var folder = sandbox.CreateDummyDirectory("Folder");
+        sandbox.CreateDummyDirectory(@"Folder\Documents");
+        var file = sandbox.CreateDummyFile(@"Folder\a.pdf");
+        var root = Allowed(folder);
+        var executor = new FolderTidyExecutor(
+            new DisconnectingRootRepository(root, int.MaxValue), new FixedFolderService(null),
+            new PlanValidator(new WindowsPathPolicy()), new WindowsPathPolicy(), new SystemClock(),
+            journal, new InMemoryPlanRepository(), Database(sandbox));
+        return (executor, root, file, folder);
+    }
+
     /// <summary>What another DeskAI window does while it is running a tidy.</summary>
     private static FileStream HoldLock(TemporaryDirectory sandbox) =>
         new(FolderTidyExecutor.LockPathFor(Path.Combine(sandbox.Path, "deskai.db")),

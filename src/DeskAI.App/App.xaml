@@ -1,8 +1,7 @@
 <Application
     x:Class="DeskAI.App.App"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:converters="using:DeskAI.App.Converters">
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
@@ -10,10 +9,6 @@
                 <!-- Merged after the control resources so DeskAI's palette wins. -->
                 <ResourceDictionary Source="ms-appx:///Themes/DeskAITheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
-
-            <converters:StatusLevelToBrushConverter x:Key="StatusLevelToBrush" />
-            <converters:StatusLevelToGlyphConverter x:Key="StatusLevelToGlyph" />
-            <converters:StatusLevelToBackgroundConverter x:Key="StatusLevelToBackground" />
         </ResourceDictionary>
     </Application.Resources>
 </Application>

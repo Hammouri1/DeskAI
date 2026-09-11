@@ -78,8 +78,7 @@ internal sealed class TestApp : IAsyncDisposable
         services.AddLogging();
         services.AddDeskAiApplication(
             database,
-            [System.IO.Path.Combine(directory.Path, "protected")],
-            demo => demo.BasePath = System.IO.Path.Combine(directory.Path, "demos"));
+            [System.IO.Path.Combine(directory.Path, "protected")]);
 
         // Replace, never add alongside: a second registration would leave the real one
         // reachable through IEnumerable<T>.

@@ -16,16 +16,9 @@ public static class ServiceCollectionExtensions
 {
     public static IServiceCollection AddDeskAiInfrastructure(
         this IServiceCollection services,
-        Action<DatabaseOptions> configureDatabase,
-        Action<DemoWorkspaceOptions>? configureDemoWorkspace = null)
+        Action<DatabaseOptions> configureDatabase)
     {
         services.AddOptions<DatabaseOptions>().Configure(configureDatabase);
-        services.AddOptions<DemoWorkspaceOptions>().Configure(options =>
-            options.BasePath = Path.Combine(Path.GetTempPath(), "DeskAI-Demos"));
-        if (configureDemoWorkspace is not null)
-        {
-            services.Configure(configureDemoWorkspace);
-        }
         services.AddSingleton<IClock, SystemClock>();
         services.AddSingleton<ICredentialVault>(_ => OperatingSystem.IsWindows()
             ? new WindowsCredentialVault()
@@ -48,12 +41,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAiUsageBudget, SqliteAiUsageBudget>();
         services.AddSingleton<IPlanRepository, SqlitePlanRepository>();
         services.AddSingleton<IOperationJournal, SqliteOperationJournal>();
-        services.AddSingleton<TemporaryDemoPlanExecutor>();
-        services.AddSingleton<IPlanExecutor>(provider => provider.GetRequiredService<TemporaryDemoPlanExecutor>());
-        services.AddSingleton<IUndoService>(provider => provider.GetRequiredService<TemporaryDemoPlanExecutor>());
-
-        // The only executor that may change a folder someone connected. It acts only while that
-        // folder may be tidied, checking again before every file. See ADR 0021.
+        // The only code in DeskAI that moves a file. It acts only in a folder someone connected
+        // and allowed to be tidied, checking again before every file. See ADR 0021 and 0022.
+        // (The practice executor it once shared its rules with was retired on 2026-09-11.)
         services.AddSingleton<IFolderTidyExecutor, FolderTidyExecutor>();
         return services;
     }

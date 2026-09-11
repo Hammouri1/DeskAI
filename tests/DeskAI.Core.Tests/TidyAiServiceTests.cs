@@ -21,10 +21,9 @@ public sealed class TidyAiServiceTests
     {
         var forbidden = new[]
         {
-            typeof(IPlanExecutor),
             typeof(IFolderTidyExecutor),
-            typeof(IUndoService),
             typeof(IOperationJournal),
+            typeof(IPlanRepository),
             typeof(IFileScanner),
             typeof(IFileIndex),
             typeof(IMetadataIndexService),

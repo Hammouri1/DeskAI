@@ -176,13 +176,17 @@ public sealed class SettingsPageTests
         settings.CloudConsent = true;
         settings.DailyRequestLimit = 1;
         await settings.SaveProviderAsync("generated-test-key-not-real");
-        var organize = app.Get<PracticeViewModel>();
+        app.Internet.Reply = _ => new DeskAI.AI.Transport.AiHttpResponse(System.Net.HttpStatusCode.InternalServerError, "{}");
+        var organize = app.Get<TidyViewModel>();
         await organize.InitializeAsync();
+        await organize.ConnectAndSelectAsync(app.MakeFolder("Downloads", "mystery.zzz"));
+        await organize.AllowTidyAsync();
 
-        await organize.GetAiSuggestionsCommand.ExecuteAsync(null);
-        await organize.GetAiSuggestionsCommand.ExecuteAsync(null);
+        // The first answer is an error, so the file is still there to ask about again.
+        await organize.AskAiAsync((await organize.PrepareAiQuestionAsync())!);
+        await organize.AskAiAsync((await organize.PrepareAiQuestionAsync())!);
 
         Assert.Single(app.Internet.Requests);
-        Assert.Contains("today's online AI limit", organize.AiPreviewMessage, StringComparison.Ordinal);
+        Assert.Contains("today's online AI limit", organize.AiMessage, StringComparison.Ordinal);
     }
 }

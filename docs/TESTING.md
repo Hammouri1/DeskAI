@@ -129,7 +129,8 @@ changes a feature.
 | Organize | Tidy moves exactly the ticked files; result line; skipped files with reasons | `TidyRunPageTests`, `TidyRunTests` |
 | Organize | Re-checked before each file: changed, replaced, gone, name taken, busy, online-only, link, permission withdrawn, disconnected, protected, escaping plan, stale approval | `TidyRunTests`, `FolderTidyExecutorTests` |
 | Organize | Undo: files back, folders that were there kept, changed or blocked files refused, once only, asks for permission again | `TidyRunPageTests`, `TidyRunTests` |
-| Organize | Neither executor acts on the other's folder or undoes its records | `TidyRunTests` |
+| Organize | An old practice folder left in a database is never tidied or undone | `TidyRunTests`, `TidyRecoveryTests` |
+| Organize | How tidying works: four steps and the promise, open for someone new, closed once a folder may be tidied | `TidyPageTests` |
 | Organize | Last tidy found again after reopening, with Undo; only the latest; asks for permission first; once only | `TidyRecoveryPageTests`, `TidyRecoveryTests` |
 | Organize | Interrupted tidy: checked file by file, "N of M moved", Undo those / Keep them, OK when nothing moved, files to check listed, Tidy off until answered | `TidyRecoveryPageTests`, `TidyRecoveryTests` |
 | Organize | Interrupted undo: how many went back, OK only, never offered again | `TidyRecoveryPageTests`, `TidyRecoveryTests` |
@@ -140,8 +141,6 @@ changes a feature.
 | Organize | Only files DeskAI doesn't know, or every file rules don't place; rules still win | `TidyAiPageTests`, `TidyAiTests` |
 | Organize | AI isn't sure: own group, unticked; refused answers change nothing | `TidyAiPageTests`, `TidyAiTests` |
 | Organize | What AI may see: no names unless allowed, no locations, no file IDs, no left-alone or protected files; re-checked before Send | `TidyAiTests`, `PlanSafetyCheckTests`, `TidyAiServiceTests` |
-| Practice | Practice preview, select/clear, run, undo | `PracticePageTests` |
-| Practice | Get AI ideas (sends, shares only what was agreed, refusals) | `AiJourneyTests`, `SettingsPageTests` |
 | Search | Connect, refresh, disconnect, protected-folder refusal | `SearchPageTests` |
 | Search | Typed search, chips, scope, not-understood, nothing matched | `SearchPageTests` |
 | Search | Saved searches | `SearchPageTests` |
@@ -151,7 +150,7 @@ changes a feature.
 | Automatic tasks | Check now, history, how often, pause, notifications | `AutomationPageTests` |
 | Privacy and AI | Sharing choices, AI modes, key storage and removal, daily limit | `SettingsPageTests`, `AiJourneyTests` |
 | Privacy and AI | Pasted key trimmed, spaced key refused, wrong-looking key warned | `SettingsPageTests` |
-| Practice | Rejected key vs refused request, with the service's own reason | `AiJourneyTests`, `CloudSuggestionProviderTests` |
+| Organize | Ask AI after turning AI on: one request to the chosen service, rejected key in plain words, removing the key stops it, daily limit | `AiJourneyTests`, `SettingsPageTests`, `CloudSuggestionProviderTests` |
 | Every page | "?" help next to each feature: complete, short, no jargon, placed | `HelpCatalogTests`, `HelpPlacementTests` |
 
 ## Quality Gates

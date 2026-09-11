@@ -1,6 +1,5 @@
 using DeskAI.AI;
 using DeskAI.AI.Transport;
-using DeskAI.App.Preview;
 using DeskAI.App.ViewModels;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Ai;
@@ -30,16 +29,13 @@ public static class DeskAiApplicationServices
     public static IServiceCollection AddDeskAiApplication(
         this IServiceCollection services,
         string databasePath,
-        IEnumerable<string> protectedPaths,
-        Action<DemoWorkspaceOptions>? configureDemoWorkspace = null)
+        IEnumerable<string> protectedPaths)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(databasePath);
         ArgumentNullException.ThrowIfNull(protectedPaths);
         var protectedList = protectedPaths.Where(path => !string.IsNullOrWhiteSpace(path)).ToArray();
 
-        services.AddDeskAiInfrastructure(
-            options => options.DatabasePath = databasePath,
-            configureDemoWorkspace);
+        services.AddDeskAiInfrastructure(options => options.DatabasePath = databasePath);
         services.AddSingleton<IAiHttpTransport>(_ => new HttpClientAiTransport(
             new HttpClient(new HttpClientHandler { AllowAutoRedirect = false })
             {
@@ -55,7 +51,6 @@ public static class DeskAiApplicationServices
         // change a file, and it sends only after the page has shown what would be sent.
         services.AddSingleton<TidyAiService>();
         services.AddSingleton<TidyRunService>();
-        services.AddSingleton<DemoOrganizationPlanFactory>();
         services.AddSingleton<FileSearchService>();
         services.AddSingleton<ConnectedFolderService>();
         // The only service that opens a file. It refuses any folder that was not
@@ -73,7 +68,6 @@ public static class DeskAiApplicationServices
         // Which folder Organize opens on after "Review in Organize". A folder ID, nothing more.
         services.AddSingleton<OrganizeRequest>();
         services.AddTransient<ShellViewModel>();
-        services.AddTransient<PracticeViewModel>();
         services.AddTransient<TidyViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<SearchViewModel>();

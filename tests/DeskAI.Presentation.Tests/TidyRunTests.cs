@@ -1,8 +1,8 @@
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Execution;
 using DeskAI.Core.Plans;
+using DeskAI.Core.Roots;
 using DeskAI.Core.Tidy;
-using DeskAI.Infrastructure.Execution;
 
 namespace DeskAI.Presentation.Tests;
 
@@ -262,21 +262,19 @@ public sealed class TidyRunTests
     }
 
     [Fact]
-    public async Task The_practice_workspace_can_never_be_tidied_by_the_real_folder_executor()
+    public async Task An_old_practice_folder_left_in_the_database_can_never_be_tidied()
     {
         await using var app = await TestApp.StartAsync();
-        var demo = app.Get<TemporaryDemoPlanExecutor>();
-        await demo.PrepareAsync(TestContext.Current.CancellationToken);
-        await app.Get<IAuthorizedRootRepository>().SaveAsync(demo.Root, TestContext.Current.CancellationToken);
+        var practice = await OldPracticeFolderAsync(app);
         var move = new MoveFileOperation(Guid.NewGuid(), "semester-budget.xlsx", @"Sheets\semester-budget.xlsx", "Test", OperationProvenance.Rule);
-        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), demo.Root.Id, 1, DateTimeOffset.UtcNow, "v1", [move]);
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), practice.Id, 1, DateTimeOffset.UtcNow, "v1", [move]);
 
         var result = await app.Get<IFolderTidyExecutor>().ExecuteAsync(
             plan, Approval.Create(Guid.NewGuid(), plan, [move.Id], DateTimeOffset.UtcNow),
             new Dictionary<Guid, ExpectedFile>(), TestContext.Current.CancellationToken);
 
         Assert.Equal(ExecutionOutcome.Failed, Assert.Single(result.Operations).Outcome);
-        Assert.True(File.Exists(Path.Combine(demo.Root.CanonicalPath, "semester-budget.xlsx")));
+        Assert.True(File.Exists(Path.Combine(practice.CanonicalPath, "semester-budget.xlsx")));
     }
 
     [Fact]
@@ -368,40 +366,44 @@ public sealed class TidyRunTests
     }
 
     [Fact]
-    public async Task Neither_executor_undoes_the_other_ones_record()
+    public async Task A_record_from_an_old_practice_folder_is_never_undone()
     {
         await using var app = await TestApp.StartAsync();
-        var (folder, rootId, _) = await SetUpAsync(app, "invoice.pdf");
-        var run = await TidyAllAsync(app, await PreviewAsync(app, rootId));
-        var demo = app.Get<TemporaryDemoPlanExecutor>();
-        await demo.PrepareAsync(TestContext.Current.CancellationToken);
+        var practice = await OldPracticeFolderAsync(app);
+        Directory.CreateDirectory(Path.Combine(practice.CanonicalPath, "Sheets"));
+        File.Move(
+            Path.Combine(practice.CanonicalPath, "semester-budget.xlsx"),
+            Path.Combine(practice.CanonicalPath, "Sheets", "semester-budget.xlsx"));
+        var move = new MoveFileOperation(Guid.NewGuid(), "semester-budget.xlsx", @"Sheets\semester-budget.xlsx", "Test", OperationProvenance.Rule);
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), practice.Id, 1, DateTimeOffset.UtcNow, "v1", [move]);
+        await app.Get<IPlanRepository>().SaveAsync(plan, TestContext.Current.CancellationToken);
+        var info = new FileInfo(Path.Combine(practice.CanonicalPath, "Sheets", "semester-budget.xlsx"));
+        var record = new ExecutionJournalEntry(
+            Guid.NewGuid(), plan.Id, 1, Guid.NewGuid(), ExecutionTransactionKind.Execute, null,
+            ExecutionTransactionState.Completed, DateTimeOffset.UtcNow, DateTimeOffset.UtcNow,
+            [new OperationJournalEntry(0, move.Id, PlanOperationKind.MoveFile, move.SourceRelativePath, move.DestinationRelativePath,
+                info.Length, info.LastWriteTimeUtc, JournalOperationState.Completed, null)]);
+        await app.Get<IOperationJournal>().CreateAsync(record, TestContext.Current.CancellationToken);
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            demo.UndoAsync(run.TransactionId!.Value, TestContext.Current.CancellationToken));
-        Assert.True(File.Exists(Path.Combine(folder, "Documents", "invoice.pdf")));
+            app.Get<IFolderTidyExecutor>().UndoAsync(record.Id, TestContext.Current.CancellationToken));
 
-        var practice = app.Get<DeskAI.App.ViewModels.PracticeViewModel>();
-        await practice.InitializeAsync();
-        await practice.ExecuteDemoCommand.ExecuteAsync(null);
-        var demoRecord = (await app.Get<IOperationJournal>().ListRecentAsync(1, TestContext.Current.CancellationToken)).Single();
-
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            app.Get<IFolderTidyExecutor>().UndoAsync(demoRecord.Id, TestContext.Current.CancellationToken));
+        Assert.True(File.Exists(info.FullName));
     }
 
-    [Fact]
-    public async Task Practice_recovery_leaves_an_interrupted_tidy_of_a_real_folder_untouched()
+    /// <summary>
+    /// A practice folder as a database from before 2026-09-11 can still hold one. The practice
+    /// page is gone, but its scope stays, and must stay meaning "never tidied".
+    /// </summary>
+    internal static async Task<AuthorizedRoot> OldPracticeFolderAsync(TestApp app)
     {
-        await using var app = await TestApp.StartAsync();
-        var (_, rootId, _) = await SetUpAsync(app, "invoice.pdf");
-        var run = await TidyAllAsync(app, await PreviewAsync(app, rootId));
-        var journal = app.Get<IOperationJournal>();
-        await journal.UpdateTransactionAsync(run.TransactionId!.Value, ExecutionTransactionState.Executing, null, TestContext.Current.CancellationToken);
-
-        await app.Get<TemporaryDemoPlanExecutor>().RecoverIncompleteAsync(TestContext.Current.CancellationToken);
-
-        var record = await journal.FindAsync(run.TransactionId.Value, TestContext.Current.CancellationToken);
-        Assert.Equal(ExecutionTransactionState.Executing, record!.State);
+        var path = app.Directory.CreateDummyDirectory("DeskAI.Demo.old");
+        app.Directory.CreateDummyFile(@"DeskAI.Demo.old\semester-budget.xlsx");
+        var practice = AuthorizedRoot.Create(
+            Guid.NewGuid(), path, "Safe temporary demo", RootAccessLevel.Allowed, RootAuthorizationScope.ControlledDemo);
+        await app.Get<IAuthorizedRootRepository>().SaveAsync(practice, TestContext.Current.CancellationToken);
+        await app.Get<IAuthorizedRootRepository>().AllowTidyAsync(practice.Id, DateTimeOffset.UtcNow, TestContext.Current.CancellationToken);
+        return practice;
     }
 
     private static async Task<(string Folder, Guid RootId, string Sentinel)> SetUpAsync(TestApp app, params string[] files)

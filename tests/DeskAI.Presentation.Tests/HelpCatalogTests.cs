@@ -66,7 +66,6 @@ public sealed class HelpCatalogTests
     [InlineData("home.health")]
     [InlineData("home.duplicates")]
     [InlineData("home.storage")]
-    [InlineData("organize.practice")]
     [InlineData("organize.tidy")]
     [InlineData("organize.permission")]
     [InlineData("organize.suggestions")]

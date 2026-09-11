@@ -19,10 +19,10 @@ public sealed class HomeAndShellTests
         await home.InitializeAsync();
         await shell.RefreshAsync();
 
-        Assert.Equal("Practice mode", home.HeroState);
+        Assert.Equal("Nothing connected yet", home.HeroState);
         Assert.False(home.HasStorage);
         Assert.False(home.HasHealth);
-        Assert.Equal("Practice mode", shell.ScopeTitle);
+        Assert.Equal("Nothing connected yet", shell.ScopeTitle);
         Assert.Contains("No folders connected", shell.ScopeMessage, StringComparison.Ordinal);
     }
 

@@ -30,7 +30,7 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
     private readonly IFindingNotifier _notifier;
     private readonly OrganizeRequest _organize;
     private readonly SynchronizationContext? _uiContext;
-    private string _scopeTitle = "Practice mode";
+    private string _scopeTitle = "Nothing connected yet";
     private string _scopeMessage = "No folders connected. DeskAI cannot see any of your files.";
     private string _findingMessage = string.Empty;
     private bool _hasFinding;
@@ -199,7 +199,7 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
 
         if (connected.Count == 0)
         {
-            ScopeTitle = "Practice mode";
+            ScopeTitle = "Nothing connected yet";
             ScopeMessage = "No folders connected. DeskAI cannot see any of your files.";
             return;
         }

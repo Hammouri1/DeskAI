@@ -19,6 +19,36 @@
                            Text="Pick a folder. DeskAI suggests where things go. Nothing moves until you say so." />
             </StackPanel>
 
+            <!--
+                How tidying works, in four steps. It replaced the practice page on 2026-09-11.
+                Open for someone who has not allowed tidying anywhere yet, closed otherwise.
+                Only the promise line wears the accent, because it is the safety promise.
+            -->
+            <Expander HorizontalAlignment="Stretch" Header="How tidying works"
+                      IsExpanded="{x:Bind ViewModel.HowItWorksOpen, Mode=TwoWay}">
+                <StackPanel Spacing="10" MaxWidth="640" HorizontalAlignment="Left">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.HowItWorksSteps}" AutomationProperties.Name="How tidying works">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,8">
+                                    <FontIcon FontSize="12" Glyph="&#xE76C;" VerticalAlignment="Top" Margin="0,3,0,0"
+                                              Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                               Text="{x:Bind}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon FontSize="13" Glyph="&#xE72E;" VerticalAlignment="Top" Margin="0,3,0,0"
+                                  Foreground="{ThemeResource DeskAccentBrush}" />
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                   Text="{x:Bind ViewModel.HowItWorksPromise}" />
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
+
             <!-- Which folder. The list holds folders already connected; the button adds one. -->
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="12">
@@ -343,12 +373,6 @@
                                Text="{x:Bind ViewModel.UndoSummary, Mode=OneWay}" />
                 </StackPanel>
             </Border>
-
-            <StackPanel Orientation="Horizontal" Spacing="8">
-                <HyperlinkButton Padding="0" Content="Nervous? Try it on example files first"
-                                 Click="OnPracticeClick" />
-                <controls:HelpButton Topic="organize.practice" />
-            </StackPanel>
 
         </StackPanel>
     </ScrollViewer>

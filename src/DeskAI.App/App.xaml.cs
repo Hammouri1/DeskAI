@@ -66,7 +66,6 @@ public partial class App : Application
                 services.AddSingleton<IFindingNotifier, WindowsFindingNotifier>();
                 services.AddTransient<DashboardPage>();
                 services.AddTransient<OrganizePage>();
-                services.AddTransient<PracticePage>();
                 services.AddTransient<SearchPage>();
                 services.AddTransient<AutomationPage>();
                 services.AddTransient<SettingsPage>();

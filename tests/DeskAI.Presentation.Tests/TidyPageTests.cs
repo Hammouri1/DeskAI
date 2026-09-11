@@ -20,6 +20,45 @@ public sealed class TidyPageTests
     }
 
     [Fact]
+    public async Task How_tidying_works_is_open_for_someone_new_and_says_the_steps_in_plain_words()
+    {
+        await using var app = await TestApp.StartAsync();
+        var page = app.Get<TidyViewModel>();
+
+        await page.InitializeAsync();
+
+        Assert.True(page.HowItWorksOpen);
+        Assert.Equal(4, page.HowItWorksSteps.Count);
+        Assert.StartsWith("Pick a folder", page.HowItWorksSteps[0], StringComparison.Ordinal);
+        Assert.Contains("Allow tidying", page.HowItWorksSteps[1], StringComparison.Ordinal);
+        Assert.Contains("Untick", page.HowItWorksSteps[2], StringComparison.Ordinal);
+        Assert.Contains("Undo, even after closing DeskAI", page.HowItWorksSteps[3], StringComparison.Ordinal);
+        Assert.Contains("never deletes anything", page.HowItWorksPromise, StringComparison.Ordinal);
+        foreach (var text in page.HowItWorksSteps.Append(page.HowItWorksPromise))
+        {
+            Assert.True(text.Split(' ').Length <= 20, $"Too long for a quick read: {text}");
+            Assert.DoesNotContain(DeskAI.App.Help.HelpCatalog.BannedWords, word =>
+                System.Text.RegularExpressions.Regex.IsMatch(text, $@"\b{word}\b", System.Text.RegularExpressions.RegexOptions.IgnoreCase));
+        }
+    }
+
+    [Fact]
+    public async Task How_tidying_works_starts_closed_once_a_folder_may_be_tidied_and_stays_as_left()
+    {
+        await using var app = await TestApp.StartAsync();
+        await TidySuggestionTests.ConnectAndAllowAsync(app, app.MakeFolder("Downloads", "invoice.pdf"));
+        var page = app.Get<TidyViewModel>();
+
+        await page.InitializeAsync();
+        Assert.False(page.HowItWorksOpen);
+
+        page.HowItWorksOpen = true;
+        await page.StopTidyingCommand.ExecuteAsync(null);
+
+        Assert.True(page.HowItWorksOpen);
+    }
+
+    [Fact]
     public async Task Picking_a_new_folder_connects_it_and_asks_for_permission_before_suggesting_anything()
     {
         await using var app = await TestApp.StartAsync();

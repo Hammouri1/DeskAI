@@ -1,4 +1,3 @@
-using DeskAI.App.Navigation;
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using Microsoft.UI.Xaml;
@@ -17,14 +16,12 @@ namespace DeskAI.App.Views;
 public sealed partial class OrganizePage : Page
 {
     private readonly IFolderPickerService _folderPicker;
-    private readonly INavigationService _navigation;
 
-    public OrganizePage(TidyViewModel viewModel, IFolderPickerService folderPicker, INavigationService navigation)
+    public OrganizePage(TidyViewModel viewModel, IFolderPickerService folderPicker)
     {
         InitializeComponent();
         ViewModel = viewModel;
         _folderPicker = folderPicker;
-        _navigation = navigation;
         Loaded += OnLoaded;
     }
 
@@ -191,8 +188,6 @@ public sealed partial class OrganizePage : Page
             await ViewModel.AskAiAsync(question);
         }
     }
-
-    private void OnPracticeClick(object sender, RoutedEventArgs e) => _navigation.Navigate("practice");
 
     private async Task ShowAsync(string title, string content) =>
         await new ContentDialog { XamlRoot = XamlRoot, Title = title, Content = content, CloseButtonText = "OK" }.ShowAsync();

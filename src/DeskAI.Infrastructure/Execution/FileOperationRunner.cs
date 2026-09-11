@@ -10,10 +10,10 @@ namespace DeskAI.Infrastructure.Execution;
 /// How an executor proves, right now, that it may still change files in its folder.
 /// </summary>
 /// <remarks>
-/// The practice workspace proves it with its ownership marker; a real folder with a live check
-/// of its tidy permission and its path. Everything else about moving files is shared in
-/// <see cref="FileOperationRunner"/>, so there is one set of move rules rather than two that
-/// can drift apart.
+/// A connected folder proves it with a live check of its tidy permission and its path
+/// (<see cref="FolderTidyExecutor"/>). Keeping that apart from <see cref="FileOperationRunner"/>
+/// keeps "may I touch this folder?" separate from "how is a file moved safely?". The practice
+/// workspace, which proved it with a marker, was retired on 2026-09-11.
 /// </remarks>
 internal interface IRootTrust
 {
@@ -243,25 +243,6 @@ internal sealed class FileOperationRunner(
         return new UndoResult(undoId, transactionId, results, started, finished);
     }
 
-    /// <summary>Whether an interrupted operation can be proved to have finished, from the disk.</summary>
-    public bool DidOperationFinish(AuthorizedRoot root, OperationJournalEntry operation)
-    {
-        try
-        {
-            if (operation.Kind == PlanOperationKind.CreateDirectory)
-            {
-                return Directory.Exists(Resolve(root, operation.DestinationRelativePath));
-            }
-
-            return operation.SourceRelativePath is not null &&
-                   !File.Exists(Resolve(root, operation.SourceRelativePath)) &&
-                   MatchesRecordedFile(Resolve(root, operation.DestinationRelativePath), operation);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or InvalidOperationException)
-        {
-            return false;
-        }
-    }
 
     /// <summary>
     /// What an operation under way when DeskAI stopped actually did, read from the disk.

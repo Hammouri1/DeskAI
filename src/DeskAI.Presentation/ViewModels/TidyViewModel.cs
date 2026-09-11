@@ -548,6 +548,36 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     /// <summary>Lets tests wait for the reload a property change started.</summary>
     public Task WhenIdleAsync() => _pending;
 
+    private static readonly string[] Steps =
+    [
+        "Pick a folder, or add one with \"Choose another folder\".",
+        "Allow tidying for that folder. You can take it back at any time.",
+        "Look through the suggestions. Untick anything you want to leave where it is.",
+        "Press Tidy. Changed your mind? Press Undo, even after closing DeskAI.",
+    ];
+
+    private bool _howItWorksOpen;
+    private bool _howItWorksDecided;
+
+    /// <summary>
+    /// The "How tidying works" card, which replaced the practice page on 2026-09-11: four
+    /// short steps, in order.
+    /// </summary>
+    public IReadOnlyList<string> HowItWorksSteps { get; } = Steps;
+
+    public string HowItWorksPromise { get; } =
+        "DeskAI never deletes anything, never touches files in subfolders, and never moves anything out of the folder you picked.";
+
+    /// <summary>
+    /// Open the first time the page is shown to someone who has not allowed tidying anywhere
+    /// yet; closed for everyone else. After that it stays however the person left it.
+    /// </summary>
+    public bool HowItWorksOpen
+    {
+        get => _howItWorksOpen;
+        set => SetProperty(ref _howItWorksOpen, value);
+    }
+
     /// <summary>Said above the list when an automatic check's notice opened this folder.</summary>
     public string ReviewNote
     {
@@ -642,6 +672,11 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
 
         OnPropertyChanged(nameof(HasFolders));
         OnPropertyChanged(nameof(HasNoFolders));
+        if (!_howItWorksDecided)
+        {
+            _howItWorksDecided = true;
+            HowItWorksOpen = !Folders.Any(folder => folder.CanTidy);
+        }
 
         // Opening the page with folders already connected shows the first one straight away,
         // rather than an empty page that makes someone hunt for what to press.

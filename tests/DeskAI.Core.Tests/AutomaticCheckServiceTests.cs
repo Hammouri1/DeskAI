@@ -92,9 +92,8 @@ public sealed class AutomaticCheckServiceTests
     {
         var forbidden = new[]
         {
-            typeof(IPlanExecutor),
             typeof(IFolderTidyExecutor),
-            typeof(IUndoService),
+            typeof(IOperationJournal),
             typeof(IOrganizationPlanner),
             typeof(IFileScanner),
             typeof(IContentTextExtractor),
