@@ -129,6 +129,10 @@ changes a feature.
 | Organize | Re-checked before each file: changed, replaced, gone, name taken, busy, online-only, link, permission withdrawn, disconnected, protected, escaping plan, stale approval | `TidyRunTests`, `FolderTidyExecutorTests` |
 | Organize | Undo: files back, folders that were there kept, changed or blocked files refused, once only, asks for permission again | `TidyRunPageTests`, `TidyRunTests` |
 | Organize | Neither executor acts on the other's folder or undoes its records | `TidyRunTests` |
+| Organize | Last tidy found again after reopening, with Undo; only the latest; asks for permission first; once only | `TidyRecoveryPageTests`, `TidyRecoveryTests` |
+| Organize | Interrupted tidy: checked file by file, "N of M moved", Undo those / Keep them, OK when nothing moved, files to check listed, Tidy off until answered | `TidyRecoveryPageTests`, `TidyRecoveryTests` |
+| Organize | Interrupted undo: how many went back, OK only, never offered again | `TidyRecoveryPageTests`, `TidyRecoveryTests` |
+| Organize | Recovery never guesses or reaches too far: changed file or link needs review, folder moved or unsafe not checked, other folders and practice refused, one run at a time across windows | `TidyRecoveryTests`, `FolderTidyExecutorTests` |
 | Search | A tidied folder can be disconnected; its tidy history is forgotten, the practice history is not | `TidyRunPageTests`, `SqliteAuthorizedRootRepositoryTests` |
 | Side menu | Says which folders DeskAI may tidy | `HomeAndShellTests` |
 | Organize | Ask AI: off until set up, preview before Send, cancel sends nothing, answer beside the button | `TidyAiPageTests`, `TidyAiTests` |

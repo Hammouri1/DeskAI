@@ -102,6 +102,22 @@ public sealed partial class OrganizePage : Page
         }
     }
 
+    /// <summary>
+    /// "Undo those" after an interrupted tidy moves files back, so it asks for the tidy
+    /// permission the same way Undo does when that was taken back.
+    /// </summary>
+    private async void OnUndoInterruptedClick(object sender, RoutedEventArgs e)
+    {
+        var result = await ViewModel.UndoInterruptedAsync();
+        if (result is { NeedsPermission: true } &&
+            ViewModel.SelectedFolder is { } folder &&
+            await ConfirmTidyPermissionAsync(folder))
+        {
+            await ViewModel.AllowTidyAsync();
+            await ViewModel.UndoInterruptedAsync();
+        }
+    }
+
     private async Task<bool> ConfirmTidyPermissionAsync(TidyFolderOption folder)
     {
         var confirm = new ContentDialog

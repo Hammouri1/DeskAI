@@ -153,10 +153,17 @@ public sealed class TidyGroupViewModel : ObservableObject
 /// Drives the Organize page: pick a folder, allow tidying, and see what tidying would do.
 /// </summary>
 /// <remarks>
+/// <para>
 /// Pressing Tidy moves exactly the ticked files, each checked again right before it moves,
 /// and the result says what happened, including every file that stayed and why. Undo is offered
 /// for that tidy and, like tidying, needs the folder's tidy permission. Nothing else on this
 /// page changes a file; asking AI only adds suggestions.
+/// </para>
+/// <para>
+/// When a folder is shown, its history is read once: the last tidy, which can still be undone
+/// after DeskAI was closed, or a tidy that was interrupted, which is checked against the disk
+/// and put to the person as a question. Tidy stays off until that question is answered.
+/// </para>
 /// </remarks>
 public sealed class TidyViewModel : ObservableObject, IDisposable
 {
@@ -192,6 +199,12 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     private string _resultSummary = string.Empty;
     private string _undoSummary = string.Empty;
 
+    // Which folder's history has been read, so it is read once per folder rather than on
+    // every reload of the list; and the question about an interrupted tidy, if there is one.
+    private Guid? _historyFolderId;
+    private InterruptedTidy? _interrupted;
+    private string _interruptedMessage = string.Empty;
+
     public TidyViewModel(
         ConnectedFolderService folders,
         TidyPermissionService permission,
@@ -209,7 +222,60 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         StopTidyingCommand = new AsyncRelayCommand(StopTidyingAsync, () => SelectedFolder?.CanTidy == true && !IsBusy);
         RefreshCommand = new AsyncRelayCommand(() => _pending = LoadAsync(), () => SelectedFolder is not null && !IsBusy);
         StopAiCommand = new RelayCommand(() => _aiCancellation?.Cancel(), () => IsAskingAi);
+        KeepInterruptedCommand = new AsyncRelayCommand(KeepInterruptedAsync, () => HasInterrupted && !IsTidying);
     }
+
+    /// <summary>"Keep them", or "OK" when there is nothing to put back.</summary>
+    public AsyncRelayCommand KeepInterruptedCommand { get; }
+
+    /// <summary>Files DeskAI could not tell about after the interruption, with where to look.</summary>
+    public ObservableCollection<TidyLeftAloneViewModel> InterruptedFiles { get; } = [];
+
+    public bool HasInterrupted => _interrupted is not null;
+    public bool HasInterruptedFiles => InterruptedFiles.Count > 0;
+
+    public string InterruptedTitle => _interrupted switch
+    {
+        null => string.Empty,
+        { IsUndo: true } undo => $"Your last undo was interrupted: {undo.Moved} of {Files(undo.Total)} went back.",
+        { Moved: 0 } => "Your last tidy was interrupted before any file moved.",
+        var tidy => $"Your last tidy was interrupted: {tidy.Moved} of {Files(tidy.Total)} moved.",
+    };
+
+    public string InterruptedNote => _interrupted switch
+    {
+        null => string.Empty,
+        { IsUndo: true } undo when undo.Moved == undo.Total => "DeskAI checked each file. Every one had gone back.",
+        { IsUndo: true } => "DeskAI checked each file. The rest are still where the tidy put them.",
+        { Moved: 0 } => "DeskAI checked each file. Nothing needs putting back.",
+        _ => "DeskAI checked each file. You can put back the ones that moved, or keep them where they are now.",
+    };
+
+    public bool CanUndoInterrupted => _interrupted?.CanUndo == true;
+
+    public string UndoInterruptedText => _interrupted?.Moved == 1 ? "Undo that file" : $"Undo those {_interrupted?.Moved}";
+
+    public string KeepInterruptedText => _interrupted switch
+    {
+        { CanUndo: true, Moved: 1 } => "Keep it",
+        { CanUndo: true } => "Keep them",
+        _ => "OK",
+    };
+
+    /// <summary>The answer to pressing one of the two buttons, when it did not go through.</summary>
+    public string InterruptedMessage
+    {
+        get => _interruptedMessage;
+        private set
+        {
+            if (SetProperty(ref _interruptedMessage, value))
+            {
+                OnPropertyChanged(nameof(HasInterruptedMessage));
+            }
+        }
+    }
+
+    public bool HasInterruptedMessage => !string.IsNullOrEmpty(InterruptedMessage);
 
     public ObservableCollection<TidyFolderOption> Folders { get; } = [];
     public ObservableCollection<TidyGroupViewModel> Groups { get; } = [];
@@ -328,6 +394,13 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
                     ClearResult();
                 }
 
+                // Its history, likewise, is read again only for a different folder.
+                if (value?.Id != _historyFolderId)
+                {
+                    _historyFolderId = null;
+                    SetInterrupted(null);
+                }
+
                 _choices.Clear();
                 _aiAdvice.Clear();
                 AiMessage = string.Empty;
@@ -352,13 +425,17 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     public int IncludedCount => Groups.Sum(group => group.IncludedCount);
     public string TidyButtonText => IncludedCount == 1 ? "Tidy 1 file" : $"Tidy {IncludedCount} files";
 
-    /// <summary>Ticked files, a folder that may be tidied, and nothing else running.</summary>
+    /// <summary>
+    /// Ticked files, a folder that may be tidied, nothing else running, and no open question
+    /// about an interrupted tidy.
+    /// </summary>
     public bool CanPressTidy =>
-        IncludedCount > 0 && _preview is { CanTidy: true } && SelectedFolder?.CanTidy == true && !IsBusy && !IsTidying && !IsAskingAi;
+        IncludedCount > 0 && _preview is { CanTidy: true } && SelectedFolder?.CanTidy == true && !IsBusy && !IsTidying &&
+        !IsAskingAi && !HasInterrupted;
 
-    [System.Diagnostics.CodeAnalysis.SuppressMessage("Performance", "CA1822:Mark members as static",
-        Justification = "Bound by the page like every other property.")]
-    public string TidyNote => "Nothing moves until you press it. You can undo it.";
+    public string TidyNote => HasInterrupted
+        ? "Answer the question about your last tidy first."
+        : "Nothing moves until you press it. You can undo it.";
 
     public bool IsTidying
     {
@@ -370,6 +447,7 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
                 OnPropertyChanged(nameof(CanPressTidy));
                 TidyCommand.NotifyCanExecuteChanged();
                 UndoCommand.NotifyCanExecuteChanged();
+                KeepInterruptedCommand.NotifyCanExecuteChanged();
             }
         }
     }
@@ -714,6 +792,155 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         return result;
     }
 
+    /// <summary>
+    /// "Undo those": puts back the files the interrupted tidy moved. Returns the result so the
+    /// page can ask to allow tidying again when that permission is missing; the question stays
+    /// open until the undo actually runs.
+    /// </summary>
+    public async Task<TidyUndoResult?> UndoInterruptedAsync()
+    {
+        if (_interrupted is not { CanUndo: true } interrupted || SelectedFolder is not { } folder || IsTidying)
+        {
+            return null;
+        }
+
+        IsTidying = true;
+        InterruptedMessage = string.Empty;
+        TidyUndoResult result;
+        try
+        {
+            result = await _run.UndoInterruptedAsync(folder.Id, interrupted).ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            result = new TidyUndoResult(false, false, 0, [], $"DeskAI stopped safely: {exception.Message}");
+        }
+        finally
+        {
+            IsTidying = false;
+        }
+
+        if (!result.Finished)
+        {
+            InterruptedMessage = result.Summary;
+            return result;
+        }
+
+        // Answered. The question goes, and the result card says what the undo did.
+        SetInterrupted(null);
+        ClearResult();
+        _lastRunFolderId = folder.Id;
+        ResultSummary = result.Summary;
+        foreach (var item in result.NotRestored)
+        {
+            ResultSkipped.Add(new TidyLeftAloneViewModel(item.FileName, item.Reason));
+        }
+
+        RaiseResultChanges();
+        _pending = LoadAsync();
+        await _pending.ConfigureAwait(true);
+        return result;
+    }
+
+    /// <summary>"Keep them" or "OK": what moved stays, and becomes the folder's last tidy.</summary>
+    private async Task KeepInterruptedAsync()
+    {
+        if (_interrupted is not { } interrupted || SelectedFolder is not { } folder)
+        {
+            return;
+        }
+
+        IsTidying = true;
+        InterruptedMessage = string.Empty;
+        string? problem;
+        try
+        {
+            problem = await _run.KeepInterruptedAsync(folder.Id, interrupted.TransactionId).ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            problem = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            IsTidying = false;
+        }
+
+        if (problem is not null)
+        {
+            InterruptedMessage = problem;
+            return;
+        }
+
+        // Read the history again: the kept tidy is now the last tidy, and can still be undone.
+        SetInterrupted(null);
+        _historyFolderId = null;
+        _pending = LoadAsync();
+        await _pending.ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Reads a folder's history once: a tidy that was interrupted comes first, as a question;
+    /// otherwise the last tidy is shown with Undo, unless this visit already has a result.
+    /// </summary>
+    private async Task LoadHistoryAsync(TidyFolderOption folder)
+    {
+        _historyFolderId = folder.Id;
+        try
+        {
+            var interrupted = await _run.FindInterruptedAsync(folder.Id).ConfigureAwait(true);
+            var last = interrupted is null && !HasResult
+                ? await _run.FindLastAsync(folder.Id).ConfigureAwait(true)
+                : null;
+            if (SelectedFolder?.Id != folder.Id)
+            {
+                return;
+            }
+
+            SetInterrupted(interrupted);
+            if (last is not null)
+            {
+                _lastRun = new TidyRunResult(
+                    last.TransactionId, last.Moved, last.Moved, last.FoldersUsed, [], last.MovedFiles, string.Empty);
+                _lastRunFolderId = folder.Id;
+                var when = last.FinishedAtUtc.ToLocalTime();
+                ResultSummary = $"Last tidy: {Files(last.Moved)} tidied into {FolderCount(last.FoldersUsed)}, at {when:t} on {when:d}.";
+                RaiseResultChanges();
+            }
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            Message = $"DeskAI could not read what it did here before: {exception.Message}";
+        }
+    }
+
+    private void SetInterrupted(InterruptedTidy? interrupted)
+    {
+        _interrupted = interrupted;
+        InterruptedMessage = string.Empty;
+        InterruptedFiles.Clear();
+        foreach (var file in interrupted?.NeedsReview ?? [])
+        {
+            InterruptedFiles.Add(new TidyLeftAloneViewModel(file.FileName, file.Reason));
+        }
+
+        OnPropertyChanged(nameof(HasInterrupted));
+        OnPropertyChanged(nameof(HasInterruptedFiles));
+        OnPropertyChanged(nameof(InterruptedTitle));
+        OnPropertyChanged(nameof(InterruptedNote));
+        OnPropertyChanged(nameof(CanUndoInterrupted));
+        OnPropertyChanged(nameof(UndoInterruptedText));
+        OnPropertyChanged(nameof(KeepInterruptedText));
+        OnPropertyChanged(nameof(TidyNote));
+        OnPropertyChanged(nameof(CanPressTidy));
+        TidyCommand.NotifyCanExecuteChanged();
+        KeepInterruptedCommand.NotifyCanExecuteChanged();
+    }
+
+    private static string Files(int count) => count == 1 ? "1 file" : $"{count} files";
+
+    private static string FolderCount(int count) => count == 1 ? "1 folder" : $"{count} folders";
+
     private void ClearResult()
     {
         _lastRun = null;
@@ -740,6 +967,14 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         _preview = null;
         NeedsPermission = SelectedFolder is { CanTidy: false };
         RaiseListChanges();
+
+        // Read even without the tidy permission: the last tidy and an interrupted one are the
+        // person's to see, and Undo asks for the permission when pressed.
+        if (SelectedFolder is { } shown && _historyFolderId != shown.Id)
+        {
+            await LoadHistoryAsync(shown).ConfigureAwait(true);
+        }
+
         if (SelectedFolder is not { CanTidy: true } folder)
         {
             return;

@@ -47,6 +47,52 @@
                 </StackPanel>
             </Border>
 
+            <!--
+                A tidy that stopped part-way. It comes first because nothing else happens in
+                this folder until it is answered. Caution, not accent: it is a question, not a
+                promise. Neither button is accent either; Undo moves files, Keep changes none.
+            -->
+            <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasInterrupted, Mode=OneWay}">
+                <StackPanel Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon FontSize="16" Glyph="&#xE7BA;" Foreground="{ThemeResource DeskCautionBrush}" />
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" TextWrapping="Wrap"
+                                   Text="{x:Bind ViewModel.InterruptedTitle, Mode=OneWay}" />
+                        <controls:HelpButton Topic="organize.interrupted" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                               Text="{x:Bind ViewModel.InterruptedNote, Mode=OneWay}" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.InterruptedFiles}"
+                                  AutomationProperties.Name="Files to check"
+                                  Visibility="{x:Bind ViewModel.HasInterruptedFiles, Mode=OneWay}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:TidyLeftAloneViewModel">
+                                <StackPanel Spacing="2" Margin="0,0,0,8">
+                                    <TextBlock FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                               Text="{x:Bind FileName}" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                               Foreground="{ThemeResource DeskCautionBrush}"
+                                               Text="{x:Bind Reason}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="{x:Bind ViewModel.UndoInterruptedText, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.CanUndoInterrupted, Mode=OneWay}"
+                                Click="OnUndoInterruptedClick" />
+                        <Button Content="{x:Bind ViewModel.KeepInterruptedText, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.KeepInterruptedCommand}" />
+                        <ProgressRing Width="18" Height="18" IsActive="{x:Bind ViewModel.IsTidying, Mode=OneWay}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Visibility="{x:Bind ViewModel.HasInterruptedMessage, Mode=OneWay}"
+                               Text="{x:Bind ViewModel.InterruptedMessage, Mode=OneWay}" />
+                </StackPanel>
+            </Border>
+
             <!-- Nothing connected yet: one clear thing to do. -->
             <Border Style="{StaticResource SoftCardStyle}" Visibility="{x:Bind ViewModel.HasNoFolders, Mode=OneWay}">
                 <StackPanel Spacing="10">
@@ -232,7 +278,7 @@
 
             <!--
                 The one bold element: how many files are ready, the button, and the honest line
-                under it. In this version the button is off, and the line says so plainly.
+                under it, which says why when the button is off for an unanswered question.
             -->
             <Border Style="{StaticResource CardStyle}" Padding="22,18"
                     Visibility="{x:Bind ViewModel.HasSuggestions, Mode=OneWay}">
@@ -243,7 +289,7 @@
                         <TextBlock FontWeight="SemiBold" Foreground="{ThemeResource DeskTextPrimaryBrush}"
                                    Text="files ticked" />
                         <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="420" HorizontalAlignment="Left"
-                                   Text="{x:Bind ViewModel.TidyNote}" />
+                                   Text="{x:Bind ViewModel.TidyNote, Mode=OneWay}" />
                     </StackPanel>
                     <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                         <ProgressRing Width="18" Height="18" IsActive="{x:Bind ViewModel.IsTidying, Mode=OneWay}" />
@@ -258,6 +304,7 @@
             <!--
                 What pressing Tidy did, right under the button. Never a plain "done" when anything
                 stayed behind: each file that stayed is listed with its reason. Undo is here too.
+                After DeskAI was reopened the same card shows the folder's last tidy, with Undo.
             -->
             <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasResult, Mode=OneWay}">
                 <StackPanel Spacing="10" MaxWidth="640" HorizontalAlignment="Left">
