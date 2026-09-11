@@ -6,9 +6,15 @@ public sealed record SizeGroup(long SizeBytes, int FileCount);
 /// <summary>One file that might be a duplicate of the others in its group.</summary>
 /// <remarks>
 /// Carries a folder name and a path relative to it, never an absolute path, for the same
-/// reason search results do.
+/// reason search results do. The folder ID and the last-changed time let a later check confirm
+/// the file is still the one DeskAI remembered before reading it.
 /// </remarks>
-public sealed record DuplicateCandidate(string RootName, string RelativePath, string Name);
+public sealed record DuplicateCandidate(
+    string RootName,
+    string RelativePath,
+    string Name,
+    Guid RootId,
+    DateTimeOffset ModifiedAtUtc);
 
 /// <summary>
 /// Files that share an exact size, and therefore might be copies of each other.

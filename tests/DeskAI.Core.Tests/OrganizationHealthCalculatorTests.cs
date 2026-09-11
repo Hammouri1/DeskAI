@@ -249,7 +249,7 @@ public sealed class OrganizationHealthCalculatorTests
     {
         var perFile = reclaimableBytes / Math.Max(1, fileCount - 1);
         var files = Enumerable.Range(0, fileCount)
-            .Select(index => new DuplicateCandidate("Study", $"copy-{index}.pdf", $"copy-{index}.pdf"))
+            .Select(index => new DuplicateCandidate("Study", $"copy-{index}.pdf", $"copy-{index}.pdf", Guid.Empty, DateTimeOffset.UnixEpoch))
             .ToList()
             .AsReadOnly();
         return new DuplicateReport([new DuplicateGroup(perFile, files)], 1, false);

@@ -136,7 +136,7 @@ public sealed class DuplicateFinderServiceTests
         Assert.Equal(0, index.ContentReads);
     }
 
-    private static IndexedFile Entry(Guid rootId, int seed, string relativePath, long sizeBytes) => new(
+    internal static IndexedFile Entry(Guid rootId, int seed, string relativePath, long sizeBytes) => new(
         rootId,
         new Guid(seed, 0, 0, [0, 0, 0, 0, 0, 0, 0, 0]),
         relativePath,
@@ -147,7 +147,7 @@ public sealed class DuplicateFinderServiceTests
         Now,
         Now);
 
-    private sealed class FakeRoots : IAuthorizedRootRepository
+    internal sealed class FakeRoots : IAuthorizedRootRepository
     {
         private readonly List<AuthorizedRoot> _roots = [];
 
@@ -185,7 +185,7 @@ public sealed class DuplicateFinderServiceTests
             throw new NotSupportedException();
     }
 
-    private sealed class FakeIndex : IFileIndex
+    internal sealed class FakeIndex : IFileIndex
     {
         private readonly Dictionary<Guid, List<IndexedFile>> _files = [];
 

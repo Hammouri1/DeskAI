@@ -59,6 +59,11 @@ public static class DeskAiApplicationServices
         services.AddSingleton<ContentSearchService>();
         services.AddSingleton<StorageSummaryService>();
         services.AddSingleton<DuplicateFinderService>();
+        // Reads whole files to tell real copies apart. Only DuplicateCheckService takes it, and
+        // only after the person has seen exactly which files it would read; a test asserts no
+        // other service can reach it.
+        services.AddSingleton<IFileFingerprinter, FileFingerprinter>();
+        services.AddSingleton<DuplicateCheckService>();
         services.AddSingleton<RuleSimulationService>();
         services.AddSingleton<AutomaticCheckService>();
         services.AddSingleton<AutomaticCheckCoordinator>();

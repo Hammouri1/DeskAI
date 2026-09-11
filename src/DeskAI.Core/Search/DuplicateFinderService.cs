@@ -14,10 +14,9 @@ namespace DeskAI.Core.Search;
 /// duplicate and must be presented that way.
 /// </para>
 /// <para>
-/// The second stage, comparing contents by hash, is deliberately not here. Hashing reads
-/// the bytes of a file, and these folders were connected under a metadata-only
-/// authorization that does not permit that. Confirming duplicates therefore belongs with
-/// the permission-gated content work, not sneaked in behind a size check.
+/// The second stage, comparing contents, is deliberately not here. It reads the bytes of
+/// files, which connecting a folder does not permit, so it is <see cref="DuplicateCheckService"/>,
+/// which asks the person first every time, and never runs behind this size check.
 /// </para>
 /// <para>
 /// Nothing here proposes removing anything. The report describes what might be duplicated
@@ -93,7 +92,7 @@ public sealed class DuplicateFinderService(IAuthorizedRootRepository roots, IFil
                     .SearchRootAsync(root.Id, query, cancellationToken)
                     .ConfigureAwait(false))
                 {
-                    files.Add(new DuplicateCandidate(root.DisplayName, file.RelativePath, file.Name));
+                    files.Add(new DuplicateCandidate(root.DisplayName, file.RelativePath, file.Name, root.Id, file.ModifiedAtUtc));
                 }
             }
 
