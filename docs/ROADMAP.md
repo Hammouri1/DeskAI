@@ -194,7 +194,7 @@ Goal: turn repeated intent into deterministic, auditable behavior.
 
 Exit criteria: rules can be explained and simulated; background execution cannot widen scope; each run is recoverable/auditable.
 
-## V0.6 — Organize Your Own Folders (**Now — steps 1–4 done**)
+## V0.6 — Organize Your Own Folders (**Now — steps 1–5 done**)
 
 Goal: let DeskAI actually move and rename files in a folder someone connected, after they
 approve each change in the preview.
@@ -236,8 +236,12 @@ Progress (build order from the design):
   that folder until they answer. A lock file now keeps two DeskAI windows from running at once.
   Found while planning and fixed first: a tidied folder could not be disconnected; disconnecting
   now forgets its tidy history too.
-- Next — step 5: **Review in Organize** from an automatic check's notice, and the practice link.
-- Then step 6: the final security review record for the milestone.
+- ✅ Step 5, 2026-09-11: **Review in Organize** on an automatic check's notice opens Tidy a folder
+  on the folder with the most matches and says what the person's rules place there; the check
+  still only looks. The practice page was removed at the owner's request (ADR 0023) and replaced
+  by a "How tidying works" card on Organize; its executor went with it, so one executor remains.
+- Next — step 6: the final security review record for the milestone, checking the built system
+  against the design's threat table, then closing V0.6.
 
 1. Design and security review before code: a separate "allow DeskAI to organize this folder"
    permission, how it is shown and withdrawn, what happens when a file changes between preview

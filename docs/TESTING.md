@@ -19,7 +19,7 @@ Exercise SQLite repositories/migrations, scanner adapters, and eventually the ex
 Every feature a person can reach is tested the way a person uses it: fill in what the page
 asks for, press the command, and check what the page then says and what happened on disk.
 `TestApp` builds DeskAI through the same `AddDeskAiApplication` call the app uses, with a real
-SQLite database, the real scanner, planner, safety checks, and demo executor, all inside a
+SQLite database, the real scanner, planner, safety checks, and real-folder executor, all inside a
 generated temp folder. Only the credential store, the network, and Windows notifications are
 replaced, so no key is written to Windows and no request leaves the machine.
 
@@ -135,7 +135,7 @@ changes a feature.
 | Organize | Interrupted tidy: checked file by file, "N of M moved", Undo those / Keep them, OK when nothing moved, files to check listed, Tidy off until answered | `TidyRecoveryPageTests`, `TidyRecoveryTests` |
 | Organize | Interrupted undo: how many went back, OK only, never offered again | `TidyRecoveryPageTests`, `TidyRecoveryTests` |
 | Organize | Recovery never guesses or reaches too far: changed file or link needs review, folder moved or unsafe not checked, other folders and practice refused, one run at a time across windows | `TidyRecoveryTests`, `FolderTidyExecutorTests` |
-| Search | A tidied folder can be disconnected; its tidy history is forgotten, the practice history is not | `TidyRunPageTests`, `SqliteAuthorizedRootRepositoryTests` |
+| Search | A tidied folder can be disconnected; its tidy history is forgotten, an old practice folder's is not | `TidyRunPageTests`, `SqliteAuthorizedRootRepositoryTests` |
 | Side menu | Says which folders DeskAI may tidy | `HomeAndShellTests` |
 | Organize | Ask AI: off until set up, preview before Send, cancel sends nothing, answer beside the button | `TidyAiPageTests`, `TidyAiTests` |
 | Organize | Only files DeskAI doesn't know, or every file rules don't place; rules still win | `TidyAiPageTests`, `TidyAiTests` |

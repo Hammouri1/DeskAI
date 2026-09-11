@@ -130,7 +130,7 @@ Store provider ID, endpoint (where allowed), model ID, capability cache, timeout
 - JSON output is versioned, byte/count bounded, duplicate-property checked, unknown-field rejecting, and limited to requested IDs and known categories.
 - Requests have a user-configurable timeout and daily cloud-request cap. There are no automatic retries or provider fallbacks.
 - Provider-reported token counts are displayed when available. DeskAI does not guess dollar cost; the user checks provider billing/pricing.
-- The practice page's AI ideas use only six generated sample records and cannot modify the plan.
+- AI is asked only from Tidy a folder, about files in a folder the person allowed DeskAI to tidy, after a dialog shows exactly what will be sent. (The practice page's AI ideas on generated sample records were retired on 2026-09-11, ADR 0023.)
 
 ## V0.6 Step 2b: Your Own Folders
 

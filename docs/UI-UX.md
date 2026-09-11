@@ -23,7 +23,7 @@ Storage insights may begin on Dashboard and later gain a dedicated view. Workspa
 3. Default to Rule Engine Only; offer AI setup later.
 4. Ask the user to add a folder with a trusted Windows picker. Do not pre-authorize personal roots silently.
 5. Explain Allowed, Restricted, and Protected in plain language.
-6. Offer a safe sample/demo folder before real files.
+6. Explain what tidying does before anything moves. (A safe sample folder was offered until 2026-09-11; the owner retired it in favour of the "How tidying works" card on Organize, ADR 0023.)
 
 Do not overwhelm the first run with every future feature or provider.
 
@@ -88,7 +88,20 @@ stacked together — impossible to understand. Top to bottom:
    under it. If the tidy permission was taken back, Undo shows the permission dialog again,
    because undo moves files too. The side menu counts folders DeskAI may tidy, and Home says
    files move only in such a folder, only when Tidy is pressed, and never get deleted.
-8. **"Nervous? Try it on example files first"**, leading to the practice page.
+8. ~~"Nervous? Try it on example files first", leading to the practice page.~~ Retired on
+   2026-09-11 with the practice page (ADR 0023). Instead, right under the title, a **How tidying
+   works** expander holds four short steps — pick a folder; allow tidying; untick what should
+   stay; press Tidy, and Undo even after closing DeskAI — and one promise line with the accent
+   shield: DeskAI never deletes, never touches subfolders, never moves anything out of the
+   folder. It is open for someone who has not allowed tidying anywhere yet, closed otherwise, and
+   stays however the person leaves it.
+
+When an automatic check's notice sends someone here (**Review in Organize**, step 5), the page
+opens on the folder with the most matches and one line under the folder bar says what their
+rules place there — "From your automatic check: your rules place 2 files here, marked "Your
+rule". Nothing moves until you press Tidy." — or, without the tidy permission, asks for it first.
+It never repeats the check's own count, because a check also sees files in subfolders that
+tidying leaves alone.
 
 After DeskAI is reopened (step 4), the result card shows the folder's last tidy instead —
 "Last tidy: 3 files tidied into 2 folders, at 10:40 on 11/09/2026." — with **Undo**, even
@@ -219,7 +232,7 @@ Accent buttons override `AccentButtonBackground` as well as `AccentFillColorDefa
 
 Three treatments were removed as generic and meaningless here: the all-caps eyebrow labels (`LOCAL AND PRIVATE`, `PRACTICE MODE`), the translucent gradient wash over the accent, and the 56–72px decorative icons in the page headers. Metrics that belong to one reading now share a single panel divided by hairlines instead of being split into identical repeated cards.
 
-The window uses a Mica backdrop, pages paint `DeskGroundBrush`, and the navigation pane footer carries a permanent Practice-mode reminder on the same accent rail, because "which files can this app touch" should never require navigating to find out.
+The window uses a Mica backdrop, pages paint `DeskGroundBrush`, and the navigation pane footer carries a permanent scope reminder ("Nothing connected yet" until a folder is connected) on the same accent rail, because "which files can this app touch" should never require navigating to find out.
 
 Status is expressed through `PreviewStatusLevel` (`Ready`, `Attention`, `Blocked`) mapped by converters to a system semantic brush, a paired Segoe Fluent glyph, and a tinted badge background. Colour is never alone: every badge carries an icon **and** the status word, so a blocked row still reads as blocked in greyscale or high contrast. `PreviewStatusLevel` is presentation severity only — Safety decides what is blocked, and the enum merely chooses how that decision is drawn.
 
@@ -227,7 +240,7 @@ Empty states stay truthful rather than becoming decorative, and no page implies 
 
 Automatic tasks used to state outright that DeskAI was doing nothing in the background. That sentence expired when automatic checks arrived: DeskAI now looks by itself. The card was rewritten to "DeskAI never moves a file on its own" — the narrower claim that is still true — rather than kept because it was reassuring. The same rule as the scope label applies: a promise about what DeskAI does is the one sentence that must never outlive its truth.
 
-A finished check leaves a quiet notice in the top-right corner of the window, over the page rather than inside it, because a check can finish while someone is on any page or away from the machine. It reports a count and says nothing has moved in the same sentence, stays until it is reviewed or dismissed rather than fading, and its only action is navigation. A check that found nothing says nothing at all: announcing "nothing matched" every fifteen minutes would train someone to ignore the one time it says something did.
+A finished check leaves a quiet notice in the top-right corner of the window, over the page rather than inside it, because a check can finish while someone is on any page or away from the machine. It reports a count and says nothing has moved in the same sentence, stays until it is reviewed or dismissed rather than fading, and its only actions are navigation: **Review in Organize** (V0.6 step 5) opens Tidy a folder on the folder with the most matches, and a quieter link opens Automatic tasks. A check that found nothing says nothing at all: announcing "nothing matched" every fifteen minutes would train someone to ignore the one time it says something did.
 
 The navigation pane always states the current scope, and that text is derived from what is actually connected rather than written as a fixed string. An earlier version hard-coded "Sample files only. Your personal folders are not connected.", which stayed on screen after a real folder was connected: the one label that promises what DeskAI can reach was the label that lied. It now reads "Practice mode" only while nothing is connected, and otherwise reports the folder and file counts. If the scope cannot be read it says so, and never falls back to the reassuring wording.
 
@@ -268,6 +281,8 @@ Implement a native shell, navigation, theme support from system defaults, placeh
 
 ## V0.2 Preview Demonstration
 
+(History. The practice page this describes was retired on 2026-09-11, ADR 0023.)
+
 The implemented Organize page uses progressive disclosure. Its main surface shows a short Review → Choose → Try it flow, recognizable filenames, friendly source/destination folder names, simple Ready/Not included states, one plain-language attention card, and a button that states how many sample files will be organized. Internal create-folder operations are automatic and hidden from the main list. Plan revision, exact temporary path, and supporting-operation counts remain available in a collapsed Technical details section.
 
 The sample uses the controlled temporary executor introduced in V0.2 step 5. Practice mode is named prominently and explains in one sentence that personal files are not used. Conflicts use calm language and remain unselected; technical safety terminology is not required to complete the demo.
@@ -278,4 +293,4 @@ Step 8 adds a separate, optional “Preview a folder” card below the practice 
 
 Settings is named “Privacy and AI” and starts with a short status card. Sharing controls use everyday names and require confirmation when allowing more information. The three main choices are “Don't use AI,” “AI running on this computer,” and “Online AI with my own key.” Choosing the online option reveals a list of supported services so a person can pick the one they already have an account with; the model hint, key label, agreement wording, and remove-key button all rename themselves to that service. Addresses, model names, timeouts, and daily limits are grouped below the main choice instead of leading with technical language. Online activation repeats exactly what may be shared, names the exact host that will receive it, and reminds the user that the chosen service controls pricing and service-side data handling.
 
-Organize presents AI as an optional “second opinion” for generated samples. The card identifies where data would go, offers a Stop button, reports usage when available, and shows the category, confidence, explanation, and source for each idea. It explicitly states that AI cannot move, rename, or change files.
+Organize presented AI as an optional “second opinion” for generated samples (retired 2026-09-11; AI is now asked from Tidy a folder). The card identifies where data would go, offers a Stop button, reports usage when available, and shows the category, confidence, explanation, and source for each idea. It explicitly states that AI cannot move, rename, or change files.

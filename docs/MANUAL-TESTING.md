@@ -2,6 +2,8 @@
 
 Use this checklist after each delivered slice. Never point development builds or tests at Desktop, Downloads, Documents, Pictures, cloud-sync folders, or other personal data until the roadmap explicitly enables a reviewed picker flow.
 
+The practice page (sample files, "Run … in safe demo", "Get AI ideas") was retired on 2026-09-11 (ADR 0023). Older sections that walk through it — V0.2 steps 4–7, the V0.3 and Bring Your Own Key steps that press "Get AI ideas", and parts of Interface Refresh — are kept as history and can be skipped. Try AI with **Ask AI** on Tidy a folder instead.
+
 ## Common verification
 
 From the repository root:
@@ -358,7 +360,7 @@ Use a new folder under Windows Temp filled with made-up files — for example a 
 `.crdownload`. Never test on a personal folder.
 
 1. Open **Organize**. Expected: "Tidy a folder", a folder list or a "Pick a folder to tidy"
-   card, and a small "Nervous? Try it on example files first" link at the bottom.
+   card, and (since step 5) an open "How tidying works" card under the title.
 2. Press **Choose another folder**, pick the test folder, and confirm. Expected: the folder is
    selected and a green-edged card asks "Allow DeskAI to tidy …?" with three promises.
 3. Press **Allow tidying** and read the dialog. Cancel once and confirm nothing changed; then
@@ -372,7 +374,7 @@ Use a new folder under Windows Temp filled with made-up files — for example a 
    Explorer that opening the page and allowing tidying moved **no file**.
 9. Press **Stop tidying this folder**. Expected: the permission card returns and the folder is
    still listed in Search.
-10. Press the practice link, then **Back to Tidy a folder**. Expected: both pages work.
+10. (Retired in step 5: the practice link and page are gone.)
 11. Press each new "?" on this page and check the explanations read clearly.
 
 ## Tidying for real (V0.6 step 3, added 2026-09-10)
@@ -439,6 +441,32 @@ Never test on a personal folder.
 8. Press the "?" next to the interrupted card's title and check it reads clearly.
 9. After a tidy, disconnect the folder in **Search**. Expected: "Disconnected. Everything
    remembered about it has been forgotten." and the files stay exactly where the tidy put them.
+
+## Review in Organize, and How tidying works (V0.6 step 5, added 2026-09-11)
+
+Use two new folders under Windows Temp with made-up files: `Alpha` holding `invoice-a.pdf`, and
+`Zeta` holding `invoice-b.pdf`, `invoice-c.pdf`, and `holiday.jpg`. Never use a personal folder.
+
+1. On a fresh start with no folder allowed to be tidied, open **Organize**. Expected: an open
+   "How tidying works" card under the title with four steps and a green-shield line saying DeskAI
+   never deletes, never touches subfolders, and never moves anything out of the folder. There is
+   no "Try it on example files" link, and no practice page anywhere.
+2. Look at the side menu and Home with nothing connected. Expected: "Nothing connected yet", not
+   "Practice mode". Home's first suggestion reads "Tidy a folder".
+3. Connect both folders and allow tidying for both. Reopen Organize. Expected: the card is now
+   closed; open it and close it — it stays as you left it while on the page.
+4. In **Automatic tasks**, write a rule: name contains `invoice`, destination `Sorted`. Press
+   **Check now**. Expected: the top-right notice "3 files match your rules. Nothing has moved."
+   with **Review in Organize** and a "See it in Automatic tasks" link.
+5. Press **Review in Organize**. Expected: Organize opens on **Zeta** (the folder with more
+   matches) with the line "From your automatic check: your rules place 2 files here, marked
+   "Your rule". Nothing moves until you press Tidy." and a **Sorted** group. In File Explorer,
+   nothing has moved.
+6. Press Check now again and, this time, **See it in Automatic tasks**. Expected: the Automatic
+   tasks page, and nothing moved.
+7. Press **Stop tidying this folder** on Zeta, check again, and press Review in Organize.
+   Expected: Zeta with the permission card and a line asking you to allow tidying to see which
+   files DeskAI would move.
 
 ## Ask AI on Tidy a folder (V0.6 step 2b, added 2026-09-10)
 

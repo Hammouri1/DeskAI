@@ -323,6 +323,23 @@ What is deliberately not built: undoing older tidies, finishing an interrupted u
 Next small task: V0.6 step 5 — "Review in Organize" from an automatic check's notice, and the practice link.
 ```
 
+## V0.6 Step 5 Learning Log — 2026-09-11
+
+```text
+What became usable: "Review in Organize" on an automatic check's notice opens Tidy a folder on the folder with the most rule matches, with a line saying what the rules place there. A "How tidying works" card on Organize replaced the practice page, which was removed at the owner's request.
+Main data flow: AutomaticCheckService → AutomaticCheckResult.FolderToReview (an ID) → ShellViewModel notice → ReviewInOrganize() → OrganizeRequest.Ask → window opens a fresh Organize page → TidyViewModel.InitializeAsync takes the ID → selects that folder → preview → ReviewNote.
+Classes/interfaces I can explain: OrganizeRequest, AutomaticCheckResult.FolderToReview, INavigationService.Navigate(route, fresh), TidyViewModel.ReviewNote and HowItWorksSteps.
+New concept and my own explanation: Passing intent, not power. The check hands over a folder ID, the same thing a person picks from a list; everything that can move a file still sits behind a permission and a button press. The notice got more useful without the check getting more reach.
+New concept and my own explanation (2): Deleting code is a safety change. An executor nothing can reach still exists, still compiles, and can be wired back by accident. Removing it shrinks what can move files to one class — but only after moving every test of shared rules that the remaining executor did not already have, so no protection is lost on the way out.
+Hardest thing to get right: Not repeating a number that would be wrong on the next page. A check looks at every remembered file, including ones in subfolders; tidying never touches those. So the Organize line counts what the rules place in this list, and says so when that is nothing.
+Security cases tested: the check still holds no executor or journal (a constructor test); Review in Organize moves nothing; without permission the page only asks; a disconnected folder falls back to the usual first folder; the request is used once; an old practice folder in the database is never tidied, undone, checked, or closed.
+Build/test evidence: Release build with zero warnings; 830 tests pass, none skipped (fewer than before because the practice executor's and practice page's own tests were deleted with them; the shared-rule ones were ported first); dotnet format clean.
+AI containment check: DeskAI.AI is unchanged and references Core only. AI is now asked from one place — Ask AI on a tidy-permitted folder, after a preview of exactly what is sent.
+Trade-off/ADR: ADR 0023 — retire the practice page and its executor; keep the ControlledDemo scope for old databases.
+What is deliberately not built: a practice or sample mode of any kind; opening more than one folder from a notice.
+Next small task: V0.6 step 6 — the final security review record, checking the built system against the design's threat table.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

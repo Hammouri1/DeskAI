@@ -84,6 +84,15 @@ gives it the folder's history: `FindLastAsync` for the last tidy after a restart
 `FindInterruptedAsync`, `KeepInterruptedAsync`, and `UndoInterruptedAsync` for a tidy that
 stopped part-way (ADR 0022).
 
+Step 5 connects automatic checks to the page without giving them any reach.
+`AutomaticCheckResult.FolderToReview` is the ID of the connected folder with the most rule
+matches — an ID, not a plan, operation, or path. "Review in Organize" on the notice leaves it with
+`OrganizeRequest` (a one-shot, UI-thread holder in Presentation); the window opens a fresh
+Organize page, whose `InitializeAsync` takes it and selects that folder if it is still connected.
+Because a check reads every remembered file but tidying moves only loose top-level files, the
+page states how many files the person's rules place *there* rather than repeating the check's
+count.
+
 Step 2b adds AI as a suggestion source (ADR 0020). `TidySuggestionService.PreviewAsync` takes a
 `TidySuggestionMode` and a dictionary of `TidyAiAdvice` by file ID; it still sends nothing.
 Authority runs rules → AI (every-file mode) → file type → AI (default mode), and advice whose
@@ -98,7 +107,7 @@ no scanner, reader, index, journal, or executor, and a test asserts that.
 
 ### `DeskAI.Presentation`
 
-The logic behind every page: view models, commands, the sample-plan factory, and
+The logic behind every page: view models, commands, and
 `AddDeskAiApplication`, the one registration of everything DeskAI is made of apart from the
 window. It references no WinUI type, so each page can be tested the way a person uses it.
 Its namespaces stay `DeskAI.App.*` because these are the app's view models, compiled
@@ -168,6 +177,12 @@ violation as "open in another program", and moves with `overwrite: false`. Undo 
 record's plan belongs to the executor's own folder, so neither executor can undo the other's
 work, and practice recovery leaves a connected folder's interrupted record for that folder's own
 recovery (V0.6 step 4). The real-folder executor runs one tidy or undo at a time.
+
+**Since 2026-09-11 (ADR 0023) `FolderTidyExecutor` is the only executor.** The practice page and
+`TemporaryDemoPlanExecutor` described above were retired, with `IPlanExecutor`, `IUndoService`,
+and `DemoWorkspaceOptions`; the paragraphs about them are history. `ControlledDemo` remains as a
+stored scope so a database from before then still reads correctly, and such a folder is never
+searched, tidied, undone, or checked.
 
 Undo reads completed journal operations in reverse order. A moved file returns only if its current size and modification time still match the recorded pre-move facts and its original path is free. A created directory is removed only if it was recorded, remains inside the owned root, is not a link, and is empty after file reversals. Undo creates its own journal transaction. For the practice workspace, undo is offered only during the same application session, because a new process cannot authenticate an old workspace.
 
@@ -366,7 +381,7 @@ Register concrete implementations once in the App composition root. Constructor 
 
 WinUI pages are registered as transient dependencies. `NavigationService` resolves the requested page from the application service provider and places that page in the shell frame, allowing pages such as `OrganizePage` to receive their view models by constructor injection. Page code-behind assigns the data context and handles the native picker/confirmation dialog because those require WinUI window handles; authorization, scanning, state, and filesystem policy remain outside the view.
 
-The V0.2 preview uses `DemoOrganizationPlanFactory` in the App project. It creates `FileItem` metadata and a synthetic authorized-root label in memory, then invokes the same Core planner and Safety validator used by later real flows. It does not create, enumerate, or inspect the displayed path. `OrganizeViewModel` adapts immutable plan results into selectable presentation rows; selection has no execution meaning until a future approval model binds chosen IDs to a validated plan revision.
+(History — retired 2026-09-11, ADR 0023.) The V0.2 preview used `DemoOrganizationPlanFactory` in the App project. It creates `FileItem` metadata and a synthetic authorized-root label in memory, then invokes the same Core planner and Safety validator used by later real flows. It does not create, enumerate, or inspect the displayed path. `OrganizeViewModel` adapts immutable plan results into selectable presentation rows; selection has no execution meaning until a future approval model binds chosen IDs to a validated plan revision.
 
 ## Concurrency and Reliability
 

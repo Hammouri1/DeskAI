@@ -105,6 +105,10 @@ the flow above replaces them. The practice run on generated files survives behin
 "Nervous? Try it on example files first" link, in a simplified view that uses the same list
 design.
 
+(Amended 2026-09-11, step 5, ADR 0023: asked how to simplify it, the owner chose to remove the
+practice page entirely and explain the page with a small "How tidying works" card instead. The
+practice executor went with it.)
+
 ### Files that are left out, and said so
 
 Shown as "Left alone" with a reason, never silently dropped:
