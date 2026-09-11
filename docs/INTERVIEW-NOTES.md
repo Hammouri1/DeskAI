@@ -303,6 +303,26 @@ What is deliberately not built: finding the last tidy after reopening DeskAI, re
 Next small task: V0.6 step 4 — "Last tidy" with Undo after restart, and the interrupted-tidy prompt.
 ```
 
+## V0.6 Step 4 Learning Log — 2026-09-11
+
+```text
+What became usable: Undo for the last tidy after DeskAI is closed and reopened, and a clear question when a tidy was interrupted by a crash ("7 of 12 files moved" — Undo those 7 / Keep them). A tidied folder can be disconnected again.
+Main data flow (reopen): Organize shows a folder → TidyRunService.FindInterruptedAsync → FolderTidyExecutor.CheckInterruptedAsync (lock, folder re-check, FileOperationRunner.CheckInterrupted per file, record → RecoveryRequired) → card; otherwise FindLastAsync → IOperationJournal.ListForRootAsync → "Last tidy" with Undo.
+Main data flow (answer): Keep → CloseInterruptedAsync (journal only) → it becomes the last tidy. Undo those → permission check → CloseInterruptedAsync → the ordinary UndoAsync with its per-file checks.
+Classes/interfaces I can explain: RunLockFile, FolderTidyExecutor.CheckInterruptedAsync/CloseInterruptedAsync, FileOperationRunner.CheckInterrupted, JournalOperationState.NeedsReview, LastTidy, InterruptedTidy, StoppingJournal, TestApp.ReopenAsync.
+New concept and my own explanation: Crash recovery is proof, not memory. The journal says what DeskAI meant to do; only the disk says what happened. A move counts as done only if the file left its old spot and the new spot holds a file with the recorded size and date; anything in between is handed to the person.
+New concept and my own explanation (2): An invariant a lock creates. Because every run holds the lock for its whole life, any unfinished record seen while holding it must belong to a run that is dead — which is what makes it safe to judge. A lock inside one process could not promise that across two windows; a file opened with no sharing can, and Windows frees it if the process dies.
+New concept and my own explanation (3): Simulating a crash honestly. The test journal lets the real code run and simply stops at one chosen write, so disk and journal are exactly what a power cut would leave. Then a second TestApp opens the same database, with nothing carried over in memory.
+Hardest thing to get right: Deciding what counts as proof. "The file is gone from where it was" feels like proof it moved, but it is not — someone may have moved or edited it since. Removing the destination check made the changed-file test fail, which is the point of having it.
+Bug found by testing: a tidied folder could not be disconnected; the plans and journal referred to it, SQLite refused, and the page showed a raw database error after the folder's search memory was already cleared.
+Security cases tested: see docs/security/2026-09-11-tidy-recovery-review.md — every row has a named test, plus a sentinel file outside the folder.
+Build/test evidence: Release build with zero warnings; 846 tests passed, none skipped; dotnet format clean.
+AI containment check: nothing in this step touches DeskAI.AI; it still references Core only. TidyAiService still holds no journal, executor, scanner, or reader, and its test fails if it is given one.
+Trade-off/ADR: ADR 0022 — the journal as the only memory, a cross-window lock file, check then ask, only the latest tidy.
+What is deliberately not built: undoing older tidies, finishing an interrupted undo automatically, a tidy history list, recovery while DeskAI is closed.
+Next small task: V0.6 step 5 — "Review in Organize" from an automatic check's notice, and the practice link.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

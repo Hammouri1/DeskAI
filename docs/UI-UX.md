@@ -90,6 +90,18 @@ stacked together — impossible to understand. Top to bottom:
    files move only in such a folder, only when Tidy is pressed, and never get deleted.
 8. **"Nervous? Try it on example files first"**, leading to the practice page.
 
+After DeskAI is reopened (step 4), the result card shows the folder's last tidy instead —
+"Last tidy: 3 files tidied into 2 folders, at 10:40 on 11/09/2026." — with **Undo**, even
+while the tidy permission is off (Undo then asks for it). Only the latest tidy is offered.
+If a tidy stopped part-way, a card sits right under the folder bar before everything else:
+a caution icon, "Your last tidy was interrupted: 7 of 12 files moved.", one line saying DeskAI
+checked each file, any file it could not tell about with where to look (in the caution
+colour), and **Undo those 7** and **Keep them** — both plain buttons, because the card asks a
+question rather than confirming anything. A tidy stopped before anything moved, and an
+interrupted undo ("3 of 5 files went back"), offer only **OK**. Until the card is answered the
+Tidy button is off and the line under it reads "Answer the question about your last tidy
+first." Answering Keep turns the record into the last tidy, so Undo is still there afterwards.
+
 Removed from this page on purpose: plan revision numbers, "Needs attention", "Recent
 activity", "More details", the old AI ideas card about made-up files (AI returned in step 2b
 as the Ask AI card above), and the read-only folder preview.

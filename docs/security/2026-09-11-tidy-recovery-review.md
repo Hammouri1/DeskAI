@@ -6,7 +6,7 @@
 - Required by: `docs/SECURITY.md` (undo and recovery are part of the file-change design) and
   ADR 0021, which left interrupted real-folder records untouched until this review.
 - Threat design: Part 2 §7 of `docs/superpowers/specs/2026-09-10-organize-your-own-folders-design.md`.
-- Status: written before the code; the result is added when built.
+- Status: accepted as built (see Result). Written before the code; result added when built.
 
 ## What changes
 
@@ -21,8 +21,8 @@ existing undo with its existing per-file checks.
 
 | Threat | Control | Test |
 |---|---|---|
-| A record is "recovered" while its run is still going (a second DeskAI window, or the same window) | A lock file beside the database is held for every tidy, undo, check, and answer; unfinished records are looked at only while holding it | a check waits for a run holding the lock; a second window cannot tidy while the first holds it |
-| The lock is held by a process that died | Windows releases a file lock when its process ends | a lock taken by a disposed executor is free again |
+| A record is "recovered" while its run is still going (a second DeskAI window, or the same window) | A lock file beside the database is held for every tidy, undo, check, and answer; unfinished records are looked at only while holding it | a record is not checked while another window holds the lock, and is once it is free; tidy and undo refuse while it is held |
+| The lock is held by a process that died | Windows releases a file lock when its process ends; DeskAI never leaves it held after a run | the lock is free again once a run is over (a real process death is checked by hand) |
 | The lock is never freed (a hung window) | Bounded wait; refuse with a plain message rather than hang | busy lock refuses |
 | A move is guessed as done, or as not done | Done only if gone from the source and the destination has the recorded size and last-changed time; not done only if still at the source with those facts; anything else is needs review | each case, including a file changed after the crash |
 | A needs-review file is moved by Undo | Undo moves only operations recorded as completed; needs review is a separate state | needs-review file stays |
@@ -51,6 +51,28 @@ The journal keeps every state it had; checking writes each file's verified state
 record waiting for an answer, which only then closes it. Checking twice is harmless. Undo is the
 existing validated undo. A disconnected folder's records are erased with it (fixed 2026-09-11),
 so there is nothing left to recover for it.
+
+## Result
+
+Accepted, 2026-09-11, with every control in the table built and tested (ADR 0022):
+
+- `RunLockFile` and `FolderTidyExecutor.CheckInterruptedAsync` / `CloseInterruptedAsync` in
+  Infrastructure; `FileOperationRunner.CheckInterrupted` decides per file; `TidyRunService`
+  finds the last tidy and describes and answers an interrupted one; the Organize page shows both.
+- A crash is simulated by stopping the real journal just before or after one of its writes in a
+  real run (`StoppingJournal`), then reopening DeskAI over the same database (`TestApp.ReopenAsync`).
+- Tests: `TidyRecoveryTests` (16, through the whole app), `TidyRecoveryPageTests` (8),
+  `FolderTidyExecutorTests` (3 new: busy lock refuses tidy and undo, check waits for the lock,
+  lock free after a run), and `SqliteAuthorizedRootRepositoryTests` (2 new, for disconnecting).
+  The link test ran on this machine rather than being skipped.
+- Controls removed on purpose to check the tests notice: the "still at the source" proof, the
+  destination match in the "moved" proof, the link checks while checking, the refusal of a new
+  tidy while a question is open, the lock around checking, and the page's Tidy guard. Each made
+  a test fail and was restored.
+- Full suite: 846 tests pass, none skipped; Release build with no warnings; formatting clean.
+
+Found while planning and fixed first: a folder that had been tidied could not be disconnected —
+the plans and journal blocked it with a raw database error after its search memory was cleared.
 
 ## Not accepted by this review
 

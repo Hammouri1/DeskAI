@@ -194,7 +194,7 @@ Goal: turn repeated intent into deterministic, auditable behavior.
 
 Exit criteria: rules can be explained and simulated; background execution cannot widen scope; each run is recoverable/auditable.
 
-## V0.6 — Organize Your Own Folders (**Planned — recommended next**)
+## V0.6 — Organize Your Own Folders (**Now — steps 1–4 done**)
 
 Goal: let DeskAI actually move and rename files in a folder someone connected, after they
 approve each change in the preview.
@@ -228,11 +228,16 @@ Progress (build order from the design):
   file. Each file must match the list the person saw; busy, online-only, hidden, changed, or
   blocked files stay with a reason. The result says what happened, and **Undo** for that tidy
   ships in the same step, needing the same permission.
-- Next — step 4: finding the last tidy again after DeskAI is reopened, and the prompt for a tidy
-  interrupted by a crash ("7 of 12 files moved" with Undo those / Keep them). Until then an
-  interrupted record is left untouched.
-- Then step 5 (review from automatic checks and the practice link), step 6 (the final security
-  review record).
+- ✅ Step 4, 2026-09-11: undo after reopening, and interrupted tidies (ADR 0022, review
+  `docs/security/2026-09-11-tidy-recovery-review.md`). The last tidy is found again from the
+  journal and can be undone after a restart. A tidy or undo that stopped part-way is checked file
+  by file against the disk — moved, not moved, or "please check", never a guess — and put to the
+  person as "7 of 12 files moved" with **Undo those 7** / **Keep them**; nothing else runs in
+  that folder until they answer. A lock file now keeps two DeskAI windows from running at once.
+  Found while planning and fixed first: a tidied folder could not be disconnected; disconnecting
+  now forgets its tidy history too.
+- Next — step 5: **Review in Organize** from an automatic check's notice, and the practice link.
+- Then step 6: the final security review record for the milestone.
 
 1. Design and security review before code: a separate "allow DeskAI to organize this folder"
    permission, how it is shown and withdrawn, what happens when a file changes between preview

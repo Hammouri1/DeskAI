@@ -405,8 +405,40 @@ test on Desktop, Downloads, Documents, Pictures, or a cloud-sync folder.
    and "Keep both" on. Expected: yours is untouched, and the other arrives as
    `invoice (2).pdf`.
 10. Press the "?" next to **Undo** and check it reads clearly.
-11. Close DeskAI after a tidy and reopen it. Expected **for now**: the Undo button is not shown
-    again after reopening — that arrives in step 4. Nothing moves when DeskAI opens.
+11. Close DeskAI after a tidy and reopen it. Since step 4 the last tidy is shown again with
+    **Undo** — see the checklist below. Nothing moves when DeskAI opens.
+
+## Undo after reopening, and interrupted tidies (V0.6 step 4, added 2026-09-11)
+
+Use the same kind of made-up folder under Windows Temp as above, with a sentinel file next to it.
+Never test on a personal folder.
+
+1. Tidy the folder, close DeskAI completely, and open it again. Open **Organize**. Expected: the
+   card under the Tidy button reads "Last tidy: N files tidied into N folders, at <time> on
+   <date>." with **Undo**. Nothing has moved on its own.
+2. Press **Undo**. Expected: "Undone. …" and the files back where they were. Close and reopen:
+   the Last tidy line is gone.
+3. Tidy again, press **Stop tidying this folder**, close and reopen DeskAI. Expected: the Last
+   tidy line and the permission card both show. Press **Undo**: the permission dialog appears
+   first. Cancel: nothing moves. Press Undo again and allow: the files go back.
+4. Tidy twice in a row (add a new PDF between the two), undo the second, then close and reopen.
+   Expected: **no** Last tidy line. DeskAI only ever offers the latest tidy.
+5. Interrupted tidy — optional and only with made-up files: put about 300 small generated PDFs
+   in the test folder, press Tidy, and end DeskAI from Task Manager while it is moving. Reopen
+   and open Organize. Expected: a card "Your last tidy was interrupted: X of 300 files moved."
+   with **Undo those X** and **Keep them**, and the Tidy button off with "Answer the question
+   about your last tidy first." Count the files in `Documents` in File Explorer: it should be X.
+   If a file is listed under the card as one to check, look for it where the card says.
+6. Press **Keep them**. Expected: the card goes and the Last tidy line appears with Undo.
+   Alternatively repeat step 5 and press **Undo those X**: the moved files come back and the card
+   goes.
+7. With one DeskAI window tidying the 300 files, open a second DeskAI window and press Tidy there
+   on the same folder. Expected: the second window waits, and never moves the same files at the
+   same time; if the first takes longer than about 30 seconds it says "DeskAI is busy tidying in
+   another window."
+8. Press the "?" next to the interrupted card's title and check it reads clearly.
+9. After a tidy, disconnect the folder in **Search**. Expected: "Disconnected. Everything
+   remembered about it has been forgotten." and the files stay exactly where the tidy put them.
 
 ## Ask AI on Tidy a folder (V0.6 step 2b, added 2026-09-10)
 

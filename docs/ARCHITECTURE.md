@@ -79,7 +79,10 @@ Safety about that plan through `IPlanSafetyCheck`, a Core contract Safety implem
 nothing. Step 3 adds `TidyRunService`, which turns the ticked moves into an `Approval` covering
 exactly them and the folders they need, bound to the plan revision on screen, passes each
 file's listed size and last-changed time as `ExpectedFile`, calls `IFolderTidyExecutor`, and
-words the result without calling a partial run done; it also undoes a tidy on request.
+words the result without calling a partial run done; it also undoes a tidy on request. Step 4
+gives it the folder's history: `FindLastAsync` for the last tidy after a restart, and
+`FindInterruptedAsync`, `KeepInterruptedAsync`, and `UndoInterruptedAsync` for a tidy that
+stopped part-way (ADR 0022).
 
 Step 2b adds AI as a suggestion source (ADR 0020). `TidySuggestionService.PreviewAsync` takes a
 `TidySuggestionMode` and a dictionary of `TidyAiAdvice` by file ID; it still sends nothing.
@@ -166,7 +169,9 @@ record's plan belongs to the executor's own folder, so neither executor can undo
 work, and practice recovery leaves a connected folder's interrupted record for that folder's own
 recovery (V0.6 step 4). The real-folder executor runs one tidy or undo at a time.
 
-Undo reads completed journal operations in reverse order. A moved file returns only if its current size and modification time still match the recorded pre-move facts and its original path is free. A created directory is removed only if it was recorded, remains inside the owned root, is not a link, and is empty after file reversals. Undo creates its own journal transaction. In this demo implementation, undo is offered only during the same application session; durable cross-restart ownership is deliberately unresolved.
+Undo reads completed journal operations in reverse order. A moved file returns only if its current size and modification time still match the recorded pre-move facts and its original path is free. A created directory is removed only if it was recorded, remains inside the owned root, is not a link, and is empty after file reversals. Undo creates its own journal transaction. For the practice workspace, undo is offered only during the same application session, because a new process cannot authenticate an old workspace.
+
+**Since V0.6 step 4 (ADR 0022) a connected folder's undo survives a restart,** because that folder is trusted by a live check rather than a secret held in memory. `IOperationJournal.ListForRootAsync` reads one folder's records (joined through its plans), and `TidyRunService.FindLastAsync` offers the latest tidy that moved a file and was not undone. A record no run finished is handled by `FolderTidyExecutor.CheckInterruptedAsync`: pending operations never started; an in-progress one is judged by `FileOperationRunner.CheckInterrupted` from names, sizes, and dates — moved, not moved, or `NeedsReview` (an appended journal state undo never touches) — and the record waits as `RecoveryRequired` until `CloseInterruptedAsync` closes it as the person answered. A folder with such a record accepts no new tidy or undo. `RunLockFile` — a file beside the database opened with no sharing — is held with the in-process lock for every tidy, undo, check, and answer, so two DeskAI processes never run at once and an unfinished record seen under the lock is always a dead run's. Disconnecting a folder erases its plans and journal in the same transaction.
 
 ## Persistence
 
