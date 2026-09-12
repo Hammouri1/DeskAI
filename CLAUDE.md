@@ -8,21 +8,16 @@ completely. Treat those documents as the source of truth. If instructions confli
 
 ## Current Handoff
 
-- Milestones V0.1–V0.4 are complete; V0.4's last item, confirming duplicates by reading files
-  after the person agrees each time, was built on 2026-09-11 (ADR 0024). V0.5 is complete except
-  checks after the window is closed.
-- V0.6 "Organize Your Own Folders" is complete in code and tests (2026-09-11; review
-  `docs/security/2026-09-11-v0.6-milestone-review.md`, ADR 0019–0023). The owner's manual
-  "V0.6 sign-off" list in `docs/MANUAL-TESTING.md` is still outstanding. The practice page is
-  gone; `FolderTidyExecutor` is the only code that moves a file.
-- The one open item from earlier milestones is checks after the window is closed (V0.5), which
-  needs its own security review first. V0.7 is still marked Future. Ask the owner which comes
-  next rather than starting one unasked.
-- As of 2026-09-10 every page has page tests in `DeskAI.Presentation.Tests`; keep the
-  Feature Coverage Map in `docs/TESTING.md` complete.
+**Read `docs/HANDOFF.md` before anything else.** The owner clears the conversation after each
+roadmap version, so that file — not the chat — is where the current state, the open items, and
+the decisions already agreed but not yet built are recorded. Start every new session there.
+
+- Ask the owner which open item comes next rather than starting one unasked.
 - Do not rebuild finished milestones or implement the whole remaining roadmap at once.
 - Before starting work, inspect Git history, the current tree, tests, and the roadmap.
 - Work in small coherent tasks and commit every completed task with a descriptive message.
+- Every page has page tests in `DeskAI.Presentation.Tests`; keep the Feature Coverage Map in
+  `docs/TESTING.md` complete.
 
 ## Product Safety
 
@@ -68,6 +63,10 @@ For each task:
 9. Commit the completed task.
 10. Explain what changed, data flow, important C#/.NET concepts, verification evidence,
     remaining risks, what the owner should test manually, and the exact next task.
+11. When the task closes a roadmap version, rewrite `docs/HANDOFF.md` in the same change,
+    following the "How to update this file" section at its end. Also write down there any
+    decision the owner made in conversation that is not yet in code, an ADR, or a design
+    document: the chat is cleared after each version, and an unrecorded decision is lost.
 
 Use these verification commands unless the repository documentation changes them:
 
