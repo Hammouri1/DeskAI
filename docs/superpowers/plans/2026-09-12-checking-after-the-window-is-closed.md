@@ -37,7 +37,8 @@
 
 | File | Responsibility |
 |---|---|
-| `src/DeskAI.Presentation/Services/IBackgroundPresence.cs` | The seam. Show/hide an icon, set its tooltip, raise Open/PauseToggled/Quit. Faked in page tests, exactly as `IFindingNotifier` is. |
+| `src/DeskAI.Presentation/Services/IBackgroundPresence.cs` | The seam. Show/hide an icon, set its tooltip and pause state, raise Open/PauseToggled/Quit. Faked in page tests, exactly as `IFindingNotifier` is. |
+| `src/DeskAI.Presentation/Services/BackgroundPresenceController.cs` | **Singleton.** The one owner of the tray wiring: subscribes to the presence, writes pause through the settings repository, stops a running check, keeps the icon and its tooltip matching what is stored. |
 | `src/DeskAI.Core/Rules/BackgroundCheckingChoice.cs` | Pure: the dialog's words and the tooltip's words, derived from `AutomaticCheckSettings`. No UI, no I/O. |
 | `src/DeskAI.App/Services/TrayPresence.cs` | `Shell_NotifyIcon` + hidden window + menu. The only untestable code; holds no decision. |
 | `src/DeskAI.App/Services/SingleInstance.cs` | The mutex and the reveal message. |
@@ -512,9 +513,11 @@ MSG
 
 **Interfaces:**
 - Produces:
-  - `interface IBackgroundPresence` in namespace `DeskAI.App.Services` with: `bool IsShowing { get; }`, `void Show(string tooltip)`, `void UpdateTooltip(string tooltip)`, `void Hide()`, `event EventHandler? OpenRequested`, `event EventHandler? PauseToggleRequested`, `event EventHandler? QuitRequested`.
-  - `RecordingPresence` test double with `List<string> Tooltips`, `bool IsShowing`, and `void RaiseOpen()`, `void RaisePauseToggle()`, `void RaiseQuit()`.
+  - `interface IBackgroundPresence` in namespace `DeskAI.App.Services` with: `bool IsShowing { get; }`, `void Show(string tooltip, bool isPaused)`, `void Update(string tooltip, bool isPaused)`, `void Hide()`, `event EventHandler? OpenRequested`, `event EventHandler? PauseToggleRequested`, `event EventHandler? QuitRequested`.
+  - `RecordingPresence` test double with `List<string> Tooltips`, `List<bool> PausedStates`, `bool IsShowing`, and `void RaiseOpen()`, `void RaisePauseToggle()`, `void RaiseQuit()`.
   - `TestApp.Presence` returning `RecordingPresence`.
+
+**Ruling R1 applies to this task.** The tooltip and the menu's pause checkmark travel together in one call, so the adapter cannot let them disagree — it is told what to display and displays it. There is no `SetPaused`.
 
 - [ ] **Step 1: Write the interface**
 
@@ -552,10 +555,18 @@ public interface IBackgroundPresence
     bool IsShowing { get; }
 
     /// <summary>Shows the icon. Does nothing when it is already showing.</summary>
-    void Show(string tooltip);
+    void Show(string tooltip, bool isPaused);
 
-    /// <summary>Changes what the icon says on hover. Does nothing when not showing.</summary>
-    void UpdateTooltip(string tooltip);
+    /// <summary>
+    /// Changes what the icon says on hover, and whether its menu shows checking as paused.
+    /// Does nothing when not showing.
+    /// </summary>
+    /// <remarks>
+    /// The two travel together deliberately. An icon whose tooltip says it is looking every
+    /// 15 minutes while its menu shows a tick beside "Pause checking" is the failure this
+    /// whole feature is careful about, and separate calls are how that happens.
+    /// </remarks>
+    void Update(string tooltip, bool isPaused);
 
     /// <summary>Takes the icon away. Does nothing when it is not showing.</summary>
     void Hide();
@@ -582,19 +593,24 @@ internal sealed class RecordingPresence : IBackgroundPresence
     /// <summary>Every tooltip it has been given, in order. The last is what it says now.</summary>
     public List<string> Tooltips { get; } = [];
 
+    /// <summary>Whether its menu showed checking as paused, alongside each tooltip.</summary>
+    public List<bool> PausedStates { get; } = [];
+
     public bool IsShowing { get; private set; }
 
-    public void Show(string tooltip)
+    public void Show(string tooltip, bool isPaused)
     {
         IsShowing = true;
         Tooltips.Add(tooltip);
+        PausedStates.Add(isPaused);
     }
 
-    public void UpdateTooltip(string tooltip)
+    public void Update(string tooltip, bool isPaused)
     {
         if (IsShowing)
         {
             Tooltips.Add(tooltip);
+            PausedStates.Add(isPaused);
         }
     }
 
@@ -655,11 +671,11 @@ public sealed class NoBackgroundPresence : IBackgroundPresence
 {
     public bool IsShowing => false;
 
-    public void Show(string tooltip)
+    public void Show(string tooltip, bool isPaused)
     {
     }
 
-    public void UpdateTooltip(string tooltip)
+    public void Update(string tooltip, bool isPaused)
     {
     }
 
@@ -677,7 +693,177 @@ public sealed class NoBackgroundPresence : IBackgroundPresence
 
 The three events are never raised here. Suppress or satisfy the "never used" warning the way the codebase already does elsewhere; if it produces a warning, add `#pragma warning disable CS0067` with a one-line comment explaining that a presence which never appears never raises anything.
 
-- [ ] **Step 5: Build and run the full suite to confirm nothing regressed**
+- [ ] **Step 5: Write the controller — the one owner of the wiring**
+
+This is ruling R1. Both view models are registered `AddTransient`, so subscribing either to a
+singleton's event would add a handler per page visit and make one menu click toggle pause
+several times. A singleton owner has exactly one subscription by construction.
+
+Create `src/DeskAI.Presentation/Services/BackgroundPresenceController.cs`:
+
+```csharp
+using DeskAI.Core.Abstractions;
+using DeskAI.Core.Rules;
+
+namespace DeskAI.App.Services;
+
+/// <summary>
+/// The one thing that owns DeskAI's icon near the clock.
+/// </summary>
+/// <remarks>
+/// <para>
+/// A singleton on purpose. View models are created fresh for each page someone opens, so a
+/// view model subscribing to the icon's events would add another handler every visit, and one
+/// click on "Pause checking" would toggle it as many times as the page had been opened.
+/// Having a single owner makes "the page and the icon never disagree" structural rather than
+/// something each caller has to be careful about.
+/// </para>
+/// <para>
+/// It decides nothing about what a check may do. It reads and writes the same settings the
+/// Automatic tasks page reads and writes, stops a check that is running when someone pauses,
+/// and hands the icon the words <see cref="BackgroundCheckingChoice"/> computed. See ADR 0025.
+/// </para>
+/// </remarks>
+public sealed class BackgroundPresenceController : IDisposable
+{
+    private readonly IBackgroundPresence _presence;
+    private readonly IAutomaticCheckSettingsRepository _settings;
+    private readonly AutomaticCheckCoordinator _checks;
+    private bool _disposed;
+
+    public BackgroundPresenceController(
+        IBackgroundPresence presence,
+        IAutomaticCheckSettingsRepository settings,
+        AutomaticCheckCoordinator checks)
+    {
+        _presence = presence;
+        _settings = settings;
+        _checks = checks;
+        _presence.PauseToggleRequested += OnPauseToggleRequested;
+        _checks.Checked += OnChecked;
+    }
+
+    /// <summary>Raised when something changed the settings from outside a page.</summary>
+    /// <remarks>
+    /// The Automatic tasks page listens so that pausing from the icon while the page is open
+    /// is visible there immediately, rather than only after the page is opened again.
+    /// </remarks>
+    public event EventHandler? SettingsChangedOutsideThePage;
+
+    /// <summary>Whether the icon is on screen.</summary>
+    public bool IsShowing => _presence.IsShowing;
+
+    /// <summary>
+    /// Whether this DeskAI has a notification area to put an icon in at all.
+    /// </summary>
+    /// <remarks>
+    /// False for <see cref="NoBackgroundPresence"/>. The page hides the switch rather than
+    /// offering one that cannot work: an inert option still promises something.
+    /// </remarks>
+    public bool CanShowAnIcon => _presence is not NoBackgroundPresence;
+
+    /// <summary>
+    /// Makes the icon match what is stored: shown or not, and saying the right thing.
+    /// </summary>
+    /// <remarks>
+    /// Called after every change rather than only when the mode changes, because the tooltip
+    /// is one of the promises. An icon saying DeskAI is looking every 15 minutes while checks
+    /// are paused is exactly the failure this feature has to avoid.
+    /// </remarks>
+    public void Refresh(AutomaticCheckSettings settings)
+    {
+        if (settings.Mode != AutomaticCheckMode.InBackground)
+        {
+            _presence.Hide();
+            return;
+        }
+
+        var tooltip = BackgroundCheckingChoice.Tooltip(settings, _checks.Latest?.ProposalCount);
+        if (_presence.IsShowing)
+        {
+            _presence.Update(tooltip, settings.IsPaused);
+        }
+        else
+        {
+            _presence.Show(tooltip, settings.IsPaused);
+        }
+    }
+
+    /// <summary>
+    /// Pause or resume, asked for from the icon rather than from a page.
+    /// </summary>
+    /// <remarks>
+    /// Stopping is always safe, and it is the one control someone may want in a hurry. It
+    /// goes through the same stored setting the page's switch uses, so the two cannot hold
+    /// different answers, and it cancels a check already under way — someone reaching for a
+    /// stop control means the thing happening now.
+    /// </remarks>
+    private void OnPauseToggleRequested(object? sender, EventArgs args) => _ = TogglePauseAsync();
+
+    /// <summary>
+    /// Pause or resume. Awaitable so a test can assert what happened rather than hope.
+    /// </summary>
+    public async Task TogglePauseAsync()
+    {
+        try
+        {
+            var stored = await _settings.LoadAsync().ConfigureAwait(false);
+            var updated = stored with { IsPaused = !stored.IsPaused };
+            if (updated.IsPaused)
+            {
+                _checks.StopRunningCheck();
+            }
+
+            await _settings.SaveAsync(updated).ConfigureAwait(false);
+            Refresh(updated);
+            SettingsChangedOutsideThePage?.Invoke(this, EventArgs.Empty);
+        }
+        catch (Exception exception) when (exception is InvalidOperationException
+            or System.Data.Common.DbException
+            or IOException
+            or OperationCanceledException)
+        {
+            // There is no page on screen to show this on, and nothing was changed on disk.
+            // The icon keeps saying what it said, which is still true.
+        }
+    }
+
+    /// <summary>Keeps the count on the icon current after a check finishes.</summary>
+    private async void OnChecked(object? sender, AutomaticCheckResult result)
+    {
+        try
+        {
+            Refresh(await _settings.LoadAsync().ConfigureAwait(false));
+        }
+        catch (Exception exception) when (exception is InvalidOperationException
+            or System.Data.Common.DbException
+            or IOException
+            or OperationCanceledException)
+        {
+        }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _presence.PauseToggleRequested -= OnPauseToggleRequested;
+        _checks.Checked -= OnChecked;
+    }
+}
+```
+
+Register it as a singleton in the shared composition, beside `IBackgroundPresence`:
+
+```csharp
+        services.AddSingleton<BackgroundPresenceController>();
+```
+
+- [ ] **Step 6: Build and run the full suite to confirm nothing regressed**
 
 Run:
 ```powershell
@@ -686,10 +872,10 @@ dotnet test DeskAI.sln -c Release --no-build --no-restore
 ```
 Expected: build succeeds with 0 warnings; all existing tests still pass.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
-git add src/DeskAI.Presentation/Services/IBackgroundPresence.cs src/DeskAI.Presentation/Services/NoBackgroundPresence.cs src/DeskAI.Presentation/Composition tests/DeskAI.Presentation.Tests/TestDoubles.cs tests/DeskAI.Presentation.Tests/TestApp.cs
+git add src/DeskAI.Presentation/Services/IBackgroundPresence.cs src/DeskAI.Presentation/Services/NoBackgroundPresence.cs src/DeskAI.Presentation/Services/BackgroundPresenceController.cs src/DeskAI.Presentation/Composition tests/DeskAI.Presentation.Tests/TestDoubles.cs tests/DeskAI.Presentation.Tests/TestApp.cs
 git commit -F - <<'MSG'
 feat(checks): a seam for the icon near the clock, so page tests can see it
 
@@ -978,10 +1164,11 @@ public sealed class BackgroundCheckingPageTests
         await page.InitializeAsync();
         await page.KeepRunningAsync(notifyWhenSomethingIsFound: false);
 
-        app.Presence.RaisePauseToggle();
+        await app.Get<BackgroundPresenceController>().TogglePauseAsync();
 
         Assert.True(page.IsPaused);
         Assert.Equal("DeskAI — checks paused", app.Presence.Tooltips[^1]);
+        Assert.True(app.Presence.PausedStates[^1]);
     }
 
     [Fact]
@@ -992,7 +1179,7 @@ public sealed class BackgroundCheckingPageTests
         await page.InitializeAsync();
         await page.KeepRunningAsync(notifyWhenSomethingIsFound: false);
 
-        app.Presence.RaisePauseToggle();
+        await app.Get<BackgroundPresenceController>().TogglePauseAsync();
 
         await using var reopened = await app.ReopenAsync();
         var again = reopened.Get<AutomationViewModel>();
@@ -1008,11 +1195,61 @@ public sealed class BackgroundCheckingPageTests
         var page = app.Get<AutomationViewModel>();
         await page.InitializeAsync();
         await page.KeepRunningAsync(notifyWhenSomethingIsFound: false);
-        app.Presence.RaisePauseToggle();
+        var controller = app.Get<BackgroundPresenceController>();
+        await controller.TogglePauseAsync();
 
-        app.Presence.RaisePauseToggle();
+        await controller.TogglePauseAsync();
 
         Assert.False(page.IsPaused);
+        Assert.False(app.Presence.PausedStates[^1]);
+    }
+
+    [Fact]
+    public async Task The_menu_item_is_wired_to_the_same_thing_the_page_uses()
+    {
+        // Proves the event actually reaches the controller. The tests above call the method
+        // directly so they can assert rather than race an async void handler; without this
+        // one, a disconnected menu item would pass all of them.
+        await using var app = await TestApp.StartAsync();
+        var page = app.Get<AutomationViewModel>();
+        await page.InitializeAsync();
+        await page.KeepRunningAsync(notifyWhenSomethingIsFound: false);
+
+        app.Presence.RaisePauseToggle();
+
+        // The handler is fire-and-forget by necessity — an event handler cannot be awaited.
+        await WaitUntil(() => page.IsPaused);
+        Assert.True(page.IsPaused);
+    }
+
+    /// <summary>Waits briefly for something a fire-and-forget handler will do.</summary>
+    private static async Task WaitUntil(Func<bool> condition)
+    {
+        for (var attempt = 0; attempt < 100 && !condition(); attempt++)
+        {
+            await Task.Delay(20);
+        }
+    }
+
+    [Fact]
+    public async Task Only_one_thing_listens_to_the_icon_however_many_times_the_page_is_opened()
+    {
+        // A transient view model subscribing to a singleton's event would toggle pause once
+        // per page visit. Opening the page three times must still mean one toggle.
+        await using var app = await TestApp.StartAsync();
+        var first = app.Get<AutomationViewModel>();
+        await first.InitializeAsync();
+        await first.KeepRunningAsync(notifyWhenSomethingIsFound: false);
+        foreach (var _ in Enumerable.Range(0, 3))
+        {
+            await app.Get<AutomationViewModel>().InitializeAsync();
+        }
+
+        await app.Get<BackgroundPresenceController>().TogglePauseAsync();
+
+        var page = app.Get<AutomationViewModel>();
+        await page.InitializeAsync();
+        Assert.True(page.IsPaused);
     }
 }
 ```
@@ -1027,7 +1264,7 @@ Expected: FAIL — `KeepsRunningWhenClosed`, `AskAboutKeepingRunning`, `KeepRunn
 In `src/DeskAI.Presentation/ViewModels/AutomationViewModel.cs`:
 
 1. Add `using DeskAI.App.Services;` if not already present.
-2. Add `IBackgroundPresence presence` as the last constructor parameter, store it as `_presence`, and subscribe: `_presence.PauseToggleRequested += OnPauseToggleRequested;`. Make the class `IDisposable` and unsubscribe in `Dispose`, following `ShellViewModel`'s existing pattern — a view model that stays subscribed to a singleton after the page is gone is a leak.
+2. Add `BackgroundPresenceController presence` as the last constructor parameter and store it as `_presence`. **Do not subscribe to `IBackgroundPresence` here** — that is ruling R1: this view model is transient, so a subscription per page visit would toggle pause several times on one menu click. Subscribe instead to the controller's own `SettingsChangedOutsideThePage`, and make the class `IDisposable` to unsubscribe, following `ShellViewModel`'s existing pattern.
 3. Add a `_mode` field defaulting to `AutomaticCheckMode.WhileAppIsOpen`.
 4. Add the members:
 
@@ -1040,7 +1277,7 @@ In `src/DeskAI.Presentation/ViewModels/AutomationViewModel.cs`:
     /// absent rather than present and inert: an option that cannot work is worse than no
     /// option, because it promises something.
     /// </remarks>
-    public bool CanKeepRunning => _presence is not NoBackgroundPresence;
+    public bool CanKeepRunning => _presence.CanShowAnIcon;
 
     /// <summary>Whether DeskAI keeps checking after the window is closed.</summary>
     public bool KeepsRunningWhenClosed => _mode == AutomaticCheckMode.InBackground;
@@ -1088,42 +1325,36 @@ In `src/DeskAI.Presentation/ViewModels/AutomationViewModel.cs`:
         IsPaused,
         NotifyWhenSomethingIsFound);
 
+    /// <summary>Hands the current settings to the one thing that owns the icon.</summary>
+    private void RefreshPresence() => _presence.Refresh(CurrentSettings());
+
     /// <summary>
-    /// Keeps the icon, and what it says, matching what is actually stored.
+    /// Something outside this page changed the settings — pause, from the icon's menu.
     /// </summary>
     /// <remarks>
-    /// Called after every change rather than only when the mode changes, because the tooltip
-    /// is one of the promises: an icon saying DeskAI is looking every 15 minutes while checks
-    /// are paused is the failure this is here to prevent.
+    /// Re-read rather than guessed at, so the page shows what is actually stored. The flag
+    /// keeps this from counting as a fresh decision and writing the value straight back.
     /// </remarks>
-    private void RefreshPresence()
+    private async void OnSettingsChangedOutsideThePage(object? sender, EventArgs args)
     {
-        var settings = CurrentSettings();
-        if (settings.Mode == AutomaticCheckMode.InBackground)
+        try
         {
-            var tooltip = BackgroundCheckingChoice.Tooltip(settings, _checks.Latest?.ProposalCount);
-            if (_presence.IsShowing)
+            var stored = await _checkSettings.LoadAsync().ConfigureAwait(true);
+            _isApplyingStoredSettings = true;
+            try
             {
-                _presence.UpdateTooltip(tooltip);
+                IsPaused = stored.IsPaused;
             }
-            else
+            finally
             {
-                _presence.Show(tooltip);
+                _isApplyingStoredSettings = false;
             }
         }
-        else
+        catch (Exception exception) when (IsExpectedFailure(exception))
         {
-            _presence.Hide();
+            Message = $"DeskAI could not read that setting: {exception.Message}";
         }
     }
-
-    /// <summary>Pause or resume, asked for from the icon rather than from this page.</summary>
-    /// <remarks>
-    /// Stopping is always safe, and it is the one control someone may want in a hurry. It
-    /// goes through the same property the switch on this page uses, so the two cannot
-    /// disagree about what is stored.
-    /// </remarks>
-    private void OnPauseToggleRequested(object? sender, EventArgs args) => IsPaused = !IsPaused;
 ```
 
 5. Change `SaveCheckSettings()` to store `_mode` instead of the hardcoded `AutomaticCheckMode.WhileAppIsOpen`, and extract an awaitable `SaveCheckSettingsAsync()` that the existing `async void SaveCheckSettings()` calls, so the new methods can await the write:
@@ -1420,7 +1651,7 @@ Create `src/DeskAI.App/Services/TrayPresence.cs`. Key requirements, each of whic
 4. **The menu has exactly three items** — "Open DeskAI" (default, bold, also the left-click action), "Pause checking" (checkable), "Quit DeskAI". Build with `CreatePopupMenu`/`AppendMenuW`/`TrackPopupMenuEx`. Call `SetForegroundWindow` before `TrackPopupMenuEx` and post a null message after, or the menu will not dismiss when clicked away — a documented Win32 requirement.
 5. **The tooltip is copied into the 128-char `szTip` field and truncated safely.** Task 1 keeps it under the limit; truncate defensively anyway rather than overrun.
 6. **Every failure is contained.** `Shell_NotifyIcon` returning false is logged at Information and leaves `IsShowing` false — the same posture `WindowsFindingNotifier` takes. A missing icon must never take DeskAI down with it.
-7. **Pause state is passed in for the checkmark.** Add `void SetPaused(bool isPaused)` to the class (not to the interface — it is set by the adapter's owner in Task 7 via the view model's state). Simpler alternative if it fits the wiring: include the check state in the tooltip refresh call.
+7. **The window class is registered as `DeskAI.TrayWindow`** — Task 7 looks it up by that exact string. **The pause checkmark comes from the `isPaused` parameter of `Show`/`Update`**; there is no `SetPaused` and the adapter stores no state of its own beyond what it was last told, so the tooltip and the checkmark cannot disagree.
 
 Structure it as: the P/Invoke declarations in one `internal static partial class` region, the window class registration and `WndProc`, then the four interface members, then `Dispose`. Use `[LibraryImport]` source-generated P/Invoke to match the project's warning level. Keep the whole file under roughly 300 lines; if it grows past that, split the P/Invoke declarations into `src/DeskAI.App/Services/TrayInterop.cs`.
 
@@ -1474,7 +1705,7 @@ Create `src/DeskAI.App/Services/SingleInstance.cs`:
 
 - A `Mutex` named `Local\DeskAI.SingleInstance`. **`Local\`, not `Global\`** — per sign-in session, so a second Windows user on the same machine gets their own DeskAI. Put that reason in a comment.
 - `AnotherIsAlreadyRunning` is `!createdNew` from the mutex constructor.
-- `RevealTheRunningOne()` finds the window by the class name `TrayPresence` registers and posts the message registered as `RegisterWindowMessageW("DeskAI.ShowExistingWindow")`. `PostMessage`, not `SendMessage`: a busy first instance must not hang the second.
+- `RevealTheRunningOne()` finds the window by the window class name `DeskAI.TrayWindow` that `TrayPresence` registers and posts the message registered as `RegisterWindowMessageW("DeskAI.ShowExistingWindow")`. `PostMessage`, not `SendMessage`: a busy first instance must not hang the second.
 - The message carries no `wParam` or `lParam`. Comment why: the most another program can achieve through this channel is causing a window to appear.
 - An `AbandonedMutexException` on acquire means a previous DeskAI died holding it. Treat that as "no other DeskAI is running" and carry on.
 
@@ -1500,7 +1731,7 @@ Register the Windows presence beside the notifier:
                 services.AddSingleton<IBackgroundPresence, TrayPresence>();
 ```
 
-This replaces `NoBackgroundPresence` for the real app only; `TestApp` keeps its `RecordingPresence`.
+Ruling R2: this must REPLACE the shared `NoBackgroundPresence` registration, not sit alongside it — `TestApp` already carries the project's rule in a comment, that a second registration leaves the real one reachable through `IEnumerable<T>`. Remove the existing descriptor before adding, the way `TestApp.Replace` does. `TestApp` keeps its `RecordingPresence`.
 
 - [ ] **Step 3: Hide instead of close, when the mode says so**
 
@@ -1540,7 +1771,8 @@ In `App.xaml.cs`, after the window is created:
 
 - `OpenRequested` → show and activate `_window`, and bring it to the front.
 - `QuitRequested` → hide the icon, `await _host.StopAsync()`, `Exit()`.
-- `PauseToggleRequested` is already handled by `AutomationViewModel` (Task 4). Confirm the view model instance is alive when no page is open; if `AutomationViewModel` is transient and therefore may not exist, move the pause subscription to `ShellViewModel` — which is created with the window and lives as long as it — and have it write through `IAutomaticCheckSettingsRepository` and call `AutomaticCheckCoordinator.StopRunningCheck()`. **Check this before implementing**: `AutomationViewModel` is registered `AddTransient`, so it almost certainly must be `ShellViewModel`. If you move it, move the page test's expectation with it and keep the page-level assertions (`Pausing_from_the_icon_pauses_on_the_page_too`) by having the page read the stored value on `InitializeAsync`.
+- `PauseToggleRequested` needs no wiring here. `BackgroundPresenceController` (Task 3) owns it, and it is a singleton. **Resolve it once at startup** — `_host.Services.GetRequiredService<BackgroundPresenceController>();` right after the host starts — so its subscription exists before any page is opened. Without that line the controller is never constructed until someone visits the Automatic tasks page, and the icon's menu would do nothing on a DeskAI that was launched and closed without going there.
+- Call `controller.Refresh(storedSettings)` once at startup too, so a DeskAI launched with the mode already on shows its icon before any page is opened.
 - The registered reveal message arriving at the tray window → same as `OpenRequested`.
 - Notification click (`AppNotificationManager.Default.NotificationInvoked`) → same as `OpenRequested`. A notification that does nothing when the window is hidden is a dead end.
 
@@ -1801,7 +2033,7 @@ MSG
 
 ## Notes for whoever implements this
 
-- **Task 7 Step 4 contains a decision you must check, not assume.** `AutomationViewModel` is registered `AddTransient`, so it may not exist when the tray menu is used with no page open. Verify before wiring; `ShellViewModel` is the likely home for the pause subscription.
+- **Rulings R1–R3 are already folded into the tasks below.** They came from a pre-flight scan of this plan against its spec, and are recorded in `.superpowers/sdd/2026-09-12-checking-after-the-window-is-closed/progress.md`. In short: the tray wiring lives in a singleton `BackgroundPresenceController`, not in either transient view model; `IBackgroundPresence` is registered once and replaced rather than added alongside; the tray window class name is `DeskAI.TrayWindow` and the pause state travels with the tooltip in one call.
 - **Do not weaken a test to make a task pass.** If `NeverStartsWithWindowsTests` fails, the code is wrong, not the test. The same goes for the containment test.
 - **The tooltip and dialog strings are the feature.** If you change one, change its test in the same commit and say why in the message.
 - **Stop and ask** if implementation reveals that hiding the window does not keep the host alive as expected, or that `AppWindow.Closing` cannot be cancelled in this Windows App SDK version. Both are assumptions from the design; neither has been run.
