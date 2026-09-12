@@ -13,3 +13,6 @@ TestResults/
 .nuget-packages/
 artifacts/
 test-sandboxes/
+
+# Subagent-driven development scratch (ledger, briefs, review packages)
+.superpowers/
