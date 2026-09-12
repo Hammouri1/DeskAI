@@ -293,6 +293,34 @@ Goal: turn organization/search into tailored workspaces.
 - Accessibility, localization foundation, performance profiling, crash recovery, import/export, and privacy review.
 - Packaging, installer/uninstaller behavior, GitHub Actions, GitHub Releases, update policy, SBOM/dependency checks, and qualifying open-source code-signing options.
 
+## V0.9 — Tidy While I'm Away (**Future**)
+
+Goal: let a rule that has already been approved carry itself out while nobody is watching.
+
+This is the largest single increase in what DeskAI is trusted to do, so it is a version of its
+own rather than a line inside another one. Everything before it stops at telling a person
+something. This is the first thing that would act on its own.
+
+- Standing approval: what it means to approve a rule's *outcome* in advance rather than one
+  previewed list of moves, and how that approval is invalidated — by the rule changing, by the
+  files changing, by a collision, by anything novel. ADR 0016 already invalidates an approval
+  when the same untouched rules want to move different files; this has to answer what is left
+  that can still be trusted after that.
+- A dedicated security review, which is a precondition rather than a step. Every control
+  DeskAI has today assumes a person is looking at a preview at the moment a file moves. That
+  assumption ends here, and each control has to be re-argued without it: preview, collision
+  handling, reparse points, time-of-check/time-of-use, and what a wrong move costs when it is
+  noticed hours later.
+- Undo becomes the primary control rather than the safety net, including undoing a run the
+  person was not present for and did not see begin.
+- A hard ceiling on what may happen unattended, decided before anything is built: which
+  actions, how many files, which folders, and what makes a run stop and wait for a person.
+- Nothing permanently deleted, unattended or otherwise. That rule does not bend here.
+
+Depends on V0.5's "checks after the window is closed": an unattended tidy needs something
+running while nobody is present, and that mode is where running unattended is designed and
+reviewed. It does not depend on V0.7 or V0.8.
+
 ## V1.0 — Stable Release (**Planned target**)
 
 - Supported Windows versions and hardware guidance documented.
