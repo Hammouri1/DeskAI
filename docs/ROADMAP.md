@@ -179,7 +179,10 @@ Goal: turn repeated intent into deterministic, auditable behavior.
   Checking after the window is closed is decided in the same ADR but NOT built: no code
   produces that mode and it is absent from the UI. It is the remaining half, and it needs
   its own security review because a process running while nobody is present is a different
-  threat case.
+  threat case. That design and review landed on 2026-09-12 — see
+  `docs/decisions/0025-checking-after-the-window-is-closed.md` and
+  `docs/security/2026-09-12-background-checking-review.md` — ahead of any code, which is the
+  remaining work in V0.5.
 - ✅ Run history, notifications, pause/disable controls, missed-run behavior, and safe concurrency.
   Completed 2026-09-10. Every check that actually ran is recorded — including the ones that
   were stopped part-way and the ones that failed, because a history that omitted those would

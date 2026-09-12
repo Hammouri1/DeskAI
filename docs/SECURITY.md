@@ -170,7 +170,9 @@ All mutation tests create a unique temporary sandbox and verify its canonical pa
 
 ## Security Review Gates
 
-A focused review is required before introducing file mutation, Recycle Bin support, content extraction, cloud transmission, background watchers/schedulers, plugins, update/install behavior, or desktop-shell customization. Each gate needs threat scenarios, negative tests, user-facing disclosures, and rollback/recovery behavior.
+A focused review is required before introducing file mutation, Recycle Bin support, content extraction, cloud transmission, background watchers/schedulers, running after the window is closed, notification-area or other desktop-shell presence, plugins, update/install behavior, or desktop-shell customization. Each gate needs threat scenarios, negative tests, user-facing disclosures, and rollback/recovery behavior.
+
+DeskAI never registers itself to start with Windows: no Run key, no Startup folder, no scheduled task, and no `StartupTask`. It runs when someone opens it and no sooner. This holds in every mode, including running after the window is closed, and is asserted by a test rather than left to intent, because it is a promise the app makes to people in words. Any control that can be reached without a window on screen may stop DeskAI doing something; none may start it. A surface reachable with no window — a notification-area menu, a notification, a hotkey — carries at most a count and a state, never a file name, folder name, or path.
 
 ## Reporting Vulnerabilities
 
