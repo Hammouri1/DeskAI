@@ -73,14 +73,6 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Brings the window back, from the icon near the clock, a notification, or a second launch.
-    /// </summary>
-    /// <remarks>
-    /// Showing is not enough on its own: a window restored by another process's request can come
-    /// back behind whatever the person is looking at, which reads as nothing having happened.
-    /// Activating and then asking for the foreground is what actually puts it in front of them.
-    /// </remarks>
-    /// <summary>
     /// Lets the next close be a real one, because DeskAI is being quit.
     /// </summary>
     /// <remarks>
@@ -90,6 +82,14 @@ public sealed partial class MainWindow : Window
     /// </remarks>
     internal void AllowTheRealClose() => _quitting = true;
 
+    /// <summary>
+    /// Brings the window back, from the icon near the clock, a notification, or a second launch.
+    /// </summary>
+    /// <remarks>
+    /// Showing is not enough on its own: a window restored by another process's request can come
+    /// back behind whatever the person is looking at, which reads as nothing having happened.
+    /// Activating and then asking for the foreground is what actually puts it in front of them.
+    /// </remarks>
     internal void Reveal()
     {
         AppWindow.Show(activateWindow: true);

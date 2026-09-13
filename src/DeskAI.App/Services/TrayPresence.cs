@@ -88,6 +88,32 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
 
     public bool IsShowing => _isShowing;
 
+    /// <summary>
+    /// Creates the hidden window that receives messages, without showing any icon.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The window has to exist before the icon does, because it is what a second launch of DeskAI
+    /// posts its "show the window you already have" message to, and it is found by class name. Left
+    /// to <see cref="Show"/>, the window would exist only while the icon did — so launching DeskAI
+    /// again while it was already open with the keep-running mode off would find nothing, reveal
+    /// nothing, and simply exit. To the person, double-clicking DeskAI would appear to do nothing at
+    /// all, which is the one outcome ADR 0025 rules out.
+    /// </para>
+    /// <para>
+    /// Call this from the UI thread, for the reason given on the class: the shell and every other
+    /// sender call back on the thread that pumps messages for this window. It is deliberately not
+    /// called from the constructor, so the thread affinity is a visible decision at the call site
+    /// rather than whichever thread dependency injection happened to build this object on.
+    /// </para>
+    /// <para>
+    /// Safe to call more than once and safe to call alongside <see cref="Show"/>: the window is
+    /// created at most once, <see cref="Hide"/> only removes the icon and leaves the window alive,
+    /// and only <see cref="Dispose"/> destroys it.
+    /// </para>
+    /// </remarks>
+    internal bool EnsureMessageWindow() => !_disposed && EnsureWindow();
+
     public void Show(string tooltip, bool isPaused)
     {
         if (_disposed || _isShowing)

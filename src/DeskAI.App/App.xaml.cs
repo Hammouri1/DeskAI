@@ -20,6 +20,15 @@ public partial class App : Application
     private Window? _window;
     private SingleInstance? _instance;
 
+    /// <summary>
+    /// Set the first time "Quit DeskAI" is chosen, so a second click is ignored.
+    /// </summary>
+    /// <remarks>
+    /// The menu is still there while the host is stopping, and two clicks would mean two
+    /// <c>StopAsync</c> calls and two exits. Only ever read and written on the UI thread.
+    /// </remarks>
+    private bool _quitInProgress;
+
     internal Window? MainAppWindow => _window;
 
     public App()
@@ -144,6 +153,14 @@ public partial class App : Application
         presence.OpenRequested += (_, _) => Reveal(window);
         presence.QuitRequested += (_, _) => _ = QuitAsync(presence, window);
 
+        // After the handlers, never before: this creates the window a second launch posts to, and a
+        // message that arrived first would find nothing listening. See EnsureMessageWindow for why
+        // the window cannot wait for the icon, and why this call belongs here on the UI thread.
+        if (presence is TrayPresence tray)
+        {
+            tray.EnsureMessageWindow();
+        }
+
         // A notification about something found is useless if clicking it leads nowhere, and with
         // the window hidden that is exactly where it would lead.
         try
@@ -185,6 +202,13 @@ public partial class App : Application
     /// </remarks>
     private async Task QuitAsync(IBackgroundPresence presence, MainWindow window)
     {
+        if (_quitInProgress)
+        {
+            return;
+        }
+
+        _quitInProgress = true;
+
         try
         {
             window.AllowTheRealClose();
