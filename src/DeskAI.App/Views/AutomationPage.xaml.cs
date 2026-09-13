@@ -33,4 +33,64 @@ public sealed partial class AutomationPage : Page
         Unloaded -= OnUnloaded;
         ViewModel.Dispose();
     }
+
+    /// <summary>
+    /// Turning this on asks before it does anything, because it changes what closing the
+    /// window means. Turning it off needs no dialog: stopping is always safe.
+    /// </summary>
+    private async void OnKeepRunningToggled(object sender, RoutedEventArgs args)
+    {
+        if (ViewModel is null || KeepRunningSwitch.IsOn == ViewModel.KeepsRunningWhenClosed)
+        {
+            // The switch is only reflecting a change the view model already made.
+            return;
+        }
+
+        if (!KeepRunningSwitch.IsOn)
+        {
+            await ViewModel.StopKeepingRunningAsync();
+            return;
+        }
+
+        var question = ViewModel.AskAboutKeepingRunning();
+        var notify = new CheckBox
+        {
+            Content = question.NotifyLabel,
+            IsChecked = question.NotifyWhenSomethingIsFound,
+        };
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = question.Title,
+            PrimaryButtonText = question.Confirm,
+            CloseButtonText = question.Decline,
+            DefaultButton = ContentDialogButton.Close,
+            Content = new StackPanel
+            {
+                Spacing = 12,
+                Children =
+                {
+                    new TextBlock { Text = question.Body, TextWrapping = TextWrapping.Wrap },
+                    new TextBlock { Text = question.LimitLine, TextWrapping = TextWrapping.Wrap },
+                    notify,
+                    new TextBlock
+                    {
+                        Text = question.NotifyCaption,
+                        TextWrapping = TextWrapping.Wrap,
+                        Style = (Style)Application.Current.Resources["CaptionStyle"],
+                    },
+                },
+            },
+        };
+
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            await ViewModel.KeepRunningAsync(notify.IsChecked == true);
+        }
+        else
+        {
+            // Put the switch back where it was. Closing the dialog is a decision not to.
+            KeepRunningSwitch.IsOn = false;
+        }
+    }
 }

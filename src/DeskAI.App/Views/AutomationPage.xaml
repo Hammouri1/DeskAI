@@ -96,11 +96,27 @@
                                    Text="Off unless you turn it on. With it off, DeskAI shows a quiet message inside the app instead." />
                     </StackPanel>
 
+                    <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.CanKeepRunning}">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <ToggleSwitch x:Name="KeepRunningSwitch"
+                                          Header="Keep checking after I close the window"
+                                          OnContent="On" OffContent="Off"
+                                          IsOn="{x:Bind ViewModel.KeepsRunningWhenClosed, Mode=OneWay}"
+                                          Toggled="OnKeepRunningToggled"
+                                          AutomationProperties.Name="Keep checking after I close the window" />
+                            <controls:HelpButton VerticalAlignment="Top" Topic="automation.keeprunning" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="560"
+                                   TextWrapping="Wrap"
+                                   HorizontalAlignment="Left"
+                                   Text="Off unless you turn it on. DeskAI will ask you first, and will never add itself to Windows startup." />
+                    </StackPanel>
+
                     <Expander Header="More details" HorizontalAlignment="Stretch">
                         <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="600"
                                    TextWrapping="Wrap"
                                    HorizontalAlignment="Left"
-                                   Text="Checking happens only while DeskAI is open. Closing it stops everything, and DeskAI does not add itself to Windows startup. A check re-reads the names, sizes, and dates of files in the folders you connected — it does not open them, and it does not move anything." />
+                                   Text="{x:Bind ViewModel.MoreDetails, Mode=OneWay}" />
                     </Expander>
 
                     <!--
