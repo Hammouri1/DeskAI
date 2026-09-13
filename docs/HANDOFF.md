@@ -16,45 +16,47 @@ appending to them.
 
 ## Where things stand
 
-- Updated: 2026-09-12, at commit `4da8d60`, branch `main`, tree clean.
+- Updated: 2026-09-13, at commit `98f436f`, branch `v0.5-background-checking` (not merged to
+  `main` yet), tree clean.
 - V0.1–V0.4 complete. V0.4's last piece, confirming duplicates by reading files after the
   person agrees each time, landed 2026-09-11 (ADR 0024).
-- V0.5 complete **except** checking after the window is closed.
+- **V0.5 is now complete**, including checking after the window is closed (ADR 0025, review
+  `docs/security/2026-09-12-background-checking-review.md`). The work landed on branch
+  `v0.5-background-checking`, not directly on `main`.
 - V0.6 "Organize Your Own Folders" complete in code and automated tests (2026-09-11;
   ADR 0019–0023, review `docs/security/2026-09-11-v0.6-milestone-review.md`).
-- V0.7 is marked Future. Nothing in it is started.
+- V0.7 is marked Future, not started. V0.9 "Tidy While I'm Away" is also marked Future, not
+  started, and depends on the V0.5 item that just landed — it needs something running while
+  nobody is present, which is what background checking builds.
 
 ## What is left
 
-1. **Checks after the window is closed** (V0.5, the one open code item). ADR 0017 decided the
-   mode and deliberately left it unbuildable: `AutomaticCheckMode.InBackground` exists in
-   `DeskAI.Core/Rules/AutomaticCheckSettings.cs`, no code produces it, and it is absent from
-   the UI. `docs/SECURITY.md` requires its own focused review before it ships, because a
-   process running while nobody is present is a different threat case.
-2. **The owner's "V0.6 sign-off" list** in `docs/MANUAL-TESTING.md` — dialogs, keyboard and
-   screen-reader use, a real crash, two windows. Only the owner can do these; they are not a
-   coding task.
-3. **V0.7**, only if the owner asks for it.
+1. **The owner's manual sign-off**, in `docs/MANUAL-TESTING.md` — two lists, neither a coding
+   task:
+   - the outstanding "V0.6 sign-off" list (dialogs, keyboard and screen-reader use, a real
+     crash, two windows);
+   - the new "Checking after the window is closed" list this version added — the tray icon,
+     window hiding, second launch, and Explorer restart are not covered by any automated
+     test, only by a person at the keyboard.
+2. **V0.7 or V0.9**, only if the owner asks for one of them next. Neither is started, and V0.9
+   also needs its own precondition security review before any code, per its roadmap entry.
+3. Merging `v0.5-background-checking` into `main`, if the owner wants that done as its own
+   step.
 
-## Decisions already agreed but not yet built
+## Decisions made in conversation, not yet recorded elsewhere
 
-Recorded here so a new chat does not re-ask. Agreed with the owner on 2026-09-12 while
-designing item 1 above:
+These came up while designing and building V0.5's last piece and exist nowhere else — not in
+code, not in an ADR, not in a design document:
 
-- "After the window is closed" means the same DeskAI keeps running with a visible tray icon
-  until sign-out or restart. It does **not** add itself to Windows startup.
-- The dialog that turns background checking on also shows the notification switch — still off
-  unless turned on — and says plainly that with it off a find is only seen on reopening.
-- Launching DeskAI again while it is hidden reveals the running one and exits the second
-  launch; it never starts a second DeskAI and never silently quits the first.
-- Preferred mechanism: `Shell_NotifyIcon` through a small adapter in `DeskAI.App`, no new
-  package. Not yet approved as part of a full design.
-- The honest limit to state in the design and the UI: a check produces a count and a notice
-  and cannot move a file, so background checking only keeps the count current. "Tidy while I
-  am away" is not in V0.5, not in V0.6, and not on the roadmap.
-
-No design document or ADR has been written for this yet. The next step for item 1 is the
-design and security review, committed before any code.
+- The tray icon's menu holds **exactly three items**: Open DeskAI, Pause checking, Quit
+  DeskAI. Adding a "Check now" to the menu was discussed and deliberately rejected — a check
+  is harmless in what it may do, but starting one with no window open and no page to report
+  the result is the exact shape the security review was written to be careful about.
+- The icon appears **when the setting is turned on**, not when the window is later closed.
+  The reasoning: turning the setting on is the moment something changed, so that is when the
+  evidence should appear, while the person is still looking at the switch that caused it.
+- `Shell_NotifyIcon`, called through a small adapter inside `DeskAI.App`, was approved over
+  adding a new NuGet package for tray support.
 
 ## What a new chat must know
 
@@ -81,7 +83,7 @@ design and security review, committed before any code.
   ```
 
 - Launchable app after a Release build:
-  `src\DeskAI.App\bin\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`
+  `src\DeskAI.App\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`
 
 ## Known limits worth repeating
 
@@ -91,6 +93,10 @@ design and security review, committed before any code.
   size and date, and name, each only if allowed, and only after a dialog showing the request.
 - PDF and Office files are refused before opening; content reading is plain text only, 64 KB.
 - No permanent automatic deletion anywhere.
+- Background checking (V0.5) only ever produces a count. Leaving DeskAI running near the
+  clock keeps that count current; it cannot tidy, move, rename, or delete anything while
+  nobody is present. That is a much larger trust decision, tracked separately as V0.9 and not
+  started.
 
 ---
 
@@ -98,8 +104,8 @@ design and security review, committed before any code.
 
 At the end of every roadmap version, before the owner clears the chat:
 
-1. Rewrite "Where things stand", "What is left", and "Decisions already agreed but not yet
-   built" to match reality — including the commit and the date.
+1. Rewrite "Where things stand", "What is left", and "Decisions made in conversation, not yet
+   recorded elsewhere" to match reality — including the commit and the date.
 2. Move anything finished out of here and into `ROADMAP.md`.
 3. Write down every decision the owner made in conversation that is not yet in code, an ADR,
    or a design document. A decision that exists only in the cleared chat is lost.

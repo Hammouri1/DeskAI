@@ -554,3 +554,79 @@ folder. An online AI request costs a little of your own credit; one or two press
    pop-up stays readable in each.
 8. Nothing in any pop-up should be untrue about what DeskAI can do today. Report any sentence
    that promises more than the app does.
+
+## Checking after the window is closed (V0.5, added 2026-09-13)
+
+None of this is covered by an automated test — the icon near the clock, the window hiding,
+the second launch, and the Explorer restart all depend on Windows itself, and only a person
+at the keyboard can see them happen. Use a temporary folder with generated files and a rule
+that matches one of them, the same way as "Automatic checks" above. Never use a personal
+folder.
+
+### Turning it on and off
+
+1. Open **Automatic tasks** and turn on **Keep checking after I close the window**. Expected:
+   a dialog appears, states DeskAI will never add itself to Windows startup, and offers a
+   notification checkbox.
+2. Turn it on again three separate times and dismiss the dialog a different way each time:
+   press **Enter**, press **Esc**, and click the dialog's **X**. Expected: all three behave
+   like pressing "No thanks" — the switch goes back to Off and no icon appears.
+3. Turn it on and press **Keep running**. Expected: the icon appears near the clock
+   **immediately, while the window is still open** — not only once you close it.
+4. Look at the dialog itself in both light and dark Windows themes. Expected: the checkbox
+   and its caption are readable, match DeskAI's other dialogs, and nothing is cut off.
+5. Turn the switch off from the page. Expected: the icon disappears at once, with no need to
+   close the window first.
+
+### Closing and reopening the window
+
+6. With the mode on, close the window. Expected: DeskAI keeps running — check Task Manager —
+   and a one-time notice tells you it is still near the clock and how to quit it.
+7. Close the window again in the same run. Expected: the notice does **not** appear a second
+   time.
+8. Reopen DeskAI from the icon and close the window once more. Expected: the notice appears
+   again, since this is a new run.
+9. Change the switch, close the window straightaway without opening another page, then visit
+   a different page and come back and close again. Expected: the new close behaviour takes
+   effect once you have visited a page, confirming the change was actually saved.
+10. With the mode off, close the window. Expected: DeskAI really exits — nothing left in Task
+    Manager and no icon.
+
+### The icon and its menu
+
+11. Hover the icon. Expected: it says how often DeskAI is looking, or that it is paused, and
+    never shows a file or folder name.
+12. With the mode on, close the window, wait for one whole checking interval to pass, then
+    hover the icon again. Expected: the wording or count has changed, proving checks keep
+    happening with no window open.
+13. Right-click the icon. Expected: exactly three items, in this order — **Open DeskAI**,
+    **Pause checking**, **Quit DeskAI** — with **Open DeskAI** shown bold as the default.
+    There is no "Check now" and nothing here starts anything.
+14. Left-click the icon, and separately choose **Open DeskAI** from the menu. Expected: both
+    bring the window to the front.
+15. Open the menu, then click elsewhere on the desktop. Expected: the menu closes without
+    choosing anything.
+16. Launch DeskAI, choose **Pause checking** from the icon without ever opening **Automatic
+    tasks**, then open DeskAI. Expected: the page already shows checking as paused — the icon
+    and the page never disagree.
+17. Pause from the icon, then unpause from the page (and the reverse). Expected: the tick
+    beside **Pause checking** always matches what the page says.
+18. Choose **Quit DeskAI**. Expected: the icon disappears and `DeskAI.App.exe` is gone from
+    Task Manager — no ghost icon left behind.
+
+### Launching again, Explorer, and signing out
+
+19. With the mode on and DeskAI hidden, launch DeskAI again (Start menu or the `.exe`).
+    Expected: the existing window is revealed and brought to the front, and Task Manager
+    still shows only one `DeskAI.App.exe`.
+20. With the mode off and DeskAI's window already open and visible, launch DeskAI again.
+    Expected: the second launch quietly exits and does nothing visible — this is expected,
+    since the window is already on screen, not a bug.
+21. Turn notifications on, let a check find something while the window is hidden, and click
+    the Windows notification. Expected: DeskAI's window is revealed.
+22. With DeskAI hidden, restart Explorer (Task Manager → Windows Explorer → Restart).
+    Expected: the icon comes back near the clock afterwards.
+23. Start a shutdown or sign-out with DeskAI hidden and cancel it before it finishes.
+    Expected: the icon is still there afterwards, rather than being permanently gone.
+24. Sign out and back in, or restart Windows. Expected: DeskAI does **not** start on its
+    own — it only runs again once you open it yourself.

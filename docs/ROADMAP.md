@@ -134,7 +134,7 @@ Goal: find and understand files without needing to move them.
 
 Exit criteria: results are scoped to authorized roots, index deletion/privacy controls work, score is explainable, and no cleanup action bypasses preview.
 
-## V0.5 — Rules and Automation (**Now**)
+## V0.5 — Rules and Automation (**Complete — 2026-09-13**)
 
 Goal: turn repeated intent into deterministic, auditable behavior.
 
@@ -163,7 +163,7 @@ Goal: turn repeated intent into deterministic, auditable behavior.
   as someone agreeing to what was understood — and every part understood is stated back. A
   bare "word files" is only read as a file ending when the word is a type DeskAI knows, so
   "invoice files" becomes a name to look for rather than an ending of ".invoice".
-- ◐ Folder watchers and/or scheduler selected through an ADR.
+- ✅ Folder watchers and/or scheduler selected through an ADR.
   Decided and half built on 2026-09-10. ADR 0017 chose a periodic check over a folder
   watcher: `FileSystemWatcher` holds a handle on a real personal folder, drops events under
   load without saying so, and storms during a cloud-sync pass, and rules read remembered
@@ -176,13 +176,17 @@ Goal: turn repeated intent into deterministic, auditable behavior.
   says instead that DeskAI never moves a file on its own, which is the promise that holds.
   See `docs/decisions/0017-periodic-rule-checks-and-background-choice.md` and
   `docs/security/2026-09-10-automatic-check-review.md`.
-  Checking after the window is closed is decided in the same ADR but NOT built: no code
-  produces that mode and it is absent from the UI. It is the remaining half, and it needs
-  its own security review because a process running while nobody is present is a different
-  threat case. That design and review landed on 2026-09-12 — see
-  `docs/decisions/0025-checking-after-the-window-is-closed.md` and
-  `docs/security/2026-09-12-background-checking-review.md` — ahead of any code, which is the
-  remaining work in V0.5.
+  Checking after the window is closed, decided and reviewed in ADR 0025
+  (`docs/decisions/0025-checking-after-the-window-is-closed.md`, review
+  `docs/security/2026-09-12-background-checking-review.md`), is now built too. A switch on
+  Automatic tasks asks first — naming that DeskAI will never add itself to Windows startup —
+  and, once agreed, the same DeskAI keeps running with a visible icon near the clock after
+  the window closes rather than exiting. That icon's tooltip says how often DeskAI is
+  looking or that it is paused, and its menu holds exactly three items: open DeskAI, pause
+  checking, and quit DeskAI. It starts nothing. Launching DeskAI again while it is hidden
+  reveals the running one instead of starting a second, so there is never more than one
+  DeskAI and one database writer. A check still only ever produces a count; leaving DeskAI
+  running keeps that count current and does not tidy anything while its owner is away.
 - ✅ Run history, notifications, pause/disable controls, missed-run behavior, and safe concurrency.
   Completed 2026-09-10. Every check that actually ran is recorded — including the ones that
   were stopped part-way and the ones that failed, because a history that omitted those would
