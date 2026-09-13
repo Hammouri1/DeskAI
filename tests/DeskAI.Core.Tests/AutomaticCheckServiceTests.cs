@@ -108,6 +108,38 @@ public sealed class AutomaticCheckServiceTests
         Assert.All(forbidden, type => Assert.DoesNotContain(type, dependencies));
     }
 
+    /// <summary>
+    /// Extends the containment above to everything that runs with no window on screen: the
+    /// coordinator as well as the service, and credentials and AI as well as file changes.
+    /// A future provider contract need not be in the forbidden list by type for this to catch
+    /// it — the name check below fails on anything shaped like an AI contract.
+    /// </summary>
+    [Fact]
+    public void Nothing_that_runs_with_no_window_can_reach_an_AI_or_a_credential()
+    {
+        var forbidden = new[]
+        {
+            typeof(IFolderTidyExecutor),
+            typeof(IOperationJournal),
+            typeof(IOrganizationPlanner),
+            typeof(IFileScanner),
+            typeof(IContentTextExtractor),
+            typeof(ICredentialVault),
+        };
+
+        var dependencies = new[] { typeof(AutomaticCheckService), typeof(AutomaticCheckCoordinator) }
+            .SelectMany(type => type.GetConstructors(BindingFlags.Public | BindingFlags.Instance))
+            .SelectMany(constructor => constructor.GetParameters())
+            .Select(parameter => parameter.ParameterType)
+            .ToArray();
+
+        Assert.All(forbidden, type => Assert.DoesNotContain(type, dependencies));
+
+        // A provider interface must not be reachable either. Named rather than typed so this
+        // fails even if a future AI contract is added that this test does not yet know about.
+        Assert.DoesNotContain(dependencies, type => type.Name.Contains("Ai", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task RunAsync_RemembersWhenItLastChecked()
     {
