@@ -12,6 +12,7 @@ public sealed partial class AutomationPage : Page
         ViewModel = viewModel;
         DataContext = viewModel;
         Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
     public AutomationViewModel ViewModel { get; }
@@ -20,5 +21,16 @@ public sealed partial class AutomationPage : Page
     {
         Loaded -= OnLoaded;
         await ViewModel.InitializeAsync();
+    }
+
+    /// <summary>
+    /// Leaving Automatic tasks stops this page's copy from listening to the icon's singleton
+    /// controller. Without this, a fresh, still-subscribed view model would pile up on every
+    /// visit to this page.
+    /// </summary>
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        Unloaded -= OnUnloaded;
+        ViewModel.Dispose();
     }
 }

@@ -332,4 +332,30 @@ public sealed class BackgroundCheckingPageTests
         await page.InitializeAsync();
         Assert.True(page.IsPaused);
     }
+
+    [Fact]
+    public async Task A_page_opened_before_the_mode_was_turned_on_does_not_hide_the_icon_when_pausing_from_the_tray()
+    {
+        // A view model already on screen before background checking was turned on — here,
+        // from outside this page entirely — still holds the old mode. If it re-synced only
+        // the pause flag from the icon's event, its own stale mode would make it hide the
+        // icon on the very next pause or resume, even though the store says checking is
+        // still on and nothing else is left to put the icon back.
+        await using var app = await TestApp.StartAsync();
+        var stale = app.Get<AutomationViewModel>();
+        await stale.InitializeAsync();
+
+        var repository = app.Get<IAutomaticCheckSettingsRepository>();
+        var current = await repository.LoadAsync(TestContext.Current.CancellationToken);
+        var turnedOn = current with { Mode = AutomaticCheckMode.InBackground };
+        await repository.SaveAsync(turnedOn, TestContext.Current.CancellationToken);
+        var controller = app.Get<BackgroundPresenceController>();
+        controller.Refresh(turnedOn);
+        Assert.True(app.Presence.IsShowing);
+
+        await controller.TogglePauseAsync();
+
+        Assert.True(app.Presence.IsShowing);
+        Assert.Equal("DeskAI — checks paused", app.Presence.Tooltips[^1]);
+    }
 }

@@ -282,8 +282,13 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
     /// Something outside this page changed the settings — pause, from the icon's menu.
     /// </summary>
     /// <remarks>
-    /// Re-read rather than guessed at, so the page shows what is actually stored. The flag
-    /// keeps this from counting as a fresh decision and writing the value straight back.
+    /// Re-reads the whole stored record, not only the pause flag: a page opened before
+    /// someone turned background checking on elsewhere would otherwise keep believing the
+    /// old mode, and the icon's own <c>RefreshPresence</c> call — made from this instance's
+    /// <see cref="IsPaused"/> setter with this instance's stale <c>_mode</c> — would then hide
+    /// the icon on the very next pause or resume, even though the store still says it should
+    /// be showing. The flag keeps this from counting as a fresh decision and writing the
+    /// value straight back.
     /// </remarks>
     private async void OnSettingsChangedOutsideThePage(object? sender, EventArgs args)
     {
@@ -293,12 +298,17 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
             _isApplyingStoredSettings = true;
             try
             {
+                _mode = stored.Mode;
                 IsPaused = stored.IsPaused;
             }
             finally
             {
                 _isApplyingStoredSettings = false;
             }
+
+            OnPropertyChanged(nameof(KeepsRunningWhenClosed));
+            OnPropertyChanged(nameof(MoreDetails));
+            OnPropertyChanged(nameof(AutomaticCheckSummary));
         }
         catch (Exception exception) when (IsExpectedFailure(exception))
         {
