@@ -60,6 +60,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
     private string _tooltip = string.Empty;
     private bool _isPaused;
     private bool _isShowing;
+    private bool _menuShowing;
     private bool _disposed;
 
     public TrayPresence(ILogger<TrayPresence> logger)
@@ -273,6 +274,11 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
                 var error = Marshal.GetLastWin32Error();
                 if (error != TrayInterop.ERROR_CLASS_ALREADY_EXISTS)
                 {
+                    // Windows never saw the name, so nothing is holding this string. Free it, or a
+                    // later attempt allocates a second one and the first is lost.
+                    Marshal.FreeHGlobal(_classNamePointer);
+                    _classNamePointer = 0;
+                    _classProcedure = null;
                     return false;
                 }
             }
@@ -303,7 +309,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
         {
             try
             {
-                if (instance.Handle(message, lParam))
+                if (instance.Handle(message, wParam, lParam))
                 {
                     return 0;
                 }
@@ -317,7 +323,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
         return TrayInterop.DefWindowProcW(window, message, wParam, lParam);
     }
 
-    private bool Handle(uint message, nint lParam)
+    private bool Handle(uint message, nint wParam, nint lParam)
     {
         if (message == _taskbarCreatedMessage)
         {
@@ -338,9 +344,21 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
         switch (message)
         {
             case TrayInterop.WM_QUERYENDSESSION:
+                // Only a question, and any application may still cancel the shutdown. The icon
+                // stays: removing it here and then having the shutdown vetoed would leave DeskAI
+                // running and checking with nothing near the clock to find it by, which is exactly
+                // the outcome ADR 0025 calls the worst this feature can produce. Falling through
+                // to DefWindowProcW answers TRUE, so DeskAI never blocks a sign-out.
+                return false;
+
             case TrayInterop.WM_ENDSESSION:
-                // Windows is signing out or shutting down. Leave nothing behind near the clock.
-                RemoveIcon();
+                // Now it is an answer, not a question. wParam is zero when the session is not
+                // ending after all, and only a real ending should take the icon away.
+                if (wParam != 0)
+                {
+                    RemoveIcon();
+                }
+
                 return false;
 
             case TrayCallbackMessage:
@@ -365,6 +383,16 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
     /// <summary>Open, pause, quit. Nothing in here begins work; see ADR 0025.</summary>
     private void ShowMenu()
     {
+        // TrackPopupMenuEx runs a nested message loop, so messages that arrive while the menu is up
+        // — another right-click, or a TaskbarCreated broadcast — are dispatched inside this call.
+        // Without this guard a second menu could nest inside the first, and worse, a Dispose reached
+        // from a handler running in that nested loop would destroy the window that owns a menu still
+        // being tracked. One menu at a time is the only safe shape.
+        if (_menuShowing)
+        {
+            return;
+        }
+
         var menu = TrayInterop.CreatePopupMenu();
         if (menu == 0)
         {
@@ -373,6 +401,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
             return;
         }
 
+        _menuShowing = true;
         try
         {
             TrayInterop.AppendMenuW(menu, TrayInterop.MF_STRING, CommandOpen, "Open DeskAI");
@@ -420,6 +449,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
         }
         finally
         {
+            _menuShowing = false;
             TrayInterop.DestroyMenu(menu);
         }
     }
