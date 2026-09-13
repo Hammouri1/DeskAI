@@ -29,8 +29,11 @@ namespace DeskAI.App.Services;
 /// </remarks>
 public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
 {
-    /// <summary>Task 7 finds this window by this exact string. Changing it breaks that lookup.</summary>
-    private const string WindowClassName = "DeskAI.TrayWindow";
+    /// <summary>
+    /// <see cref="SingleInstance"/> finds this window by this exact string. Shared rather than
+    /// repeated, so the lookup and the registration cannot drift apart.
+    /// </summary>
+    internal const string WindowClassName = "DeskAI.TrayWindow";
 
     /// <summary>The shell sends the icon's mouse events back as this private message.</summary>
     private const uint TrayCallbackMessage = 0x8000 + 1; // WM_APP + 1
@@ -55,6 +58,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
 
     private readonly ILogger<TrayPresence> _logger;
     private readonly uint _taskbarCreatedMessage;
+    private readonly uint _revealMessage;
     private nint _window;
     private nint _icon;
     private string _tooltip = string.Empty;
@@ -70,6 +74,10 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
         // Explorer announces its own restart by broadcasting this message, so the id has to be
         // known before any window of ours can be woken by it.
         _taskbarCreatedMessage = TrayInterop.RegisterWindowMessageW("TaskbarCreated");
+
+        // A second launch of DeskAI posts this to say "show the window you already have". Same
+        // name in both processes, so both get the same id; see SingleInstance.
+        _revealMessage = TrayInterop.RegisterWindowMessageW(SingleInstance.RevealMessageName);
     }
 
     public event EventHandler? OpenRequested;
@@ -338,6 +346,17 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
                 }
             }
 
+            return true;
+        }
+
+        // The zero guard is not defensive tidiness: a failed RegisterWindowMessageW returns 0,
+        // and message 0 is WM_NULL, which ShowMenu posts to this very window. Without it a
+        // machine where registration failed would open the window on every right-click.
+        if (_revealMessage != 0 && message == _revealMessage)
+        {
+            // Someone launched DeskAI again. The same thing a left-click means: give them back
+            // the window they already have.
+            OpenRequested?.Invoke(this, EventArgs.Empty);
             return true;
         }
 
