@@ -1,5 +1,6 @@
 using DeskAI.AI;
 using DeskAI.AI.Transport;
+using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Ai;
@@ -72,6 +73,10 @@ public static class DeskAiApplicationServices
         services.AddHostedService<AutomaticCheckTimer>();
         // Which folder Organize opens on after "Review in Organize". A folder ID, nothing more.
         services.AddSingleton<OrganizeRequest>();
+        // A DeskAI with no notification area is a legitimate DeskAI: it simply never offers
+        // to keep running with no window. The Windows one is registered by the app.
+        services.AddSingleton<IBackgroundPresence, NoBackgroundPresence>();
+        services.AddSingleton<BackgroundPresenceController>();
         services.AddTransient<ShellViewModel>();
         services.AddTransient<TidyViewModel>();
         services.AddTransient<SettingsViewModel>();

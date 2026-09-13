@@ -148,3 +148,45 @@ internal sealed class RecordingNotifier : IFindingNotifier
 
     public void Notify(string title, string message) => Messages.Add(message);
 }
+
+/// <summary>The icon near the clock, as a test can see it.</summary>
+internal sealed class RecordingPresence : IBackgroundPresence
+{
+    /// <summary>Every tooltip it has been given, in order. The last is what it says now.</summary>
+    public List<string> Tooltips { get; } = [];
+
+    /// <summary>Whether its menu showed checking as paused, alongside each tooltip.</summary>
+    public List<bool> PausedStates { get; } = [];
+
+    public bool IsShowing { get; private set; }
+
+    public void Show(string tooltip, bool isPaused)
+    {
+        IsShowing = true;
+        Tooltips.Add(tooltip);
+        PausedStates.Add(isPaused);
+    }
+
+    public void Update(string tooltip, bool isPaused)
+    {
+        if (IsShowing)
+        {
+            Tooltips.Add(tooltip);
+            PausedStates.Add(isPaused);
+        }
+    }
+
+    public void Hide() => IsShowing = false;
+
+    public event EventHandler? OpenRequested;
+
+    public event EventHandler? PauseToggleRequested;
+
+    public event EventHandler? QuitRequested;
+
+    public void RaiseOpen() => OpenRequested?.Invoke(this, EventArgs.Empty);
+
+    public void RaisePauseToggle() => PauseToggleRequested?.Invoke(this, EventArgs.Empty);
+
+    public void RaiseQuit() => QuitRequested?.Invoke(this, EventArgs.Empty);
+}

@@ -50,6 +50,8 @@ internal sealed class TestApp : IAsyncDisposable
 
     public RecordingNotifier Notifier => (RecordingNotifier)_services.GetRequiredService<IFindingNotifier>();
 
+    public RecordingPresence Presence => (RecordingPresence)_services.GetRequiredService<IBackgroundPresence>();
+
     public T Get<T>() where T : notnull => _services.GetRequiredService<T>();
 
     public static Task<TestApp> StartAsync() => StartAsync(new TemporaryDirectory(), stoppable: false);
@@ -85,6 +87,7 @@ internal sealed class TestApp : IAsyncDisposable
         Replace<ICredentialVault>(services, new InMemoryCredentialVault());
         Replace<IAiHttpTransport>(services, new RecordingAiTransport());
         Replace<IFindingNotifier>(services, new RecordingNotifier());
+        Replace<IBackgroundPresence>(services, new RecordingPresence());
         if (stoppable)
         {
             Replace<IOperationJournal>(services, new StoppingJournal(
