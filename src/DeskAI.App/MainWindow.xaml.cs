@@ -1,8 +1,6 @@
 using DeskAI.App.Navigation;
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
-using DeskAI.Core.Abstractions;
-using DeskAI.Core.Rules;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -13,11 +11,8 @@ public sealed partial class MainWindow : Window
 {
     private readonly INavigationService? _navigationService;
     private readonly ShellViewModel? _shell;
-    private readonly IAutomaticCheckSettingsRepository? _settings;
     private readonly IFindingNotifier? _notifier;
-
-    /// <summary>What the stored mode said the last time it was read. See <see cref="OnClosing"/>.</summary>
-    private bool _keepsRunningWhenClosed;
+    private readonly BackgroundPresenceController? _presence;
 
     /// <summary>
     /// Whether the "DeskAI is still running" notice has already been shown this run.
@@ -37,16 +32,16 @@ public sealed partial class MainWindow : Window
     public MainWindow(
         ShellViewModel viewModel,
         INavigationService navigationService,
-        IAutomaticCheckSettingsRepository settings,
-        IFindingNotifier notifier)
+        IFindingNotifier notifier,
+        BackgroundPresenceController presence)
     {
         InitializeComponent();
         Title = "DeskAI";
         _shell = viewModel;
         RootNavigation.DataContext = viewModel;
         _navigationService = navigationService;
-        _settings = settings;
         _notifier = notifier;
+        _presence = presence;
         _navigationService.Initialize(ContentFrame);
         RootNavigation.SelectedItem = RootNavigation.MenuItems[0];
         _navigationService.Navigate("dashboard");
@@ -61,10 +56,17 @@ public sealed partial class MainWindow : Window
     /// The host — and so the check timer — is untouched, which is the whole of the promise: the
     /// same DeskAI is still running. Reopening shows the state it was left in rather than a fresh
     /// start. With the mode off, this does nothing and the close is a real one.
+    /// <para>
+    /// Reads <see cref="BackgroundPresenceController.KeepsRunningWhenClosed"/> rather than a
+    /// field kept here, because this handler cannot await a fresh read and a cached copy on the
+    /// window would go stale the moment the switch changed on the Automatic tasks page without
+    /// this window ever navigating. When the controller is unavailable, the safe direction is a
+    /// real close, never a hidden one — so the check below defaults to false, not true.
+    /// </para>
     /// </remarks>
     private void OnClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
-        if (_keepsRunningWhenClosed && !_quitting)
+        if (_presence is { KeepsRunningWhenClosed: true } && !_quitting)
         {
             args.Cancel = true;
             sender.Hide();
@@ -106,10 +108,17 @@ public sealed partial class MainWindow : Window
     /// notifications because there is no longer a window to put a message in; on a machine
     /// where those are unavailable, nothing is shown rather than something invisible being
     /// counted as told.
+    /// <para>
+    /// Gated on <see cref="BackgroundPresenceController.KeepsRunningWhenClosed"/> too, the same
+    /// value <see cref="OnClosing"/> just checked, so this can never claim an icon is near the
+    /// clock in the one state where none is being shown.
+    /// </para>
     /// </remarks>
     private void ShowWhereItWentOnceThisRun()
     {
-        if (_toldThemWhereItWent || _notifier is not { IsAvailable: true })
+        if (_toldThemWhereItWent
+            || _notifier is not { IsAvailable: true }
+            || _presence is not { KeepsRunningWhenClosed: true })
         {
             return;
         }
@@ -121,40 +130,22 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Keeps the pane's scope reminder honest, and the close behaviour with it.
+    /// Keeps the pane's scope reminder honest.
     /// </summary>
     /// <remarks>
     /// Refreshed on every navigation because connecting or disconnecting a folder happens
     /// on another page, and a stale reminder about what DeskAI can reach is exactly the
-    /// thing this label exists to prevent. The keep-running mode is read here for the same
-    /// reason: it is switched on the Automatic tasks page, and a stale copy would either hide
-    /// the window when someone expected it to close or close it when they expected it to stay.
+    /// thing this label exists to prevent. The keep-running mode used to be read here too, but
+    /// a copy refreshed only on navigation went stale the moment the switch changed on the
+    /// Automatic tasks page with no navigation in between — see
+    /// <see cref="BackgroundPresenceController.KeepsRunningWhenClosed"/>, which <see cref="OnClosing"/>
+    /// reads directly instead.
     /// </remarks>
     private async Task RefreshScopeAsync()
     {
         if (_shell is not null)
         {
             await _shell.RefreshAsync();
-        }
-
-        if (_settings is null)
-        {
-            return;
-        }
-
-        try
-        {
-            var stored = await _settings.LoadAsync();
-            _keepsRunningWhenClosed = stored.Mode == AutomaticCheckMode.InBackground;
-        }
-        catch (Exception exception) when (exception is InvalidOperationException
-            or System.Data.Common.DbException
-            or IOException
-            or OperationCanceledException)
-        {
-            // The narrow answer is the safe one: an unreadable setting must not be treated as
-            // permission to keep running with no window.
-            _keepsRunningWhenClosed = false;
         }
     }
 

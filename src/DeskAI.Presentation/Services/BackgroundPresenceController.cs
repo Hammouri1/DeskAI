@@ -50,6 +50,20 @@ public sealed class BackgroundPresenceController : IDisposable
     public bool IsShowing => _presence.IsShowing;
 
     /// <summary>
+    /// Whether the stored mode says DeskAI should keep checking after its window is closed.
+    /// </summary>
+    /// <remarks>
+    /// Exists so a window's close handler can decide what closing means the instant it happens.
+    /// A window-closing event handler cannot await, so the answer has to be a cached value read
+    /// synchronously rather than a fresh load from storage. Caching it here,
+    /// on the one object every settings change already passes through <see cref="Refresh"/>,
+    /// means there is exactly one place to keep it current — a copy kept on a window instead
+    /// goes stale the moment the switch changes on another page, because nothing tells the
+    /// window a page it isn't showing just changed the mode.
+    /// </remarks>
+    public bool KeepsRunningWhenClosed { get; private set; }
+
+    /// <summary>
     /// Whether this DeskAI has a notification area to put an icon in at all.
     /// </summary>
     /// <remarks>
@@ -68,6 +82,8 @@ public sealed class BackgroundPresenceController : IDisposable
     /// </remarks>
     public void Refresh(AutomaticCheckSettings settings)
     {
+        KeepsRunningWhenClosed = settings.Mode == AutomaticCheckMode.InBackground;
+
         if (settings.Mode != AutomaticCheckMode.InBackground)
         {
             _presence.Hide();

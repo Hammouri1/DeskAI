@@ -151,6 +151,45 @@ public sealed class BackgroundCheckingPageTests
     }
 
     [Fact]
+    public async Task A_fresh_app_that_has_never_turned_the_mode_on_would_let_the_window_really_close()
+    {
+        await using var app = await TestApp.StartAsync();
+
+        Assert.False(app.Get<BackgroundPresenceController>().KeepsRunningWhenClosed);
+    }
+
+    [Fact]
+    public async Task Turning_it_on_makes_the_controller_say_closing_should_hide_the_window()
+    {
+        await using var app = await TestApp.StartAsync();
+        var page = app.Get<AutomationViewModel>();
+        await page.InitializeAsync();
+
+        await page.KeepRunningAsync(notifyWhenSomethingIsFound: false);
+
+        Assert.True(app.Get<BackgroundPresenceController>().KeepsRunningWhenClosed);
+    }
+
+    [Fact]
+    public async Task Turning_it_off_makes_the_controller_say_closing_should_really_close_at_once()
+    {
+        // This is the regression the whole fix is about: MainWindow used to keep its own copy
+        // of this answer, refreshed only on navigation. Someone who switched this off and then
+        // closed the window immediately — without visiting another page first — would find the
+        // stale "on" copy still in place. Nothing here navigates or reloads the page; the
+        // controller has to be correct the instant the switch changes.
+        await using var app = await TestApp.StartAsync();
+        var page = app.Get<AutomationViewModel>();
+        await page.InitializeAsync();
+        await page.KeepRunningAsync(notifyWhenSomethingIsFound: false);
+        Assert.True(app.Get<BackgroundPresenceController>().KeepsRunningWhenClosed);
+
+        await page.StopKeepingRunningAsync();
+
+        Assert.False(app.Get<BackgroundPresenceController>().KeepsRunningWhenClosed);
+    }
+
+    [Fact]
     public async Task While_it_is_on_the_page_does_not_claim_checking_stops_when_you_close_it()
     {
         await using var app = await TestApp.StartAsync();

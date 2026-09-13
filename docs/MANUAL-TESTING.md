@@ -586,9 +586,10 @@ folder.
    time.
 8. Reopen DeskAI from the icon and close the window once more. Expected: the notice appears
    again, since this is a new run.
-9. Change the switch, close the window straightaway without opening another page, then visit
-   a different page and come back and close again. Expected: the new close behaviour takes
-   effect once you have visited a page, confirming the change was actually saved.
+9. With the mode on, turn the switch off, then close the window immediately — click the X
+   right away, without clicking anything else or opening another page first. Expected: DeskAI
+   really exits at once. Check Task Manager: no `DeskAI.App.exe` left running, and no
+   notification claims it is still near the clock, because there is no icon to be near it.
 10. With the mode off, close the window. Expected: DeskAI really exits — nothing left in Task
     Manager and no icon.
 
