@@ -83,9 +83,11 @@ public sealed class AutomaticCheckServiceTests
     }
 
     /// <summary>
-    /// Containment by construction. A check cannot move a file because nothing that moves
-    /// files is reachable from it: if someone ever adds an executor, a planner, or an undo
-    /// service to the constructor, this fails before the feature ships.
+    /// Checks only the direct constructor parameters of <see cref="AutomaticCheckService"/> —
+    /// not anything those parameters' own dependencies might in turn hold. It catches an
+    /// executor, a planner, or an undo service handed straight to this constructor; it would
+    /// not catch one buried a level deeper, inside a repository or another service this
+    /// constructor already takes.
     /// </summary>
     [Fact]
     public void Constructor_CannotReachAnythingThatChangesAFile()
@@ -109,10 +111,13 @@ public sealed class AutomaticCheckServiceTests
     }
 
     /// <summary>
-    /// Extends the containment above to everything that runs with no window on screen: the
-    /// coordinator as well as the service, and credentials and AI as well as file changes.
-    /// A future provider contract need not be in the forbidden list by type for this to catch
-    /// it — the name check below fails on anything shaped like an AI contract.
+    /// Same shallow check as above, widened to two types instead of one and to credentials and
+    /// AI as well as file changes: it only inspects the direct constructor parameters of
+    /// <see cref="AutomaticCheckService"/> and <see cref="AutomaticCheckCoordinator"/>, not
+    /// anything reachable further inside the types those constructors already take. A
+    /// forbidden type handed to, say, <c>RuleSimulationService</c> instead would not be seen
+    /// here. A future provider contract need not be in the forbidden list by type for this to
+    /// catch it — the name check below fails on anything shaped like an AI contract.
     /// </summary>
     [Fact]
     public void Nothing_that_runs_with_no_window_can_reach_an_AI_or_a_credential()
