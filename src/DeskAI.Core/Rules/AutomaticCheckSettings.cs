@@ -13,8 +13,9 @@ public enum AutomaticCheckMode
     WhileAppIsOpen = 0,
 
     /// <summary>
-    /// DeskAI keeps checking after the window is closed. Decided in ADR 0017, deliberately
-    /// not yet buildable: no code produces this value, and the refusal is tested.
+    /// DeskAI keeps checking after the window is closed, with an icon near the clock. It
+    /// still adds nothing to Windows startup: after a restart or a sign-out it runs again
+    /// only when someone opens it. Decided in ADR 0017, designed and reviewed in ADR 0025.
     /// </summary>
     InBackground = 1,
 }
