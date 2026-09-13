@@ -16,8 +16,11 @@ appending to them.
 
 ## Where things stand
 
-- Updated: 2026-09-13, at commit `98f436f`, branch `v0.5-background-checking` (not merged to
-  `main` yet), tree clean.
+- Updated: 2026-09-13, after commit `ab01694`, branch `v0.5-background-checking` (not merged
+  to `main` yet). `ab01694` landed after this file was first written: turning "Keep checking
+  after I close the window" off and closing at once could leave DeskAI running with no icon.
+  `MainWindow` now reads `BackgroundPresenceController.KeepsRunningWhenClosed` directly, and
+  manual step 9 checks that case by name.
 - V0.1–V0.4 complete. V0.4's last piece, confirming duplicates by reading files after the
   person agrees each time, landed 2026-09-11 (ADR 0024).
 - **V0.5 is now complete**, including checking after the window is closed (ADR 0025, review
@@ -37,7 +40,12 @@ appending to them.
      crash, two windows);
    - the new "Checking after the window is closed" list this version added — the tray icon,
      window hiding, second launch, and Explorer restart are not covered by any automated
-     test, only by a person at the keyboard.
+     test, only by a person at the keyboard. **Partly done (2026-09-13):** the owner reported
+     that the icon and its menu work (the owner said it worked "eventually" — which step was
+     slow has not been pinned down yet), and that a check ran while the window was closed
+     and its message showed when DeskAI was reopened. The owner did not report going through
+     the numbered steps one by one, so the rest of the list — especially 2, 9, 19–24 — is
+     still unconfirmed.
 2. **V0.7 or V0.9**, only if the owner asks for one of them next. Neither is started, and V0.9
    also needs its own precondition security review before any code, per its roadmap entry.
 3. Merging `v0.5-background-checking` into `main`, if the owner wants that done as its own
