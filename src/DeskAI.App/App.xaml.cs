@@ -95,6 +95,7 @@ public partial class App : Application
                 services.AddTransient<OrganizePage>();
                 services.AddTransient<SearchPage>();
                 services.AddTransient<AutomationPage>();
+                services.AddTransient<WorkspacePage>();
                 services.AddTransient<SettingsPage>();
                 services.AddTransient<MainWindow>();
             })

@@ -28,6 +28,9 @@
             <NavigationViewItem Content="Automatic tasks" Tag="automation">
                 <NavigationViewItem.Icon><FontIcon Glyph="&#xE945;" /></NavigationViewItem.Icon>
             </NavigationViewItem>
+            <NavigationViewItem Content="My workspace" Tag="workspace">
+                <NavigationViewItem.Icon><FontIcon Glyph="&#xE840;" /></NavigationViewItem.Icon>
+            </NavigationViewItem>
             <NavigationViewItem Content="Privacy and AI" Tag="settings">
                 <NavigationViewItem.Icon><FontIcon Glyph="&#xE72E;" /></NavigationViewItem.Icon>
             </NavigationViewItem>

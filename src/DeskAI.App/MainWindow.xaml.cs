@@ -166,7 +166,11 @@ public sealed partial class MainWindow : Window
         GoTo("automation", fresh: false);
     }
 
-    private void GoTo(string route, bool fresh)
+    /// <summary>
+    /// Opens a page and selects its menu item, so the side menu never points at a page other
+    /// than the one on screen. Also used by My workspace's "Open in Search".
+    /// </summary>
+    internal void GoTo(string route, bool fresh)
     {
         _navigationService?.Navigate(route, fresh);
         foreach (var item in RootNavigation.MenuItems)

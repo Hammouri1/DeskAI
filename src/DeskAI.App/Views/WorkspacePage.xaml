@@ -1,0 +1,233 @@
+<Page
+    x:Class="DeskAI.App.Views.WorkspacePage"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewmodels="using:DeskAI.App.ViewModels"
+    xmlns:views="using:DeskAI.App.Views"
+    xmlns:controls="using:DeskAI.App.Controls"
+    Background="{ThemeResource DeskGroundBrush}">
+    <Grid>
+        <ScrollViewer>
+            <StackPanel Margin="32,28,32,44" MaxWidth="920" HorizontalAlignment="Left" Spacing="24">
+
+                <StackPanel Spacing="8" MaxWidth="640" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock Style="{StaticResource PageTitleStyle}" Text="My workspace" />
+                        <controls:HelpButton Topic="workspace.page" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                               Text="Your shortcuts and starter packs. Nothing here moves or changes files." />
+                </StackPanel>
+
+                <!--
+                    Pinned searches. A tile shows a name and a count, never a file name, and the
+                    caption says when the counts were made so no tile passes for a live reading.
+                -->
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="14">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Pinned searches" />
+                            <controls:HelpButton Topic="workspace.pins" />
+                        </StackPanel>
+
+                        <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.HasNoPins, Mode=OneWay}">
+                            <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                       Text="Pin a saved search to see it here." />
+                            <HyperlinkButton Padding="0" Content="Go to Search" Click="OnGoToSearchClick" />
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.Pins, Mode=OneWay}"
+                                      Visibility="{x:Bind ViewModel.HasPins, Mode=OneWay}"
+                                      AutomationProperties.Name="Pinned searches">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="216" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="viewmodels:PinnedSearchTileViewModel">
+                                    <Border Style="{StaticResource RowCardStyle}" Margin="0,0,10,10">
+                                        <StackPanel Spacing="8">
+                                            <TextBlock FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                       Text="{x:Bind Name}" />
+                                            <TextBlock Style="{StaticResource SectionTitleStyle}"
+                                                       Text="{x:Bind Count}" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Button Content="Open in Search"
+                                                        Tag="{x:Bind Id}"
+                                                        Click="OnOpenInSearchClick" />
+                                                <Button Content="Unpin"
+                                                        Command="{Binding ElementName=Root, Path=ViewModel.UnpinCommand}"
+                                                        CommandParameter="{x:Bind Id}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <TextBlock Style="{StaticResource CaptionStyle}"
+                                   Visibility="{x:Bind ViewModel.HasPins, Mode=OneWay}"
+                                   Text="{x:Bind ViewModel.PinsCaption, Mode=OneWay}" />
+                    </StackPanel>
+                </Border>
+
+                <!--
+                    Starter packs. Each card opens a preview; only Add in that dialog adds, and
+                    what happened is written on the card that was pressed.
+                -->
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Starter packs" />
+                            <controls:HelpButton Topic="workspace.packs" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="620"
+                                   HorizontalAlignment="Left"
+                                   Text="Ready-made saved searches and rules. You see everything a pack adds before anything is added." />
+                    </StackPanel>
+
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Packs}"
+                                  AutomationProperties.Name="Starter packs">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:StarterPackCardViewModel">
+                                <Border Style="{StaticResource RowCardStyle}" Margin="0,0,0,8">
+                                    <StackPanel Spacing="8">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                            <StackPanel Spacing="3">
+                                                <TextBlock FontWeight="SemiBold"
+                                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                           Text="{x:Bind Name}" />
+                                                <TextBlock Style="{StaticResource CaptionStyle}"
+                                                           Text="{x:Bind Summary}" />
+                                            </StackPanel>
+                                            <!-- Plain, not accent: seeing what a pack adds confirms nothing. -->
+                                            <Button Grid.Column="1" VerticalAlignment="Center"
+                                                    Content="See what it adds"
+                                                    Tag="{x:Bind Id}"
+                                                    Click="OnPackClick" />
+                                        </Grid>
+                                        <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                                   TextWrapping="Wrap"
+                                                   Visibility="{x:Bind HasResult, Mode=OneWay}"
+                                                   Text="{x:Bind Result, Mode=OneWay}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Style="{StaticResource CaptionStyle}"
+                               Text="Or make your own in Search and Automatic tasks." />
+                </StackPanel>
+
+                <!-- Saved searches that are not pinned, so a person's own searches can be pinned too. -->
+                <Border Style="{StaticResource CardStyle}"
+                        Visibility="{x:Bind ViewModel.HasOtherSearches, Mode=OneWay}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Your other saved searches" />
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                   Visibility="{x:Bind ViewModel.HasPinMessage, Mode=OneWay}"
+                                   Text="{x:Bind ViewModel.PinMessage, Mode=OneWay}" />
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.OtherSearches, Mode=OneWay}"
+                                      AutomationProperties.Name="Saved searches that are not pinned">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="viewmodels:UnpinnedSearchViewModel">
+                                    <Border Style="{StaticResource RowCardStyle}">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                            <StackPanel Spacing="3">
+                                                <TextBlock FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                           Text="{x:Bind Name}" />
+                                                <TextBlock Style="{StaticResource CaptionStyle}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Text="{x:Bind Phrase}" />
+                                            </StackPanel>
+                                            <Button Grid.Column="1" VerticalAlignment="Center" Content="Pin"
+                                                    IsEnabled="{Binding ElementName=Root, Path=ViewModel.CanPinMore}"
+                                                    Command="{Binding ElementName=Root, Path=ViewModel.PinCommand}"
+                                                    CommandParameter="{x:Bind Id}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+
+            </StackPanel>
+        </ScrollViewer>
+
+        <!--
+            The preview before a pack is added. Add wears the accent because it is the one press
+            here that confirms something; Enter, Esc, and the X all behave like Cancel.
+        -->
+        <ContentDialog x:Name="PackDialog"
+                       PrimaryButtonText="Add"
+                       CloseButtonText="Cancel"
+                       DefaultButton="Close"
+                       PrimaryButtonStyle="{StaticResource AccentButtonStyle}">
+            <ScrollViewer MaxHeight="460">
+                <StackPanel Spacing="12" MaxWidth="460">
+                    <TextBlock x:Name="PackNothingToAdd"
+                               Style="{StaticResource BodySecondaryStyle}"
+                               TextWrapping="Wrap"
+                               Visibility="Collapsed"
+                               Text="You already have everything in this pack." />
+
+                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Saved searches" />
+                    <ItemsControl x:Name="PackSearches" AutomationProperties.Name="Saved searches in this pack">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="views:PackLine">
+                                <StackPanel Spacing="2" Margin="0,0,0,8">
+                                    <TextBlock FontWeight="SemiBold" TextWrapping="Wrap"
+                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                               Text="{x:Bind Name}" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                               Text="{x:Bind Description}" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                               Foreground="{ThemeResource DeskCautionBrush}"
+                                               Visibility="{x:Bind NoteVisibility}"
+                                               Text="{x:Bind Note}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock x:Name="PackRulesTitle" Style="{StaticResource SectionTitleStyle}" Text="Rules" />
+                    <ItemsControl x:Name="PackRules" AutomationProperties.Name="Rules in this pack">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="views:PackLine">
+                                <StackPanel Spacing="2" Margin="0,0,0,8">
+                                    <TextBlock FontWeight="SemiBold" TextWrapping="Wrap"
+                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                               Text="{x:Bind Name}" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                               Text="{x:Bind Description}" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                               Foreground="{ThemeResource DeskCautionBrush}"
+                                               Visibility="{x:Bind NoteVisibility}"
+                                               Text="{x:Bind Note}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- The one promise in this dialog, on the accent rail. -->
+                    <Border Padding="12,10" CornerRadius="0,4,4,0"
+                            Background="{ThemeResource DeskSurfaceBrush}"
+                            BorderBrush="{ThemeResource DeskAccentBrush}"
+                            BorderThickness="3,0,0,0">
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                   Text="Rules start switched off. Nothing moves until you turn a rule on and press Tidy." />
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </ContentDialog>
+    </Grid>
+</Page>
