@@ -42,9 +42,14 @@ appending to them.
    "Checking after the window is closed" not yet reported. On 2026-09-13 the owner reported the
    tray icon and menu work ("eventually" — which step was slow is not pinned down) and that a
    check ran while the window was closed; steps 2, 9, and 19–24 are unconfirmed.
-3. **The next V0.7 piece**, only when the owner picks one: C folder templates (creates folders —
-   needs its own design and security review first), D DeskAI's own look, or E desktop and
-   wallpaper (a `SECURITY.md` review gate). The recommended order was C, then D, then E.
+3. **The next V0.7 piece**, only when the owner picks one: C folder templates, D DeskAI's own
+   look, or E desktop and wallpaper (a `SECURITY.md` review gate). The recommended order was C,
+   then D, then E. On 2026-09-14, while the owner was away, **drafts only** were written for C —
+   design `docs/superpowers/specs/2026-09-14-folder-templates-design.md` and review
+   `docs/security/2026-09-14-folder-templates-review.md`. No code. They end with five questions
+   for the owner (reuse Allow tidying? one level only? the lists? link to packs? C or D first?).
+   Do not build C until those are answered. The review found one must-fix: a journal record with
+   no file moves settles as Failed and reads "0 of 0 files" on Organize.
 4. Merging `v0.5-background-checking` and `v0.7-workspace-profiles` into `main`, if the owner
    wants that as its own step.
 

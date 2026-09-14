@@ -297,7 +297,8 @@ Built one piece at a time, safest first (design:
   Windows setting changes. There is no Custom pack; making your own stays in Search and
   Automatic tasks.
 - C: Folder templates — creating a folder layout in a connected folder. Creates folders, so it
-  needs its own design and security review first. Not started.
+  needs its own design and security review first. Draft design and review written 2026-09-14,
+  waiting for the owner's answers; no code.
 - D: DeskAI's own look (themes for the DeskAI window), keeping "green means safe or confirmed".
   Not started.
 - E: Desktop layouts, icons, shortcuts, and wallpaper. Changes Windows, so it is a `SECURITY.md`
