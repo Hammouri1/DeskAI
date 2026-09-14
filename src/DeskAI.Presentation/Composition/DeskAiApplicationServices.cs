@@ -7,6 +7,7 @@ using DeskAI.Core.Ai;
 using DeskAI.Core.Rules;
 using DeskAI.Core.Search;
 using DeskAI.Core.Tidy;
+using DeskAI.Core.Workspace;
 using DeskAI.Infrastructure.Content;
 using DeskAI.Infrastructure.DependencyInjection;
 using DeskAI.Infrastructure.Execution;
@@ -73,6 +74,12 @@ public static class DeskAiApplicationServices
         services.AddHostedService<AutomaticCheckTimer>();
         // Which folder Organize opens on after "Review in Organize". A folder ID, nothing more.
         services.AddSingleton<OrganizeRequest>();
+        // My workspace. Both create or read saved searches and rules only; neither can reach a
+        // file, and tests fail if either is given anything that can.
+        services.AddSingleton<StarterPackService>();
+        services.AddSingleton<PinnedSearchService>();
+        // Which saved search Search runs after "Open in Search". A saved-search ID, nothing more.
+        services.AddSingleton<SearchRequest>();
         // A DeskAI with no notification area is a legitimate DeskAI: it simply never offers
         // to keep running with no window. The Windows one is registered by the app.
         services.AddSingleton<IBackgroundPresence, NoBackgroundPresence>();

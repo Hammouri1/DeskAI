@@ -112,6 +112,7 @@ public sealed class SearchViewModel : ObservableObject
     private readonly ContentSearchService _insideFiles;
     private readonly ISavedSearchRepository _savedSearches;
     private readonly IClock _clock;
+    private readonly SearchRequest _request;
     private string _phrase = string.Empty;
     private string _folderMessage = "No folders connected yet.";
     private bool _isFolderBusy;
@@ -129,13 +130,15 @@ public sealed class SearchViewModel : ObservableObject
         ConnectedFolderService folders,
         ContentSearchService insideFiles,
         ISavedSearchRepository savedSearches,
-        IClock clock)
+        IClock clock,
+        SearchRequest request)
     {
         _search = search;
         _folders = folders;
         _insideFiles = insideFiles;
         _savedSearches = savedSearches;
         _clock = clock;
+        _request = request;
         SearchCommand = new AsyncRelayCommand(RunAsync, () => !IsBusy);
         RunSavedSearchCommand = new AsyncRelayCommand<Guid>(RunSavedSearchAsync, _ => !IsBusy);
         DeleteSavedSearchCommand = new AsyncRelayCommand<Guid>(DeleteSavedSearchAsync, _ => !IsBusy);
@@ -270,11 +273,34 @@ public sealed class SearchViewModel : ObservableObject
 
     public static int MaxSavedSearchNameLength => SavedSearch.MaxNameLength;
 
-    /// <summary>Loads the folder list and saved searches when the page opens.</summary>
+    /// <summary>
+    /// Loads the folder list and saved searches when the page opens, then runs the saved search
+    /// My workspace asked for, if any.
+    /// </summary>
+    /// <remarks>
+    /// The request is taken once. Running it is exactly what pressing Run on that saved search
+    /// does, so arriving from My workspace can show nothing a person could not have asked for here.
+    /// </remarks>
     public async Task InitializeAsync()
     {
         await ReloadFoldersAsync().ConfigureAwait(true);
         await ReloadSavedSearchesAsync().ConfigureAwait(true);
+
+        if (_request.Take() is not { } requestedId)
+        {
+            return;
+        }
+
+        var requested = SavedSearches.FirstOrDefault(item => item.Id == requestedId);
+        if (requested is null)
+        {
+            StatusTitle = "That saved search no longer exists";
+            StatusMessage = "It may have been removed. Your other saved searches are below.";
+            return;
+        }
+
+        Phrase = requested.Phrase;
+        await RunAsync().ConfigureAwait(true);
     }
 
     /// <summary>
