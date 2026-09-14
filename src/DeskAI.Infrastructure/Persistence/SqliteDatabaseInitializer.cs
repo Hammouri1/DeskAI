@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 12;
+    public const int CurrentSchemaVersion = 13;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -45,8 +45,40 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplyAutomaticCheckMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyAutomaticCheckHistoryMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyTidyPermissionMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplySavedSearchPinMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
+    }
+
+    /// <summary>
+    /// Lets a saved search be pinned to My workspace.
+    /// </summary>
+    /// <remarks>
+    /// A column rather than a table: a pin belongs to exactly one saved search and should vanish
+    /// with it. Existing searches start unpinned, so upgrading changes nothing anyone can see.
+    /// SQLite has no "add column if missing", so the column is looked for first; running this
+    /// twice must be as harmless as every other migration here.
+    /// </remarks>
+    private static async Task ApplySavedSearchPinMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = "SELECT COUNT(*) FROM pragma_table_info('saved_searches') WHERE name = 'is_pinned';";
+        var hasColumn = (long)(await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) ?? 0L) > 0;
+
+        command.CommandText = hasColumn
+            ? "INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (13, $appliedAtUtc);"
+            : """
+                ALTER TABLE saved_searches ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0;
+                INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (13, $appliedAtUtc);
+                """;
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>

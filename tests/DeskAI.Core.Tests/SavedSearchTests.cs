@@ -58,6 +58,27 @@ public sealed class SavedSearchTests
         Assert.Throws<ArgumentException>(() => SavedSearch.Create(Guid.NewGuid(), "Name", phrase, Now));
     }
 
+    [Fact]
+    public void ANewSavedSearchIsNotPinned()
+    {
+        var saved = SavedSearch.Create(Guid.NewGuid(), "Photos", "photos", Now);
+
+        Assert.False(saved.IsPinned);
+    }
+
+    [Fact]
+    public void PinningChangesOnlyThePin()
+    {
+        var saved = SavedSearch.Create(Guid.NewGuid(), "Photos", "photos", Now);
+
+        var pinned = saved.WithPinned(true);
+
+        Assert.True(pinned.IsPinned);
+        Assert.Equal(saved.Id, pinned.Id);
+        Assert.Equal(saved.Name, pinned.Name);
+        Assert.Equal(saved.Phrase, pinned.Phrase);
+    }
+
     /// <summary>
     /// Storing the phrase rather than a resolved query is what keeps a relative phrase
     /// relative. This pins that decision down: the saved value is still the words.

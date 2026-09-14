@@ -33,7 +33,7 @@ public sealed class SqliteDatabaseInitializerTests
 
         // Every migration must record its own number so the upgrade path stays auditable.
         command.CommandText = "SELECT group_concat(version, ',') FROM (SELECT version FROM schema_migrations ORDER BY version);";
-        Assert.Equal("1,2,3,4,5,6,7,8,9,10,11,12", await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("1,2,3,4,5,6,7,8,9,10,11,12,13", await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -133,6 +133,52 @@ public sealed class SqliteDatabaseInitializerTests
         Assert.Equal(1L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
         verify.CommandText = "SELECT COUNT(*) FROM authorized_roots WHERE display_name = 'Practice';";
         Assert.Equal(1L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task InitializeAsync_AddsThePinToSavedSearchesAndLeavesExistingOnesUnpinned()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var databasePath = System.IO.Path.Combine(sandbox.Path, "deskai.db");
+        var initializer = new SqliteDatabaseInitializer(
+            Options.Create(new DatabaseOptions { DatabasePath = databasePath }),
+            new SystemClock(),
+            NullLogger<SqliteDatabaseInitializer>.Instance);
+        await initializer.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Roll the saved-search table back to the shape a version-12 install would have, with
+        // one search already saved.
+        await using (var older = new SqliteConnection($"Data Source={databasePath};Pooling=False"))
+        {
+            await older.OpenAsync(TestContext.Current.CancellationToken);
+            await using var downgrade = older.CreateCommand();
+            downgrade.CommandText = """
+                DROP TABLE saved_searches;
+                CREATE TABLE saved_searches (
+                    saved_search_id TEXT NOT NULL PRIMARY KEY,
+                    name            TEXT NOT NULL,
+                    phrase          TEXT NOT NULL,
+                    created_at_utc  TEXT NOT NULL
+                );
+                CREATE UNIQUE INDEX ix_saved_searches_name ON saved_searches(name COLLATE NOCASE);
+                INSERT INTO saved_searches VALUES
+                    ('88888888-8888-8888-8888-888888888888', 'Photos', 'photos', '2026-09-08T00:00:00Z');
+                DELETE FROM schema_migrations WHERE version = 13;
+                """;
+            await downgrade.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        }
+
+        await initializer.InitializeAsync(TestContext.Current.CancellationToken);
+        // A second start must not try to add the column again.
+        await initializer.InitializeAsync(TestContext.Current.CancellationToken);
+
+        await using var upgraded = new SqliteConnection($"Data Source={databasePath};Mode=ReadOnly;Pooling=False");
+        await upgraded.OpenAsync(TestContext.Current.CancellationToken);
+        await using var verify = upgraded.CreateCommand();
+        verify.CommandText = "SELECT MAX(version) FROM schema_migrations;";
+        Assert.Equal(13L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        verify.CommandText = "SELECT is_pinned FROM saved_searches WHERE name = 'Photos';";
+        Assert.Equal(0L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
