@@ -16,7 +16,8 @@ appending to them.
 
 ## Where things stand
 
-- Updated: 2026-09-14, branch `v0.7-workspace-profiles`, which was started from
+- Updated: 2026-09-14, after commit `f694d19`, tree clean, branch `v0.7-workspace-profiles`,
+  which was started from
   `v0.5-background-checking`. **Neither branch is merged to `main` yet.**
 - V0.1–V0.6 complete in code and automated tests. V0.5's last piece, checking after the window
   is closed, landed 2026-09-13 (ADR 0025), with one follow-up fix `ab01694` (turning checking
