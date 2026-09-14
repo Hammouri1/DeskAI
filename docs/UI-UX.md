@@ -14,7 +14,7 @@ Primary navigation:
 - **Automation** — deterministic rules, simulations, approval scope, schedules/watchers, and run history.
 - **Settings** — AI mode/provider, privacy/disclosure, authorized and protected locations, appearance, data/history, diagnostics, and About.
 
-Storage insights may begin on Dashboard and later gain a dedicated view. Workspace Profiles/Design appear only when implemented, not as misleading active navigation.
+Storage insights may begin on Dashboard and later gain a dedicated view. Workspace Profiles/Design appear only when implemented, not as misleading active navigation. Since V0.7's first slice (2026-09-14) the side menu reads Home, Organize, Search, Automatic tasks, **My workspace**, Privacy and AI; My workspace holds only what is built — pinned searches and starter packs — and later V0.7 pieces join it when they exist.
 
 ## First-Run Experience
 
@@ -192,6 +192,29 @@ Reading inside files is a separate, visible permission. Connecting a folder neve
 ## Rules and Automation
 
 Use a readable “When / If / Then / Scope” editor. When AI drafts a rule, show the deterministic interpretation and a simulation against sample/current indexed files before approval. Clearly distinguish enabled, scheduled/watched, manual-only, paused, and needs-review. Provide a kill switch/pause-all action.
+
+## My workspace (V0.7, built 2026-09-14)
+
+One sentence under the title: "Your shortcuts and starter packs. Nothing here moves or changes
+files." Top to bottom:
+
+1. **Pinned searches.** Tiles, at most eight, each a saved search's name, a count, **Open in
+   Search**, and **Unpin**. Counts are worded so no guess reads as a fact: "1 file", "23 files",
+   "200+ files" when the search reached its limit, "No folders connected", "Search not
+   understood", or "Could not count" on that tile alone. A caption says when the counts were made
+   and to refresh a folder in Search to update them. A tile never shows a file name. With nothing
+   pinned: "Pin a saved search to see it here." and a link to Search.
+2. **Starter packs.** Five cards — Student, Developer, Gaming, Productivity, Minimal — each a name,
+   one line, and a plain **See what it adds** button (plain, because seeing confirms nothing). It
+   opens a dialog listing each search by name and words and each rule as its sentence, with any
+   item to be skipped and why in the caution colour, and the promise on the accent rail: "Rules
+   start switched off. Nothing moves until you turn a rule on and press Tidy." **Add** is the
+   accent button; Enter, Esc, and the X behave as Cancel; Add is off when the pack would add
+   nothing. The result is written on that pack's own card, for example "Added 1 search. Skipped 1
+   you already had: Screenshots.", and always says added rules are switched off. There is no
+   Custom card; a line says "Or make your own in Search and Automatic tasks."
+3. **Your other saved searches.** Saved searches not pinned, each with **Pin**. Past eight, Pin is
+   off and a line beside the list says to unpin one to make room.
 
 ## Implemented Visual System
 

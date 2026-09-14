@@ -631,3 +631,39 @@ folder.
     Expected: the icon is still there afterwards, rather than being permanently gone.
 24. Sign out and back in, or restart Windows. Expected: DeskAI does **not** start on its
     own — it only runs again once you open it yourself.
+
+## My workspace (V0.7, added 2026-09-14)
+
+Use a new folder under Windows Temp with made-up files only: `holiday.jpg`, `notes.txt`,
+`Screenshot 2026-09-14.png`, and `invoice-march.pdf`. Never use a personal folder.
+
+1. Look at the side menu. Expected: **My workspace** between Automatic tasks and Privacy and AI.
+   Open it. Expected: "Pin a saved search to see it here." with a Go to Search link, five pack
+   cards, and no Custom card.
+2. With nothing connected, press **See what it adds** on **Minimal**. Expected: a dialog "Add the
+   Minimal starter pack?" listing Screenshots and Installers, no Rules heading, and the green-edged
+   line "Rules start switched off…". Press **Esc**. Expected: nothing added, no line on the card.
+   Repeat with **Enter** and with the dialog's **X**: each behaves like Cancel.
+3. Open it again and press **Add**. Expected: "Added 2 searches." on the Minimal card, and two tiles
+   reading "No folders connected" — not "0 files".
+4. Connect the test folder in **Search**, come back to My workspace. Expected: the Screenshots tile
+   now shows a number, and the caption says when it was counted. No tile shows a file name.
+5. Press **See what it adds** on **Student**. Expected: Screenshots listed with "You already have a
+   search called Screenshots." in the caution colour, and three rules written as sentences. Add.
+   Expected: "Added 2 searches and 3 rules. Skipped 1 you already had: Screenshots. The rules are
+   switched off — turn them on in Automatic tasks."
+6. Open **Automatic tasks**. Expected: Slides, Assignments, and Screenshots rules, all **Off**.
+   Open **Organize** on the test folder (allow tidying if asked). Expected: no "Your rule" group.
+   Turn the Screenshots rule on, reopen Organize. Expected: a Screenshots group marked "Your rule".
+   In File Explorer, nothing has moved.
+7. Press **Add** on Minimal a second time. Expected: the dialog says you already have everything and
+   Add is switched off.
+8. On a tile, press **Open in Search**. Expected: Search opens with that search already run and the
+   side menu shows Search selected.
+9. Save several searches in Search until nine exist, pin them from **Your other saved searches**.
+   Expected: after eight, Pin is off and a line says to unpin one. Unpin one: Pin works again.
+10. Press each new "?" (My workspace, Pinned searches, Starter packs) and check they read clearly.
+11. Switch Windows between light, dark, and high contrast with the page and the dialog open.
+    Expected: everything readable, the promise line keeps its rail.
+12. Tab through the page and the dialog with the keyboard only, then with Narrator on. Expected:
+    every button reachable and named.

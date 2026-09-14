@@ -155,6 +155,12 @@ changes a feature.
 | Automatic tasks | Wording follows the mode: never claims checking stops on close while it does not, always says nothing moves by itself, always says no Windows startup | `BackgroundCheckingPageTests`, `BackgroundCheckingChoiceTests` |
 | Whole app | Never registers itself to start with Windows | `NeverStartsWithWindowsTests` |
 | Whole app | Launching DeskAI again reveals the running one rather than starting a second | `SingleInstanceDecisionTests` |
+| My workspace | Starter packs: five cards, no Custom; preview lists every search and rule and adds nothing; Add writes what happened on that card; names already used are skipped and named, never replaced; adding twice adds nothing; the 50-search limit | `WorkspacePageTests`, `StarterPackServiceTests`, `StarterPackCatalogTests` |
+| My workspace | A pack's rules arrive Off, change neither Tidy nor a check until turned on, and move no file | `WorkspacePageTests`, `StarterPackServiceTests`, `StarterPackCatalogTests` |
+| My workspace | Every pack search means what its name says (each phrase checked against the translator) | `StarterPackCatalogTests` |
+| My workspace | Pinned tiles: count, "No folders connected", "Search not understood", "200+" at the limit, no file names; pin up to eight, refused beside the list, unpin | `WorkspacePageTests`, `PinnedSearchServiceTests`, `SqliteSavedSearchRepositoryTests`, `SqliteDatabaseInitializerTests` |
+| My workspace | Open in Search lands on that saved search's results; used once; a removed search is said to be gone | `WorkspacePageTests` |
+| My workspace | Nothing here can reach a file, a credential, or AI | `StarterPackServiceTests`, `PinnedSearchServiceTests` |
 | Privacy and AI | Sharing choices, AI modes, key storage and removal, daily limit | `SettingsPageTests`, `AiJourneyTests` |
 | Privacy and AI | Pasted key trimmed, spaced key refused, wrong-looking key warned | `SettingsPageTests` |
 | Organize | Ask AI after turning AI on: one request to the chosen service, rejected key in plain words, removing the key stops it, daily limit | `AiJourneyTests`, `SettingsPageTests`, `CloudSuggestionProviderTests` |

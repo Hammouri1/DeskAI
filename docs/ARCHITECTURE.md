@@ -127,6 +127,32 @@ picker, notifications), and the composition root, which calls `AddDeskAiApplicat
 only the Windows-facing pieces. Code-behind is limited to view behavior and confirmation
 dialogs. App must not manipulate files or call provider HTTP APIs directly.
 
+### My workspace (V0.7, ADR 0026)
+
+`DeskAI.Core.Workspace` holds the first V0.7 slice: starter packs and pinned saved searches.
+Nothing in it changes a file.
+
+`StarterPackCatalog` is a fixed list of five `StarterPack` values, each a set of
+`StarterPackSearch` (name and phrase) and `StarterPackRule` (name, typed conditions, destination).
+`StarterPackRule.ToRule` is the one place a pack rule becomes an `AutomationRule`, through the
+ordinary factory and `MoveToFolderAction` checks, always with `isEnabled: false`.
+
+`StarterPackService.PreviewAsync` lists what a pack would add and why anything would be skipped —
+a name already used, compared case-insensitively, or the 50-search limit — and saves nothing.
+`AddAsync` works that plan out again from stored state rather than trusting the preview, saves
+through `ISavedSearchRepository` and `IRuleRepository`, pins new searches while fewer than
+`SavedSearch.MaxPinned` (8) are pinned, and returns a `StarterPackOutcome`. A failure part-way
+leaves what was added and says so. `PinnedSearchService` pins and unpins, and counts a pinned
+search through `FileSearchService`, returning `PinnedCount` with a kind that keeps a count apart
+from "no folders" and "not understood", and marks a count that reached the search limit. Both
+services take only repositories, `FileSearchService`, and the clock; tests fail if either is given
+an executor, journal, planner, scanner, reader, credential vault, or AI provider.
+
+In Presentation, `WorkspaceViewModel` drives the page and `SearchRequest` — shaped like
+`OrganizeRequest` — hands one saved-search ID to `SearchViewModel`, which takes it once in
+`InitializeAsync` and runs that search as pressing Run would. `WorkspacePage` shows the pack
+preview in a `ContentDialog` and navigates through `MainWindow.GoTo` so the side menu follows.
+
 ## Initial Domain Model
 
 Names may evolve, but concepts should remain explicit:
@@ -201,7 +227,7 @@ SQLite is local application state, not a source of authority over the current fi
 
 Use migrations, foreign keys, transactions, indexes, UTC timestamps, and an explicit retention strategy. Repositories are justified when they separate Core use cases from SQLite—not as one generic repository for every table. API keys stay in a Windows-protected credential store and SQLite holds only a credential reference.
 
-Schema version 1 introduced migration tracking, local settings, and authorized roots. Versions 2–3 added plans, operations, journal outcomes, and undo links. Version 4 added authorization scope. Version 5 adds non-secret AI mode, endpoint/model, disclosure flags, limits, consent, and a credential reference. Version 6 adds an atomic per-provider daily request counter. Version 7 adds `indexed_files`, keyed on `(root_id, file_id)` with a foreign key to `authorized_roots` using `ON DELETE CASCADE`, plus indexes on path, name, category, size, and modification time. Version 8 adds `saved_searches`, holding a name, the typed phrase, and a creation time. Version 9 adds `automation_rules`, holding a name, version, enabled flag, the conditions as a JSON array of plain kind/value pairs, and the action as a kind/value pair; like saved searches it has no root column, for the same reason, and its name index is case-insensitive so two rules cannot differ only by capitalisation. It deliberately has no root column and no foreign key: a saved search must not be able to outlive or widen an authorization, so scope is resolved from the authorized roots each time one runs. A case-insensitive unique index on the name stops two saved searches differing only by capitalisation. API-key bytes never enter SQLite.
+Schema version 1 introduced migration tracking, local settings, and authorized roots. Versions 2–3 added plans, operations, journal outcomes, and undo links. Version 4 added authorization scope. Version 5 adds non-secret AI mode, endpoint/model, disclosure flags, limits, consent, and a credential reference. Version 6 adds an atomic per-provider daily request counter. Version 7 adds `indexed_files`, keyed on `(root_id, file_id)` with a foreign key to `authorized_roots` using `ON DELETE CASCADE`, plus indexes on path, name, category, size, and modification time. Version 8 adds `saved_searches`, holding a name, the typed phrase, and a creation time. Version 9 adds `automation_rules`, holding a name, version, enabled flag, the conditions as a JSON array of plain kind/value pairs, and the action as a kind/value pair; like saved searches it has no root column, for the same reason, and its name index is case-insensitive so two rules cannot differ only by capitalisation. It deliberately has no root column and no foreign key: a saved search must not be able to outlive or widen an authorization, so scope is resolved from the authorized roots each time one runs. A case-insensitive unique index on the name stops two saved searches differing only by capitalisation. Versions 10–12 add automatic-check settings, check history, and the tidy permission. Version 13 (V0.7) adds `is_pinned` to `saved_searches`, defaulting to 0 so existing searches start unpinned; the migration looks for the column first because SQLite has no "add column if missing". Saving a search again never changes its pin. API-key bytes never enter SQLite.
 
 Version 4 previously recorded the constant `CurrentSchemaVersion` instead of the literal `4`, so no database ever stored that row. The migration now records `4`, and `INSERT OR IGNORE` backfills it on existing installations.
 

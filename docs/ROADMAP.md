@@ -283,9 +283,25 @@ move, and undo it after a restart; every refusal case is tested with generated t
 and each of those steps has a page test that performs it through the page, not only through
 the executor.
 
-## V0.7 — Workspace Profiles and Design (**Future**)
+## V0.7 — Workspace Profiles and Design (**Now — started 2026-09-14**)
 
 Goal: turn organization/search into tailored workspaces.
+
+Built one piece at a time, safest first (design:
+`docs/superpowers/specs/2026-09-14-my-workspace-starter-packs-design.md`):
+
+- ✅ A + B, 2026-09-14: **My workspace** (ADR 0026). Profiles are one-time starter packs —
+  Student, Developer, Gaming, Productivity, Minimal — that preview, then add ordinary saved
+  searches and rules; rules always arrive switched off, and nothing a person already has is
+  replaced. Saved searches can be pinned (up to eight) as tiles with honest counts. No file or
+  Windows setting changes. There is no Custom pack; making your own stays in Search and
+  Automatic tasks.
+- C: Folder templates — creating a folder layout in a connected folder. Creates folders, so it
+  needs its own design and security review first. Not started.
+- D: DeskAI's own look (themes for the DeskAI window), keeping "green means safe or confirmed".
+  Not started.
+- E: Desktop layouts, icons, shortcuts, and wallpaper. Changes Windows, so it is a `SECURITY.md`
+  review gate. Not started.
 
 - Student, Developer, Gaming, Productivity, Minimal, and Custom profiles.
 - Folder templates, pinned Smart Collections, and workspace setup suggestions.

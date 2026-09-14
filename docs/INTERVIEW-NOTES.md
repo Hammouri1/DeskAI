@@ -374,6 +374,25 @@ What is deliberately not built: removing copies, storing fingerprints, using con
 Next small task: the owner's manual checks for V0.6 and this feature, then decide on V0.5's checks after the window is closed or V0.7.
 ```
 
+## V0.7 My Workspace Learning Log — 2026-09-14
+
+```text
+Milestone / date: V0.7 first slice (pieces A + B), 2026-09-14.
+What became usable: A My workspace page. Starter packs (Student, Developer, Gaming, Productivity, Minimal) preview and then add saved searches and switched-off rules; saved searches can be pinned as tiles with honest counts and opened in Search.
+Main data flow: pack card → StarterPackService.PreviewAsync (reads searches and rules, marks skips, saves nothing) → dialog → Add → AddAsync (reads again, saves searches with pins, rules via StarterPackRule.ToRule switched off) → outcome line on the card. Tile: saved search (is_pinned) → PinnedSearchService.CountAsync → FileSearchService → PinnedCount → wording.
+Classes/interfaces I can explain: StarterPack, StarterPackCatalog, StarterPackRule.ToRule, StarterPackService, StarterPackPreview/Outcome, PinnedSearchService, PinnedCount, SearchRequest, WorkspaceViewModel, WorkspacePage.
+New concept and my own explanation: A preview is not a promise. The dialog can stay open while something changes, so Add rebuilds the plan from what is stored now; anything new since is skipped, never overwritten.
+New concept and my own explanation (2): Safe by default at the one choke point. Every pack rule becomes real in ToRule, which switches it off — so no caller can forget to, and a mutation test (switching it on) makes a page test fail.
+New concept and my own explanation (3): Additive schema migration. Adding a column with a default leaves old rows valid; checking pragma_table_info first makes the migration safe to run twice.
+Hardest thing to get right: Wording a number honestly. "0 files" looks like a measurement even when nothing was searched, so a count, "no folders", "not understood", and "stopped at the limit" are four different results rather than one integer.
+Security cases tested: preview saves nothing; clashes skipped whatever the capitals; re-read before add; limits of 50 searches and 8 pins; rules Off end to end (Tidy and check unchanged until turned on, no file moved); neither service can be given an executor, journal, planner, scanner, reader, credential vault, or AI provider.
+Build/test evidence: Release build with zero warnings; 1006 tests pass, none skipped; dotnet format clean.
+AI containment check: nothing in this slice touches DeskAI.AI or sends anything; the Workspace services take no AI or credential type, and a test fails if they do.
+Trade-off/ADR: ADR 0026 — one-time starter packs, not a remembered profile; fixed catalog in code; no Custom card.
+What is deliberately not built: folder templates, DeskAI themes, desktop and wallpaper changes, removing a pack as a unit, editing packs, pins on Home.
+Next small task: the owner's manual check of My workspace (MANUAL-TESTING.md), then choose the next V0.7 piece.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

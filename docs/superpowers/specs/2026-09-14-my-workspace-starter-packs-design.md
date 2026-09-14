@@ -3,7 +3,9 @@
 - Date: 2026-09-14
 - Milestone: V0.7 "Workspace Profiles and Design", first slice
 - Branch: `v0.7-workspace-profiles` (started from `v0.5-background-checking`, not yet merged)
-- Status: agreed with the owner in conversation on 2026-09-14; awaiting written review
+- Status: agreed with the owner in conversation on 2026-09-14; the owner asked for work to start
+  while away, so it was built on 2026-09-14 without a separate written review (ADR 0026). The
+  owner should still read it.
 
 ## Why this slice, and what V0.7 is split into
 
