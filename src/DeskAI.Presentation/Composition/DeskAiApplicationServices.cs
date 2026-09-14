@@ -90,6 +90,7 @@ public static class DeskAiApplicationServices
         services.AddTransient<SearchViewModel>();
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<AutomationViewModel>();
+        services.AddTransient<WorkspaceViewModel>();
         return services;
     }
 }
