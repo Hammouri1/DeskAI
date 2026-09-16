@@ -17,8 +17,9 @@ public interface IWallpaperSetter
     string? ReadCurrent();
 
     /// <summary>Makes <paramref name="imagePath"/> the wallpaper, or an empty string for a plain colour.</summary>
+    /// <remarks>Named <c>Apply</c> rather than <c>Set</c>, which is a keyword in some languages (CA1716).</remarks>
     /// <exception cref="InvalidOperationException">Windows refused, with a plain reason.</exception>
-    void Set(string imagePath);
+    void Apply(string imagePath);
 }
 
 /// <summary>What is at a path a person picked as a picture, read without opening it.</summary>

@@ -34,13 +34,24 @@ public sealed class WindowsWallpaperSetter : IWallpaperSetter
             return null;
         }
 
-        var buffer = new StringBuilder(MaxPath);
-        return SystemParametersInfoGet(SpiGetDeskWallpaper, (uint)buffer.Capacity, buffer, 0)
-            ? buffer.ToString()
-            : null;
+        // A character buffer rather than a StringBuilder (CA1838). The first character is set to
+        // zero first, so a call that succeeds without writing reads as "a plain colour" rather
+        // than as whatever happened to be in that memory.
+        var buffer = Marshal.AllocHGlobal(MaxPath * sizeof(char));
+        try
+        {
+            Marshal.WriteInt16(buffer, 0, 0);
+            return SystemParametersInfoGet(SpiGetDeskWallpaper, MaxPath, buffer, 0)
+                ? Marshal.PtrToStringUni(buffer)
+                : null;
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
     }
 
-    public void Set(string imagePath)
+    public void Apply(string imagePath)
     {
         ArgumentNullException.ThrowIfNull(imagePath);
         if (!OperatingSystem.IsWindows() ||
@@ -52,7 +63,7 @@ public sealed class WindowsWallpaperSetter : IWallpaperSetter
 
     [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool SystemParametersInfoGet(uint action, uint parameter, StringBuilder value, uint flags);
+    private static extern bool SystemParametersInfoGet(uint action, uint parameter, IntPtr value, uint flags);
 
     [DllImport("user32.dll", EntryPoint = "SystemParametersInfoW", CharSet = CharSet.Unicode, SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

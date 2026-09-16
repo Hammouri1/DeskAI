@@ -266,7 +266,7 @@ public sealed class WallpaperServiceTests
 
         public string? ReadCurrent() => Current;
 
-        public void Set(string imagePath)
+        public void Apply(string imagePath)
         {
             if (RefuseWith is { } reason)
             {

@@ -306,7 +306,7 @@ public sealed partial class TidyAiTests
         var rootId = Assert.Single(search.Folders).Id;
         var preview = await PreviewAsync(app, rootId);
 
-        var prepared = await app.Get<TidyAiService>().PrepareAsync(rootId, preview.AskableFiles, TestContext.Current.CancellationToken);
+        var prepared = await app.Get<TidyAiService>().PrepareAsync(rootId, preview.AskableFiles, cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Null(prepared.Question);
         Assert.Empty(app.Internet.Requests);
@@ -459,7 +459,7 @@ public sealed partial class TidyAiTests
             rootId, Guid.NewGuid(), 1, NoChoices, mode, advice ?? NoAdvice, TestContext.Current.CancellationToken))!;
 
     private static Task<TidyAiPreparation> PrepareAsync(TestApp app, Guid rootId, TidyPreview preview) =>
-        app.Get<TidyAiService>().PrepareAsync(rootId, preview.AskableFiles, TestContext.Current.CancellationToken);
+        app.Get<TidyAiService>().PrepareAsync(rootId, preview.AskableFiles, cancellationToken: TestContext.Current.CancellationToken);
 
     private static async Task<TidyAiAnswer> AskAsync(TestApp app, Guid rootId, TidyPreview preview)
     {

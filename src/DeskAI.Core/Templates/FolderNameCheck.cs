@@ -22,7 +22,8 @@ public static class FolderNameCheck
 
     private static readonly char[] Separators = [',', '\n', '\r', ';'];
 
-    private static readonly char[] Forbidden = ['\\', '/', ':', '*', '?', '"', '<', '>', '|'];
+    private static readonly System.Buffers.SearchValues<char> Forbidden =
+        System.Buffers.SearchValues.Create(['\\', '/', ':', '*', '?', '"', '<', '>', '|']);
 
     private static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -86,7 +87,7 @@ public static class FolderNameCheck
             return $"A folder name can be up to {MaxNameLength} letters.";
         }
 
-        if (name.IndexOfAny(Forbidden) >= 0 || name.Any(char.IsControl))
+        if (name.AsSpan().ContainsAny(Forbidden) || name.Any(char.IsControl))
         {
             return $"{name} can't be used. A folder name can't contain \\ / : * ? \" < > or |.";
         }

@@ -115,8 +115,8 @@ public sealed class TidyAiService(
     public async Task<TidyAiPreparation> PrepareAsync(
         Guid rootId,
         IReadOnlyList<FileItem> files,
-        CancellationToken cancellationToken = default,
-        bool planFolder = false)
+        bool planFolder = false,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(files);
         var root = await roots.FindAsync(rootId, cancellationToken).ConfigureAwait(false);

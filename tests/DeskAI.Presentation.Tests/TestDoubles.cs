@@ -152,12 +152,12 @@ internal sealed class RecordingWallpaperSetter : IWallpaperSetter
     /// <summary>Every path it was asked to set, in order.</summary>
     public List<string> Sets { get; } = [];
 
-    /// <summary>When set, the next Set refuses with this reason, as Windows would under a policy.</summary>
+    /// <summary>When set, the next Apply refuses with this reason, as Windows would under a policy.</summary>
     public string? RefuseWith { get; set; }
 
     public string? ReadCurrent() => Current;
 
-    public void Set(string imagePath)
+    public void Apply(string imagePath)
     {
         if (RefuseWith is { } reason)
         {

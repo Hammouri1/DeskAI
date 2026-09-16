@@ -166,7 +166,7 @@ public sealed class AskDeskAiService(
             .OrderByDescending(item => item.TotalSizeBytes)
             .Take(3)
             .Select(item => $"{item.Category} {Size(item.TotalSizeBytes)}");
-        var largest = summary.LargestFiles.FirstOrDefault();
+        var largest = summary.LargestFiles.Count > 0 ? summary.LargestFiles[0] : null;
         var reply = $"Your {Folders(summary.FoldersIncluded)} hold {Size(summary.TotalSizeBytes)} across {Files(summary.TotalFiles)}. "
             + $"Biggest kinds: {string.Join(", ", kinds)}."
             + (largest is null ? string.Empty : $" Largest file: {largest.Name} ({Size(largest.SizeBytes)}) in {largest.RootName}.");

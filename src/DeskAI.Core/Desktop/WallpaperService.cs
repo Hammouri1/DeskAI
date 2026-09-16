@@ -87,7 +87,7 @@ public sealed class WallpaperService(IWallpaperSetter setter, IPictureInspector 
 
         try
         {
-            setter.Set(preview.Path);
+            setter.Apply(preview.Path);
         }
         catch (InvalidOperationException exception)
         {
@@ -138,7 +138,7 @@ public sealed class WallpaperService(IWallpaperSetter setter, IPictureInspector 
 
         try
         {
-            setter.Set(previous);
+            setter.Apply(previous);
         }
         catch (InvalidOperationException exception)
         {

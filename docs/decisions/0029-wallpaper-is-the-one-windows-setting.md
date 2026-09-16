@@ -29,7 +29,9 @@ deferred beyond V0.7.
   the page says so beside Put back, and the next Use remembers their newer choice instead.
 - **`IWallpaperSetter` has two calls and one holder.** `WallpaperService` takes it, the picture
   inspector, and the settings store, and nothing else; the automatic-check and presence
-  reflection tests forbid the setter, so nothing that runs with no window can reach it.
+  reflection tests forbid the setter, so nothing that runs with no window can reach it. (On
+  2026-09-16 the second call was renamed `Set` to `Apply`, because `Set` is a keyword in some
+  languages and the analyzer said so. Two calls, same behaviour, same tests.)
 - **"Tidy my Desktop" adds no reach.** The Desktop path comes from the known-folder API, the
   folder is connected exactly as the picker connects one (names, sizes, dates), and Organize
   asks its own permission before anything moves. Shortcuts are unknown types to the classifier
