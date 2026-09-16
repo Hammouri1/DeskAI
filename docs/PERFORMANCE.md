@@ -30,8 +30,10 @@ folder. Record them below when something changes that could move them.
 The second run is after V1.1. Connect, refresh, and search are unchanged within the noise of a
 single run, which is what was expected: the new four-folder rule costs one path comparison per
 connect, not per file. **Home takes about 9 ms longer** because the page now also loads the Your
-folders card (one list of connected folders) and the Ask DeskAI card (one settings read) before
-it draws. That is two small database reads, and it is the price of the two cards.
+folders card (one list of connected folders) and the Ask DeskAI card (two settings reads: the AI
+choice, and whether the person has already agreed to send questions) before it draws. That is
+three small database reads, and it is the price of the two cards. The run above was taken just
+before the second of those reads was added, so Home is a fraction slower again.
 
 Note: the table is updated by hand from the probe's output (`%TEMP%\DeskAI-perf.txt`). A
 connect stops at the scan bound and the page says so, and a tidy preview stops at 500 loose
