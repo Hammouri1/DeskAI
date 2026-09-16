@@ -784,6 +784,30 @@ Nothing here touches a file. Design: `docs/superpowers/specs/2026-09-16-command-
    Narrator on. Expected: each is reachable and named ("Find a file", "Dark mode for the DeskAI
    window", the AI state).
 
+## The command-center look: Home (added 2026-09-16)
+
+Use a temporary folder of made-up files. Never connect a personal folder.
+
+1. Open **Home** with nothing connected. Expected: a welcome card with "Nothing connected yet"
+   on a green dot, "Good morning" / "Good afternoon" / "Good evening" matching the clock, the
+   sentence that your files are untouched, two grey pills ("Nothing moves by itself", "You
+   approve every change"), and soft grey circles with icons on the right. No green anywhere
+   except the dot, the rail, and the scope reminder.
+2. Under **QUICK LOOK**, four tinted tiles — blue, violet, amber, rose — each reading 0, with
+   "Connect a folder to look" under the last. None is green.
+3. Connect the folder in Search (put two same-size files over 4 KB in it) and return to Home.
+   Expected: the tiles show the folder count, file count with size, unused count, and the number
+   of possible duplicates with "Same size, not compared yet". The score card and "Where your
+   space is going" sit on the left; "Possible duplicates" (with an orange "up to …" pill and the
+   compare button) and "Largest files" on the right.
+4. Make the window narrower than about 1100 pixels. Expected: the circles disappear, the tiles
+   become two by two, and the right column moves under the left; nothing is cut off.
+5. Try all four looks in light and dark. Expected: the tiles keep their tints, the circles stay
+   neutral, and the text on every tile is readable.
+6. Turn on Windows high contrast. Expected: the tiles lose their tints and keep a border; every
+   number and caption is still readable.
+7. Tab through the page and press each "?" with the keyboard, then with Narrator on.
+
 ## My workspace (V0.7, added 2026-09-14)
 
 Use a new folder under Windows Temp with made-up files only: `holiday.jpg`, `notes.txt`,

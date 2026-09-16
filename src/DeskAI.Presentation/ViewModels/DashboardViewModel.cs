@@ -240,8 +240,32 @@ public sealed class DashboardViewModel(
     private bool _hasHealth;
     private string _healthCoverage = string.Empty;
     private bool _hasHealthCoverage;
+    private string _greeting = "Hello";
+    private string _duplicateTileCaption = "Connect a folder to look";
     private string _heroState = "Nothing connected yet";
     private string _heroTitle = "Your files are untouched";
+
+    /// <summary>"Good morning", "Good afternoon", or "Good evening", from the clock when the page opened.</summary>
+    public string Greeting
+    {
+        get => _greeting;
+        private set => SetProperty(ref _greeting, value);
+    }
+
+    /// <summary>The greeting for a local time of day. Morning until noon, afternoon until six.</summary>
+    public static string GreetingFor(DateTimeOffset localTime) => localTime.Hour switch
+    {
+        < 12 => "Good morning",
+        < 18 => "Good afternoon",
+        _ => "Good evening",
+    };
+
+    /// <summary>The one line under the possible-duplicates number on its tile. Hedged like the rest.</summary>
+    public string DuplicateTileCaption
+    {
+        get => _duplicateTileCaption;
+        private set => SetProperty(ref _duplicateTileCaption, value);
+    }
     private string _heroMessage =
         "No folder of yours is connected, so nothing on your computer can be moved, renamed, or deleted.";
 
@@ -409,6 +433,8 @@ public sealed class DashboardViewModel(
 
     public async Task InitializeAsync()
     {
+        Greeting = GreetingFor(_clock.UtcNow.ToLocalTime());
+
         StorageSummary summary;
         DuplicateReport duplicates;
         try
@@ -465,10 +491,12 @@ public sealed class DashboardViewModel(
             DuplicateDetail = report.FoldersIncluded == 0
                 ? "Connect a folder to look for possible copies."
                 : "No files share a size, so nothing looks duplicated.";
+            DuplicateTileCaption = report.FoldersIncluded == 0 ? "Connect a folder to look" : "Nothing looks duplicated";
             return;
         }
 
         DuplicateHeadline = report.TotalFiles.ToString("N0", CultureInfo.CurrentCulture);
+        DuplicateTileCaption = "Same size, not compared yet";
         DuplicateDetail =
             $"These share an exact size, so up to {DescribeSize(report.ReclaimableBytes)} might be duplicated. "
             + "DeskAI has not compared their contents, so they are not confirmed copies.";

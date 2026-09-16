@@ -112,6 +112,7 @@ changes a feature.
 | Page | Feature | Page tests |
 |---|---|---|
 | Home | Totals, categories, largest files, last checked | `HomeAndShellTests` |
+| Home | Greeting by time of day; the four Quick look tiles (folders, files, sitting unused, possible duplicates) read the remembered numbers, and the duplicates caption stays hedged | `HomeAndShellTests`, `ShellLayoutTests` |
 | Home | Possible copies (same size, never "confirmed") | `HomeAndShellTests` |
 | Home | Check if they're really copies: dialog says what is read first, Cancel reads nothing, identical / different / not checked with reasons, nothing kept, sent, or changed | `CopyCheckPageTests`, `DuplicateCheckTests`, `DuplicateCheckServiceTests`, `FileFingerprinterTests` |
 | Home | Health score with its parts | `HomeAndShellTests` |
