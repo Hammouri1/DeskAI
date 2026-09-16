@@ -43,11 +43,47 @@ public sealed partial class MainWindow : Window
         _notifier = notifier;
         _presence = presence;
         _navigationService.Initialize(ContentFrame);
-        RootNavigation.SelectedItem = RootNavigation.MenuItems[0];
+        RootNavigation.SelectedItem = RootNavigation.MenuItems
+            .OfType<NavigationViewItem>()
+            .First(item => item.Tag is "dashboard");
         _navigationService.Navigate("dashboard");
+        _shell.ShowPage("dashboard");
+        RootNavigation.ActualThemeChanged += (_, _) => ReportTheme();
         AppWindow.Closing += OnClosing;
         _ = RefreshScopeAsync();
     }
+
+    /// <summary>
+    /// Tells the pane's dark-mode switch what the window is actually showing while the saved
+    /// choice is "Follow Windows". The view model cannot see WinUI, so the window reports it.
+    /// </summary>
+    private void ReportTheme() =>
+        _shell?.ReportWindowTheme(RootNavigation.ActualTheme == ElementTheme.Dark);
+
+    /// <summary>The dark-mode switch: saves always-dark or always-light for DeskAI's window only.</summary>
+    private async void OnDarkModeToggled(object sender, RoutedEventArgs args)
+    {
+        if (_shell is null || DarkModeSwitch.IsOn == _shell.IsDark)
+        {
+            // The binding just moved the switch to match the saved choice; nothing to save.
+            return;
+        }
+
+        await _shell.SetDarkAsync(DarkModeSwitch.IsOn);
+    }
+
+    /// <summary>The top-bar search box: opens Search with the phrase already run.</summary>
+    private void OnFindSubmitted(AutoSuggestBox sender, AutoSuggestBoxQuerySubmittedEventArgs args)
+    {
+        if (_shell?.FindFile(args.QueryText) == true)
+        {
+            sender.Text = string.Empty;
+            GoTo("search", fresh: true);
+        }
+    }
+
+    /// <summary>The AI pill only opens Privacy and AI, where the choice it describes is made.</summary>
+    private void OnAiPillClicked(object sender, RoutedEventArgs args) => GoTo("settings", fresh: false);
 
     /// <summary>
     /// Closing the window means hiding it when DeskAI has been asked to keep checking.
@@ -146,6 +182,7 @@ public sealed partial class MainWindow : Window
         if (_shell is not null)
         {
             await _shell.RefreshAsync();
+            ReportTheme();
         }
     }
 
@@ -173,6 +210,7 @@ public sealed partial class MainWindow : Window
     internal void GoTo(string route, bool fresh)
     {
         _navigationService?.Navigate(route, fresh);
+        _shell?.ShowPage(route);
         foreach (var item in RootNavigation.MenuItems)
         {
             if (item is NavigationViewItem { Tag: string tag } menuItem && tag == route)
@@ -205,6 +243,7 @@ public sealed partial class MainWindow : Window
         if (args.InvokedItemContainer?.Tag is string tag)
         {
             _navigationService?.Navigate(tag);
+            _shell?.ShowPage(tag);
             _ = RefreshScopeAsync();
         }
     }

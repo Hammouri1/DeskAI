@@ -754,6 +754,36 @@ folder called `slides`. Never use a personal folder.
 13. Tab through the section and both dialogs with the keyboard only, then with Narrator on.
     Expected: the folder choice, every button, and the text box are reachable and named.
 
+## The command-center look: every page (added 2026-09-16)
+
+Nothing here touches a file. Design: `docs/superpowers/specs/2026-09-16-command-center-redesign-design.md`.
+
+1. Open DeskAI. Expected: the side menu shows "DeskAI" with a small mark at the top, then three
+   small grey labels — **Your files** (Home, Organize, Search), **DeskAI for you** (Automatic
+   tasks, My workspace), **Settings** (Privacy and AI). The chosen page sits on a soft grey pill,
+   not a green one. The menu names are exactly the ones you chose to keep.
+2. Above the page: a top bar with the page name on the left, a **Find a file…** box, and a pill
+   reading **AI off**. Open each page and check the top-bar name matches the menu.
+3. Type `photos` in the box and press Enter. Expected: Search opens with "photos" already run
+   and the menu shows Search selected. Go to Home and back to Search: the box is empty and
+   nothing runs on its own. Press Enter in an empty box: nothing happens.
+4. In Privacy and AI, set up an online service and save. Expected: the pill reads
+   **AI: <service>**. Remove the key: it reads **AI off** again. Press the pill: Privacy and AI
+   opens. It never says a service is on while one is not set up.
+5. At the bottom of the menu, above the green scope reminder: **Dark mode**. Flip it. Expected:
+   the whole window changes at once; on My workspace "Light or dark" now shows Dark (or Light).
+   Close and reopen DeskAI: the choice is kept. Windows' own theme is unchanged.
+6. Choose **Follow Windows** on My workspace, then change the Windows app theme in Settings.
+   Expected: DeskAI follows and the switch shows the theme actually on screen.
+7. Cards have rounder corners everywhere; the green rail on the hero and the scope reminder is
+   unchanged. Try all four looks in both light and dark: the menu panel, the top bar, and the
+   cards take the look; green and orange are the same in every look.
+8. Turn on Windows high contrast. Expected: the top bar, the pills, the menu, and any tinted tile
+   use the high-contrast colours, and every pill still has its icon and word.
+9. Tab through the menu, the top bar, the switch, and the pill with the keyboard only, then with
+   Narrator on. Expected: each is reachable and named ("Find a file", "Dark mode for the DeskAI
+   window", the AI state).
+
 ## My workspace (V0.7, added 2026-09-14)
 
 Use a new folder under Windows Temp with made-up files only: `holiday.jpg`, `notes.txt`,

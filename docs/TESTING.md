@@ -118,6 +118,11 @@ changes a feature.
 | Home | Honest wording about what can change | `HomeAndShellTests` |
 | Side menu | What is connected and whether files are read | `HomeAndShellTests` |
 | Side menu | Notice when a check finds something; opt-in notification | `HomeAndShellTests` |
+| Every page | The grouped menu keeps the six names the owner chose, in the top bar's order, under three plain group labels | `ShellLayoutTests`, `ShellPageTests` |
+| Every page | Top bar: the page name; "Find a file…" opens Search with the phrase already run, once, and a blank phrase does nothing | `ShellPageTests` |
+| Every page | The AI pill says "AI off" until a service is really ready, then names it; pressing it only opens Privacy and AI | `ShellPageTests` |
+| Every page | Dark mode switch: saves light or dark for the DeskAI window only, repaints at once, remembered after reopening, shows what the window paints while following Windows | `ShellPageTests` |
+| Every page | Tile tints exist in dark, light, and high contrast, are never the accent, and no page paints a tile with anything else | `ShellLayoutTests` |
 | Notice | Review in Organize: opens the folder with the most matches, says what its rules place there, asks for permission first if needed, used once, moves nothing | `ReviewInOrganizePageTests` |
 | Organize | Pick or connect a folder; protected folder refused | `TidyPageTests` |
 | Organize | Tidy permission: asked first, allowed, taken back, erased on disconnect | `TidyPageTests`, `SqliteAuthorizedRootRepositoryTests`, `RootCapabilitiesTests` |

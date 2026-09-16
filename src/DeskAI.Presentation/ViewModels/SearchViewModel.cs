@@ -275,16 +275,24 @@ public sealed class SearchViewModel : ObservableObject
 
     /// <summary>
     /// Loads the folder list and saved searches when the page opens, then runs the saved search
-    /// My workspace asked for, if any.
+    /// My workspace asked for, or the phrase typed in the top bar, if any.
     /// </summary>
     /// <remarks>
-    /// The request is taken once. Running it is exactly what pressing Run on that saved search
-    /// does, so arriving from My workspace can show nothing a person could not have asked for here.
+    /// The request is taken once. Running it is exactly what pressing Run on that saved search,
+    /// or typing the phrase here and pressing Search, does, so arriving from elsewhere can show
+    /// nothing a person could not have asked for on this page.
     /// </remarks>
     public async Task InitializeAsync()
     {
         await ReloadFoldersAsync().ConfigureAwait(true);
         await ReloadSavedSearchesAsync().ConfigureAwait(true);
+
+        if (_request.TakePhrase() is { } typed)
+        {
+            Phrase = typed.Length > MaxPhraseLength ? typed[..MaxPhraseLength] : typed;
+            await RunAsync().ConfigureAwait(true);
+            return;
+        }
 
         if (_request.Take() is not { } requestedId)
         {
