@@ -106,7 +106,7 @@ public sealed partial class SettingsPage : Page
         }
     }
 
-    private StackPanel DescribeRestore(RestorePreview preview)
+    private static StackPanel DescribeRestore(RestorePreview preview)
     {
         var panel = new StackPanel { Spacing = 10, MaxWidth = 480 };
         if (!preview.AddsAnything)
