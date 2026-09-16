@@ -42,8 +42,8 @@ public sealed class WallpaperService(IWallpaperSetter setter, IPictureInspector 
 {
     public const long MaxBytes = 50L * 1024 * 1024;
 
-    private const string PreviousKey = "wallpaper.previous";
-    private const string SetKey = "wallpaper.set";
+    public const string PreviousKey = "wallpaper.previous";
+    public const string SetKey = "wallpaper.set";
 
     private static readonly string[] Extensions = [".jpg", ".jpeg", ".png", ".bmp"];
 

@@ -77,6 +77,7 @@ public partial class App : Application
                 services.AddSingleton<INavigationService, NavigationService>();
                 services.AddSingleton<IFolderPickerService, WindowsFolderPickerService>();
                 services.AddSingleton<IPicturePickerService, WindowsPicturePickerService>();
+                services.AddSingleton<IBackupFilePickerService, WindowsBackupFilePickerService>();
                 services.AddSingleton<IFindingNotifier, WindowsFindingNotifier>();
 
                 // Replace, never add alongside. A second registration would leave

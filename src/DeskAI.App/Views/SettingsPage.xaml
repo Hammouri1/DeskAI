@@ -3,6 +3,7 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:DeskAI.App.Controls"
+    xmlns:viewmodels="using:DeskAI.App.ViewModels"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
         <StackPanel Margin="28,24,28,40" MaxWidth="920" HorizontalAlignment="Left" Spacing="22">
@@ -160,6 +161,63 @@
                                    Text="Windows stores it, not DeskAI. Each service has its own separate entry, so a key you save for one company is never sent to another. DeskAI never shows a key again after you save it." />
                     </StackPanel>
                 </Grid>
+            </Border>
+
+            <!--
+                Back up and restore. The file holds rules and saved searches only; both buttons are
+                plain because choosing a file confirms nothing — Restore in the dialog is the yes.
+            -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="14">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Back up and restore" />
+                            <controls:HelpButton Topic="settings.backup" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                   Text="Save your rules and saved searches to a file, or bring them back from one. The file never holds your folders, your keys, or where anything is on your computer." />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Save a backup file…" Click="OnSaveBackupClick" />
+                        <Button Content="Restore from a backup file…" Click="OnRestoreBackupClick" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Visibility="{Binding HasBackupStatus}"
+                               Text="{Binding BackupStatus}" />
+                </StackPanel>
+            </Border>
+
+            <!--
+                Start fresh. It forgets DeskAI's memory and touches no file, and it asks first. Not
+                an accent button: forgetting is not a permission, and a caution word is the honest one.
+            -->
+            <Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="14">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Start fresh" />
+                            <controls:HelpButton Topic="settings.freshStart" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                   Text="Make DeskAI forget everything it remembers: connected folders, rules, saved searches, your AI choice and keys, and its history. Your files stay exactly where they are. Do this before removing DeskAI from your computer." />
+                    </StackPanel>
+                    <Button Content="Start fresh…" Click="OnStartFreshClick" />
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Visibility="{Binding HasFreshStartStatus}"
+                               Text="{Binding FreshStartStatus}" />
+                </StackPanel>
+            </Border>
+
+            <!-- About: the version and where updates are. DeskAI never checks online for a new one. -->
+            <Border Style="{StaticResource SoftCardStyle}">
+                <StackPanel Spacing="4">
+                    <TextBlock FontWeight="SemiBold" Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Text="{x:Bind viewmodels:SettingsViewModel.Version}" />
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                               Text="DeskAI never checks the internet for updates. New versions are published on its GitHub releases page, and your settings stay when you replace the folder." />
+                </StackPanel>
             </Border>
         </StackPanel>
     </ScrollViewer>

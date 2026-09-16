@@ -833,6 +833,46 @@ Use temporary folders of made-up files only.
 6. Repeat 1–5 in light mode, in each look, and in high contrast; every pill keeps its icon and
    word, and nothing is cut off.
 
+## Back up, restore, and Start fresh (V0.8, added 2026-09-16)
+
+Use a temporary folder of made-up files, a rule, and a saved search. Never a personal folder.
+
+1. Open **Privacy and AI** and scroll to **Back up and restore**. Press **Save a backup file…**.
+   Expected: the Windows save dialog, suggesting `DeskAI backup <today>.json`. Cancel: nothing
+   happens. Save it to a temp folder. Expected: a line "Saved 1 rule and 1 saved search to
+   <name>. The file holds no folders, keys, or locations." Open the file in Notepad: rule and
+   search names and phrases only; no folder path, no key, no "IsEnabled".
+2. Delete the rule in Automatic tasks. Press **Restore from a backup file…**, pick the file.
+   Expected: a dialog "Restore from this backup?" listing the rule under Rules and the search
+   under Saved searches with "You already have a search called …" in orange, the green-railed
+   line that restored rules start switched off, and a button **Restore 1**. Esc, Enter, and the
+   X all cancel. Restore: the line says what was restored and skipped; in Automatic tasks the
+   rule is **Off**.
+3. Restore the same file again. Expected: the dialog says nothing would be added and the
+   Restore button is off.
+4. Edit the file in Notepad: change the destination to `..\Windows`. Restore. Expected: the rule
+   is listed with "DeskAI can't use this rule: …" and Restore is off. Pick a `.txt` file, a photo
+   renamed to `.json`, and an empty file. Expected: a plain sentence under the buttons each time,
+   nothing added.
+5. Turn on **Keep checking after I close the window** and save an AI key. Press **Start
+   fresh…**. Expected: a dialog saying exactly what is forgotten and that files are not touched;
+   Cancel changes nothing. Press **Forget everything**. Expected: "Done. DeskAI forgot …"; the
+   side menu says nothing is connected; the icon near the clock is gone; Automatic tasks shows
+   no rules; Search shows no folders; the AI pill reads "AI off"; Credential Manager has no
+   `DeskAI/…` entry; the files in your temp folder are exactly where they were.
+6. The bottom card shows "DeskAI 0.8.0" (or the release version) and says DeskAI never checks
+   for updates. Press the "?" on both new cards and check they read clearly.
+
+## A release zip (V0.8, added 2026-09-16)
+
+1. Push a tag such as `v0.8.0`. Expected: the Release workflow makes a GitHub Release with
+   `DeskAI-0.8.0-win-x64.zip` and `DeskAI-0.8.0-sbom.json`.
+2. On a machine or account without DeskAI, unzip and run `DeskAI.App.exe`. Expected: the
+   unknown-publisher notice described in `docs/INSTALL.md`, then DeskAI opens with nothing
+   connected, and Privacy and AI shows "DeskAI 0.8.0".
+3. Delete the folder. Expected: nothing left in Program Files, the Start menu, or Windows
+   startup; `%LocalAppData%\DeskAI` remains until Start fresh or a manual delete.
+
 ## My workspace (V0.7, added 2026-09-14)
 
 Use a new folder under Windows Temp with made-up files only: `holiday.jpg`, `notes.txt`,

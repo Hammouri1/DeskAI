@@ -178,6 +178,26 @@ A focused review is required before introducing file mutation, Recycle Bin suppo
 
 DeskAI never registers itself to start with Windows: no Run key, no Startup folder, no scheduled task, and no `StartupTask`. It runs when someone opens it and no sooner. This holds in every mode, including running after the window is closed, and is asserted by a test rather than left to intent, because it is a promise the app makes to people in words. Any control that can be reached without a window on screen may stop DeskAI doing something; none may start it. A surface reachable with no window — a notification-area menu, a notification, a hotkey — carries at most a count and a state, never a file name, folder name, or path.
 
+## Backup Files and Start Fresh
+
+Since V0.8 (ADR 0030, review `docs/security/2026-09-16-v0.8-privacy-review.md`) DeskAI can write
+one file a person asked for — a backup of rules and saved searches — at a path they picked in
+the Windows save dialog, and read one back from the open dialog. The file holds no folder, path,
+permission, AI setting, or key. Reading is bounded and strict; every rule in it is rebuilt through
+the same `RuleCodec` and factory checks a typed rule passes, a rule that fails is skipped with a
+reason, a name already in use is never replaced, and a restored rule always arrives switched off,
+so restoring cannot by itself move a file. Start fresh erases DeskAI's memory (folders, index,
+journal, rules, searches, AI choice, every `DeskAI/*` credential, history, settings) and touches
+no file on disk. Neither service holds a scanner, reader, executor, journal, or wallpaper setter.
+
+## Distribution
+
+DeskAI is published as an unsigned self-contained zip on GitHub Releases, built by GitHub
+Actions from a tag, with a CycloneDX bill of materials and a known-vulnerability check that
+fails the build. There is no installer, no registry write, no startup entry, and no self-update:
+DeskAI never contacts a DeskAI server or GitHub from inside the app. See ADR 0030 and
+`docs/INSTALL.md`.
+
 ## Reporting Vulnerabilities
 
 Before public release, add a private security-reporting address/process and `SECURITY.md` repository policy. Do not request public proof-of-concept disclosure for issues that could destroy or expose user data.

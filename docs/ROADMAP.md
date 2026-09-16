@@ -337,12 +337,43 @@ Built one piece at a time, safest first (design:
 - No direct desktop-shell mutation without a dedicated security/recovery design. (Held: the
   wallpaper picture is the one change, reviewed.)
 
-## V0.8 — Extensibility and Distribution (**Future**)
+## V0.8 — Extensibility and Distribution (**Complete — 2026-09-16**)
 
-- Capability-scoped plugin contracts and manifest.
-- Isolation, signing/trust, compatibility, permissions, update, and revocation model before community plugins.
-- Accessibility, localization foundation, performance profiling, crash recovery, import/export, and privacy review.
-- Packaging, installer/uninstaller behavior, GitHub Actions, GitHub Releases, update policy, SBOM/dependency checks, and qualifying open-source code-signing options.
+Design: `docs/superpowers/specs/2026-09-16-v0.8-distribution-design.md`; decisions: ADR 0030;
+privacy review: `docs/security/2026-09-16-v0.8-privacy-review.md`. Built the same day as the
+command-center redesign (`docs/superpowers/specs/2026-09-16-command-center-redesign-design.md`),
+which restyled every page under the same rules and kept the menu names the owner chose.
+
+- ✅ **GitHub builds and tests every push** (`.github/workflows/build.yml`): locked restore,
+  Release build, all tests, format check, and a known-vulnerable-dependency check that fails
+  the run.
+- ✅ **A release zip per tag** (`.github/workflows/release.yml`): self-contained x64 publish with
+  the tag as the version, zipped, with a CycloneDX software bill of materials, attached to a
+  GitHub Release. No installer and no signing (ADR 0030); `docs/INSTALL.md` explains install,
+  update, remove, and the unknown-publisher notice. DeskAI never checks online for updates;
+  Privacy and AI shows the version.
+- ✅ **Back up and restore** on Privacy and AI: a JSON file of rules and saved searches only,
+  written where the person chose; restore previews what would be added and skipped, rebuilds
+  every rule through the same checks a typed one passes, skips names already used, and
+  **restored rules arrive switched off**.
+- ✅ **Start fresh**: after a dialog, DeskAI forgets every folder, rule, search, key, AI choice,
+  history, setting, look, and wallpaper memory. No file is touched. The data-retention control
+  V1.0 asks for.
+- ✅ **Accessibility**: `AccessibilityNameTests` reads the pages so every icon-only button and
+  every input has a name for screen readers; keyboard and Narrator steps stay in the manual lists.
+- ✅ **Performance**: an opt-in probe over 3,000 generated files, recorded in `docs/PERFORMANCE.md`.
+- ✅ **Crash recovery**: already built (ADR 0022's interrupted-tidy recovery, the startup-failure
+  window, the contained unhandled-exception handler); recorded, not rebuilt.
+- **Deferred, recorded in ADR 0030:** add-ons (plugins) until the system is finished, with the
+  boundary they must start from written down; code signing until a certificate exists;
+  localization beyond culture-aware formatting until there is a second language.
+
+The original bullet list is kept for the record:
+
+- Capability-scoped plugin contracts and manifest. (Boundary recorded in ADR 0030; not built.)
+- Isolation, signing/trust, compatibility, permissions, update, and revocation model before community plugins. (Deferred with the above.)
+- Accessibility, localization foundation, performance profiling, crash recovery, import/export, and privacy review. (Done as listed; localization deferred.)
+- Packaging, installer/uninstaller behavior, GitHub Actions, GitHub Releases, update policy, SBOM/dependency checks, and qualifying open-source code-signing options. (Zip, workflows, SBOM, no-self-update policy done; signing options recorded.)
 
 ## V0.9 — Tidy While I'm Away (**Future**)
 

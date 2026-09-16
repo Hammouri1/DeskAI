@@ -185,6 +185,8 @@ Protected entries: 5
 
 Changing from local/rule-only to cloud requires provider selection and a disclosure review. Expanding a disclosure category requires confirmation. Provide controls to remove credentials, revoke a root, clear index/history according to retention rules, and export redacted diagnostics.
 
+**Back up and restore, and Start fresh (V0.8, 2026-09-16).** Two cards at the bottom of Privacy and AI, then an About line with the version. "Save a backup file…" and "Restore from a backup file…" are plain buttons (choosing a file confirms nothing). Restore opens a dialog listing every rule and saved search in the file, with any skip reason in the caution colour, the promise on the accent rail that restored rules start switched off and nothing already here is replaced, and a button that says the count, **Restore 3**, off when nothing would be added; Enter, Esc, and the X cancel. The result is written under the buttons, always naming what was skipped and always saying restored rules are off. "Start fresh…" is a plain button too; its dialog says exactly what is forgotten and that files and the wallpaper on screen are not touched, and its confirming button reads **Forget everything** — a caution word, not the accent, because forgetting is not a permission. The About line says DeskAI never checks the internet for updates.
+
 ## Search and Smart Collections
 
 Always show actual scope (“Searching 3 authorized folders”). Natural-language input translates to visible filter chips so the user can correct interpretation. Results show path context, classification source, and why they matched. A Smart Collection is labeled virtual; saving it does not move files.

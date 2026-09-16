@@ -4,6 +4,7 @@ using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Ai;
+using DeskAI.Core.Backup;
 using DeskAI.Core.Desktop;
 using DeskAI.Core.Rules;
 using DeskAI.Core.Search;
@@ -89,6 +90,10 @@ public static class DeskAiApplicationServices
         services.AddSingleton<WallpaperService>();
         // Which saved search Search runs after "Open in Search". A saved-search ID, nothing more.
         services.AddSingleton<SearchRequest>();
+        // Back up and restore, and Start fresh (V0.8). Neither holds anything that can reach a
+        // file on disk beyond the one backup file the person chose; a test asserts it.
+        services.AddSingleton<BackupService>();
+        services.AddSingleton<FreshStartService>();
         // A DeskAI with no notification area is a legitimate DeskAI: it simply never offers
         // to keep running with no window. The Windows one is registered by the app.
         services.AddSingleton<IBackgroundPresence, NoBackgroundPresence>();

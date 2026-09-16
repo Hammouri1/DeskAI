@@ -183,6 +183,13 @@ changes a feature.
 | Whole app | No test can touch the real wallpaper or the real Desktop: both are replaced in `TestApp`, and the test Desktop is asserted to sit inside the test's own folder and differ from the real one | `DesktopAndWallpaperPageTests`, `TestApp` |
 | Privacy and AI | Sharing choices, AI modes, key storage and removal, daily limit | `SettingsPageTests`, `AiJourneyTests` |
 | Privacy and AI | Pasted key trimmed, spaced key refused, wrong-looking key warned | `SettingsPageTests` |
+| Privacy and AI | Back up: the file holds rules and saved searches and no folder, path, key, or setting; the status says so | `BackupPageTests` |
+| Privacy and AI | Restore: preview adds nothing and names what is skipped and why; restore adds once with new IDs, rules Off, names already used skipped; a second restore adds nothing; pins kept only while there is room | `BackupPageTests` |
+| Privacy and AI | Restore refuses a file that is not a backup, a newer version, a non-.json file, and an oversized file in plain words; a hostile or unknown rule in the file is skipped with a reason and the rest restored | `BackupPageTests` |
+| Privacy and AI | Start fresh forgets every folder, rule, search, key, AI choice, check history and setting, look, and wallpaper memory, hides the icon, and touches no file; the backup and fresh-start services hold nothing that reaches a file | `FreshStartPageTests`, `BackupPageTests` |
+| Privacy and AI | The version line | `FreshStartPageTests` |
+| Every page | Every button without visible text and every box, list, and switch carries a name for screen readers | `AccessibilityNameTests` |
+| Whole app | Performance probe on a few thousand generated files (opt-in, `DESKAI_PERF`), recorded in `docs/PERFORMANCE.md` | `PerformanceProbe` |
 | Organize | Ask AI after turning AI on: one request to the chosen service, rejected key in plain words, removing the key stops it, daily limit | `AiJourneyTests`, `SettingsPageTests`, `CloudSuggestionProviderTests` |
 | Every page | "?" help next to each feature: complete, short, no jargon, placed | `HelpCatalogTests`, `HelpPlacementTests` |
 

@@ -5,6 +5,7 @@ using DeskAI.Core.Plans;
 using DeskAI.Infrastructure.Desktop;
 using DeskAI.Infrastructure.Persistence;
 using DeskAI.Infrastructure.Execution;
+using DeskAI.Infrastructure.Files;
 using DeskAI.Infrastructure.Indexing;
 using DeskAI.Infrastructure.Scanning;
 using DeskAI.Infrastructure.Security;
@@ -43,6 +44,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAiSettingsRepository, SqliteAiSettingsRepository>();
         services.AddSingleton<IAppearanceSettingsRepository, SqliteAppearanceSettingsRepository>();
         services.AddSingleton<IAppSettingsStore, SqliteAppSettingsStore>();
+        // Reads and writes one text file at a path the person chose in a Windows dialog: the backup file.
+        services.AddSingleton<IUserFileStore, UserFileStore>();
         // The one Windows setting DeskAI can change, and the person's Desktop folder, asked from
         // Windows. Page tests replace both, the way they replace the credential vault, so no test
         // can touch the real wallpaper or the real Desktop. See the 2026-09-16 desktop review.

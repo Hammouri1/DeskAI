@@ -211,6 +211,33 @@ navigate to Organize, where `TidyViewModel` takes it and asks permission as usua
 replaces `IWallpaperSetter` with a recording one and `IKnownFolders` with a folder inside its
 own temp directory, and asserts the latter, so no test can reach the real wallpaper or Desktop.
 
+### Back up, restore, and Start fresh (V0.8, ADR 0030)
+
+`DeskAI.Core.Backup` holds `BackupService` and `FreshStartService`; neither takes anything that can
+reach a file on disk, and `BackupPageTests` asserts it by reading their constructors.
+
+`BackupService(IRuleRepository, ISavedSearchRepository, IClock)` turns the stored rules and saved
+searches into a `DeskAiBackup` (version, time, `BackupRule` = name + `RuleConditionData`s +
+`RuleActionData`, `BackupSearch` = name + phrase + pinned) and back. `ToText` serializes with
+`System.Text.Json`; `Parse` is strict (1 MB, unknown members refused, newer version refused, at
+most 200 items). `PreviewAsync` rebuilds every rule through `RuleCodec` and
+`AutomationRule.Create` with `isEnabled: false` and every search through `SavedSearch.Create`,
+marks a name already stored (case-insensitive) or a rule that fails those checks as skipped with
+a reason, and adds nothing. `RestoreAsync` works the plan out again from stored state and saves
+only the accepted lines with new IDs; a pin is kept only while fewer than eight are pinned. The
+on/off flag is not in the file, so "restored rules arrive off" is structural.
+
+`FreshStartService` forgets DeskAI's memory in a fixed order: every folder through
+`ConnectedFolderService.DisconnectAsync` (cascading to index, permissions, plans, journal), any
+root left in the repository, rules, saved searches, every catalog service's credential and the AI
+settings, check history and settings, the look, and the two wallpaper keys. It touches no file.
+
+`IUserFileStore` (Core) is the one contract for a file the person chose in a Windows dialog;
+`UserFileStore` (Infrastructure, `Files/`) accepts only a fully qualified local `.json` path,
+refuses a link and an oversized file before opening, and opens read-only. The app adds
+`IBackupFilePickerService` (`FileSavePicker` / `FileOpenPicker`, `.json` only) beside the other
+pickers; `SettingsViewModel` drives the card and the page shows the preview dialog.
+
 ### DeskAI's look (V0.7 piece D, ADR 0028)
 
 `DeskAI.Core.Appearance` holds `ThemeMode` (follow Windows, light, dark), `LookPalette` (five
