@@ -16,9 +16,10 @@ appending to them.
 
 ## Where things stand
 
-- Updated: 2026-09-16, at the end of the session that closed the roadmap. Branch
-  `v0.7-workspace-profiles` holds everything since V0.5; it was merged into `main` at the end
-  of that session (see "What is left" if the merge is not there — then do it first).
+- Updated: 2026-09-16, after commit `a09fc47` on `main`, tree clean. `v0.5-background-checking`
+  and `v0.7-workspace-profiles` are **merged into `main`** (merge commit `0530a05`); work
+  continues on `main` or a new branch from it. Nothing has been pushed to GitHub from this
+  checkout yet.
 - **The whole roadmap is complete in code, tests, and documents: V0.1–V1.0.** On 2026-09-16 one
   session did, in order, each with its own commit(s): the command-center redesign of every page
   (`docs/superpowers/specs/2026-09-16-command-center-redesign-design.md`), V0.8 (ADR 0030,
@@ -27,14 +28,16 @@ appending to them.
   (`docs/security/2026-09-16-v1.0-release-review.md`, `LICENSE` (MIT), `CONTRIBUTING.md`, root
   `SECURITY.md`, `docs/USER-GUIDE.md`, `docs/INSTALL.md`, `docs/RELEASE-NOTES.md`). Version is
   `1.0.0` in `Directory.Build.props`.
-- Verification at the end: Release build of every project; **1192 tests pass, none skipped**;
-  `dotnet format` clean. The App's final copy into `src\DeskAI.App\bin\x64\Release\...` could
-  not complete because the owner's own `DeskAI.App.exe` was running the whole session and
-  locked the DLLs there; the App was compiled and verified into a scratch folder instead
-  (`dotnet build src/DeskAI.App -c Release -p:OutDir=<somewhere else>`). **Close DeskAI and run
-  the three verification commands once** to get the launchable exe at the usual path.
-- **The owner has not yet seen anything from V0.7 onward running.** Every manual list from
-  "My workspace" to "A release zip" in `MANUAL-TESTING.md` is unreported. The riskiest
+- Verification at the end, with the owner's DeskAI closed: full Release build of
+  `DeskAI.sln`; **1192 tests pass, none skipped**; `dotnet format` clean; the launchable exe is
+  at the usual path below (built 2026-09-16 14:02). While the owner's own `DeskAI.App.exe` is
+  open, the App's final copy step fails with locked DLLs; compile it into a scratch folder then
+  (`dotnet build src/DeskAI.App -c Release -p:OutDir=<somewhere else>`) and ask them to close it
+  for the real build. Three analyzer warnings from before this session remain (see item 5).
+- **The owner has not yet reported on anything from V0.7 onward.** They were given the exe at
+  the end of the session and asked to start with Home, the away switch on Organize, and the
+  backup and Start fresh cards; every manual list from "My workspace" to "A release zip" in
+  `MANUAL-TESTING.md` is unreported. The riskiest
   untested-by-hand spots: the real theme repaint and the real wallpaper call (V0.7), the away
   switch's dialog and the notice with the window closed (V0.9), and the release workflow, which
   has never run on GitHub (no push or tag has been made from this machine's checkout).
@@ -61,7 +64,9 @@ appending to them.
 5. **Small things noticed and left:** three pre-existing analyzer warnings (CA1716 on
    `IWallpaperSetter.Set`, CA1870 in `FolderNameCheck`, CA1838 in `WindowsDesktop`) appear on a
    full rebuild; they were not introduced this session and were left alone to keep the diff
-   honest. `docs/PERFORMANCE.md` has one recorded run; add one after any change to scanning.
+   honest. Renaming `Set` touches a reviewed contract (ADR 0029), so do it as its own small
+   commit with the wallpaper tests. `docs/PERFORMANCE.md` has one recorded run; add one after
+   any change to scanning.
 
 ## Decisions made in conversation, not yet recorded elsewhere
 
