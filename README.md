@@ -124,9 +124,47 @@ tests/
 `Core` references nothing. `AI` references `Core` alone and contains no filesystem API. `App`
 composes the system and holds no filesystem business logic.
 
-## Using DeskAI
+## Getting it and running it
 
-- Install, update, and remove: [docs/INSTALL.md](docs/INSTALL.md)
+There is **no published release yet**, so there is no zip to download from the Releases page.
+Until there is, there are two ways to run DeskAI.
+
+**If someone sent you a zip.** Unzip it wherever you keep programs — for example
+`C:\Apps\DeskAI` — and run `DeskAI.App.exe`. Nothing is installed: no Program Files, no registry,
+no Windows startup entry. Deleting the folder removes the app.
+
+**If you have the source.** You need Windows 11 24H2 or later (64-bit) and the .NET SDK named in
+`global.json`. Then:
+
+```powershell
+git clone https://github.com/Hammouri1/DeskAI.git
+cd DeskAI
+dotnet publish src/DeskAI.App/DeskAI.App.csproj -c Release -r win-x64 --self-contained -p:WindowsAppSDKSelfContained=true -o publish/DeskAI
+```
+
+Run `publish\DeskAI\DeskAI.App.exe`. The build takes a couple of minutes and needs no other
+tools.
+
+### Windows will warn you the first time
+
+DeskAI is **not signed with a paid certificate**, so Windows shows **"Windows protected your
+PC"** the first time you run it. Choose **More info**, then **Run anyway**. This is what Windows
+shows for any unsigned program; it is not a judgement about what the app does. If that is not
+good enough for you, build it from source yourself using the commands above — then the binary is
+one you produced.
+
+### What to expect on first run
+
+DeskAI starts with **no folder connected and AI switched off**. It can see nothing until you
+connect a folder, and it can only ever connect your Desktop, Downloads, Documents, or Pictures.
+Connecting a folder lets DeskAI *list* names, sizes, and dates — not move, rename, delete, or
+open anything. Tidying is a separate permission you give per folder on the Organize page, and
+even then nothing moves until you press Tidy and approve the preview. Everything it does can be
+undone.
+
+To remove it completely: open **Privacy and AI**, press **Start fresh**, then delete the folder.
+
+- Install, update, and remove in detail: [docs/INSTALL.md](docs/INSTALL.md)
 - How the pages work: [docs/USER-GUIDE.md](docs/USER-GUIDE.md)
 - What changed: [docs/RELEASE-NOTES.md](docs/RELEASE-NOTES.md)
 

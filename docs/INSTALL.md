@@ -13,13 +13,20 @@ or Windows startup, and it never checks the internet for updates.
 
 ## Install
 
-1. On the GitHub **Releases** page, download `DeskAI-<version>-win-x64.zip`.
+There is no published release yet, so the Releases page is empty. Until there is one, you will
+either be sent a zip or build one yourself with the commands in the README.
+
+1. Get `DeskAI-<version>-win-x64.zip` — from the GitHub **Releases** page once one exists, or
+   from whoever sent it to you.
 2. Unzip it somewhere you keep programs, for example `C:\Apps\DeskAI`.
 3. Run `DeskAI.App.exe`.
 
 The first time, Windows may show a **"Windows protected your PC"** notice, because the app is
-not yet signed with a paid certificate. Choose **More info**, then **Run anyway**. The zip on the
-Releases page is the only place DeskAI is published; do not run a copy from anywhere else.
+not yet signed with a paid certificate. Choose **More info**, then **Run anyway**.
+
+Once releases exist, the zip on the Releases page will be the only place DeskAI is published, and
+you should not run a copy from anywhere else. Until then, run only a zip from someone you trust
+or one you built yourself from the source.
 
 ## Where DeskAI keeps its memory
 
