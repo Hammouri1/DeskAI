@@ -833,6 +833,47 @@ Use temporary folders of made-up files only.
 6. Repeat 1–5 in light mode, in each look, and in high contrast; every pill keeps its icon and
    word, and nothing is cut off.
 
+## Tidy while I'm away (V0.9, added 2026-09-16)
+
+This is the first thing DeskAI does on its own. Use **only** a new folder under Windows Temp
+with made-up files: `invoice-a.pdf`, `invoice-b.pdf`, `holiday.jpg`, and `Old\invoice-old.pdf`.
+Never a personal folder.
+
+1. Connect the folder, allow tidying, and write a rule "name contains invoice → Sorted" in
+   Automatic tasks. On **Organize**, under the folder bar: a switch **Tidy this folder while I'm
+   away**, off, with "Off. DeskAI moves nothing here on its own." Turn the rule off: the switch
+   is disabled and the line says to turn on a rule first. Turn the rule back on.
+2. Flip the switch. Expected: a dialog "Tidy <folder> while you're away?" naming the rule as a
+   sentence, the 25-file ceiling, what stops it, that it never deletes, and Undo; the confirming
+   button reads **Tidy while I'm away** in green. Esc, Enter, and the X all cancel and the switch
+   goes back off. Flip it again and confirm. Expected: "On since <time>, for 1 rule…".
+3. Press **Check now** in Automatic tasks (or wait for the next check). Expected: the notice
+   "While you were away, DeskAI tidied 2 files in <folder>. Nothing was deleted." In File
+   Explorer: both invoices are in `Sorted`; `holiday.jpg` and `Old\invoice-old.pdf` have not
+   moved; nothing was deleted. Home's pill now reads "Moves files on its own in 1 folder you
+   chose", and Automatic tasks' first card says the narrower promise.
+4. Press **Review in Organize**. Expected: a **While you were away** card first, with the run's
+   count and time and no file names, **Undo the latest run**, and **Got it**. Press Undo: the
+   invoices are back. Close and reopen DeskAI: the card is still there until you press Got it.
+5. Put a file called `invoice-a.pdf` inside `Sorted` yourself and a loose `invoice-a.pdf` at the
+   top, then Check now. Expected: nothing moved; the notice says DeskAI stopped and needs you
+   to look; on Organize the switch is off with an orange line naming the clash.
+6. Turn it on again, then edit or add a rule. Open Organize. Expected: the switch is off with an
+   orange "A rule … since you agreed." line. Turn it on again, then press **Stop tidying this
+   folder**: the switch disappears; allow tidying again: it is off with "Tidying is no longer
+   allowed…" until you turn it on.
+7. Turn on **Keep checking after I close the window**. Expected: the dialog's limit line now
+   says DeskAI also moves what your rules match in the folder you chose, at most 25 files each
+   time. Close the window, add a made-up `invoice-c.pdf`, wait for a check. Expected: it moves,
+   the notification (if on) says "DeskAI tidied 1 file while you were away." with no file name,
+   and the icon's tooltip still shows counts only.
+8. With 30 made-up invoices, Check now. Expected: 25 move, 5 wait; the next check moves the
+   rest.
+9. Open **Privacy and AI** and press **Start fresh**. Expected: the switch is gone with the
+   folder; nothing on disk changed.
+10. Press the "?" next to the switch and check it reads clearly. Tab through the switch, the
+    dialog, and the card with the keyboard, then with Narrator on.
+
 ## Back up, restore, and Start fresh (V0.8, added 2026-09-16)
 
 Use a temporary folder of made-up files, a rule, and a saved search. Never a personal folder.

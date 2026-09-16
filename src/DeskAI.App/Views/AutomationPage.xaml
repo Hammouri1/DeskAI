@@ -60,11 +60,11 @@
                                  Fill="{ThemeResource DeskAccentBrush}" />
                         <TextBlock FontWeight="SemiBold" FontSize="13"
                                    Foreground="{ThemeResource DeskAccentBrush}"
-                                   Text="DeskAI never moves a file on its own" />
+                                   Text="{x:Bind ViewModel.OwnPromise, Mode=OneWay}" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
                                HorizontalAlignment="Left"
-                               Text="DeskAI can look at your connected folders for you and tell you when your rules match something. Looking is all it does: it cannot move, rename, or delete anything from this page. Anything real still goes through the preview where you approve it first." />
+                               Text="{x:Bind ViewModel.OwnPromiseDetail, Mode=OneWay}" />
                 </StackPanel>
             </Border>
             </StackPanel>

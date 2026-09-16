@@ -178,6 +178,22 @@ A focused review is required before introducing file mutation, Recycle Bin suppo
 
 DeskAI never registers itself to start with Windows: no Run key, no Startup folder, no scheduled task, and no `StartupTask`. It runs when someone opens it and no sooner. This holds in every mode, including running after the window is closed, and is asserted by a test rather than left to intent, because it is a promise the app makes to people in words. Any control that can be reached without a window on screen may stop DeskAI doing something; none may start it. A surface reachable with no window — a notification-area menu, a notification, a hotkey — carries at most a count and a state, never a file name, folder name, or path.
 
+## Tidying While Nobody Is Watching
+
+Since V0.9 (ADR 0031, review `docs/security/2026-09-16-tidy-while-away-review.md`) DeskAI can move
+a file on its own, and only under all of these at once: the folder is connected and may be
+tidied; the person turned on "Tidy this folder while I'm away" for it after a dialog naming the
+rules as worded and the ceiling; the file is a loose top-level file that one of those rules,
+unchanged since the yes, places; there is no same-name clash; and fewer than 25 files have moved
+in this run. A run happens only after an automatic check, through `TidyRunService` and the one
+executor with every per-file re-check, journaled and undoable. A rule change, a withdrawn
+permission, a clash, a refused file, or a folder that cannot be looked at turns the mode off
+with the reason shown on Organize. Never a type-placed or AI-placed file, never a subfolder's
+file, never a move out of the folder, never a numbered copy, never a delete. The check service
+holds no executor; `IAwayTidyRunner` is implemented by `AwayTidyService` alone, which holds no AI,
+reader, fingerprinter, credential, or file store. Every "nothing moves by itself" sentence in the
+app follows the mode.
+
 ## Backup Files and Start Fresh
 
 Since V0.8 (ADR 0030, review `docs/security/2026-09-16-v0.8-privacy-review.md`) DeskAI can write

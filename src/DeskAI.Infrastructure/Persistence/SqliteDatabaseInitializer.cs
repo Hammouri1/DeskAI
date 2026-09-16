@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 13;
+    public const int CurrentSchemaVersion = 14;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -46,6 +46,7 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplyAutomaticCheckHistoryMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyTidyPermissionMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplySavedSearchPinMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplyAwayTidyMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
     }
@@ -76,6 +77,53 @@ public sealed partial class SqliteDatabaseInitializer(
                 ALTER TABLE saved_searches ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0;
                 INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (13, $appliedAtUtc);
                 """;
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Adds the standing yes for tidying while away, and the unattended runs (V0.9, ADR 0031).
+    /// </summary>
+    /// <remarks>
+    /// Both cascade with the folder, like the tidy permission, so disconnecting or Start fresh
+    /// ends the mode and forgets its runs. The approval is its own table rather than a column
+    /// on the permission so that granting or withdrawing the permission can never quietly
+    /// grant this; only the dialog's yes writes here.
+    /// </remarks>
+    private static async Task ApplyAwayTidyMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = """
+            CREATE TABLE IF NOT EXISTS away_tidy (
+                root_id          TEXT NOT NULL PRIMARY KEY REFERENCES authorized_roots(id) ON DELETE CASCADE,
+                approved_at_utc  TEXT NOT NULL,
+                rules_json       TEXT NOT NULL,
+                stopped_at_utc   TEXT NULL,
+                stopped_reason   TEXT NULL
+            );
+
+            CREATE TABLE IF NOT EXISTS away_tidy_runs (
+                run_id          TEXT NOT NULL PRIMARY KEY,
+                root_id         TEXT NOT NULL REFERENCES authorized_roots(id) ON DELETE CASCADE,
+                transaction_id  TEXT NULL,
+                ran_at_utc      TEXT NOT NULL,
+                moved           INTEGER NOT NULL,
+                folders_used    INTEGER NOT NULL,
+                skipped         INTEGER NOT NULL,
+                stopped_reason  TEXT NULL,
+                seen_at_utc     TEXT NULL
+            );
+
+            CREATE INDEX IF NOT EXISTS ix_away_tidy_runs_root ON away_tidy_runs(root_id, seen_at_utc, ran_at_utc);
+
+            INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (14, $appliedAtUtc);
+            """;
         command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);

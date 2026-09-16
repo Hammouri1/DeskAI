@@ -33,7 +33,7 @@ public sealed class SqliteDatabaseInitializerTests
 
         // Every migration must record its own number so the upgrade path stays auditable.
         command.CommandText = "SELECT group_concat(version, ',') FROM (SELECT version FROM schema_migrations ORDER BY version);";
-        Assert.Equal("1,2,3,4,5,6,7,8,9,10,11,12,13", await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("1,2,3,4,5,6,7,8,9,10,11,12,13,14", await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public sealed class SqliteDatabaseInitializerTests
         await upgraded.OpenAsync(TestContext.Current.CancellationToken);
         await using var verify = upgraded.CreateCommand();
         verify.CommandText = "SELECT MAX(version) FROM schema_migrations;";
-        Assert.Equal(13L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(14L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
         verify.CommandText = "SELECT is_pinned FROM saved_searches WHERE name = 'Photos';";
         Assert.Equal(0L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
     }

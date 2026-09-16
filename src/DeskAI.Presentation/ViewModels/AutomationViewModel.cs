@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Rules;
+using DeskAI.Core.Tidy;
 
 namespace DeskAI.App.ViewModels;
 
@@ -61,6 +62,8 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
     private readonly AutomaticCheckCoordinator _checks;
     private readonly IClock _clock;
     private readonly BackgroundPresenceController _presence;
+    private readonly AwayTidyService _away;
+    private int _awayFolders;
     private CheckFrequencyOption _selectedFrequency;
     private bool _isPaused;
     private bool _notifyWhenSomethingIsFound;
@@ -87,7 +90,8 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
         IAutomaticCheckHistoryRepository checkHistory,
         AutomaticCheckCoordinator checks,
         IClock clock,
-        BackgroundPresenceController presence)
+        BackgroundPresenceController presence,
+        AwayTidyService away)
     {
         _rules = rules;
         _simulation = simulation;
@@ -96,6 +100,7 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
         _checks = checks;
         _clock = clock;
         _presence = presence;
+        _away = away;
         _selectedFrequency = FrequencyOptions[1];
         CheckNowCommand = new AsyncRelayCommand(CheckNowAsync, () => !IsBusy);
         ClearHistoryCommand = new AsyncRelayCommand(ClearHistoryAsync, () => !IsBusy);
@@ -240,7 +245,20 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
     public bool KeepsRunningWhenClosed => _mode == AutomaticCheckMode.InBackground;
 
     /// <summary>The "More details" paragraph, which changes with the mode.</summary>
-    public string MoreDetails => BackgroundCheckingChoice.MoreDetails(_mode);
+    public string MoreDetails => BackgroundCheckingChoice.MoreDetails(_mode, _awayFolders);
+
+    /// <summary>
+    /// The first card's headline: "never moves a file on its own" only while that is true.
+    /// </summary>
+    /// <remarks>
+    /// Read from the folders with "Tidy while I'm away" on each time the page opens. A promise
+    /// about what DeskAI does is the one sentence that must never outlive its truth (ADR 0031).
+    /// </remarks>
+    public string OwnPromise => AwayTidyWords.Promise(_awayFolders);
+
+    public string OwnPromiseDetail => _awayFolders == 0
+        ? "DeskAI can look at your connected folders for you and tell you when your rules match something. Looking is all it does: it cannot move, rename, or delete anything from this page. Anything real still goes through the preview where you approve it first."
+        : $"DeskAI looks at your connected folders for you and tells you when your rules match something. In the {AwayTidyWords.Folders(_awayFolders)} where you turned on Tidy while I'm away (on Organize), it also moves what your rules match, at most {AwayTidyLimits.MaxFilesPerRun} files each time, and it never deletes anything. Everywhere else, nothing moves until you press Tidy.";
 
     /// <summary>
     /// The words someone is shown before this is turned on. Stores nothing.
@@ -250,7 +268,7 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
     /// actually told, and so that closing the dialog is genuinely a decision not to.
     /// </remarks>
     public BackgroundCheckingQuestion AskAboutKeepingRunning() =>
-        BackgroundCheckingChoice.Ask(CurrentSettings());
+        BackgroundCheckingChoice.Ask(CurrentSettings(), _awayFolders);
 
     /// <summary>The person said yes, together with what they chose about notifications.</summary>
     public async Task KeepRunningAsync(bool notifyWhenSomethingIsFound)
@@ -337,24 +355,24 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
         : (SelectedFrequency.Value, KeepsRunningWhenClosed) switch
         {
             (AutomaticCheckFrequency.OnlyWhenIAsk, _) =>
-                "DeskAI only looks when you press Check now. It never moves anything by itself.",
+                "DeskAI only looks when you press Check now. " + AwayTidyWords.Sentence(_awayFolders),
             (AutomaticCheckFrequency.EveryFifteenMinutes, true) =>
                 "DeskAI keeps looking every 15 minutes, even after you close the window, and "
-                    + "tells you if your rules match anything. It never moves anything by itself.",
+                    + "tells you if your rules match anything. " + AwayTidyWords.Sentence(_awayFolders),
             (AutomaticCheckFrequency.EveryHour, true) =>
                 "DeskAI keeps looking every hour, even after you close the window, and tells "
-                    + "you if your rules match anything. It never moves anything by itself.",
+                    + "you if your rules match anything. " + AwayTidyWords.Sentence(_awayFolders),
             (_, true) =>
                 "DeskAI keeps looking a few times a day, even after you close the window, and "
-                    + "tells you if your rules match anything. It never moves anything by itself.",
+                    + "tells you if your rules match anything. " + AwayTidyWords.Sentence(_awayFolders),
             (AutomaticCheckFrequency.EveryFifteenMinutes, false) =>
                 "While DeskAI is open it looks every 15 minutes and tells you if your rules "
-                    + "match anything. It never moves anything by itself.",
+                    + "match anything. " + AwayTidyWords.Sentence(_awayFolders),
             (AutomaticCheckFrequency.EveryHour, false) =>
                 "While DeskAI is open it looks every hour and tells you if your rules match "
-                    + "anything. It never moves anything by itself.",
+                    + "anything. " + AwayTidyWords.Sentence(_awayFolders),
             _ => "While DeskAI is open it looks a few times a day and tells you if your rules "
-                + "match anything. It never moves anything by itself.",
+                + "match anything. " + AwayTidyWords.Sentence(_awayFolders),
         };
 
     /// <summary>A sentence someone typed, waiting to be read into the form.</summary>
@@ -489,6 +507,10 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
     {
         try
         {
+            _awayFolders = await _away.CountActiveAsync().ConfigureAwait(true);
+            OnPropertyChanged(nameof(OwnPromise));
+            OnPropertyChanged(nameof(OwnPromiseDetail));
+            OnPropertyChanged(nameof(MoreDetails));
             await ReloadAsync().ConfigureAwait(true);
             await LoadCheckSettingsAsync().ConfigureAwait(true);
         }

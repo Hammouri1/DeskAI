@@ -66,12 +66,18 @@ public sealed class DashboardViewModel(
     StorageSummaryService storage,
     DuplicateFinderService duplicates,
     DuplicateCheckService copyCheck,
+    DeskAI.Core.Tidy.AwayTidyService away,
     IClock clock) : ObservableObject, IDisposable
 {
     private readonly StorageSummaryService _storage = storage;
     private readonly DuplicateFinderService _duplicates = duplicates;
     private readonly DuplicateCheckService _copyCheck = copyCheck;
+    private readonly DeskAI.Core.Tidy.AwayTidyService _away = away;
     private readonly IClock _clock = clock;
+    private int _awayFolders;
+
+    /// <summary>The pill on the hero: "Nothing moves by itself" only while that is true (ADR 0031).</summary>
+    public string PromisePill => DeskAI.Core.Tidy.AwayTidyWords.Pill(_awayFolders);
     private bool _isCheckingCopies;
     private string _copyCheckSummary = string.Empty;
     private CancellationTokenSource? _copyCheckStop;
@@ -439,6 +445,8 @@ public sealed class DashboardViewModel(
         DuplicateReport duplicates;
         try
         {
+            _awayFolders = await _away.CountActiveAsync().ConfigureAwait(true);
+            OnPropertyChanged(nameof(PromisePill));
             summary = await _storage.BuildAsync(_clock.UtcNow).ConfigureAwait(true);
             duplicates = await _duplicates.FindAsync().ConfigureAwait(true);
         }
@@ -627,7 +635,10 @@ public sealed class DashboardViewModel(
         HeroMessage =
             "DeskAI remembers names, sizes, and dates for these files. It opens a file only if you "
             + "allowed that for its folder. It moves files only in a folder you allowed it to tidy, "
-            + "only when you press Tidy, and it never deletes anything.";
+            + (_awayFolders == 0
+                ? "only when you press Tidy, "
+                : $"when you press Tidy or, in the {DeskAI.Core.Tidy.AwayTidyWords.Folders(_awayFolders)} where you turned on Tidy while I'm away, on its own, ")
+            + "and it never deletes anything.";
 
         TotalSize = DescribeSize(summary.TotalSizeBytes);
 

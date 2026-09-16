@@ -161,6 +161,11 @@ changes a feature.
 | Automatic tasks | Pause from the icon; the page and the icon never disagree | `BackgroundCheckingPageTests` |
 | Automatic tasks | Wording follows the mode: never claims checking stops on close while it does not, always says nothing moves by itself, always says no Windows startup | `BackgroundCheckingPageTests`, `BackgroundCheckingChoiceTests` |
 | Whole app | Never registers itself to start with Windows | `NeverStartsWithWindowsTests` |
+| Organize | Tidy while I'm away: the switch is off and disabled until tidying is allowed and a rule is on; the dialog names the folder, the rules, and the 25-file ceiling | `AwayTidyPageTests` |
+| Organize | After the yes a check moves only rule-placed loose files (never type-placed, AI, subfolder, or clashing files), at most 25 per run; the away card, the notice, and Undo follow, also after reopening; Got it clears the card | `AwayTidyPageTests` |
+| Organize | A same-name clash stops the run before anything moves; a rule added, edited, toggled, or removed turns the mode off with the reason before the next run and when the folder is shown; withdrawing tidy permission ends it; a busy file stays and the mode stops after the run | `AwayTidyPageTests` |
+| Home, Automatic tasks | Every "nothing moves by itself" promise follows the mode: pill, hero sentence, first card, checking summary, keep-running dialog, More details | `AwayTidyPageTests`, `BackgroundCheckingPageTests` |
+| Whole app | Start fresh and disconnecting end the mode; the away service is the only unattended path, holds no AI, reader, fingerprinter, credential, or file store, and the check service still holds no executor | `AwayTidyPageTests`, `FreshStartPageTests` |
 | Whole app | Launching DeskAI again reveals the running one rather than starting a second | `SingleInstanceDecisionTests` |
 | My workspace | Starter packs: five cards, no Custom; preview lists every search and rule and adds nothing; Add writes what happened on that card; names already used are skipped and named, never replaced; adding twice adds nothing; the 50-search limit | `WorkspacePageTests`, `StarterPackServiceTests`, `StarterPackCatalogTests` |
 | My workspace | A pack's rules arrive Off, change neither Tidy nor a check until turned on, and move no file | `WorkspacePageTests`, `StarterPackServiceTests`, `StarterPackCatalogTests` |

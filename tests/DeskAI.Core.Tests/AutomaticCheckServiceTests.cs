@@ -373,7 +373,7 @@ public sealed class AutomaticCheckServiceTests
         public FakeCheckHistory History { get; } = new();
 
         public AutomaticCheckCoordinator Coordinator() =>
-            new(Service, History, new FixedClock(Now));
+            new(Service, History, new NoAwayTidy(), new FixedClock(Now));
 
         public AutomaticCheckService Service => new(
             new ConnectedFolderService(_folders, Index, _roots),
@@ -398,6 +398,13 @@ public sealed class AutomaticCheckServiceTests
     private sealed class FixedClock(DateTimeOffset now) : IClock
     {
         public DateTimeOffset UtcNow { get; } = now;
+    }
+
+    /// <summary>A DeskAI where no folder has "Tidy while I'm away" on: the runner does nothing.</summary>
+    private sealed class NoAwayTidy : DeskAI.Core.Tidy.IAwayTidyRunner
+    {
+        public Task<DeskAI.Core.Tidy.AwayTidySummary> RunAllAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult(new DeskAI.Core.Tidy.AwayTidySummary(0, 0, null, null, 0));
     }
 
     private sealed class FakeCheckSettings : IAutomaticCheckSettingsRepository

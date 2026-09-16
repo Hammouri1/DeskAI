@@ -70,7 +70,7 @@
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <FontIcon FontSize="12" Glyph="&#xE72E;"
                                               Foreground="{ThemeResource DeskTextSecondaryBrush}" />
-                                    <TextBlock Style="{StaticResource PillTextStyle}" Text="Nothing moves by itself" />
+                                    <TextBlock Style="{StaticResource PillTextStyle}" Text="{x:Bind ViewModel.PromisePill, Mode=OneWay}" />
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource PillStyle}">

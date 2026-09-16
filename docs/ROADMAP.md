@@ -375,7 +375,38 @@ The original bullet list is kept for the record:
 - Accessibility, localization foundation, performance profiling, crash recovery, import/export, and privacy review. (Done as listed; localization deferred.)
 - Packaging, installer/uninstaller behavior, GitHub Actions, GitHub Releases, update policy, SBOM/dependency checks, and qualifying open-source code-signing options. (Zip, workflows, SBOM, no-self-update policy done; signing options recorded.)
 
-## V0.9 — Tidy While I'm Away (**Future**)
+## V0.9 — Tidy While I'm Away (**Complete — 2026-09-16**)
+
+Built after its security review (`docs/security/2026-09-16-tidy-while-away-review.md`), ADR 0031,
+and design (`docs/superpowers/specs/2026-09-16-tidy-while-away-design.md`), from the owner's
+choice "Move a few, then wait":
+
+- ✅ A per-folder switch on Organize, **Tidy this folder while I'm away**, offered only where
+  tidying is already allowed and at least one rule is on. Turning it on opens a dialog naming
+  the folder, the rules as worded, and the ceiling; its yes records `AwayTidyApproval` (the
+  folder and every enabled rule at its version) in its own cascading table (schema 14).
+- ✅ After each automatic check — including after the window is closed, if that is on —
+  `AwayTidyService` runs once per folder with the yes: only loose files a switched-on rule
+  places, never a type-placed or AI-placed file, never a subfolder's file, never a same-name
+  clash, at most **25 files per run**, through the same `TidyRunService` and executor as a
+  hand tidy, journaled and undoable.
+- ✅ Anything unexpected stops it with the reason kept and shown: a rule edited, added,
+  removed, or toggled (checked before every run and whenever the folder is shown); tidy
+  permission withdrawn; a clash (the run stops before anything moves); a file the executor
+  refused (the rest move, then the mode turns off); a folder that cannot be looked at.
+- ✅ Undo first: a "While you were away" card above everything on Organize with the runs
+  (counts and times, never a file name), **Undo the latest run**, and **Got it**; the notice in
+  the window says the count and folder and offers Review in Organize; the notification, if on,
+  carries a count only. Runs survive reopening.
+- ✅ Every "nothing moves by itself" promise — Home's pill and sentence, Automatic tasks' first
+  card and checking summary, the keep-running dialog and More details, the help topics — says
+  the narrower truth while any folder has the mode on, and the old sentence when none does.
+- ✅ Containment: `AutomaticCheckService` still holds no executor; the coordinator holds only
+  `IAwayTidyRunner`, which `AwayTidyService` alone implements; it holds no AI, reader,
+  fingerprinter, credential, or file store. Start fresh and disconnecting end the mode.
+- Nothing permanently deleted, unattended or otherwise. Unchanged.
+
+The original text is kept for the record:
 
 Goal: let a rule that has already been approved carry itself out while nobody is watching.
 

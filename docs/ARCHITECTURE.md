@@ -211,6 +211,30 @@ navigate to Organize, where `TidyViewModel` takes it and asks permission as usua
 replaces `IWallpaperSetter` with a recording one and `IKnownFolders` with a folder inside its
 own temp directory, and asserts the latter, so no test can reach the real wallpaper or Desktop.
 
+### Tidy while I'm away (V0.9, ADR 0031)
+
+`DeskAI.Core.Tidy.AwayTidyApproval` is the standing yes: the folder and every enabled rule at its
+version, with `Covers(rules)` returning the same `RuleApprovalCheck` statuses ADR 0016 uses, minus
+the outcome fingerprint. `AwayTidyRun` records one unattended run (counts, time, transaction,
+stop reason, seen time). `IAwayTidyRepository` / `SqliteAwayTidyRepository` store both in
+`away_tidy` and `away_tidy_runs` (schema 14), cascading with the folder; the approval insert
+selects through `tidy_permissions`, so a yes for a folder that may not be tidied inserts nothing.
+
+`AwayTidyService` implements `IAwayTidyRunner`, the one parameter `AutomaticCheckCoordinator`
+takes that can move a file (`AutomaticCheckService` still takes none). After a check that ran,
+the coordinator calls `RunAllAsync`, which for each active approval re-checks the rules, the
+folder, and the permission, asks `TidySuggestionService` for the ordinary preview with no AI
+advice and no keep-both choices, refuses on a scan problem or any rule-placed clash, takes at
+most `AwayTidyLimits.MaxFilesPerRun` rule-placed moves, and runs them through
+`TidyRunService.TidyAsync` — the same approval, executor, journal, and per-file re-checks as a
+hand tidy. A refused file stops the mode after the run. The coordinator raises `Tidied` with an
+`AwayTidySummary` (counts, one folder name, the folder to review), which `ShellViewModel` turns
+into the notice and a count-only notification. `AwayTidyWords` holds the sentences every page
+uses so no promise can drift from the mode: `TidyViewModel` (switch, line, card),
+`DashboardViewModel` (pill, hero sentence), `AutomationViewModel` (first card, summary), and
+`BackgroundCheckingChoice.Ask/MoreDetails` (the keep-running dialog) all read
+`CountActiveAsync`.
+
 ### Back up, restore, and Start fresh (V0.8, ADR 0030)
 
 `DeskAI.Core.Backup` holds `BackupService` and `FreshStartService`; neither takes anything that can

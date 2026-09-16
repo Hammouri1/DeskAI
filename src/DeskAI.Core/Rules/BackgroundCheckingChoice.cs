@@ -33,14 +33,25 @@ public sealed record BackgroundCheckingQuestion(
 public static class BackgroundCheckingChoice
 {
     /// <summary>The dialog shown before the mode is turned on. Asking, not announcing.</summary>
-    public static BackgroundCheckingQuestion Ask(AutomaticCheckSettings settings) => new(
+    public static BackgroundCheckingQuestion Ask(AutomaticCheckSettings settings) => Ask(settings, awayFolders: 0);
+
+    /// <param name="awayFolders">
+    /// How many folders have "Tidy while I'm away" on. With none, the limit line says checking
+    /// does not tidy; with any, it says the narrower truth, because a dialog that promised
+    /// otherwise would be the one promise that lied (ADR 0031).
+    /// </param>
+    public static BackgroundCheckingQuestion Ask(AutomaticCheckSettings settings, int awayFolders) => new(
         Title: "Keep DeskAI running after you close the window?",
         Body: "DeskAI will stay near the clock and keep looking at the folders you connected. "
             + "It will not add itself to Windows startup — after you restart or sign out, it only "
             + "runs again when you open it.",
-        LimitLine: "A check can tell you how many files your rules match. It cannot move, rename, "
-            + "or delete anything. So leaving DeskAI on keeps that number up to date; it does not "
-            + "tidy while you are away.",
+        LimitLine: awayFolders == 0
+            ? "A check can tell you how many files your rules match. It cannot move, rename, "
+                + "or delete anything. So leaving DeskAI on keeps that number up to date; it does not "
+                + "tidy while you are away."
+            : "A check tells you how many files your rules match. In the "
+                + $"{Tidy.AwayTidyWords.Folders(awayFolders)} where you turned on Tidy while I'm away, it also moves what your "
+                + $"rules match, at most {Tidy.AwayTidyLimits.MaxFilesPerRun} files each time, and never deletes anything.",
         NotifyLabel: "Tell me with a Windows notification when something is found",
         NotifyCaption: "With this off, you'll see what it found the next time you open DeskAI.",
         NotifyWhenSomethingIsFound: settings.NotifyWhenSomethingIsFound,
@@ -92,16 +103,23 @@ public static class BackgroundCheckingChoice
     /// is derived. The startup sentence and the moves-nothing sentence stay in both, because
     /// they are true in both.
     /// </remarks>
-    public static string MoreDetails(AutomaticCheckMode mode)
+    public static string MoreDetails(AutomaticCheckMode mode) => MoreDetails(mode, awayFolders: 0);
+
+    public static string MoreDetails(AutomaticCheckMode mode, int awayFolders)
     {
         var opening = mode == AutomaticCheckMode.InBackground
             ? "Checking carries on after you close the window, until you quit DeskAI from the icon "
                 + "near the clock, sign out, or restart."
             : "Checking happens only while DeskAI is open. Closing it stops everything.";
 
+        var moving = awayFolders == 0
+            ? "and it does not move anything."
+            : $"and it moves files only in the {Tidy.AwayTidyWords.Folders(awayFolders)} where you turned on "
+                + "Tidy while I'm away, only what your rules match.";
+
         return opening
             + " DeskAI does not add itself to Windows startup. A check re-reads the names, sizes, "
-            + "and dates of files in the folders you connected — it does not open them, and it "
-            + "does not move anything.";
+            + "and dates of files in the folders you connected — it does not open them, "
+            + moving;
     }
 }

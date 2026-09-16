@@ -97,6 +97,60 @@
                                Foreground="{ThemeResource DeskTextPrimaryBrush}"
                                Visibility="{x:Bind ViewModel.HasReviewNote, Mode=OneWay}"
                                Text="{x:Bind ViewModel.ReviewNote, Mode=OneWay}" />
+
+                    <!--
+                        Tidy while I'm away (V0.9, ADR 0031): the standing yes for this folder. Turning it
+                        on opens a dialog naming the rules and the ceiling; off needs none. The line
+                        under it says the state, in the caution colour when DeskAI stopped it and why.
+                    -->
+                    <StackPanel Spacing="4" Margin="0,6,0,0" Visibility="{x:Bind ViewModel.HasAwaySwitch, Mode=OneWay}">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <ToggleSwitch x:Name="AwaySwitch"
+                                          Header="Tidy this folder while I'm away"
+                                          OnContent="On" OffContent="Off"
+                                          IsEnabled="{x:Bind ViewModel.CanUseAwaySwitch, Mode=OneWay}"
+                                          IsOn="{x:Bind ViewModel.IsAwayOn, Mode=OneWay}"
+                                          Toggled="OnAwayToggled"
+                                          AutomationProperties.Name="Tidy this folder while I'm away" />
+                            <controls:HelpButton VerticalAlignment="Top" Topic="organize.away" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                                   Visibility="{x:Bind ViewModel.AwayLineIsPlain, Mode=OneWay}"
+                                   Text="{x:Bind ViewModel.AwayLine, Mode=OneWay}" />
+                        <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                                   Foreground="{ThemeResource DeskCautionBrush}"
+                                   Visibility="{x:Bind ViewModel.AwayLineIsCaution, Mode=OneWay}"
+                                   Text="{x:Bind ViewModel.AwayLine, Mode=OneWay}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!--
+                What DeskAI did while nobody was watching. First, above everything else, because
+                undo is the primary control for an unattended run: the Undo here is the same Undo
+                as any tidy, for the latest run. Lines carry counts and times, never a file name.
+            -->
+            <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasAwayRuns, Mode=OneWay}">
+                <StackPanel Spacing="10" MaxWidth="640" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon FontSize="16" Glyph="&#xE823;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="While you were away" />
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.AwayRuns}" AutomationProperties.Name="What DeskAI did while you were away">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                           Foreground="{ThemeResource DeskTextPrimaryBrush}" Text="{x:Bind}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Undo the latest run" Click="OnUndoClick"
+                                Visibility="{x:Bind ViewModel.CanUndo, Mode=OneWay}" />
+                        <Button Content="Got it" Command="{x:Bind ViewModel.GotItCommand}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                               Text="Nothing was deleted. Undo puts back the files from the latest run if they have not changed since." />
                 </StackPanel>
             </Border>
 

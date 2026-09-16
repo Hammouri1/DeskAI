@@ -56,6 +56,10 @@ public static class DeskAiApplicationServices
         // change a file, and it sends only after the page has shown what would be sent.
         services.AddSingleton<TidyAiService>();
         services.AddSingleton<TidyRunService>();
+        // Tidy while I'm away (V0.9, ADR 0031): the one type reachable from an automatic check that
+        // can move a file, under a standing approval with a hard ceiling. A test names it as such.
+        services.AddSingleton<AwayTidyService>();
+        services.AddSingleton<IAwayTidyRunner>(provider => provider.GetRequiredService<AwayTidyService>());
         services.AddSingleton<FileSearchService>();
         services.AddSingleton<ConnectedFolderService>();
         // The only service that opens a file. It refuses any folder that was not

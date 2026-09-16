@@ -12,6 +12,9 @@ public sealed record TidyFolderOption(Guid Id, string Name, string Path, bool Ca
     public override string ToString() => Name;
 }
 
+/// <summary>What the dialog before "Tidy while I'm away" says: the folder, the rules as worded, the ceiling.</summary>
+public sealed record AwayTidyQuestion(string Title, string Intro, IReadOnlyList<string> Rules, string Promise);
+
 /// <summary>A file DeskAI will not touch, with the reason in plain words.</summary>
 public sealed record TidyLeftAloneViewModel(string FileName, string Reason);
 
@@ -210,13 +213,17 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     private Guid? _reviewFolderId;
     private string _reviewNote = string.Empty;
 
+    private readonly AwayTidyService _away;
+    private AwayTidyStatus? _awayStatus;
+
     public TidyViewModel(
         ConnectedFolderService folders,
         TidyPermissionService permission,
         TidySuggestionService suggestions,
         TidyAiService ai,
         TidyRunService run,
-        OrganizeRequest request)
+        OrganizeRequest request,
+        AwayTidyService away)
     {
         _folders = folders;
         _permission = permission;
@@ -224,6 +231,8 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         _ai = ai;
         _run = run;
         _request = request;
+        _away = away;
+        GotItCommand = new AsyncRelayCommand(GotItAsync, () => HasAwayRuns);
         TidyCommand = new AsyncRelayCommand(TidyAsync, () => CanPressTidy);
         UndoCommand = new AsyncRelayCommand(() => UndoLastTidyAsync(), () => CanUndo && !IsTidying);
         StopTidyingCommand = new AsyncRelayCommand(StopTidyingAsync, () => SelectedFolder?.CanTidy == true && !IsBusy);
@@ -234,6 +243,156 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
 
     /// <summary>"Keep them", or "OK" when there is nothing to put back.</summary>
     public AsyncRelayCommand KeepInterruptedCommand { get; }
+
+    // Tidy while I'm away (V0.9, ADR 0031). The switch, its line, and the card of runs the
+    // person has not looked at. The status is read from AwayTidyService each time the folder
+    // loads, which also turns the mode off with the reason if the rules no longer match the yes.
+
+    /// <summary>The switch is offered only where tidying is already allowed.</summary>
+    public bool HasAwaySwitch => SelectedFolder is { CanTidy: true };
+
+    public bool IsAwayOn => _awayStatus?.IsOn == true;
+
+    /// <summary>On when it can be turned on, or is on and so can be turned off.</summary>
+    public bool CanUseAwaySwitch => _awayStatus is { } status && (status.CanTurnOn || status.IsOn);
+
+    public string AwayLine => _awayStatus?.Line ?? string.Empty;
+
+    public bool AwayLineIsCaution => _awayStatus?.IsCaution == true;
+
+    public bool AwayLineIsPlain => !AwayLineIsCaution;
+
+    /// <summary>What DeskAI did while nobody was watching, one line per run, never a file name.</summary>
+    public ObservableCollection<string> AwayRuns { get; } = [];
+
+    public bool HasAwayRuns => AwayRuns.Count > 0;
+
+    /// <summary>"Got it": the runs have been looked at. Undo, if wanted, is the same Undo as any tidy.</summary>
+    public AsyncRelayCommand GotItCommand { get; }
+
+    /// <summary>
+    /// What the dialog before the yes must say: the folder, the rules as worded, and the ceiling.
+    /// </summary>
+    /// <returns>The question, or null when the switch cannot be turned on right now.</returns>
+    public async Task<AwayTidyQuestion?> PrepareAwayQuestionAsync()
+    {
+        if (SelectedFolder is not { CanTidy: true } folder)
+        {
+            return null;
+        }
+
+        var rules = await _away.EnabledRulesAsync().ConfigureAwait(true);
+        if (rules.Count == 0)
+        {
+            return null;
+        }
+
+        return new AwayTidyQuestion(
+            $"Tidy {folder.Name} while you're away?",
+            $"Whenever DeskAI checks your folders — and after you close the window, if you turned that on — it will move loose files in {folder.Name} that these rules match, into folders inside {folder.Name}:",
+            rules.Select(rule => rule.Describe()).ToArray(),
+            $"At most {AwayTidyLimits.MaxFilesPerRun} files each time. It stops and waits for you if a rule changes, a file is in the way, "
+                + $"or a file can't be moved. It never deletes anything and never moves a file out of {folder.Name}. You can undo every run here.");
+    }
+
+    /// <summary>The dialog's yes. Records the rules as they are now.</summary>
+    public async Task TurnAwayOnAsync()
+    {
+        if (SelectedFolder is not { } folder)
+        {
+            return;
+        }
+
+        try
+        {
+            ShowAway(await _away.TurnOnAsync(folder.Id).ConfigureAwait(true));
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            Message = $"DeskAI could not turn that on: {exception.Message}";
+        }
+    }
+
+    public async Task TurnAwayOffAsync()
+    {
+        if (SelectedFolder is not { } folder)
+        {
+            return;
+        }
+
+        try
+        {
+            ShowAway(await _away.TurnOffAsync(folder.Id).ConfigureAwait(true));
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            Message = $"DeskAI could not turn that off: {exception.Message}";
+        }
+    }
+
+    private async Task GotItAsync()
+    {
+        if (SelectedFolder is not { } folder)
+        {
+            return;
+        }
+
+        try
+        {
+            await _away.MarkSeenAsync(folder.Id).ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            Message = $"DeskAI could not note that: {exception.Message}";
+            return;
+        }
+
+        AwayRuns.Clear();
+        OnPropertyChanged(nameof(HasAwayRuns));
+        GotItCommand.NotifyCanExecuteChanged();
+    }
+
+    private async Task LoadAwayAsync(TidyFolderOption folder)
+    {
+        try
+        {
+            var status = await _away.GetStatusAsync(folder.Id).ConfigureAwait(true);
+            var runs = await _away.ListUnseenAsync(folder.Id).ConfigureAwait(true);
+            if (SelectedFolder?.Id != folder.Id)
+            {
+                return;
+            }
+
+            ShowAway(status);
+            AwayRuns.Clear();
+            foreach (var run in runs)
+            {
+                var when = run.RanAtUtc.ToLocalTime();
+                AwayRuns.Add(run.Moved > 0
+                    ? $"While you were away, DeskAI tidied {Files(run.Moved)} into {FolderCount(run.FoldersUsed)} at {when:t} on {when:d}."
+                        + (run.StoppedReason is { } then ? $" Then it stopped: {then}" : string.Empty)
+                    : $"DeskAI stopped tidying while you're away at {when:t} on {when:d}: {run.StoppedReason}");
+            }
+
+            OnPropertyChanged(nameof(HasAwayRuns));
+            GotItCommand.NotifyCanExecuteChanged();
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            Message = $"DeskAI could not read the away setting: {exception.Message}";
+        }
+    }
+
+    private void ShowAway(AwayTidyStatus? status)
+    {
+        _awayStatus = status;
+        OnPropertyChanged(nameof(HasAwaySwitch));
+        OnPropertyChanged(nameof(IsAwayOn));
+        OnPropertyChanged(nameof(CanUseAwaySwitch));
+        OnPropertyChanged(nameof(AwayLine));
+        OnPropertyChanged(nameof(AwayLineIsCaution));
+        OnPropertyChanged(nameof(AwayLineIsPlain));
+    }
 
     /// <summary>Files DeskAI could not tell about after the interruption, with where to look.</summary>
     public ObservableCollection<TidyLeftAloneViewModel> InterruptedFiles { get; } = [];
@@ -1047,6 +1206,19 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         if (SelectedFolder is { } shown && _historyFolderId != shown.Id)
         {
             await LoadHistoryAsync(shown).ConfigureAwait(true);
+        }
+
+        // The away switch and its runs, every time: the status check is what turns the mode off
+        // when a rule changed, and the person must see that the moment they look.
+        if (SelectedFolder is { } shownAway)
+        {
+            await LoadAwayAsync(shownAway).ConfigureAwait(true);
+        }
+        else
+        {
+            ShowAway(null);
+            AwayRuns.Clear();
+            OnPropertyChanged(nameof(HasAwayRuns));
         }
 
         if (SelectedFolder is not { CanTidy: true } folder)

@@ -74,7 +74,41 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
         // notice is shown directly.
         _uiContext = SynchronizationContext.Current;
         _checks.Checked += OnChecked;
+        _checks.Tidied += OnTidied;
         DismissFindingCommand = new RelayCommand(() => HasFinding = false);
+    }
+
+    /// <summary>
+    /// Tidying while away moved something, or stopped and needs a person. The notice says the
+    /// count and the folder's name and offers Review in Organize; the notification, if on,
+    /// carries the count only.
+    /// </summary>
+    private void OnTidied(object? sender, DeskAI.Core.Tidy.AwayTidySummary summary)
+    {
+        var where = summary.FolderName is { } name ? $" in {name}" : string.Empty;
+        var message = summary.MovedAnything
+            ? $"While you were away, DeskAI tidied {DeskAI.Core.Tidy.AwayTidyWords.Files(summary.FilesMoved)}{where}. Nothing was deleted."
+            : $"DeskAI stopped tidying while you're away{where} and needs you to look.";
+        var notification = summary.MovedAnything
+            ? $"DeskAI tidied {DeskAI.Core.Tidy.AwayTidyWords.Files(summary.FilesMoved)} while you were away. Open DeskAI to look."
+            : "DeskAI stopped tidying while you're away. Open DeskAI to look.";
+
+        void Show()
+        {
+            FindingMessage = message;
+            _folderToReview = summary.FolderToReview;
+            OnPropertyChanged(nameof(CanReviewInOrganize));
+            HasFinding = true;
+            _ = NotifyIfAskedAsync(notification, raw: true);
+        }
+
+        if (_uiContext is null || SynchronizationContext.Current == _uiContext)
+        {
+            Show();
+            return;
+        }
+
+        _uiContext.Post(_ => Show(), null);
     }
 
     public RelayCommand DismissFindingCommand { get; }
@@ -297,14 +331,14 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
         _uiContext.Post(_ => Show(), null);
     }
 
-    private async Task NotifyIfAskedAsync(string message)
+    private async Task NotifyIfAskedAsync(string message, bool raw = false)
     {
         try
         {
             var settings = await _checkSettings.LoadAsync().ConfigureAwait(true);
             if (settings.NotifyWhenSomethingIsFound)
             {
-                _notifier.Notify("DeskAI", $"{message} Open DeskAI to look.");
+                _notifier.Notify("DeskAI", raw ? message : $"{message} Open DeskAI to look.");
             }
         }
         catch (Exception exception) when (exception is InvalidOperationException
@@ -325,6 +359,7 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
 
         _disposed = true;
         _checks.Checked -= OnChecked;
+        _checks.Tidied -= OnTidied;
     }
 
     public string ScopeTitle
