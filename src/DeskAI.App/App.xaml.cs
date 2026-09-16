@@ -76,6 +76,7 @@ public partial class App : Application
                 services.AddDeskAiApplication(Path.Combine(appStateDirectory, "deskai.db"), protectedPaths);
                 services.AddSingleton<INavigationService, NavigationService>();
                 services.AddSingleton<IFolderPickerService, WindowsFolderPickerService>();
+                services.AddSingleton<IPicturePickerService, WindowsPicturePickerService>();
                 services.AddSingleton<IFindingNotifier, WindowsFindingNotifier>();
 
                 // Replace, never add alongside. A second registration would leave

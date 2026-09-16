@@ -140,6 +140,41 @@ internal sealed class RecordingAiTransport : IAiHttpTransport
     }
 }
 
+/// <summary>
+/// Stands in for Windows' wallpaper: remembers what it was set to. The real one is never in a
+/// test, so no test can change the developer's wallpaper.
+/// </summary>
+internal sealed class RecordingWallpaperSetter : IWallpaperSetter
+{
+    /// <summary>What Windows "shows": a path, an empty string for a plain colour, or null when it will not say.</summary>
+    public string? Current { get; set; } = string.Empty;
+
+    /// <summary>Every path it was asked to set, in order.</summary>
+    public List<string> Sets { get; } = [];
+
+    /// <summary>When set, the next Set refuses with this reason, as Windows would under a policy.</summary>
+    public string? RefuseWith { get; set; }
+
+    public string? ReadCurrent() => Current;
+
+    public void Set(string imagePath)
+    {
+        if (RefuseWith is { } reason)
+        {
+            throw new InvalidOperationException(reason);
+        }
+
+        Sets.Add(imagePath);
+        Current = imagePath;
+    }
+}
+
+/// <summary>The person's "Desktop", inside the test's own temp folder. Never the real one.</summary>
+internal sealed class SandboxKnownFolders(string desktop) : IKnownFolders
+{
+    public string? Desktop { get; set; } = desktop;
+}
+
 /// <summary>Stands in for the window painter: remembers every look it was asked to apply.</summary>
 internal sealed class RecordingAppearanceApplier : IAppearanceApplier
 {

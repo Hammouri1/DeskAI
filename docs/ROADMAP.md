@@ -310,14 +310,32 @@ Built one piece at a time, safest first (design:
   keeps the shared text readable. Applied to the DeskAI window at once and at startup before it
   shows; stored in the existing key/value settings table; unknown values fall back to Slate.
   Changes nothing in Windows and no file.
-- E: Desktop layouts, icons, shortcuts, and wallpaper. Changes Windows, so it is a `SECURITY.md`
-  review gate. Not started.
+- ✅ E, 2026-09-16: **Desktop and wallpaper** (ADR 0029, review
+  `docs/security/2026-09-16-desktop-and-wallpaper-review.md`), scoped by the owner that day.
+  **Wallpaper:** pick one picture in the Windows file dialog, see it, press "Use as wallpaper";
+  the old wallpaper is written down before the change and "Put the old wallpaper back" restores
+  it, also after reopening. Only a plain local JPG/PNG/BMP under 50 MB; DeskAI never lists
+  folders for pictures and never makes or downloads one. This is DeskAI's first change to a
+  Windows setting, and the only one. **Desktop:** "Tidy my Desktop" connects the Desktop folder
+  through the known-folder API (names, sizes, dates) and opens it in Organize, where the
+  ordinary permission, preview, Tidy, and undo apply; shortcuts are left alone. Tests never touch
+  the real wallpaper or Desktop: both are replaced in `TestApp` and asserted to be sandboxed.
+- **Deferred beyond V0.7 (owner, 2026-09-16):** shortcut and icon suggestions, desktop layout
+  previews, and local image generation. Each would need new executor commands or a new
+  source of pictures, and its own review. There is still no desktop-shell mutation beyond the
+  wallpaper picture.
 
-- Student, Developer, Gaming, Productivity, Minimal, and Custom profiles.
-- Folder templates, pinned Smart Collections, and workspace setup suggestions.
-- Desktop layout previews and safe shortcut/icon suggestions.
+**V0.7 is complete as of 2026-09-16.** The original bullet list for it is kept for the record:
+
+- Student, Developer, Gaming, Productivity, Minimal, and Custom profiles. (Built as one-time
+  starter packs; no Custom, by ADR 0026.)
+- Folder templates, pinned Smart Collections, and workspace setup suggestions. (Templates and
+  pinned searches built; "setup suggestions" are the packs.)
+- Desktop layout previews and safe shortcut/icon suggestions. (Deferred, see above.)
 - Themes and wallpapers; local image generation only after hardware/license/privacy design.
-- No direct desktop-shell mutation without a dedicated security/recovery design.
+  (Looks and wallpaper built; generation deferred.)
+- No direct desktop-shell mutation without a dedicated security/recovery design. (Held: the
+  wallpaper picture is the one change, reviewed.)
 
 ## V0.8 — Extensibility and Distribution (**Future**)
 

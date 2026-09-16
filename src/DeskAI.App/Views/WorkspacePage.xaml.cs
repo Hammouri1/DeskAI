@@ -1,3 +1,4 @@
+using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.Core.Templates;
 using DeskAI.Core.Workspace;
@@ -20,12 +21,85 @@ public sealed class PackLine(string name, string description, string? note)
 
 public sealed partial class WorkspacePage : Page
 {
-    public WorkspacePage(WorkspaceViewModel viewModel)
+    private readonly IPicturePickerService _picturePicker;
+
+    public WorkspacePage(WorkspaceViewModel viewModel, IPicturePickerService picturePicker)
     {
         InitializeComponent();
         ViewModel = viewModel;
+        _picturePicker = picturePicker;
         DataContext = viewModel;
         Loaded += OnLoaded;
+    }
+
+    /// <summary>
+    /// Lets the person pick one picture, shows it, and makes it the wallpaper only if the
+    /// dialog's button is pressed.
+    /// </summary>
+    private async void OnChoosePictureClick(object sender, RoutedEventArgs e)
+    {
+        if (((App)Application.Current).MainAppWindow is not { } window)
+        {
+            return;
+        }
+
+        var picked = await _picturePicker.PickPictureAsync(WinRT.Interop.WindowNative.GetWindowHandle(window));
+        if (picked.Outcome == FolderPickOutcome.Unavailable)
+        {
+            await ViewModel.PreviewWallpaperAsync(null);
+            return;
+        }
+
+        if (!picked.WasPicked)
+        {
+            return;
+        }
+
+        var preview = await ViewModel.PreviewWallpaperAsync(picked.Path);
+        if (preview is null)
+        {
+            return;
+        }
+
+        WallpaperPreviewImage.Source = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(preview.Path));
+        WallpaperPreviewName.Text = preview.Name;
+        WallpaperPreviewCurrent.Text = $"Windows shows now: {preview.CurrentDescription}.";
+        WallpaperDialog.Title = $"Make {preview.Name} your wallpaper?";
+        WallpaperDialog.XamlRoot = XamlRoot;
+        if (await WallpaperDialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            await ViewModel.UseWallpaperAsync(preview);
+        }
+    }
+
+    /// <summary>
+    /// Asks before connecting the Desktop, then hands it to Organize, which asks again before
+    /// tidying. Connecting reads names, sizes, and dates and moves nothing.
+    /// </summary>
+    private async void OnTidyDesktopClick(object sender, RoutedEventArgs e)
+    {
+        if (!ViewModel.IsDesktopConnected)
+        {
+            var confirm = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = "Connect your Desktop?",
+                Content = "DeskAI will remember the names, sizes, and dates of the files on your Desktop. It reads nothing inside them and moves nothing.\n\n"
+                    + "Organize then asks your permission and shows what it would move before anything moves. Shortcuts are left alone.",
+                PrimaryButtonText = "Connect my Desktop",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+            };
+            if (await confirm.ShowAsync() != ContentDialogResult.Primary)
+            {
+                return;
+            }
+        }
+
+        if (await ViewModel.ConnectDesktopAsync() is not null)
+        {
+            GoTo("organize", fresh: true);
+        }
     }
 
     public WorkspaceViewModel ViewModel { get; }

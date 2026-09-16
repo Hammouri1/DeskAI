@@ -237,7 +237,19 @@ files." Top to bottom:
    reads in dark and in light), a line, and a plain **Use this look** button. The chosen card
    says "Chosen" in the accent, because a chosen state is a confirmed state. Choosing repaints
    the window at once and is remembered. See "Looks" under the visual system below.
-5. **Your other saved searches.** Saved searches not pinned, each with **Pin**. Past eight, Pin is
+5. **Desktop and wallpaper** (piece E, 2026-09-16). One line: "The only Windows setting DeskAI
+   can change is your wallpaper, and only when you press the button." Two cards. **Wallpaper**:
+   a plain **Choose a picture…** button (the Windows file dialog, pictures only); then a dialog
+   showing the picture, its name, "Windows shows now: …", the promise on the accent rail (DeskAI
+   remembers the current wallpaper; a slideshow or Spotlight stops; no other setting changes),
+   and the accent button **Use as wallpaper**. The result is written on the card. When DeskAI
+   has changed the wallpaper, the card shows "Your old wallpaper: holiday.jpg." (or "a plain
+   colour") with **Put the old wallpaper back**, and a caution line when Windows now shows
+   something DeskAI did not set. **Your Desktop**: its state in one line and **Tidy my Desktop**,
+   which asks "Connect your Desktop?" (names, sizes, dates; nothing inside; nothing moved), then
+   opens Organize on it, where the usual permission and preview apply. Off when Windows has no
+   Desktop folder for the account.
+6. **Your other saved searches.** Saved searches not pinned, each with **Pin**. Past eight, Pin is
    off and a line beside the list says to unpin one to make room.
 
 The sentence under the page title is "Your shortcuts, starter packs, and folder templates.

@@ -632,6 +632,49 @@ folder.
 24. Sign out and back in, or restart Windows. Expected: DeskAI does **not** start on its
     own — it only runs again once you open it yourself.
 
+## Desktop and wallpaper (V0.7 piece E, added 2026-09-16)
+
+This is the one list that touches something real: your wallpaper. Before starting, note your
+current wallpaper (Settings > Personalization > Background) so you can check it comes back. For
+the Desktop part, use a **second Windows account** made for testing, or accept that DeskAI will
+remember the names of what is on your real Desktop (it moves nothing until you press Tidy).
+
+**Wallpaper**
+
+1. Open **My workspace**. Expected: a **Desktop and wallpaper** section whose line says the only
+   Windows setting DeskAI can change is the wallpaper, and only when you press the button.
+2. Press **Choose a picture…**. Expected: the Windows file dialog, showing pictures only. Cancel.
+   Expected: nothing changes, no line on the card.
+3. Choose a JPG or PNG you own. Expected: a dialog showing the picture, its name, "Windows shows
+   now: <your wallpaper's file name>" (or "a plain colour"), the green-edged promise about
+   remembering and slideshows, and the accent button **Use as wallpaper**. Press **Esc**, then
+   try **Enter**, then the **X**. Expected: each behaves like Cancel; your wallpaper is unchanged.
+4. Choose it again and press **Use as wallpaper**. Expected: your desktop changes at once; the
+   card says "<name> is now your wallpaper."; below it, "Your old wallpaper: <old name>." with
+   **Put the old wallpaper back**.
+5. Close DeskAI and open it again. Expected: the Put back line and button are still there.
+6. In Windows, set a different wallpaper yourself. Back in DeskAI (leave and return to My
+   workspace). Expected: an orange line saying Windows now shows a different wallpaper than the
+   one DeskAI set, and that Put back restores the old one anyway.
+7. Press **Put the old wallpaper back**. Expected: your original wallpaper is back; the card says
+   "<old name> is your wallpaper again."; the Put back line is gone.
+8. Try to choose a `.txt` file by typing its name in the dialog. Expected: "DeskAI can use JPG,
+   PNG, and BMP pictures." on the card and nothing changes. Check Settings > Personalization:
+   theme, accent, and lock screen are as they were.
+
+**Desktop**
+
+9. Press **Tidy my Desktop**. Expected: "Connect your Desktop?" saying names, sizes, and dates,
+   nothing inside, nothing moved. Cancel. Expected: nothing connected (check Search's folder
+   list).
+10. Press it again and **Connect my Desktop**. Expected: Organize opens on Desktop, asking "Allow
+    DeskAI to tidy Desktop?"; nothing on your desktop has changed; the card now says the Desktop
+    is connected.
+11. Allow tidying. Expected: loose files grouped by where they would go; shortcuts listed under
+    left alone; nothing moved until you press Tidy. If you tidy, Undo puts it back.
+12. Press the "?" on both cards and check they read clearly. Tab through the section and the
+    dialogs with the keyboard, then with Narrator on.
+
 ## DeskAI's look (V0.7 piece D, added 2026-09-16)
 
 Nothing here touches a file, so no test folder is needed. Note your Windows theme and wallpaper

@@ -99,6 +99,7 @@ public sealed class AutomaticCheckServiceTests
             typeof(IOrganizationPlanner),
             typeof(IFileScanner),
             typeof(IContentTextExtractor),
+            typeof(IWallpaperSetter),
         };
 
         var dependencies = typeof(AutomaticCheckService)
@@ -130,6 +131,7 @@ public sealed class AutomaticCheckServiceTests
             typeof(IFileScanner),
             typeof(IContentTextExtractor),
             typeof(ICredentialVault),
+            typeof(IWallpaperSetter),
         };
 
         var dependencies = new[] { typeof(AutomaticCheckService), typeof(AutomaticCheckCoordinator) }

@@ -181,6 +181,36 @@ executor's undo, which removes only recorded, still-empty folders. `FindLastAsyn
 folder's newest records and offers the latest run made only of create-folder operations, if it
 has not been undone and nothing ran in the folder since.
 
+### Desktop and wallpaper (V0.7 piece E, ADR 0029)
+
+`DeskAI.Core.Desktop.WallpaperService` is the one place DeskAI changes a Windows setting. It
+takes three narrow contracts from `Core.Abstractions` and nothing else: `IWallpaperSetter`
+(`ReadCurrent`, `Set`), `IPictureInspector` (kind and size of one path, never its contents), and
+`IAppSettingsStore` (the `app_settings` key/value table). `PreviewAsync` checks the picked path
+— fully qualified, local, not UNC or a URL, jpg/jpeg/png/bmp, an existing plain file that is not
+a reparse point, 1 byte to 50 MB — and describes what Windows shows now. `UseAsync` checks again,
+writes the current wallpaper to `wallpaper.previous` before calling the setter (unless DeskAI's
+own last-set picture is still showing and a previous is already recorded), then records
+`wallpaper.set`; if Windows refuses, the recorded previous is rolled back so Put back is not
+offered for a change that never happened. `FindRestoreAsync` describes the recorded previous and
+whether Windows now shows something else; `PutBackAsync` restores it (an empty string means a
+plain colour) if its file still exists, then clears both keys.
+
+Infrastructure implements the three contracts in `Infrastructure/Desktop`:
+`WindowsWallpaperSetter` (`SystemParametersInfoW` with `SPI_GETDESKWALLPAPER` /
+`SPI_SETDESKWALLPAPER`, `SPIF_UPDATEINIFILE | SPIF_SENDCHANGE`; classic `DllImport`),
+`FilePictureInspector`, and `WindowsKnownFolders` (`Environment.GetFolderPath`), plus
+`SqliteAppSettingsStore`. The app adds `IPicturePickerService` (`FileOpenPicker`, picture
+extensions only) beside the folder picker.
+
+`WorkspaceViewModel.PreviewWallpaperAsync` / `UseWallpaperAsync` / `PutWallpaperBackCommand`
+drive the wallpaper card; `ConnectDesktopAsync` asks `IKnownFolders.Desktop`, reuses an already
+connected Desktop or calls `ConnectedFolderService.ConnectAsync` (the picker's path: metadata
+scope, bounded scan, policy), then leaves the folder ID in `OrganizeRequest` for the page to
+navigate to Organize, where `TidyViewModel` takes it and asks permission as usual. `TestApp`
+replaces `IWallpaperSetter` with a recording one and `IKnownFolders` with a folder inside its
+own temp directory, and asserts the latter, so no test can reach the real wallpaper or Desktop.
+
 ### DeskAI's look (V0.7 piece D, ADR 0028)
 
 `DeskAI.Core.Appearance` holds `ThemeMode` (follow Windows, light, dark), `LookPalette` (five

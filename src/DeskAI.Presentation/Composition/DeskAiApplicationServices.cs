@@ -4,6 +4,7 @@ using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Ai;
+using DeskAI.Core.Desktop;
 using DeskAI.Core.Rules;
 using DeskAI.Core.Search;
 using DeskAI.Core.Templates;
@@ -83,6 +84,9 @@ public static class DeskAiApplicationServices
         // empty folders through the same executor Tidy uses, with the tidy permission, and
         // nothing else. See ADR 0027.
         services.AddSingleton<FolderTemplateService>();
+        // The wallpaper: DeskAI's one change to a Windows setting, only from the page's button.
+        // It holds the setter, the picture inspector, and the settings store, and nothing else.
+        services.AddSingleton<WallpaperService>();
         // Which saved search Search runs after "Open in Search". A saved-search ID, nothing more.
         services.AddSingleton<SearchRequest>();
         // A DeskAI with no notification area is a legitimate DeskAI: it simply never offers

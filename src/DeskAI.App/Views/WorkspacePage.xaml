@@ -207,6 +207,75 @@
                 </StackPanel>
 
                 <!--
+                    Desktop and wallpaper. The wallpaper is the one Windows setting DeskAI can
+                    change, only from its button after a dialog, and it can be put back. The
+                    Desktop card only connects the folder and hands it to Organize.
+                -->
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="4">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Desktop and wallpaper" />
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="620"
+                                   HorizontalAlignment="Left"
+                                   Text="The only Windows setting DeskAI can change is your wallpaper, and only when you press the button." />
+                    </StackPanel>
+
+                    <Border Style="{StaticResource RowCardStyle}">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <StackPanel Spacing="3">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock FontWeight="SemiBold"
+                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                   Text="Wallpaper" />
+                                        <controls:HelpButton Topic="workspace.wallpaper" />
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource CaptionStyle}"
+                                               Text="Pick a picture from your computer and make it your wallpaper." />
+                                </StackPanel>
+                                <!-- Plain, not accent: choosing a picture confirms nothing. -->
+                                <Button Grid.Column="1" VerticalAlignment="Center"
+                                        Content="Choose a picture…"
+                                        Click="OnChoosePictureClick" />
+                            </Grid>
+                            <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                       Visibility="{x:Bind ViewModel.HasWallpaperMessage, Mode=OneWay}"
+                                       Text="{x:Bind ViewModel.WallpaperMessage, Mode=OneWay}" />
+                            <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.CanPutWallpaperBack, Mode=OneWay}">
+                                <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                           Text="{x:Bind ViewModel.PutBackSummary, Mode=OneWay}" />
+                                <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                           Foreground="{ThemeResource DeskCautionBrush}"
+                                           Visibility="{x:Bind ViewModel.HasPutBackNote, Mode=OneWay}"
+                                           Text="{x:Bind ViewModel.PutBackNote, Mode=OneWay}" />
+                                <Button HorizontalAlignment="Left" Content="Put the old wallpaper back"
+                                        Command="{x:Bind ViewModel.PutWallpaperBackCommand}" />
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource RowCardStyle}">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                <StackPanel Spacing="3">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBlock FontWeight="SemiBold"
+                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                   Text="Your Desktop" />
+                                        <controls:HelpButton Topic="workspace.desktop" />
+                                    </StackPanel>
+                                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                               Text="{x:Bind ViewModel.DesktopStatus, Mode=OneWay}" />
+                                </StackPanel>
+                                <Button Grid.Column="1" VerticalAlignment="Center"
+                                        Content="Tidy my Desktop"
+                                        IsEnabled="{x:Bind ViewModel.HasDesktop, Mode=OneWay}"
+                                        Click="OnTidyDesktopClick" />
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+
+                <!--
                     DeskAI's look. Choosing a card repaints this window at once and is remembered.
                     Only the neutral colours differ between looks; the accent stays green in all.
                 -->
@@ -375,6 +444,32 @@
                     </Border>
                 </StackPanel>
             </ScrollViewer>
+        </ContentDialog>
+
+        <!--
+            The picture before it becomes the wallpaper. The confirming button says what it
+            does and wears the accent; Enter, Esc, and the X all behave like Cancel.
+        -->
+        <ContentDialog x:Name="WallpaperDialog"
+                       PrimaryButtonText="Use as wallpaper"
+                       CloseButtonText="Cancel"
+                       DefaultButton="Close"
+                       PrimaryButtonStyle="{StaticResource AccentButtonStyle}">
+            <StackPanel Spacing="12" MaxWidth="460">
+                <Image x:Name="WallpaperPreviewImage" MaxHeight="220" Stretch="Uniform"
+                       HorizontalAlignment="Left" />
+                <TextBlock x:Name="WallpaperPreviewName" FontWeight="SemiBold" TextWrapping="Wrap"
+                           Foreground="{ThemeResource DeskTextPrimaryBrush}" />
+                <TextBlock x:Name="WallpaperPreviewCurrent" Style="{StaticResource CaptionStyle}" TextWrapping="Wrap" />
+                <Border Padding="12,10" CornerRadius="0,4,4,0"
+                        Background="{ThemeResource DeskSurfaceBrush}"
+                        BorderBrush="{ThemeResource DeskAccentBrush}"
+                        BorderThickness="3,0,0,0">
+                    <TextBlock TextWrapping="Wrap"
+                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Text="DeskAI remembers your current wallpaper so you can put it back. If Windows was showing a slideshow or Spotlight, that stops; putting the old wallpaper back restores the picture only. No other Windows setting changes." />
+                </Border>
+            </StackPanel>
         </ContentDialog>
 
         <!--
