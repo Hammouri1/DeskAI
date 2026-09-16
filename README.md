@@ -76,15 +76,20 @@ DeskAI/
 └── tests/
 ```
 
-## Start Building
+## Using DeskAI
 
-1. Open this `DeskAI` folder in Codex on Windows.
-2. Ask Codex to read `AGENTS.md` and all files under `docs/`.
-3. Restore, build, and test using the commands in `docs/DEVELOPMENT.md`.
-4. Continue with V0.4's local metadata index and constrained search as the next work cycle.
-5. Review every filesystem feature against `docs/SECURITY.md` before enabling real-folder use.
+- Install, update, and remove: [docs/INSTALL.md](docs/INSTALL.md).
+- How the pages work: [docs/USER-GUIDE.md](docs/USER-GUIDE.md).
+- What changed: [docs/RELEASE-NOTES.md](docs/RELEASE-NOTES.md).
 
-Do not point development tools or tests at real personal folders. Current development uses generated in-memory or temporary test data only.
+## Building It
+
+1. Windows 11 and the .NET SDK named in `global.json`; nothing else is needed.
+2. Read `AGENTS.md` and the documents it names; `docs/HANDOFF.md` says where things stand.
+3. Restore, build, and test with the commands in `docs/DEVELOPMENT.md`.
+4. Follow `CONTRIBUTING.md` for how a change is made and what is never accepted.
+
+Do not point development tools or tests at real personal folders. Development uses generated temporary test data only.
 
 ## Product Principles
 
@@ -96,10 +101,10 @@ Do not point development tools or tests at real personal folders. Current develo
 - Fast deterministic handling for common cases; AI only where it adds value.
 - Honest UI: suggestions, confidence, provider use, and irreversible consequences are visible.
 
-## Contributing Direction
+## Contributing and Security
 
-This project is not ready for general contributions yet. When implementation begins, changes should be small, tested, documented, and consistent with the dependency and safety rules in `AGENTS.md`. Security-critical behavior requires negative tests, not only happy-path coverage.
+See `CONTRIBUTING.md`. Changes are small, tested with generated data only, documented in the same commit, and consistent with the safety rules in `AGENTS.md`; security-critical behaviour needs negative tests. To report a security problem privately, see `SECURITY.md`.
 
 ## License
 
-No license has been selected in this documentation pack. Choose and add an open-source license before accepting external contributions or distributing the application.
+MIT. See `LICENSE`.

@@ -82,6 +82,6 @@ public sealed class FreshStartPageTests
     [Fact]
     public void The_version_line_names_DeskAI_and_a_number()
     {
-        Assert.StartsWith("DeskAI 0.", SettingsViewModel.Version, StringComparison.Ordinal);
+        Assert.Matches(@"^DeskAI \d+\.\d+\.\d+$", SettingsViewModel.Version);
     }
 }

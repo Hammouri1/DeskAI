@@ -434,15 +434,29 @@ Depends on V0.5's "checks after the window is closed": an unattended tidy needs 
 running while nobody is present, and that mode is where running unattended is designed and
 reviewed. It does not depend on V0.7 or V0.8.
 
-## V1.0 — Stable Release (**Planned target**)
+## V1.0 — Stable Release (**Complete in code and documents — 2026-09-16; the owner's manual sign-off of V0.7–V1.0 is outstanding**)
 
-- Supported Windows versions and hardware guidance documented.
-- Polished organizer loop that works on folders people connect (V0.6), undo/history, protected items, rule-only mode, privacy controls, and at least one well-supported optional AI path.
-- Security threat review; destructive/escape scenarios tested.
-- Accessibility and keyboard navigation reviewed.
-- Clean install/update/uninstall and data-retention behavior verified.
-- User documentation, contribution guide, license, security reporting, and release notes present.
-- No placeholder UI presented as complete functionality.
+- ✅ Supported Windows versions and hardware guidance: `docs/INSTALL.md` (Windows 11 24H2 or
+  later, x64; an ordinary laptop is enough — `docs/PERFORMANCE.md` records a 3,000-file folder
+  connecting in about a tenth of a second).
+- ✅ The organizer loop on connected folders, undo and history, protected locations, rule-only
+  mode, privacy controls, and the optional AI path: V0.2–V0.9.
+- ✅ Security threat review with destructive and escape scenarios traced to tests:
+  `docs/security/2026-09-16-v1.0-release-review.md`.
+- ✅ Accessibility and keyboard: `AccessibilityNameTests`, pills and badges with icon and word,
+  high-contrast mapping, and the Tab and Narrator steps in every manual list.
+- ✅ Clean install, update, uninstall, and data retention: unzip and run, replace the folder,
+  Start fresh then delete; verified by `FreshStartPageTests` and `NeverStartsWithWindowsTests`,
+  with the manual release-zip list.
+- ✅ User documentation (`docs/USER-GUIDE.md`, `docs/INSTALL.md`), contribution guide
+  (`CONTRIBUTING.md`), license (MIT, `LICENSE`, the owner's choice of 2026-09-16), security
+  reporting (`SECURITY.md` at the root), release notes (`docs/RELEASE-NOTES.md`).
+- ✅ No placeholder UI presented as complete: `NoPlaceholderUiTests`.
+- Version 1.0.0 in `Directory.Build.props`; a `v1.0.0` tag makes the release zip.
+
+Still the owner's to do by hand, recorded in `HANDOFF.md`: walk the manual lists for the
+redesign, V0.8, and V0.9 (and the older V0.6 and background-checking sign-offs), and push the
+first tag.
 
 ## Explicitly Deferred Beyond V1 Unless Reprioritized
 

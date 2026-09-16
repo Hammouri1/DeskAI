@@ -6,7 +6,10 @@ or Windows startup, and it never checks the internet for updates.
 ## What you need
 
 - Windows 11, version 24H2 or later (build 26100), 64-bit.
-- Nothing else. The zip includes everything DeskAI runs on.
+- Nothing else. The zip includes everything DeskAI runs on. An ordinary laptop is plenty:
+  DeskAI reads names, sizes, and dates, not file contents, and connecting a folder of a few
+  thousand files takes well under a second (`PERFORMANCE.md`). About 200 MB of disk for the app
+  folder; its memory in `%LocalAppData%\DeskAI` is a few megabytes.
 
 ## Install
 
