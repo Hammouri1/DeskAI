@@ -154,7 +154,9 @@ public sealed class TidySuggestionService(
 
             // Advice only counts while the file is the one AI was told about.
             var advice = aiAdvice.TryGetValue(file.Id, out var said) && said.StillAppliesTo(file) ? said : null;
-            var aiFolder = advice is null ? null : Recipe.FindDestination(advice.Category);
+            // A planned folder name (ADR 0034) was checked when the answer arrived and is checked
+            // again by the plan validator and the executor; a category idea goes through the recipe.
+            var aiFolder = advice is null ? null : advice.FolderName ?? Recipe.FindDestination(advice.Category);
             var typeFolder = Recipe.FindDestination(classification.Category);
             var isRulePlaced = ruleByPath.ContainsKey(name);
             if (!isRulePlaced && advice is null && (mode == TidySuggestionMode.AiForEveryFile || typeFolder is null))

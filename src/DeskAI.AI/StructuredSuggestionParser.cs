@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DeskAI.Core.Ai;
 using DeskAI.Core.Classification;
+using DeskAI.Core.Templates;
 
 namespace DeskAI.AI;
 
@@ -19,7 +20,21 @@ public static class StructuredSuggestionParser
         string json,
         IReadOnlySet<Guid> requestedFileIds,
         int maximumResponseBytes,
-        AiSuggestionProvenance provenance)
+        AiSuggestionProvenance provenance) =>
+        Parse(json, requestedFileIds, maximumResponseBytes, provenance, AiSuggestionTask.Classify);
+
+    /// <param name="task">
+    /// For <see cref="AiSuggestionTask.PlanFolder"/> every suggestion must carry a folder name
+    /// that passes <see cref="FolderNameCheck"/>, and category may be left out; for
+    /// <see cref="AiSuggestionTask.Classify"/> a folder is refused. At most
+    /// <see cref="OrganizationSuggestionRequest.MaxPlanFolders"/> distinct folders.
+    /// </param>
+    public static StructuredSuggestionParseResult Parse(
+        string json,
+        IReadOnlySet<Guid> requestedFileIds,
+        int maximumResponseBytes,
+        AiSuggestionProvenance provenance,
+        AiSuggestionTask task)
     {
         ArgumentNullException.ThrowIfNull(json);
         ArgumentNullException.ThrowIfNull(requestedFileIds);
@@ -56,6 +71,7 @@ public static class StructuredSuggestionParser
         }
 
         var seen = new HashSet<Guid>();
+        var folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var suggestions = new List<OrganizationSuggestion>(envelope.Suggestions.Count);
         foreach (var item in envelope.Suggestions)
         {
@@ -69,8 +85,33 @@ public static class StructuredSuggestionParser
                 return StructuredSuggestionParseResult.Invalid(StructuredOutputFailure.DuplicateFileId);
             }
 
-            if (!Enum.TryParse<FileCategory>(item.Category, ignoreCase: false, out var category) ||
-                !Enum.IsDefined(category))
+            // A folder name is untrusted text that will become part of a path. Only a plan may
+            // carry one, it must pass the same check a typed template name passes, and a plan
+            // that names too many folders is refused whole rather than trimmed.
+            if (task == AiSuggestionTask.Classify && item.Folder is not null)
+            {
+                return StructuredSuggestionParseResult.Invalid(StructuredOutputFailure.UnexpectedFolder);
+            }
+
+            if (task == AiSuggestionTask.PlanFolder)
+            {
+                if (item.Folder is null || FolderNameCheck.Check(item.Folder) is not null)
+                {
+                    return StructuredSuggestionParseResult.Invalid(StructuredOutputFailure.InvalidFolderName);
+                }
+
+                if (folders.Add(item.Folder) && folders.Count > OrganizationSuggestionRequest.MaxPlanFolders)
+                {
+                    return StructuredSuggestionParseResult.Invalid(StructuredOutputFailure.TooManyFolders);
+                }
+            }
+
+            FileCategory category;
+            if (task == AiSuggestionTask.PlanFolder && item.Category is null)
+            {
+                category = FileCategory.Unknown;
+            }
+            else if (!Enum.TryParse(item.Category, ignoreCase: false, out category) || !Enum.IsDefined(category))
             {
                 return StructuredSuggestionParseResult.Invalid(StructuredOutputFailure.UnknownCategory);
             }
@@ -87,7 +128,7 @@ public static class StructuredSuggestionParser
             }
 
             suggestions.Add(new OrganizationSuggestion(
-                item.FileId, category, item.Confidence, item.Reason, provenance));
+                item.FileId, category, item.Confidence, item.Reason, provenance, item.Folder));
         }
 
         return StructuredSuggestionParseResult.Valid(suggestions.AsReadOnly());
@@ -122,7 +163,8 @@ public static class StructuredSuggestionParser
         [property: JsonPropertyName("fileId")] Guid FileId,
         [property: JsonPropertyName("category")] string? Category,
         [property: JsonPropertyName("confidence")] double Confidence,
-        [property: JsonPropertyName("reason")] string? Reason);
+        [property: JsonPropertyName("reason")] string? Reason,
+        [property: JsonPropertyName("folder")] string? Folder = null);
 }
 
 public sealed record StructuredSuggestionParseResult(
@@ -148,4 +190,7 @@ public enum StructuredOutputFailure
     UnknownCategory,
     InvalidConfidence,
     InvalidReason,
+    UnexpectedFolder,
+    InvalidFolderName,
+    TooManyFolders,
 }

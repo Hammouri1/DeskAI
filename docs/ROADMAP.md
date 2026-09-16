@@ -481,6 +481,11 @@ three AI features (A: plain language for Search and rules, B: "Plan this folder"
   typed words alone after a dialog; the AI answers with a few typed facts; DeskAI writes them as
   a sentence in its own fixed vocabulary and reads it exactly as a typed one, so AI gains no new
   reach and saved searches keep working.
+- ✅ 2026-09-16: **AI feature B — Plan this folder** (ADR 0034, review
+  `docs/security/2026-09-16-plan-folder-review.md`). The same request as Ask AI about every
+  file rules do not place; the AI may also name at most 12 plain folders, each checked by the
+  parser, the service, the path policy, and the executor; the plan is the ordinary preview,
+  Tidy, and undo.
 
 ## Explicitly Deferred Beyond V1 Unless Reprioritized
 

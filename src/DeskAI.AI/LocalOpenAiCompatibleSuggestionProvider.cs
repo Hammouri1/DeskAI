@@ -77,7 +77,8 @@ public sealed class LocalOpenAiCompatibleSuggestionProvider : IOrganizationSugge
                 structuredJson,
                 request.Files.Select(file => file.FileId).ToHashSet(),
                 request.Limits.MaximumResponseBytes,
-                AiSuggestionProvenance.LocalAi);
+                AiSuggestionProvenance.LocalAi,
+                request.Task);
             return parsed.IsValid
                 ? new OrganizationSuggestionResponse(
                     AiProviderStatus.Success, "Local AI", parsed.Suggestions,

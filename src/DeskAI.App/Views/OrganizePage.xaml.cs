@@ -1,5 +1,6 @@
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
+using DeskAI.Core.Tidy;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -204,11 +205,27 @@ public sealed partial class OrganizePage : Page
     private async void OnAskAiClick(object sender, RoutedEventArgs e)
     {
         var question = await ViewModel.PrepareAiQuestionAsync();
-        if (question is null)
+        if (question is not null && await ConfirmSendAsync(question))
         {
-            return;
+            await ViewModel.AskAiAsync(question);
         }
+    }
 
+    /// <summary>
+    /// The same dialog as Ask AI, with one more line: the AI may name folders, each checked by
+    /// DeskAI and only ever inside this folder. Sends only if the person presses Send.
+    /// </summary>
+    private async void OnPlanAiClick(object sender, RoutedEventArgs e)
+    {
+        var question = await ViewModel.PreparePlanQuestionAsync();
+        if (question is not null && await ConfirmSendAsync(question))
+        {
+            await ViewModel.AskAiAsync(question);
+        }
+    }
+
+    private async Task<bool> ConfirmSendAsync(TidyAiQuestion question)
+    {
         var files = new StackPanel { Spacing = 4 };
         foreach (var line in question.FileLines)
         {
@@ -239,6 +256,15 @@ public sealed partial class OrganizePage : Page
             Text = "Each file also gets a random number so DeskAI can match the answers. What is inside your files, "
                 + "where they are on your computer, and folder names are never sent. AI only suggests; nothing moves.",
         });
+        if (question.IsPlan)
+        {
+            content.Children.Add(new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Text = "It may also suggest folder names. DeskAI checks every name and only ever makes folders inside this one; "
+                    + "you see the whole plan before anything moves.",
+            });
+        }
 
         var confirm = new ContentDialog
         {
@@ -249,10 +275,7 @@ public sealed partial class OrganizePage : Page
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
         };
-        if (await confirm.ShowAsync() == ContentDialogResult.Primary)
-        {
-            await ViewModel.AskAiAsync(question);
-        }
+        return await confirm.ShowAsync() == ContentDialogResult.Primary;
     }
 
     private async Task ShowAsync(string title, string content) =>

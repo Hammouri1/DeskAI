@@ -352,6 +352,20 @@
                         <Button Content="Stop" Command="{x:Bind ViewModel.StopAiCommand}"
                                 Visibility="{x:Bind ViewModel.IsAskingAi, Mode=OneWay}" />
                     </StackPanel>
+                    <!--
+                        Plan this folder (ADR 0034): the same files and sharing rules as Ask AI, but the
+                        AI may also name folders. Plain button: the plan is only a preview until Tidy.
+                    -->
+                    <Border Height="1" Margin="0,4" Background="{ThemeResource DeskLineBrush}" />
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                               Text="{x:Bind ViewModel.PlanAiPrompt}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Content="{x:Bind ViewModel.PlanAiText}"
+                                IsEnabled="{x:Bind ViewModel.CanPlanAi, Mode=OneWay}"
+                                Click="OnPlanAiClick" />
+                        <controls:HelpButton Topic="organize.planAi" />
+                    </StackPanel>
                     <TextBlock Style="{StaticResource CaptionStyle}"
                                Text="{x:Bind ViewModel.AiSharingNote, Mode=OneWay}" />
                     <TextBlock Style="{StaticResource BodySecondaryStyle}"

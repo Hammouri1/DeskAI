@@ -71,13 +71,18 @@ public sealed record TidyLeftAlone(string FileName, LeftAloneReason Reason, stri
 /// size and last-changed time make the advice expire by itself: an idea about a file that has
 /// since changed is an idea about a different file.
 /// </remarks>
+/// <param name="FolderName">
+/// From "Plan this folder" (ADR 0034): the plain folder name the AI chose, checked by
+/// <c>FolderNameCheck</c>, which takes the place of the recipe's folder. Null for a category idea.
+/// </param>
 public sealed record TidyAiAdvice(
     FileCategory Category,
     bool IsUnsure,
     string ServiceName,
     OperationProvenance Provenance,
     long SizeBytes,
-    DateTimeOffset ModifiedAtUtc)
+    DateTimeOffset ModifiedAtUtc,
+    string? FolderName = null)
 {
     public bool StillAppliesTo(FileItem file)
     {

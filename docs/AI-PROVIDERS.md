@@ -144,9 +144,10 @@ Store provider ID, endpoint (where allowed), model ID, capability cache, timeout
   (`TidyAiService.RealFolderShareable`), each only if allowed. Full locations and folder names
   are never sent. Each file carries a random per-request number, not DeskAI's file ID.
 - The answer goes through the same strict parser; the service checks again that every number
-  was one it sent. A category maps to a folder through `TidyFolderRecipe`, so AI never names a
-  folder. The AI's reason text is not displayed. Confidence below 0.7 shows as "AI isn't sure"
-  and starts unticked; no percentage is shown.
+  was one it sent. A category maps to a folder through `TidyFolderRecipe`, so for "Ask AI" AI
+  never names a folder (for "Plan this folder", see V1.1 below). The AI's reason text is not
+  displayed. Confidence below 0.7 shows as "AI isn't sure" and starts unticked; no percentage
+  is shown.
 - At most 100 files per request; one press is one request against the daily limit.
 - See ADR 0020 and `docs/security/2026-09-10-real-folder-ai-disclosure-review.md`.
 
@@ -179,3 +180,21 @@ Store provider ID, endpoint (where allowed), model ID, capability cache, timeout
   before building anything, refuses to send if the AI choice changed since the dialog, and
   refuses a reading DeskAI's own reader would not understand.
 - Review: `docs/security/2026-09-16-sentence-ai-review.md`.
+
+## V1.1: Plan This Folder (ADR 0034)
+
+- **Plan this folder with AI** on Organize sends exactly what "Ask AI" would about every file
+  the person's rules do not place (the page switches to that choice first), under the same
+  sharing rules and the same dialog, with one more line saying the AI may also name folders.
+- The request carries `AiSuggestionTask.PlanFolder`. The prompt asks for at most 12 plain
+  folder names and one `folder` per file; `category` becomes optional. `StructuredSuggestionParser`
+  refuses a `folder` on a classification, requires one on a plan, checks each with
+  `FolderNameCheck` (the same rule a typed template name passes: one segment, no separators,
+  drive, wildcards, reserved names, trailing dot, control characters, at most 64), counts
+  distinct names case-insensitively, and refuses the whole plan on the first bad name or the
+  thirteenth folder. `TidyAiService` checks every name again before it becomes advice.
+- A planned name reaches the planner as `TidyAiAdvice.FolderName` and takes the place of the
+  recipe's folder; the plan validator and the executor check the path again. Groups are named
+  by the AI's folders, ideas show "AI idea from <service>", unsure ones start unticked, rules
+  still win, and Tidy and undo are the ordinary ones.
+- Review: `docs/security/2026-09-16-plan-folder-review.md`.

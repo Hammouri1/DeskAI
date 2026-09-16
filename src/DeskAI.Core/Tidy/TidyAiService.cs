@@ -5,6 +5,7 @@ using DeskAI.Core.Classification;
 using DeskAI.Core.Files;
 using DeskAI.Core.Plans;
 using DeskAI.Core.Roots;
+using DeskAI.Core.Templates;
 
 namespace DeskAI.Core.Tidy;
 
@@ -36,7 +37,11 @@ public sealed record TidyAiQuestion(
     IReadOnlyList<string> FileLines,
     int LeftOutCount,
     OrganizationSuggestionRequest Request,
-    IReadOnlyDictionary<Guid, FileItem> FilesByStandIn);
+    IReadOnlyDictionary<Guid, FileItem> FilesByStandIn)
+{
+    /// <summary>True for "Plan this folder": the AI may also name folders (ADR 0034).</summary>
+    public bool IsPlan => Request.Task == AiSuggestionTask.PlanFolder;
+}
 
 /// <summary>A prepared question, or the plain reason there is none.</summary>
 public sealed record TidyAiPreparation(TidyAiQuestion? Question, string Explanation);
@@ -103,10 +108,15 @@ public sealed class TidyAiService(
         Describe(await settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(false));
 
     /// <summary>Builds the request and describes it. Sends nothing.</summary>
+    /// <param name="planFolder">
+    /// True for "Plan this folder" (ADR 0034): the same files and the same sharing rules, but the
+    /// AI is asked to name folders as well as say where each file goes.
+    /// </param>
     public async Task<TidyAiPreparation> PrepareAsync(
         Guid rootId,
         IReadOnlyList<FileItem> files,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool planFolder = false)
     {
         ArgumentNullException.ThrowIfNull(files);
         var root = await roots.FindAsync(rootId, cancellationToken).ConfigureAwait(false);
@@ -155,7 +165,10 @@ public sealed class TidyAiService(
             64 * 1024,
             128 * 1024,
             settings.MaximumEstimatedCostUsd);
-        var request = AiRequestBuilder.Build(root, described, new HashSet<Guid>(), shared, limits);
+        var request = AiRequestBuilder.Build(root, described, new HashSet<Guid>(), shared, limits) with
+        {
+            Task = planFolder ? AiSuggestionTask.PlanFolder : AiSuggestionTask.Classify,
+        };
         var (_, name, destination) = Target(settings);
         return new(
             new TidyAiQuestion(
@@ -210,6 +223,28 @@ public sealed class TidyAiService(
             return new(true, false, NoAdvice, "The AI answer did not pass DeskAI's safety checks, so it was ignored.");
         }
 
+        // A planned folder name is untrusted text. The parser checked it; this checks it again,
+        // so a future connection that forgets to cannot hand a path to the planner. The path
+        // policy and the executor check it a third and fourth time.
+        var folders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var item in response.Suggestions)
+        {
+            if (item.FolderName is { } folder)
+            {
+                if (!question.IsPlan || FolderNameCheck.Check(folder) is not null)
+                {
+                    return new(true, false, NoAdvice, "The AI answer did not pass DeskAI's safety checks, so it was ignored.");
+                }
+
+                folders.Add(folder);
+            }
+        }
+
+        if (folders.Count > OrganizationSuggestionRequest.MaxPlanFolders)
+        {
+            return new(true, false, NoAdvice, $"{question.ServiceName} named more than {OrganizationSuggestionRequest.MaxPlanFolders} folders, so its plan was ignored.");
+        }
+
         var advice = new Dictionary<Guid, TidyAiAdvice>();
         foreach (var item in response.Suggestions)
         {
@@ -220,12 +255,15 @@ public sealed class TidyAiService(
                 question.ServiceName,
                 question.Mode == AiMode.Local ? OperationProvenance.LocalAi : OperationProvenance.CloudAi,
                 file.SizeBytes,
-                file.ModifiedAtUtc);
+                file.ModifiedAtUtc,
+                item.FolderName);
         }
 
-        var placed = advice.Values.Count(item => item.Category != FileCategory.Unknown);
-        var unsure = advice.Values.Count(item => item.Category != FileCategory.Unknown && item.IsUnsure);
-        var message = $"{question.ServiceName} suggested a place for {placed} of {Files(question.FilesByStandIn.Count)}.";
+        var placed = advice.Values.Count(item => item.FolderName is not null || item.Category != FileCategory.Unknown);
+        var unsure = advice.Values.Count(item => (item.FolderName is not null || item.Category != FileCategory.Unknown) && item.IsUnsure);
+        var message = question.IsPlan
+            ? $"{question.ServiceName} planned {Folders(folders.Count)} for {placed} of {Files(question.FilesByStandIn.Count)}."
+            : $"{question.ServiceName} suggested a place for {placed} of {Files(question.FilesByStandIn.Count)}.";
         if (unsure > 0)
         {
             message += unsure == 1
@@ -305,4 +343,6 @@ public sealed class TidyAiService(
     };
 
     private static string Files(int count) => count == 1 ? "1 file" : $"{count} files";
+
+    private static string Folders(int count) => count == 1 ? "1 folder" : $"{count} folders";
 }

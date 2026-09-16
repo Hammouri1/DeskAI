@@ -113,7 +113,8 @@ public sealed class CloudChatCompletionsSuggestionProvider(
                 structuredJson,
                 request.Files.Select(file => file.FileId).ToHashSet(),
                 request.Limits.MaximumResponseBytes,
-                AiSuggestionProvenance.CloudAi);
+                AiSuggestionProvenance.CloudAi,
+                request.Task);
             return parsed.IsValid
                 ? new OrganizationSuggestionResponse(
                     AiProviderStatus.Success,

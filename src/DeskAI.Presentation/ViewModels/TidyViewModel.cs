@@ -512,6 +512,18 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         var count => $"Ask AI about {count} files",
     };
 
+    /// <summary>
+    /// "Plan this folder with AI" (ADR 0034): AI names folders and says which file goes where, for
+    /// every file the person's rules do not place. Same sharing rules, same preview, same Tidy.
+    /// </summary>
+    public bool CanPlanAi => CanUseAiForEveryFile && HasAiPanel && !IsAskingAi && !IsBusy;
+
+    public string PlanAiText => "Plan this folder with AI";
+
+    public string PlanAiPrompt =>
+        "Or let AI plan the whole folder: it names folders and says which file goes into which. "
+        + "DeskAI checks every name, and you still see the whole plan before anything moves.";
+
     /// <summary>What there is to ask about, in one line, before anything is pressed.</summary>
     public string AskAiPrompt => (AskableCount, _mode) switch
     {
@@ -878,6 +890,44 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         try
         {
             var prepared = await _ai.PrepareAsync(folder.Id, _preview.AskableFiles).ConfigureAwait(true);
+            AiMessage = prepared.Question is null ? prepared.Explanation : string.Empty;
+            return prepared.Question;
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            AiMessage = $"AI stayed off: {exception.Message}";
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Builds the "plan this folder" question for AI and returns it for the page to show. Sends
+    /// nothing. Switches the page to "every file my rules don't place" first, because a plan is
+    /// about the whole folder, not only the files DeskAI cannot place by type.
+    /// </summary>
+    /// <returns>The question to show, or null with the reason in <see cref="AiMessage"/>.</returns>
+    public async Task<TidyAiQuestion?> PreparePlanQuestionAsync()
+    {
+        if (SelectedFolder is not { } folder || _preview is null || !CanPlanAi)
+        {
+            return null;
+        }
+
+        if (_mode != TidySuggestionMode.AiForEveryFile)
+        {
+            SuggestionModeIndex = 1;
+            await _pending.ConfigureAwait(true);
+        }
+
+        if (_preview is null || _preview.AskableFiles.Count == 0)
+        {
+            AiMessage = "Your rules already place every file here, so there is nothing for AI to plan.";
+            return null;
+        }
+
+        try
+        {
+            var prepared = await _ai.PrepareAsync(folder.Id, _preview.AskableFiles, planFolder: true).ConfigureAwait(true);
             AiMessage = prepared.Question is null ? prepared.Explanation : string.Empty;
             return prepared.Question;
         }
@@ -1373,6 +1423,7 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(HasAskable));
         OnPropertyChanged(nameof(AskableCount));
         OnPropertyChanged(nameof(CanAskAi));
+        OnPropertyChanged(nameof(CanPlanAi));
         OnPropertyChanged(nameof(AskAiText));
         OnPropertyChanged(nameof(AskAiPrompt));
         OnPropertyChanged(nameof(AiSharingNote));

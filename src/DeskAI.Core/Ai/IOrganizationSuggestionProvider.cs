@@ -19,14 +19,32 @@ public interface IOrganizationSuggestionProvider
         CancellationToken cancellationToken = default);
 }
 
+/// <summary>What the AI is asked to do with the files it is shown.</summary>
+public enum AiSuggestionTask
+{
+    /// <summary>Name a category for each file; DeskAI's recipe chooses the folder (ADR 0020).</summary>
+    Classify,
+
+    /// <summary>
+    /// Plan the folder: name a small set of plain folders and say which file goes into which
+    /// (V1.1, ADR 0034). Every name is checked by <c>FolderNameCheck</c> before it is believed,
+    /// and again by the path policy and the executor.
+    /// </summary>
+    PlanFolder,
+}
+
 public sealed record OrganizationSuggestionRequest(
     string SchemaVersion,
     Guid RequestId,
     IReadOnlyList<AiFileCandidate> Files,
     DisclosureSummary Disclosure,
-    AiRequestLimits Limits)
+    AiRequestLimits Limits,
+    AiSuggestionTask Task = AiSuggestionTask.Classify)
 {
     public const string CurrentSchemaVersion = "1";
+
+    /// <summary>The most folders a plan may name. A plan with more is refused whole.</summary>
+    public const int MaxPlanFolders = 12;
 }
 
 public sealed record AiFileCandidate(
@@ -68,12 +86,17 @@ public sealed record OrganizationSuggestionResponse(
     public bool IsAvailable => Status == AiProviderStatus.Success;
 }
 
+/// <param name="FolderName">
+/// For a <see cref="AiSuggestionTask.PlanFolder"/> answer only: one plain folder name, already
+/// checked by the parser. Null for a classification.
+/// </param>
 public sealed record OrganizationSuggestion(
     Guid FileId,
     FileCategory Category,
     double Confidence,
     string Reason,
-    AiSuggestionProvenance Provenance);
+    AiSuggestionProvenance Provenance,
+    string? FolderName = null);
 
 public sealed record AiUsage(int? InputTokens, int? OutputTokens, decimal? EstimatedCostUsd);
 

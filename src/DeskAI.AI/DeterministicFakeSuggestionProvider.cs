@@ -19,7 +19,8 @@ public sealed class DeterministicFakeSuggestionProvider : IOrganizationSuggestio
                 CategoryFor(file.Extension),
                 0.75,
                 "Deterministic fake suggestion generated for testing.",
-                AiSuggestionProvenance.DeterministicFake))
+                AiSuggestionProvenance.DeterministicFake,
+                request.Task == AiSuggestionTask.PlanFolder ? FolderFor(file.Extension) : null))
             .ToArray();
         return Task.FromResult(new OrganizationSuggestionResponse(
             AiProviderStatus.Success,
@@ -67,6 +68,15 @@ public sealed class DeterministicFakeSuggestionProvider : IOrganizationSuggestio
             json,
             "Generated a test reading without network access."));
     }
+
+    /// <summary>A canned plan: one plain folder per kind of file, always a name the checks accept.</summary>
+    private static string FolderFor(string? extension) => extension?.ToLowerInvariant() switch
+    {
+        ".pdf" or ".doc" or ".docx" or ".txt" => "Paperwork",
+        ".png" or ".jpg" or ".jpeg" => "Photos",
+        ".xlsx" or ".csv" => "Sheets",
+        _ => "Other",
+    };
 
     private static FileCategory CategoryFor(string? extension) => extension?.ToLowerInvariant() switch
     {

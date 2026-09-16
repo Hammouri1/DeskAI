@@ -146,6 +146,7 @@ changes a feature.
 | Search | A tidied folder can be disconnected; its tidy history is forgotten, an old practice folder's is not | `TidyRunPageTests`, `SqliteAuthorizedRootRepositoryTests` |
 | Side menu | Says which folders DeskAI may tidy | `HomeAndShellTests` |
 | Organize | Ask AI: off until set up, preview before Send, cancel sends nothing, answer beside the button | `TidyAiPageTests`, `TidyAiTests` |
+| Organize | Plan this folder with AI (ADR 0034): asks about every file rules do not place, the AI's folder names become the groups, Tidy makes exactly those folders and undo puts files back, a name outside this folder refuses the whole plan, rules still win; parser refuses a folder on a classification, a missing or bad name, or more than 12 folders | `TidyAiPageTests`, `PlanFolderParserTests` |
 | Organize | Only files DeskAI doesn't know, or every file rules don't place; rules still win | `TidyAiPageTests`, `TidyAiTests` |
 | Organize | AI isn't sure: own group, unticked; refused answers change nothing | `TidyAiPageTests`, `TidyAiTests` |
 | Organize | What AI may see: no names unless allowed, no locations, no file IDs, no left-alone or protected files; re-checked before Send | `TidyAiTests`, `PlanSafetyCheckTests`, `TidyAiServiceTests` |

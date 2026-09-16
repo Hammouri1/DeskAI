@@ -77,7 +77,9 @@ what you want in your own words ("the slides from my trip last summer", "put my 
 somewhere tidy") and press **Let AI read this**. Only those words are sent, nothing about your
 files. The AI's reading comes back as plain words in the box, which DeskAI then searches or
 fills into the rule boxes, and you can change them. On **Organize**, AI can suggest where
-files it cannot place by type belong.
+files it cannot place by type belong, or, with **Plan this folder with AI**, suggest folder
+names for the whole folder and which file goes where. DeskAI checks every name, only ever makes
+folders inside the one you are tidying, and shows you the whole plan before anything moves.
 
 ## Backups, moving computers, and leaving
 

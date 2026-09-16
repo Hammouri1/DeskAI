@@ -989,3 +989,26 @@ service; the whole list is about six. Nothing here moves a file.
    and no rule is added until you name it and press Add.
 8. Press the "?" beside each button and check it reads clearly. Tab to the buttons and through
    the dialog with the keyboard, then with Narrator on.
+
+## Plan this folder with AI (V1.1, added 2026-09-16)
+
+Use the same made-up test folder as "Ask AI on Tidy a folder", with `notes.pdf`, `photo.jpg`,
+`invoice-march.pdf`, and `mystery.zzz`. One or two Sends is enough.
+
+1. With AI on, open **Organize**, pick the test folder, and allow tidying. Expected: under the
+   Ask AI card's line, a plain **Plan this folder with AI** button with its own "?" and a line
+   saying AI names folders, DeskAI checks every name, and you see the plan first.
+2. Press it. Expected: the choice above switches to "Every file my rules don't place", and the
+   dialog "Send this to <service>?" lists all four files as the AI will see them, with the
+   extra line that it may suggest folder names and DeskAI checks each one. Press **Cancel**.
+   Expected: nothing changes.
+3. Press it again and **Send**. Expected: a line such as "<service> planned 3 folders for 4 of
+   4 files. Nothing has moved." and the groups are now named by the AI, for example "Invoices"
+   and "Photos", each file saying "AI idea from <service>". Check File Explorer: nothing moved.
+4. Untick one file, press **Tidy 3 files**. Expected: exactly those folders appear inside the
+   test folder with the ticked files in them; the unticked one stays. Press **Undo**. Expected:
+   everything back at the top, and the empty folders DeskAI made are gone.
+5. Add a rule "invoice → Invoices" on Automatic tasks, turn it on, and plan again. Expected:
+   `invoice-march.pdf` stays under your rule's folder whatever the AI said.
+6. Press the "?" next to the button and check it reads clearly and truthfully. Tab to the
+   button and through the dialog with the keyboard, then with Narrator on.

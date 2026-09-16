@@ -81,7 +81,13 @@ stacked together — impossible to understand. Top to bottom:
    the AI's own words. Ideas the AI was unsure about go into an "AI isn't sure" group at the
    end, with a question-mark icon and a caution note, and start unticked. No percentage is
    shown. The button is plain rather than accent because pressing it confirms nothing; Send is
-   the confirming act.
+   the confirming act. **Plan this folder with AI** (V1.1, ADR 0034) sits under a rule on the
+   same card with one line: AI names folders and says which file goes into which, DeskAI
+   checks every name, and the whole plan is seen before anything moves. It switches the choice
+   above to "Every file my rules don't place", opens the same dialog with one more line about
+   folder names, and the answer arrives as groups named by the AI's folders — "Bank", "Trip
+   2026" — each file saying "AI idea from OpenRouter". A plan that names a folder DeskAI cannot
+   make is refused whole and the list stays as it was.
 6. **Left alone**, collapsed, listing every file DeskAI will not touch with its reason.
 7. **The action bar**, the page's one bold element: the number of ticked files, the Tidy
    button, and one honest line: "Nothing moves until you press it. You can undo it." The button
