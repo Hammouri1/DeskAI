@@ -29,6 +29,8 @@ public static class ServiceCollectionExtensions
         services.AddSingleton(DefaultFolderRecipe.Create());
         services.AddSingleton<IFileScanner, WindowsMetadataScanner>();
         services.AddSingleton<IReadOnlyFolderService, ReadOnlyFolderService>();
+        // Names and kinds directly inside a connected folder, for folder templates. No contents.
+        services.AddSingleton<IFolderNameLookup, FolderNameLookup>();
         services.AddSingleton<IFileIndex, SqliteFileIndex>();
         services.AddSingleton<IMetadataIndexService, MetadataIndexService>();
         services.AddSingleton<IDatabaseInitializer, SqliteDatabaseInitializer>();
