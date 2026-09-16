@@ -16,9 +16,11 @@ appending to them.
 
 ## Where things stand
 
-- Updated: 2026-09-14, after commit `f694d19`, tree clean, branch `v0.7-workspace-profiles`,
+- Updated: 2026-09-16, after commit `9b1796e`, tree clean, branch `v0.7-workspace-profiles`,
   which was started from
   `v0.5-background-checking`. **Neither branch is merged to `main` yet.**
+- No code has changed since A + B. The only work after it was documentation: the folder
+  templates drafts in `9b1796e`, which are waiting for the owner's answers.
 - V0.1–V0.6 complete in code and automated tests. V0.5's last piece, checking after the window
   is closed, landed 2026-09-13 (ADR 0025), with one follow-up fix `ab01694` (turning checking
   off and closing at once could leave DeskAI running with no icon).
