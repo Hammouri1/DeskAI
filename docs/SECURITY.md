@@ -60,6 +60,8 @@ Initial executor commands are deliberately small:
 
 Later actions such as tagging or sending an item to the Recycle Bin require their own typed command and policy. There is no command for raw shell, PowerShell, CMD, registry, arbitrary process launch, installation, privilege elevation, downloading executables, permission modification, or permanent deletion.
 
+Since V0.7 piece C (ADR 0027, review `docs/security/2026-09-14-folder-templates-review.md`) folder templates on My workspace use the first of these commands on their own: a plan of nothing but create-directory operations, one level inside a connected folder, previewed by name, approved as exactly those operations, and run by `FolderTidyExecutor` under the same tidy permission and the same per-operation re-checks as a tidy. Names come from a compiled catalog or from names the person typed; typed names are an untrusted input, checked first by `FolderNameCheck` (single plain name, no separator, drive, traversal, device name, or trailing dot; at most 8) and again by the path policy before a plan exists, and a third time by the executor. No AI takes part. Undo removes only recorded, still-empty folders. A journal record with no moves settles by the folders it made, so an interrupted template run is put to the person as folders and can be undone.
+
 ## Filesystem Rules
 
 ### Explicit roots

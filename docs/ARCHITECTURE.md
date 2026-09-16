@@ -153,6 +153,41 @@ In Presentation, `WorkspaceViewModel` drives the page and `SearchRequest` — sh
 `InitializeAsync` and runs that search as pressing Run would. `WorkspacePage` shows the pack
 preview in a `ContentDialog` and navigates through `MainWindow.GoTo` so the side menu follows.
 
+### Folder templates (V0.7 piece C, ADR 0027)
+
+`DeskAI.Core.Templates` is deliberately a different namespace from `Workspace`: a reflection test
+asserts no `Workspace` type holds the executor or the journal, and `FolderTemplateService` is the
+one My workspace service that does. It makes empty folders and nothing else.
+
+`FolderTemplateCatalog` is five fixed `FolderTemplate` values, one per starter pack, each folder
+name matching that pack's rule destinations (a test checks both). `FolderTemplate.Own` wraps names
+a person typed once `FolderNameCheck.Parse` has accepted them: single plain names, no separators or
+drive letters or traversal, none of the characters Windows refuses, no device names, no trailing
+dot, up to 8, no duplicates, each refusal a sentence a person can act on.
+
+`FolderTemplateService.PreviewAsync` (or `PreviewOwnAsync`) finds the root, requires
+`RootCapabilities.CanTidy`, runs `CheckStillSafeAsync`, refuses while the folder has an unfinished
+journal record, then asks `IFolderNameLookup` — a new narrow contract, implemented by
+`FolderNameLookup` in Infrastructure, that lists the folder's top level once and reports for each
+name whether a folder, a file, a link, or nothing is there, by the name on disk — and builds an
+`OrganizationPlan` of `CreateDirectoryOperation`s for the missing names. `IPlanSafetyCheck` sees
+every name; a blocked one becomes a "Can't be made" line and is left out of the plan. The preview
+carries the plan. `MakeAsync` looks again from fresh state; if a different set of folders would be
+made it makes nothing and returns the fresh preview for the page to show. Otherwise it approves
+exactly the previewed plan's operations and calls `IFolderTidyExecutor.ExecuteAsync` with no
+expected files. It reads the journal record afterwards so a folder the executor found already
+there is reported as such and never as made. `UndoAsync` needs the tidy permission and calls the
+executor's undo, which removes only recorded, still-empty folders. `FindLastAsync` reads the
+folder's newest records and offers the latest run made only of create-folder operations, if it
+has not been undone and nothing ran in the folder since.
+
+The recovery fix that made this safe: `FolderTidyExecutor.Settle` measures a record with no move
+operations by the folders it made rather than the files it moved (before, such a record settled
+as `Failed` and could never be undone), `InterruptedTidy` carries `MadeFolders` and `TotalFolders`
+with `IsFolders`, and `TidyRunService.UndoAsync` words a folder-only undo in folders removed.
+Organize shows "DeskAI stopped while making folders: 1 of 2 folders made." with **Remove that
+folder** / **Keep it**.
+
 ## Initial Domain Model
 
 Names may evolve, but concepts should remain explicit:

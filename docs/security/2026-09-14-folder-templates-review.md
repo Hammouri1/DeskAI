@@ -6,8 +6,10 @@
   do not add a new *kind* of change (the executor already creates folders during Tidy), but they
   are the first feature whose whole purpose is to change a folder without moving a file. They
   also reach the executor from a new page, so the gate is applied in full.
-- Status: **Draft, written before any code, waiting for the owner's decisions.** A finding
-  becomes a requirement only when the design is agreed.
+- Status: **Accepted 2026-09-16**, after the owner's decisions (reuse the tidy permission; one
+  level; fixed lists **and typed names**; not linked to packs). Typed names triggered the
+  re-review this document said would be needed; it is the section "Re-review: typed names"
+  below. Every control marked proposed is now built and has the test named. ADR 0027.
 
 ## What changes in DeskAI's reach
 
@@ -77,9 +79,27 @@ boundary (AI plays no part), and what can be reached with no window (nothing).
 4. **No new gate triggered:** no content reading, network, background work, shell presence, or
    Windows setting change.
 
+## Re-review: typed names (2026-09-16)
+
+The owner chose to let people type their own folder names. That adds one untrusted input to a
+feature that otherwise had none. It does not add a new operation, a new permission, or a new
+path to the disk: a typed name still becomes a `CreateDirectoryOperation` in a plan the policy
+and the executor check. What changes is that the *name* is no longer from a compiled list.
+
+| # | Threat | Control (built) | Negative test |
+|---|---|---|---|
+| T18 | A typed name escapes the folder: `..\x`, `C:\x`, `\\server\x`, `Docs/2026`, or a name containing a separator | `FolderNameCheck.Check` refuses any separator, colon, or dot-only name before anything is looked at; the policy blocks traversal and rooted paths again when the plan is built; `FileOperationRunner.Resolve` and `EnsureContained` refuse a third time | `FolderNameCheckTests` (each form), `FolderTemplatePolicyTests` (name check and policy agree), `FolderTemplatePageTests` (`..\Up` refused on the card, nothing on disk) |
+| T19 | A typed name is a Windows device name (`CON`, `NUL`, `COM1.txt`), ends with a dot or space, or holds a character Windows refuses (`* ? " < > \|`) or a control character | Refused by the name check with the reason; also refused by the policy's `IsUnsupported` | `FolderNameCheckTests`, `FolderTemplatePolicyTests`, `FolderTemplatePageTests` (`CON`) |
+| T20 | Mass creation through typing: hundreds of names, or the same name many times | At most 8 names per template (`FolderTemplateCatalog.MaxFolders`), duplicates refused ignoring capitals, each name at most 64 characters; `IFolderNameLookup` refuses more than 8 names too | `FolderNameCheckTests`, `FolderNameLookupTests` |
+| T21 | A typed name collides with a protected entry, an existing file, or a link inside the folder | Same controls as catalog names: the policy's overlap check blocks it before a plan exists; the lookup reports a file or link and the preview says "Can't be made"; the runner refuses at creation time if it appeared since | `FolderTemplateServiceTests` (policy-blocked name left out of the plan), `FolderTemplatePageTests` (a file with the name) |
+| T22 | What was typed is used somewhere other than a folder name — in a prompt, a log, a query | The typed text reaches only `FolderNameCheck.Parse`, then the plan, then the journal's destination path. No AI, network, or logging type is reachable from the service (reflection test). It is shown back to the person in the reason text, unescaped, which is safe in a WinUI `TextBlock` | `FolderTemplateServiceTests` reflection test |
+
+**Residual risk:** none new. A person can, by typing, make an empty folder with an odd but legal
+name inside a folder they allowed DeskAI to tidy. That is what they asked for, they saw the name
+in the preview, and undo removes it while it is empty.
+
 ## Verdict
 
-Safe to build **as designed**, once the owner has answered the design's questions and finding 1
-is scheduled as the first infrastructure commit. Re-review is needed if templates gain typed
-folder names, nested folders, any operation other than creating a folder, or a path to run
-without a window.
+Built **as designed and agreed**, with finding 1 fixed first (`b81e803`) and the typed-name
+re-review above. Re-review is needed if templates gain nested folders, any operation other than
+creating a folder, or a path to run without a window.

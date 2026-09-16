@@ -632,6 +632,57 @@ folder.
 24. Sign out and back in, or restart Windows. Expected: DeskAI does **not** start on its
     own — it only runs again once you open it yourself.
 
+## Folder templates (V0.7 piece C, added 2026-09-16)
+
+Use a new folder under Windows Temp with made-up files only, for example `notes.txt` and a
+folder called `slides`. Never use a personal folder.
+
+1. Open **My workspace** with nothing connected. Expected: under Starter packs, a **Folder
+   templates** section with "Connect a folder in Organize first." and a Go to Organize link;
+   the sentence under the page title says nothing here moves a file.
+2. Connect the test folder in **Search** (not Organize, so tidying is not allowed yet). Back on
+   My workspace. Expected: "Make them in" with the folder chosen, six cards — Student, Developer,
+   Gaming, Productivity, Minimal, Your own folders — each with its folder names on one line, and
+   the last with a text box.
+3. Press **See what it makes** on **Student**. Expected: the same "Allow DeskAI to tidy …?" dialog
+   Organize shows, naming the folder's path. Press **Cancel**. Expected: nothing happens, no
+   folder made. Press again and **Allow tidying**. Expected: the preview dialog "Make the Student
+   folders in <folder>?" listing Assignments, Screenshots, Notes under "DeskAI will make:", and
+   `slides` under "Already there, left as they are:", the green-edged promise line, and the
+   accent button reading **Make 3 folders**.
+4. Press **Esc**, then try again with **Enter**, then the **X**. Expected: each behaves like Cancel
+   and nothing is made (check in File Explorer).
+5. Open it again and press **Make 3 folders**. Expected: on the Student card, "Made 3 folders in
+   <folder>. Already there: slides." In File Explorer the three new folders exist and are empty;
+   `notes.txt` has not moved. Below the cards: "Made in <folder> at <time> …: Assignments,
+   Screenshots, Notes." with **Undo**.
+6. Put a file into the new `Screenshots` folder, then press **Undo**. Expected: "Removed 2 of 3
+   folders. Screenshots: The folder is no longer empty, so DeskAI left it in place." Assignments
+   and Notes are gone, Screenshots and `slides` remain, and the Undo line disappears.
+7. In the test folder make a *file* called `Installers` (no extension). Press **See what it makes**
+   on **Minimal**. Expected: Screenshots under "Already there, left as they are:", Installers
+   under "Can't be made:" with "A file called Installers is already there." in the caution
+   colour, the button **switched off** and reading **Make 0 folders**, and the line "Every folder
+   in this list is already there." Cancel; the Minimal card says "Every folder in this list is
+   already in <folder>." Delete the file and look again. Expected: Installers is under "DeskAI
+   will make:" and the button reads **Make 1 folder**.
+8. On **Your own folders** type `Tax, ..\Up` and press the button. Expected: on that card,
+   "..\Up can't be used. A folder name can't contain \ / : * ? " < > or |." and nothing made. Try
+   `CON`, `Notes.`, nine names, and `Notes, notes`. Expected: a plain reason each time. Type
+   `Tax 2026, Receipts` and press. Expected: the dialog "Make your folders in <folder>?" and after
+   Make, both folders exist, empty.
+9. Close DeskAI, open it again, go to My workspace. Expected: the "Made in <folder> …" line and
+   **Undo** are still there for the folders from step 8. Press Undo. Expected: "Removed 2
+   folders." and they are gone.
+10. In **Organize**, take back tidying for the folder (**Stop tidying**). On My workspace, press
+    **See what it makes**. Expected: the permission dialog again, not the preview.
+11. Add the **Student** starter pack. Expected: no folder appears in the test folder.
+12. Press the "?" next to Folder templates and check it reads clearly, including the line about
+    synced folders. Switch Windows between light, dark, and high contrast with the preview open.
+    Expected: everything readable, the promise line keeps its rail, the caution lines stay visible.
+13. Tab through the section and both dialogs with the keyboard only, then with Narrator on.
+    Expected: the folder choice, every button, and the text box are reachable and named.
+
 ## My workspace (V0.7, added 2026-09-14)
 
 Use a new folder under Windows Temp with made-up files only: `holiday.jpg`, `notes.txt`,

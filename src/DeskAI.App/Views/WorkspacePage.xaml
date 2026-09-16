@@ -17,7 +17,7 @@
                         <controls:HelpButton Topic="workspace.page" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource BodySecondaryStyle}"
-                               Text="Your shortcuts and starter packs. Nothing here moves or changes files." />
+                               Text="Your shortcuts, starter packs, and folder templates. Nothing here moves a file." />
                 </StackPanel>
 
                 <!--
@@ -124,6 +124,88 @@
                                Text="Or make your own in Search and Automatic tasks." />
                 </StackPanel>
 
+                <!--
+                    Folder templates. The one thing on this page that changes a folder: it makes
+                    empty folders, after a preview and a yes, with the same permission Tidy uses.
+                    The folder is chosen once for the whole section; each card opens the preview.
+                -->
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Folder templates" />
+                            <controls:HelpButton Topic="workspace.templates" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="620"
+                                   HorizontalAlignment="Left"
+                                   Text="Make a set of empty folders in a folder you chose. You see the list first, and you can undo it." />
+                    </StackPanel>
+
+                    <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.HasNoTemplateFolders, Mode=OneWay}">
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                   Text="Connect a folder in Organize first." />
+                        <HyperlinkButton Padding="0" Content="Go to Organize" Click="OnGoToOrganizeClick" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasTemplateFolders, Mode=OneWay}">
+                        <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <TextBlock Style="{StaticResource BodySecondaryStyle}" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource DeskTextPrimaryBrush}" Text="Make them in" />
+                            <ComboBox MinWidth="220"
+                                      AutomationProperties.Name="Folder to make templates in"
+                                      ItemsSource="{x:Bind ViewModel.TemplateFolders, Mode=OneWay}"
+                                      SelectedItem="{x:Bind ViewModel.SelectedTemplateFolder, Mode=TwoWay}" />
+                        </StackPanel>
+
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.Templates}"
+                                      AutomationProperties.Name="Folder templates">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="viewmodels:FolderTemplateCardViewModel">
+                                    <Border Style="{StaticResource RowCardStyle}" Margin="0,0,0,8">
+                                        <StackPanel Spacing="8">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock FontWeight="SemiBold"
+                                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                               Text="{x:Bind Name}" />
+                                                    <TextBlock Style="{StaticResource CaptionStyle}"
+                                                               Visibility="{x:Bind IsBuiltIn}"
+                                                               Text="{x:Bind FolderList}" />
+                                                    <!-- The one place a person types folder names. Checked when the button is pressed. -->
+                                                    <TextBox Visibility="{x:Bind IsOwn}"
+                                                             MaxWidth="460" HorizontalAlignment="Left"
+                                                             AutomationProperties.Name="Your own folder names"
+                                                             PlaceholderText="Folder names, separated by commas"
+                                                             Text="{x:Bind TypedNames, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                                                </StackPanel>
+                                                <!-- Plain, not accent: seeing the list confirms nothing. -->
+                                                <Button Grid.Column="1" VerticalAlignment="Center"
+                                                        Content="See what it makes"
+                                                        Tag="{x:Bind Id}"
+                                                        Click="OnTemplateClick" />
+                                            </Grid>
+                                            <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                                       TextWrapping="Wrap"
+                                                       Visibility="{x:Bind HasResult, Mode=OneWay}"
+                                                       Text="{x:Bind Result, Mode=OneWay}" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <!-- The chosen folder's last template run, from DeskAI's history, with Undo. -->
+                        <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.CanUndoTemplate, Mode=OneWay}">
+                            <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                       Text="{x:Bind ViewModel.LastTemplateSummary, Mode=OneWay}" />
+                            <Button HorizontalAlignment="Left" Content="Undo"
+                                    Command="{x:Bind ViewModel.UndoTemplateCommand}" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                   Visibility="{x:Bind ViewModel.HasTemplateMessage, Mode=OneWay}"
+                                   Text="{x:Bind ViewModel.TemplateMessage, Mode=OneWay}" />
+                    </StackPanel>
+                </StackPanel>
+
                 <!-- Saved searches that are not pinned, so a person's own searches can be pinned too. -->
                 <Border Style="{StaticResource CardStyle}"
                         Visibility="{x:Bind ViewModel.HasOtherSearches, Mode=OneWay}">
@@ -225,6 +307,75 @@
                         <TextBlock TextWrapping="Wrap"
                                    Foreground="{ThemeResource DeskTextPrimaryBrush}"
                                    Text="Rules start switched off. Nothing moves until you turn a rule on and press Tidy." />
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </ContentDialog>
+
+        <!--
+            The preview before a template is made. The confirming button says the count and
+            wears the accent; Enter, Esc, and the X all behave like Cancel.
+        -->
+        <ContentDialog x:Name="TemplateDialog"
+                       CloseButtonText="Cancel"
+                       DefaultButton="Close"
+                       PrimaryButtonStyle="{StaticResource AccentButtonStyle}">
+            <ScrollViewer MaxHeight="460">
+                <StackPanel Spacing="12" MaxWidth="460">
+                    <TextBlock x:Name="TemplateNothingToMake"
+                               Style="{StaticResource BodySecondaryStyle}"
+                               TextWrapping="Wrap"
+                               Visibility="Collapsed"
+                               Text="Every folder in this list is already there." />
+
+                    <StackPanel x:Name="TemplateWillMake" Spacing="4">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="DeskAI will make:" />
+                        <ItemsControl x:Name="TemplateNewFolders" AutomationProperties.Name="Folders DeskAI will make">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <TextBlock TextWrapping="Wrap" Foreground="{ThemeResource DeskTextPrimaryBrush}" Text="{x:Bind}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <StackPanel x:Name="TemplateAlready" Spacing="4">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Already there, left as they are:" />
+                        <ItemsControl x:Name="TemplateAlreadyFolders" AutomationProperties.Name="Folders already there">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <TextBlock TextWrapping="Wrap" Style="{StaticResource CaptionStyle}" Text="{x:Bind}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <StackPanel x:Name="TemplateBlocked" Spacing="4">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Can't be made:" />
+                        <ItemsControl x:Name="TemplateBlockedFolders" AutomationProperties.Name="Folders that can't be made">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="views:PackLine">
+                                    <StackPanel Spacing="2" Margin="0,0,0,6">
+                                        <TextBlock FontWeight="SemiBold" TextWrapping="Wrap"
+                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                   Text="{x:Bind Name}" />
+                                        <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                                   Foreground="{ThemeResource DeskCautionBrush}"
+                                                   Text="{x:Bind Note}" />
+                                    </StackPanel>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <!-- The one promise in this dialog, on the accent rail. -->
+                    <Border Padding="12,10" CornerRadius="0,4,4,0"
+                            Background="{ThemeResource DeskSurfaceBrush}"
+                            BorderBrush="{ThemeResource DeskAccentBrush}"
+                            BorderThickness="3,0,0,0">
+                        <TextBlock TextWrapping="Wrap"
+                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                   Text="Only empty folders are made. Nothing is moved, renamed, or deleted. You can undo it." />
                     </Border>
                 </StackPanel>
             </ScrollViewer>

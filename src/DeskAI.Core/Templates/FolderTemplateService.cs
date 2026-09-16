@@ -172,8 +172,12 @@ public sealed class FolderTemplateService(
             return Nothing(fresh, ChangedMessage) with { LookAgain = fresh };
         }
 
-        var approval = Approval.Create(Guid.NewGuid(), fresh.Plan, fresh.Plan.Operations.Select(operation => operation.Id), clock.UtcNow);
-        var result = await executor.ExecuteAsync(fresh.Plan, approval, new Dictionary<Guid, ExpectedFile>(), cancellationToken)
+        // The fresh look only confirms the list; what runs is the plan the person saw, so the
+        // approval and the journal name exactly the operations that were on screen. The
+        // executor checks the plan against the policy again before anything is made.
+        var plan = preview.Plan!;
+        var approval = Approval.Create(Guid.NewGuid(), plan, plan.Operations.Select(operation => operation.Id), clock.UtcNow);
+        var result = await executor.ExecuteAsync(plan, approval, new Dictionary<Guid, ExpectedFile>(), cancellationToken)
             .ConfigureAwait(false);
 
         // The journal knows whether a folder was made or found already there; the result alone
@@ -192,7 +196,7 @@ public sealed class FolderTemplateService(
             .Where(line => line.Kind == FolderTemplateLineKind.Blocked)
             .Select(line => new FolderOutcome(line.Name, line.Reason ?? "It can't be made here."))
             .ToList();
-        foreach (var create in fresh.Plan.Operations.OfType<CreateDirectoryOperation>())
+        foreach (var create in plan.Operations.OfType<CreateDirectoryOperation>())
         {
             var name = create.DestinationRelativePath;
             if (states.TryGetValue(create.Id, out var state) && state == JournalOperationState.AlreadyPresent)

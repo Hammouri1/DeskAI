@@ -1,14 +1,32 @@
-# Folder Templates — Design (draft, waiting for the owner)
+# Folder Templates — Design
 
-- Date: 2026-09-14
+- Date: 2026-09-14; agreed and built 2026-09-16
 - Milestone: V0.7 "Workspace Profiles and Design", piece C
 - Branch: `v0.7-workspace-profiles`
-- Status: **Draft. Not agreed with the owner, and not built.** Written on 2026-09-14 while the
-  owner was away ("continue until I'm back"). V0.7 piece C creates folders, so `ROADMAP.md`
-  requires its own design and security review before any code. This document and
-  `docs/security/2026-09-14-folder-templates-review.md` are those two, as proposals. Every choice
-  marked **Proposed** needs the owner's yes before it is built; the questions at the end are the
-  ones only the owner can answer.
+- Status: **Agreed and built** (ADR 0027). The owner answered the five questions on 2026-09-16:
+  1. reuse Allow tidying — yes; 2. one level only — yes; 3. the five lists — yes, **and people
+  may type their own folder names** (a change from the proposal; see "Typed names" below and
+  the review's re-review); 4. keep packs and templates unconnected — yes; 5. C first, then D,
+  then E. Everything below marked **Proposed** was accepted as written unless the "Built as"
+  notes say otherwise.
+
+## Built as (differences from the proposal)
+
+- **Typed names.** A sixth card, "Your own folders", holds a text box ("Folder names, separated
+  by commas"). `FolderNameCheck.Parse` splits on commas, semicolons, and new lines, trims, ignores
+  blanks, and refuses with a sentence: separators, drive letters, traversal, the characters
+  Windows refuses, control characters, dot-only names, trailing dots, device names, names over 64
+  characters, more than 8, and duplicates. Accepted names become `FolderTemplate.Own(names)` and
+  take the same path as a catalog template, including the policy check and the executor's own.
+- **One folder choice for the section**, a "Make them in" list of connected folders, rather than
+  a "Choose a folder…" button per card. Each card's button is "See what it makes".
+- **One Undo, under the cards**, for the chosen folder's last template run, instead of Undo on
+  each card. After reopening, the journal does not know which card made a run, so one place is
+  the honest one. The card keeps its result line.
+- **What runs is the previewed plan.** `MakeAsync` looks again to confirm the list, then runs the
+  plan the person saw, so the approval names the operations that were on screen. A different
+  list means nothing runs and the fresh list is shown.
+- The hazard-2 recovery fix went in first as its own commit (`b81e803`), as the review asked.
 
 ## What a folder template is, in one sentence
 

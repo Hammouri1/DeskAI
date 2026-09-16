@@ -213,8 +213,30 @@ files." Top to bottom:
    nothing. The result is written on that pack's own card, for example "Added 1 search. Skipped 1
    you already had: Screenshots.", and always says added rules are switched off. There is no
    Custom card; a line says "Or make your own in Search and Automatic tasks."
-3. **Your other saved searches.** Saved searches not pinned, each with **Pin**. Past eight, Pin is
+3. **Folder templates** (piece C, 2026-09-16). "Make a set of empty folders in a folder you
+   chose. You see the list first, and you can undo it." With nothing connected: "Connect a folder
+   in Organize first." and a link. Otherwise a **Make them in** folder choice (connected folders
+   only; connecting stays in Organize), then six cards — the five pack templates with their
+   folder names on one line, and **Your own folders** with a text box "Folder names, separated by
+   commas" — each with a plain **See what it makes** button (plain, because seeing confirms
+   nothing). If the folder may not be tidied, the same "Allow DeskAI to tidy …?" dialog Organize
+   shows comes first. The preview dialog lists "DeskAI will make:", "Already there, left as they
+   are:" (by the name on disk), and "Can't be made:" with each reason in the caution colour, the
+   promise on the accent rail — "Only empty folders are made. Nothing is moved, renamed, or
+   deleted. You can undo it." — and the accent button says the count, **Make 3 folders**, and is
+   off when nothing can be made. Enter, Esc, and the X behave as Cancel. The result is written on
+   that card, for example "Made 2 of 3 folders in Downloads. Notes: A file called Notes is already
+   there. Already there: slides.", and never says "Made" for a folder that was already there.
+   Under the cards, one line and one **Undo** for the chosen folder's last template run, found in
+   DeskAI's history so it is still there after reopening; a tidy in that folder afterwards takes
+   it off the page. A typed name that cannot be a folder is refused on the card with a plain
+   reason before anything is looked at.
+4. **Your other saved searches.** Saved searches not pinned, each with **Pin**. Past eight, Pin is
    off and a line beside the list says to unpin one to make room.
+
+The sentence under the page title is "Your shortcuts, starter packs, and folder templates.
+Nothing here moves a file." It stopped saying "changes files" the day templates arrived, because
+a template does change a folder; the narrower promise is the one that is still true.
 
 ## Implemented Visual System
 

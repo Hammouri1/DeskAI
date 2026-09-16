@@ -3,9 +3,62 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Search;
+using DeskAI.Core.Templates;
+using DeskAI.Core.Tidy;
 using DeskAI.Core.Workspace;
 
 namespace DeskAI.App.ViewModels;
+
+/// <summary>
+/// One folder template's card. The result of making it is written on the card itself.
+/// </summary>
+/// <remarks>
+/// The "Your own folders" card is the one place a person types folder names. What they type
+/// stays here until they press the button; it is checked then, and again by the safety policy.
+/// </remarks>
+public sealed class FolderTemplateCardViewModel(string id, string name, string folderList) : ObservableObject
+{
+    private string _result = string.Empty;
+    private string _typedNames = string.Empty;
+
+    public string Id { get; } = id;
+
+    public string Name { get; } = name;
+
+    /// <summary>The folder names on one line, empty for the card a person fills in.</summary>
+    public string FolderList { get; } = folderList;
+
+    public bool IsOwn => Id == FolderTemplate.OwnId;
+
+    public bool IsBuiltIn => !IsOwn;
+
+    /// <summary>What the person typed on the "Your own folders" card, unchecked.</summary>
+    public string TypedNames
+    {
+        get => _typedNames;
+        set => SetProperty(ref _typedNames, value);
+    }
+
+    public string Result
+    {
+        get => _result;
+        set
+        {
+            if (SetProperty(ref _result, value))
+            {
+                OnPropertyChanged(nameof(HasResult));
+            }
+        }
+    }
+
+    public bool HasResult => !string.IsNullOrEmpty(Result);
+}
+
+/// <summary>A connected folder a template could be made in.</summary>
+public sealed record TemplateFolderOption(Guid Id, string Name, string Path, bool CanTidy)
+{
+    public override string ToString() => Name;
+}
 
 /// <summary>One pinned search as a tile: its name and what its count may truthfully say.</summary>
 public sealed record PinnedSearchTileViewModel(Guid Id, string Name, string Count);
@@ -43,23 +96,30 @@ public sealed class StarterPackCardViewModel(string id, string name, string summ
 }
 
 /// <summary>
-/// The logic behind My workspace: starter packs and pinned searches.
+/// The logic behind My workspace: starter packs, pinned searches, and folder templates.
 /// </summary>
 /// <remarks>
 /// <para>
-/// Nothing on this page changes a file. Adding a pack creates saved searches and switched-off
+/// Nothing on this page moves a file. Adding a pack creates saved searches and switched-off
 /// rules; pinning changes a flag on a saved search; a tile's count is an ordinary search over
-/// what DeskAI remembers. The page holds nothing that could do more.
+/// what DeskAI remembers. The one thing here that changes a folder is a template, which makes
+/// empty folders — after a preview and a yes, with the tidy permission, through the same
+/// executor Tidy uses — and can be undone.
 /// </para>
 /// <para>
-/// A pack is added in two steps with the person between them: <see cref="PreviewPackAsync"/>
-/// says what would be added, and only <see cref="AddPackAsync"/>, after the view's dialog, adds.
+/// Everything that changes something is done in two steps with the person between them:
+/// <see cref="PreviewPackAsync"/> and <see cref="PreviewTemplateAsync"/> say what would happen,
+/// and only <see cref="AddPackAsync"/> and <see cref="MakeTemplateAsync"/>, after the view's
+/// dialog, do it.
 /// </para>
 /// </remarks>
 public sealed class WorkspaceViewModel : ObservableObject
 {
     private readonly StarterPackService _packs;
     private readonly PinnedSearchService _pins;
+    private readonly FolderTemplateService _templates;
+    private readonly ConnectedFolderService _folders;
+    private readonly TidyPermissionService _permission;
     private readonly ISavedSearchRepository _searches;
     private readonly SearchRequest _request;
     private readonly IClock _clock;
@@ -67,35 +127,113 @@ public sealed class WorkspaceViewModel : ObservableObject
     private string _pinMessage = string.Empty;
     private bool _canPinMore = true;
     private bool _isBusy;
+    private TemplateFolderOption? _selectedTemplateFolder;
+    private LastFolderTemplate? _lastTemplate;
+    private string _lastTemplateSummary = string.Empty;
+    private string _templateMessage = string.Empty;
+
+    // The history lookup started by choosing a folder, kept so callers can wait for it.
+    private Task _pendingLast = Task.CompletedTask;
 
     public WorkspaceViewModel(
         StarterPackService packs,
         PinnedSearchService pins,
+        FolderTemplateService templates,
+        ConnectedFolderService folders,
+        TidyPermissionService permission,
         ISavedSearchRepository searches,
         SearchRequest request,
         IClock clock)
     {
         _packs = packs;
         _pins = pins;
+        _templates = templates;
+        _folders = folders;
+        _permission = permission;
         _searches = searches;
         _request = request;
         _clock = clock;
         Packs = StarterPackCatalog.All
             .Select(pack => new StarterPackCardViewModel(pack.Id, pack.Name, pack.Summary))
             .ToArray();
+        Templates = FolderTemplateCatalog.All
+            .Select(template => new FolderTemplateCardViewModel(template.Id, template.Name, template.FolderList))
+            .Append(new FolderTemplateCardViewModel(FolderTemplate.OwnId, "Your own folders", string.Empty))
+            .ToArray();
         PinCommand = new AsyncRelayCommand<Guid>(PinAsync, _ => !IsBusy);
         UnpinCommand = new AsyncRelayCommand<Guid>(UnpinAsync, _ => !IsBusy);
+        UndoTemplateCommand = new AsyncRelayCommand(UndoTemplateAsync, () => CanUndoTemplate && !IsBusy);
     }
 
     public IReadOnlyList<StarterPackCardViewModel> Packs { get; }
+
+    /// <summary>The five built-in templates, then the card a person fills in.</summary>
+    public IReadOnlyList<FolderTemplateCardViewModel> Templates { get; }
 
     public ObservableCollection<PinnedSearchTileViewModel> Pins { get; } = [];
 
     public ObservableCollection<UnpinnedSearchViewModel> OtherSearches { get; } = [];
 
+    /// <summary>The connected folders a template can be made in. Connecting belongs to Organize.</summary>
+    public ObservableCollection<TemplateFolderOption> TemplateFolders { get; } = [];
+
     public AsyncRelayCommand<Guid> PinCommand { get; }
 
     public AsyncRelayCommand<Guid> UnpinCommand { get; }
+
+    public AsyncRelayCommand UndoTemplateCommand { get; }
+
+    public bool HasTemplateFolders => TemplateFolders.Count > 0;
+
+    public bool HasNoTemplateFolders => TemplateFolders.Count == 0;
+
+    /// <summary>The folder templates are made in. Changing it looks up that folder's last template run.</summary>
+    public TemplateFolderOption? SelectedTemplateFolder
+    {
+        get => _selectedTemplateFolder;
+        set
+        {
+            if (SetProperty(ref _selectedTemplateFolder, value))
+            {
+                TemplateMessage = string.Empty;
+                _pendingLast = LoadLastTemplateAsync(value);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The folder's last template run, found in DeskAI's history, so it can still be undone
+    /// after DeskAI was closed and opened again.
+    /// </summary>
+    public string LastTemplateSummary
+    {
+        get => _lastTemplateSummary;
+        private set
+        {
+            if (SetProperty(ref _lastTemplateSummary, value))
+            {
+                OnPropertyChanged(nameof(CanUndoTemplate));
+                UndoTemplateCommand.NotifyCanExecuteChanged();
+            }
+        }
+    }
+
+    public bool CanUndoTemplate => _lastTemplate is not null;
+
+    /// <summary>The answer to pressing Undo, shown beside it.</summary>
+    public string TemplateMessage
+    {
+        get => _templateMessage;
+        private set
+        {
+            if (SetProperty(ref _templateMessage, value))
+            {
+                OnPropertyChanged(nameof(HasTemplateMessage));
+            }
+        }
+    }
+
+    public bool HasTemplateMessage => !string.IsNullOrEmpty(TemplateMessage);
 
     public bool HasPins => Pins.Count > 0;
 
@@ -142,11 +280,222 @@ public sealed class WorkspaceViewModel : ObservableObject
             {
                 PinCommand.NotifyCanExecuteChanged();
                 UnpinCommand.NotifyCanExecuteChanged();
+                UndoTemplateCommand.NotifyCanExecuteChanged();
             }
         }
     }
 
-    public Task InitializeAsync() => ReloadAsync();
+    public async Task InitializeAsync()
+    {
+        await ReloadAsync().ConfigureAwait(true);
+        await ReloadTemplateFoldersAsync().ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// What making a template in the chosen folder would do right now. Changes nothing.
+    /// </summary>
+    /// <returns>
+    /// The preview, or null when there is nothing to show because the reason is already written
+    /// on the card (no folder chosen, a bad typed name, a folder that cannot be looked at).
+    /// </returns>
+    public async Task<FolderTemplatePreview?> PreviewTemplateAsync(string cardId)
+    {
+        var card = Templates.First(item => item.Id == cardId);
+        card.Result = string.Empty;
+        if (SelectedTemplateFolder is not { } folder)
+        {
+            card.Result = "Connect a folder in Organize first.";
+            return null;
+        }
+
+        try
+        {
+            var preview = card.IsOwn
+                ? await _templates.PreviewOwnAsync(folder.Id, card.TypedNames).ConfigureAwait(true)
+                : await _templates.PreviewAsync(folder.Id, cardId).ConfigureAwait(true);
+            if (preview.Problem is not null)
+            {
+                card.Result = preview.Problem;
+                return null;
+            }
+
+            if (!preview.NeedsPermission && !preview.CanMake)
+            {
+                card.Result = $"Every folder in this list is already in {folder.Name}.";
+            }
+
+            return preview;
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            card.Result = $"DeskAI stopped safely: {exception.Message}";
+            return null;
+        }
+    }
+
+    /// <summary>Called only after the page's permission dialog was accepted.</summary>
+    public async Task AllowTemplateFolderTidyAsync()
+    {
+        if (SelectedTemplateFolder is not { } folder)
+        {
+            return;
+        }
+
+        var result = await _permission.AllowAsync(folder.Id).ConfigureAwait(true);
+        TemplateMessage = result.IsAllowed ? string.Empty : result.Explanation;
+        await ReloadTemplateFoldersAsync(folder.Id).ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Makes the folders after the person agreed in the preview dialog, and says what happened
+    /// on the card.
+    /// </summary>
+    /// <returns>A fresh preview when the folder changed while the dialog was open, to show again; else null.</returns>
+    public async Task<FolderTemplatePreview?> MakeTemplateAsync(FolderTemplatePreview preview)
+    {
+        ArgumentNullException.ThrowIfNull(preview);
+        var card = Templates.First(item => item.Id == preview.Template.Id);
+        IsBusy = true;
+        try
+        {
+            var outcome = await _templates.MakeAsync(preview).ConfigureAwait(true);
+            card.Result = DescribeTemplateOutcome(outcome);
+            await LoadLastTemplateAsync(SelectedTemplateFolder).ConfigureAwait(true);
+            return outcome.LookAgain;
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            card.Result = $"DeskAI stopped safely: {exception.Message}";
+            return null;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>The folders a run made, kept by a page test to check undo names them.</summary>
+    internal LastFolderTemplate? LastTemplate => _lastTemplate;
+
+    /// <summary>
+    /// Writes what making a template did as one calm line. It never says "Made" for a folder
+    /// that was already there, and never hides a folder that was not made.
+    /// </summary>
+    internal static string DescribeTemplateOutcome(FolderTemplateOutcome outcome)
+    {
+        if (outcome.Problem is not null)
+        {
+            return outcome.Problem;
+        }
+
+        var total = outcome.Made.Count + outcome.NotMade.Count;
+        var parts = new List<string>();
+        if (outcome.Made.Count == total)
+        {
+            parts.Add($"Made {Count(outcome.Made.Count, "folder", "folders")} in {outcome.FolderName}.");
+        }
+        else if (outcome.Made.Count == 0)
+        {
+            parts.Add($"No folders were made in {outcome.FolderName}.");
+        }
+        else
+        {
+            parts.Add($"Made {outcome.Made.Count} of {Count(total, "folder", "folders")} in {outcome.FolderName}.");
+        }
+
+        parts.AddRange(outcome.NotMade.Select(item => $"{item.Name}: {item.Reason}"));
+        if (outcome.AlreadyThere.Count > 0)
+        {
+            parts.Add($"Already there: {string.Join(", ", outcome.AlreadyThere)}.");
+        }
+
+        return string.Join(" ", parts);
+    }
+
+    private async Task UndoTemplateAsync()
+    {
+        if (_lastTemplate is not { } last || SelectedTemplateFolder is not { } folder)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var result = await _templates.UndoAsync(folder.Id, last.TransactionId, last.MadeById).ConfigureAwait(true);
+            TemplateMessage = result.Summary;
+            await LoadLastTemplateAsync(folder).ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            TemplateMessage = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task ReloadTemplateFoldersAsync(Guid? keep = null)
+    {
+        var wanted = keep ?? SelectedTemplateFolder?.Id;
+        var connected = await _folders.ListAsync().ConfigureAwait(true);
+        TemplateFolders.Clear();
+        foreach (var folder in connected)
+        {
+            TemplateFolders.Add(new TemplateFolderOption(folder.Id, folder.Name, folder.Path, folder.CanTidy));
+        }
+
+        OnPropertyChanged(nameof(HasTemplateFolders));
+        OnPropertyChanged(nameof(HasNoTemplateFolders));
+
+        // Re-selecting the same folder must still reload, because its permission may have just
+        // changed; clearing first makes the assignment below count as a change.
+        _selectedTemplateFolder = null;
+        SelectedTemplateFolder = TemplateFolders.FirstOrDefault(item => item.Id == wanted) ?? TemplateFolders.FirstOrDefault();
+        if (SelectedTemplateFolder is null)
+        {
+            OnPropertyChanged(nameof(SelectedTemplateFolder));
+            _pendingLast = LoadLastTemplateAsync(null);
+        }
+
+        await _pendingLast.ConfigureAwait(true);
+    }
+
+    /// <summary>Waits for the history lookup a folder choice started. For the page and its tests.</summary>
+    public Task WaitForTemplateHistoryAsync() => _pendingLast;
+
+    private async Task LoadLastTemplateAsync(TemplateFolderOption? folder)
+    {
+        _lastTemplate = null;
+        if (folder is null)
+        {
+            LastTemplateSummary = string.Empty;
+            return;
+        }
+
+        try
+        {
+            var last = await _templates.FindLastAsync(folder.Id).ConfigureAwait(true);
+            if (SelectedTemplateFolder?.Id != folder.Id)
+            {
+                return;
+            }
+
+            _lastTemplate = last;
+            LastTemplateSummary = last is null
+                ? string.Empty
+                : $"Made in {folder.Name} at {last.FinishedAtUtc.ToLocalTime():t} on {last.FinishedAtUtc.ToLocalTime():d}: {string.Join(", ", last.Made)}.";
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            LastTemplateSummary = string.Empty;
+            TemplateMessage = $"DeskAI could not read what it did here before: {exception.Message}";
+        }
+
+        OnPropertyChanged(nameof(CanUndoTemplate));
+        UndoTemplateCommand.NotifyCanExecuteChanged();
+    }
 
     /// <summary>What adding a pack would do right now. Saves nothing.</summary>
     public Task<StarterPackPreview> PreviewPackAsync(string packId) => _packs.PreviewAsync(packId);
