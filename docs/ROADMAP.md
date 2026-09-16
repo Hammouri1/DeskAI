@@ -499,8 +499,19 @@ three AI features (A: plain language for Search and rules, B: "Plan this folder"
 - ✅ 2026-09-16: every analyzer warning cleared, including two V1.1 introduced; a second
   performance run recorded after V1.1.
 
-V1.1 is complete in code, tests, and documents as of 2026-09-16; the owner's manual look at all
-of it is the next thing (`HANDOFF.md`).
+- ✅ 2026-09-17: **the words say where the icon near the clock really is** (ADR 0025 amended),
+  after the owner looked for it and found nothing. Nothing was broken — the keep-running switch
+  was off, so no icon existed — but the caption never said the switch is what creates the icon,
+  and three places sent a person to "near the clock" when Windows 11 hides a new icon behind the
+  arrow. One sentence is now appended to all four. The owner confirmed the icon afterwards.
+- ✅ 2026-09-17: **the repository describes the product that exists.** The README had called
+  DeskAI "a planned application" with V1.0 next and schema 7; both it and `INSTALL.md` also sent
+  people to an empty Releases page. Rewritten around what a person can do today, with an honest
+  limits section and instructions that work while there is no release.
+
+V1.1 is complete in code, tests, and documents as of 2026-09-17, and the source is on GitHub
+privately at https://github.com/Hammouri1/DeskAI. The owner's manual look at all of it, and the
+first Actions run, are the next things (`HANDOFF.md`).
 
 ## Explicitly Deferred Beyond V1 Unless Reprioritized
 
