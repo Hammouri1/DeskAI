@@ -391,3 +391,19 @@ Step 8 adds a separate, optional “Preview a folder” card below the practice 
 Settings is named “Privacy and AI” and starts with a short status card. Sharing controls use everyday names and require confirmation when allowing more information. The three main choices are “Don't use AI,” “AI running on this computer,” and “Online AI with my own key.” Choosing the online option reveals a list of supported services so a person can pick the one they already have an account with; the model hint, key label, agreement wording, and remove-key button all rename themselves to that service. Addresses, model names, timeouts, and daily limits are grouped below the main choice instead of leading with technical language. Online activation repeats exactly what may be shared, names the exact host that will receive it, and reminds the user that the chosen service controls pricing and service-side data handling.
 
 Organize presented AI as an optional “second opinion” for generated samples (retired 2026-09-11; AI is now asked from Tidy a folder). The card identifies where data would go, offers a Stop button, reports usage when available, and shows the category, confidence, explanation, and source for each idea. It explicitly states that AI cannot move, rename, or change files.
+
+**"Check this now" (2026-09-17).** Beside **Save AI choice**, a plain button — checking is not a
+permission. Under both, the saved-choice line, then a result card that exists only once a check
+has run: a tick in the accent and "Working. <service> answered.", or a cross in the danger colour
+and one sentence naming the thing on this page to change ("<service> did not accept your key.
+Paste it again above, copying only the key itself."), with the service's own words quoted after it
+when it gave any and the key itself never echoed back. A caption under the card says checking
+sends no file names, sizes, or locations, and that online AI spends one request from the daily
+allowance; the online button confirms that in a dialog first. Saving again or removing the key
+clears the card, because a result belongs to the setup it was taken from.
+
+Saving now says what it did, not what it assumes: "Saved. Now press "Check this now" to see
+whether <service> answers." — never "ready", which DeskAI had not checked. A refusal reads
+"Not saved." followed by a sentence a person can act on, and also opens a dialog headed
+**DeskAI did not save that yet**: the status line alone sat below the fold in small grey text,
+and the owner read a filled-in form and an unchanged page as a broken app (2026-09-17).

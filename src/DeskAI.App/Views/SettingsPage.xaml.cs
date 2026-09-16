@@ -229,7 +229,69 @@ public sealed partial class SettingsPage : Page
         await _viewModel.SaveProviderAsync(CloudKeyBox.Password);
         // Managed strings cannot be forcibly erased, so clear the box as soon as possible.
         CloudKeyBox.Password = string.Empty;
+        CheckResultIcon.Glyph = QuestionGlyph;
+        CheckResultIcon.Foreground = (Brush)Application.Current.Resources["DeskTextSecondaryBrush"];
+
+        // A refusal used to be one line of small grey text under a button most of the way down
+        // a long page. The owner filled the form in, saw nothing, and thought DeskAI was broken.
+        if (_viewModel.ProviderProblem is { } problem)
+        {
+            await new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = "DeskAI did not save that yet",
+                Content = problem,
+                CloseButtonText = "OK",
+            }.ShowAsync();
+        }
     }
+
+    /// <summary>
+    /// Says hello to whichever AI is saved and shows what came back.
+    /// </summary>
+    /// <remarks>
+    /// Online AI is asked first, because a check is a real request on the person's own account.
+    /// The colour and icon are set here rather than bound, since this project holds no converters.
+    /// </remarks>
+    private async void OnCheckConnectionClick(object sender, RoutedEventArgs e)
+    {
+        if (_viewModel.SelectedModeIndex == (int)AiMode.Cloud)
+        {
+            var confirmation = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = "Check now?",
+                Content = $"DeskAI will say hello to {_viewModel.SelectedProviderName} to see whether it answers. "
+                    + "Nothing about your files is sent. This uses one request from your daily allowance.",
+                PrimaryButtonText = "Check now",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Primary,
+            };
+            if (await confirmation.ShowAsync() != ContentDialogResult.Primary)
+            {
+                return;
+            }
+        }
+
+        CheckConnectionButton.IsEnabled = false;
+        try
+        {
+            await _viewModel.CheckConnectionAsync();
+        }
+        finally
+        {
+            CheckConnectionButton.IsEnabled = true;
+        }
+
+        var worked = _viewModel.ConnectionWorked == true;
+        CheckResultIcon.Glyph = worked ? WorkingGlyph : ProblemGlyph;
+        CheckResultIcon.Foreground = (Brush)Application.Current.Resources[
+            worked ? "SystemFillColorSuccessBrush" : "SystemFillColorCriticalBrush"];
+    }
+
+    private const string QuestionGlyph = "";
+    private const string WorkingGlyph = "";
+    private const string ProblemGlyph = "";
 
     private async void OnRemoveCloudKeyClick(object sender, RoutedEventArgs e)
     {

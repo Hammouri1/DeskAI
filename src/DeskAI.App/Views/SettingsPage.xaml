@@ -142,9 +142,29 @@
                         </StackPanel>
                     </Expander>
 
-                    <Button HorizontalAlignment="Left" Click="OnSaveProviderClick" Content="Save AI choice"
-                            Style="{StaticResource AccentButtonStyle}" />
-                    <TextBlock Style="{StaticResource BodySecondaryStyle}" Text="{Binding ProviderStatus}" />
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <Button Click="OnSaveProviderClick" Content="Save AI choice"
+                                Style="{StaticResource AccentButtonStyle}" />
+                        <Button x:Name="CheckConnectionButton" Click="OnCheckConnectionClick"
+                                Content="Check this now" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                               Text="{Binding ProviderStatus}" />
+
+                    <!--
+                        What the check found. Saving only writes the choice down; until this
+                        card has words in it, nothing has proved the AI answers at all.
+                    -->
+                    <Border Style="{StaticResource SoftCardStyle}" Visibility="{Binding HasConnectionStatus}">
+                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="12">
+                            <FontIcon x:Name="CheckResultIcon" FontSize="18" VerticalAlignment="Top"
+                                      Glyph="&#xE9F5;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                            <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}"
+                                       TextWrapping="Wrap" Text="{Binding ConnectionStatus}" />
+                        </Grid>
+                    </Border>
+                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                               Text="Checking says hello to your AI and shows you the answer. It sends no file names, sizes, or locations. With online AI it uses one request from your daily allowance." />
                 </StackPanel>
             </Border>
 

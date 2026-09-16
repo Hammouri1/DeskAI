@@ -77,7 +77,7 @@ public sealed class CloudChatCompletionsSuggestionProvider(
                 timeout.Token).ConfigureAwait(false);
             if (response.StatusCode != HttpStatusCode.OK)
             {
-                var said = ServiceExplanation(response.Body, key);
+                var said = ServiceReply.Explanation(response.Body, key);
                 return Failure(
                     MapStatus(response.StatusCode),
                     said is null
@@ -177,7 +177,7 @@ public sealed class CloudChatCompletionsSuggestionProvider(
             request,
             response =>
             {
-                var said = ServiceExplanation(response.Body, key);
+                var said = ServiceReply.Explanation(response.Body, key);
                 return ChatCompletionsSentenceCall.Failure(
                     name,
                     MapStatus(response.StatusCode),
@@ -190,49 +190,6 @@ public sealed class CloudChatCompletionsSuggestionProvider(
 
     private static int? ReadInt(JsonElement parent, string name) =>
         parent.TryGetProperty(name, out var value) && value.TryGetInt32(out var number) ? number : null;
-
-    private const int MaximumExplanationLength = 200;
-
-    /// <summary>
-    /// The service's own one-line reason for refusing, made safe to show.
-    /// </summary>
-    /// <remarks>
-    /// "The key was not accepted" has several causes a person can fix — a mistyped key, a
-    /// deleted one, one from another service — and the service's own words usually say
-    /// which. The text is untrusted: it is shown as text only, stripped of control
-    /// characters, shortened, and the saved key is removed in case the service echoes it.
-    /// </remarks>
-    private static string? ServiceExplanation(string body, string key)
-    {
-        string? message;
-        try
-        {
-            using var document = JsonDocument.Parse(body);
-            message = document.RootElement.ValueKind == JsonValueKind.Object &&
-                document.RootElement.TryGetProperty("error", out var error) &&
-                error.ValueKind == JsonValueKind.Object &&
-                error.TryGetProperty("message", out var text) &&
-                text.ValueKind == JsonValueKind.String
-                    ? text.GetString()
-                    : null;
-        }
-        catch (JsonException)
-        {
-            return null;
-        }
-
-        if (string.IsNullOrWhiteSpace(message))
-        {
-            return null;
-        }
-
-        var cleaned = new string(message.Select(character => char.IsControl(character) ? ' ' : character).ToArray())
-            .Replace(key, "[your key]", StringComparison.Ordinal)
-            .Trim();
-        return cleaned.Length <= MaximumExplanationLength
-            ? cleaned
-            : string.Concat(cleaned.AsSpan(0, MaximumExplanationLength), "…");
-    }
 
     private static AiProviderStatus MapStatus(HttpStatusCode status) => status switch
     {

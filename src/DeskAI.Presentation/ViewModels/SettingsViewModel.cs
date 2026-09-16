@@ -18,6 +18,7 @@ public sealed class SettingsViewModel(
     FreshStartService freshStart,
     IUserFileStore files,
     BackgroundPresenceController presence,
+    IAiConnectionCheck connectionCheck,
     IClock clock) : ObservableObject
 {
     private AiSettings _loaded = AiSettings.Default;
@@ -182,6 +183,10 @@ public sealed class SettingsViewModel(
     private int _selectedCloudProviderIndex;
     private bool _cloudConsent;
     private string _providerStatus = "Choose whether you want to use AI.";
+    private string? _providerProblem;
+    private string _connectionStatus = string.Empty;
+    private bool? _connectionWorked;
+    private bool _isCheckingConnection;
     private double _timeoutSeconds = 30;
     private double _dailyRequestLimit = 20;
     private string _keyWarning = string.Empty;
@@ -246,6 +251,86 @@ public sealed class SettingsViewModel(
     public string RemoveKeyLabel => $"Remove saved {SelectedProvider.DisplayName} key";
     public bool CloudConsent { get => _cloudConsent; set => SetProperty(ref _cloudConsent, value); }
     public string ProviderStatus => _providerStatus;
+
+    /// <summary>
+    /// The reason the last save was refused, or null when it went through.
+    /// </summary>
+    /// <remarks>
+    /// The status line under the button sits below the fold on a long page, in small grey text.
+    /// The owner filled the form in, pressed Save, saw nothing change, and concluded DeskAI was
+    /// broken. The page now also puts this in front of them, so a refusal cannot be missed.
+    /// </remarks>
+    public string? ProviderProblem => _providerProblem;
+
+    /// <summary>What the last "Check this now" found. Empty until one has been run.</summary>
+    public string ConnectionStatus => _connectionStatus;
+
+    public bool HasConnectionStatus => !string.IsNullOrEmpty(ConnectionStatus);
+
+    /// <summary>True when the AI answered, false when it did not, null before any check.</summary>
+    public bool? ConnectionWorked => _connectionWorked;
+
+    /// <summary>True while a check is in flight, so the page can disable the button.</summary>
+    public bool IsCheckingConnection => _isCheckingConnection;
+
+    /// <summary>
+    /// Asks the saved AI to answer one word, and says plainly what happened.
+    /// </summary>
+    /// <remarks>
+    /// It checks what is <em>saved</em>, not what is typed on screen, because the key lives in
+    /// Windows and only a saved choice is what the rest of DeskAI will use. For online AI this
+    /// sends one real request on the person's own account; the page asks them first.
+    /// </remarks>
+    public async Task CheckConnectionAsync(CancellationToken cancellationToken = default)
+    {
+        if (_isCheckingConnection)
+        {
+            return;
+        }
+
+        _isCheckingConnection = true;
+        _connectionStatus = "Checking…";
+        _connectionWorked = null;
+        NotifyConnection();
+        try
+        {
+            var result = await connectionCheck.CheckAsync(cancellationToken).ConfigureAwait(true);
+            _connectionStatus = result.Message;
+            _connectionWorked = result.Worked;
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            _connectionStatus = $"DeskAI could not run the check: {exception.Message}";
+            _connectionWorked = false;
+        }
+        finally
+        {
+            _isCheckingConnection = false;
+            NotifyConnection();
+        }
+    }
+
+    /// <summary>
+    /// The sentence a person should read, without the part .NET adds for a programmer.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="ArgumentException"/> appends "(Parameter 'modelId')" to whatever it is given,
+    /// and that reached the page word for word. The refusal is written for the person in the
+    /// policy that throws it; only the tail is removed here.
+    /// </remarks>
+    private static string PlainMessage(Exception exception) =>
+        exception is ArgumentException { ParamName: { Length: > 0 } parameter } argument
+            ? argument.Message.Replace($" (Parameter '{parameter}')", string.Empty, StringComparison.Ordinal).Trim()
+            : exception.Message;
+
+    private void NotifyConnection()
+    {
+        OnPropertyChanged(nameof(ConnectionStatus));
+        OnPropertyChanged(nameof(HasConnectionStatus));
+        OnPropertyChanged(nameof(ConnectionWorked));
+        OnPropertyChanged(nameof(IsCheckingConnection));
+    }
+
     public double TimeoutSeconds { get => _timeoutSeconds; set => SetProperty(ref _timeoutSeconds, value); }
     public double DailyRequestLimit { get => _dailyRequestLimit; set => SetProperty(ref _dailyRequestLimit, value); }
 
@@ -276,6 +361,10 @@ public sealed class SettingsViewModel(
     public async Task SaveProviderAsync(string apiKey)
     {
         _keyWarning = string.Empty;
+        _providerProblem = null;
+        // A result from the old setup would be a lie about the new one.
+        _connectionStatus = string.Empty;
+        _connectionWorked = null;
         try
         {
             var mode = Enum.IsDefined((AiMode)SelectedModeIndex)
@@ -313,19 +402,23 @@ public sealed class SettingsViewModel(
 
             await settingsRepository.SaveAsync(updated);
             _loaded = updated;
+            // "Ready" was a claim DeskAI had never checked. It now says only what it did, and
+            // points at the button that can turn the claim into something seen.
             _providerStatus = mode switch
             {
                 AiMode.RuleEngineOnly => "Saved. DeskAI will work without AI.",
-                AiMode.Local => "Saved. AI will run only on this computer.",
-                _ => $"Saved. {SelectedProvider.DisplayName} is ready with your sharing choices.{_keyWarning}",
+                AiMode.Local => "Saved. Now press \"Check this now\" to see whether it answers.",
+                _ => $"Saved. Now press \"Check this now\" to see whether {SelectedProvider.DisplayName} answers.{_keyWarning}",
             };
         }
         catch (Exception exception) when (exception is ArgumentException or InvalidOperationException or System.ComponentModel.Win32Exception)
         {
-            _providerStatus = $"Settings were not enabled: {exception.Message}";
+            _providerProblem = PlainMessage(exception);
+            _providerStatus = $"Not saved. {_providerProblem}";
         }
 
         NotifyAll();
+        NotifyConnection();
     }
 
     /// <summary>Removes only the key for the currently selected service, never every saved key.</summary>
@@ -346,6 +439,8 @@ public sealed class SettingsViewModel(
             _selectedModeIndex = (int)AiMode.RuleEngineOnly;
             _cloudConsent = false;
             _providerStatus = $"{provider.DisplayName} key removed. AI is now off.";
+            _connectionStatus = string.Empty;
+            _connectionWorked = null;
         }
         catch (System.ComponentModel.Win32Exception exception)
         {
@@ -353,6 +448,7 @@ public sealed class SettingsViewModel(
         }
 
         NotifyAll();
+        NotifyConnection();
     }
 
     private async Task<AiSettings> CreateCloudSettingsAsync(string apiKey)
@@ -466,6 +562,7 @@ public sealed class SettingsViewModel(
         OnPropertyChanged(nameof(RemoveKeyLabel));
         OnPropertyChanged(nameof(CloudConsent));
         OnPropertyChanged(nameof(ProviderStatus));
+        OnPropertyChanged(nameof(ProviderProblem));
         OnPropertyChanged(nameof(TimeoutSeconds));
         OnPropertyChanged(nameof(DailyRequestLimit));
     }

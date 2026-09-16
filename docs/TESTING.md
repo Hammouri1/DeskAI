@@ -196,6 +196,9 @@ changes a feature.
 | Whole app | No test can touch the real wallpaper or the real Desktop, Downloads, Documents, or Pictures: all are replaced in `TestApp`, the four test folders are asserted to sit inside the test's own folder and outside the real ones, and every test's Desktop contains a protected "program folder", as the owner's does | `YourFoldersPageTests`, `DesktopAndWallpaperPageTests`, `TestApp` |
 | Privacy and AI | Sharing choices, AI modes, key storage and removal, daily limit | `SettingsPageTests`, `AiJourneyTests` |
 | Privacy and AI | Pasted key trimmed, spaced key refused, wrong-looking key warned | `SettingsPageTests` |
+| Privacy and AI | "Check this now": says hello to the saved AI and reports what answered; refusal, missing key, unreachable local app, unreadable reply, and the daily cap each explained; the result is cleared when the choice changes or the key is removed | `SettingsCheckPageTests`, `AiConnectionCheckTests` |
+| Privacy and AI | The check carries nothing about the computer, whatever the sharing choices allow, and never repeats the key back onto the page | `SettingsCheckPageTests` |
+| Privacy and AI | An empty model name or local address is refused in words a person can act on, never a framework sentence about a parameter | `SettingsCheckPageTests` |
 | Privacy and AI | Back up: the file holds rules and saved searches and no folder, path, key, or setting; the status says so | `BackupPageTests` |
 | Privacy and AI | Restore: preview adds nothing and names what is skipped and why; restore adds once with new IDs, rules Off, names already used skipped; a second restore adds nothing; pins kept only while there is room | `BackupPageTests` |
 | Privacy and AI | Restore refuses a file that is not a backup, a newer version, a non-.json file, and an oversized file in plain words; a hostile or unknown rule in the file is skipped with a reason and the rest restored | `BackupPageTests` |

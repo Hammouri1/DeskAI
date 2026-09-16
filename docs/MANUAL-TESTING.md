@@ -1051,3 +1051,31 @@ one paid request; the list is about five.
 8. Ask "hello". Expected: "I'm not sure what you mean. You can ask things like …".
 9. Press the "?" and check it reads clearly. Tab through the box, the button, the dialog, and a
    reply's button with the keyboard, then with Narrator on.
+
+## Check this now (Privacy and AI)
+
+Saving an AI choice only writes it down. This is the walk that proves it works. The online part
+needs a key you already have, and each check is one real request on your own account.
+
+1. With AI off, open **Privacy and AI**, scroll to **Choose how AI works**, and press
+   **Check this now**. Expected: a card saying AI is off and to choose how AI works and press
+   Save AI choice first. Nothing is sent.
+2. Choose **Online AI with my own key**, leave **Model name** empty, enter your key, turn the
+   agreement on, and press **Save AI choice**. Expected: a dialog headed "DeskAI did not save
+   that yet" telling you to fill in the Model name box and that the grey example is only a hint.
+   No mention of a "parameter". The five boxes at the top of the page still say AI is off.
+3. Do the same with **AI running on this computer** and an empty address. Expected: the same
+   kind of dialog, naming the address box and showing an example address.
+4. Fill the model name in properly and save. Expected: "Saved. Now press "Check this now" to see
+   whether <service> answers."
+5. Press **Check this now**. Expected: a dialog saying DeskAI will say hello, that nothing about
+   your files is sent, and that it uses one request from your allowance. Cancel: nothing happens.
+6. Press it again and confirm. Expected: a green tick and "Working. <service> answered." The pill
+   at the top right reads **AI: <service>**.
+7. Change the model name to something your account does not have, save, and check. Expected: a red
+   mark and the service's own reason, with your key never shown back to you.
+8. Remove the key. Expected: the result card disappears rather than still claiming it works.
+9. For local AI: close your AI app, then check. Expected: "DeskAI could not reach it. Check the AI
+   app on this computer is running…". Start it and check again for the green tick.
+10. Set **Most online AI requests allowed each day** to 1, check twice. Expected: the second says
+    you have reached today's limit and that a check costs one request. Nothing was sent.

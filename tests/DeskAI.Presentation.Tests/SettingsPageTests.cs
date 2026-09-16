@@ -51,7 +51,8 @@ public sealed class SettingsPageTests
 
         await settings.SaveProviderAsync("generated-test-key-not-real");
 
-        Assert.StartsWith("Settings were not enabled", settings.ProviderStatus, StringComparison.Ordinal);
+        Assert.StartsWith("Not saved.", settings.ProviderStatus, StringComparison.Ordinal);
+        Assert.NotNull(settings.ProviderProblem);
         Assert.Equal("AI is off", settings.AiProcessing);
         Assert.Null(await app.Vault.RetrieveAsync("DeskAI/OpenRouter", TestContext.Current.CancellationToken));
     }
@@ -86,7 +87,8 @@ public sealed class SettingsPageTests
 
         await settings.SaveProviderAsync(string.Empty);
 
-        Assert.StartsWith("Settings were not enabled", settings.ProviderStatus, StringComparison.Ordinal);
+        Assert.StartsWith("Not saved.", settings.ProviderStatus, StringComparison.Ordinal);
+        Assert.NotNull(settings.ProviderProblem);
         Assert.Equal("AI is off", settings.AiProcessing);
     }
 
@@ -107,7 +109,8 @@ public sealed class SettingsPageTests
         settings.CloudModel = "gpt-4o-mini";
         await settings.SaveProviderAsync(string.Empty);
 
-        Assert.StartsWith("Settings were not enabled", settings.ProviderStatus, StringComparison.Ordinal);
+        Assert.StartsWith("Not saved.", settings.ProviderStatus, StringComparison.Ordinal);
+        Assert.NotNull(settings.ProviderProblem);
         Assert.Null(await app.Vault.RetrieveAsync(
             CloudProviderCatalog.All[1].CredentialReference, TestContext.Current.CancellationToken));
     }

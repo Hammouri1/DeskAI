@@ -47,6 +47,9 @@ public static class DeskAiApplicationServices
                 Timeout = Timeout.InfiniteTimeSpan,
             }));
         services.AddSingleton<IOrganizationSuggestionProvider, ConfiguredSuggestionProvider>();
+        // "Check this now" on Privacy and AI: the one AI path that carries no file information
+        // at all, so a person can see their choice works before trusting it with anything.
+        services.AddSingleton<IAiConnectionCheck, ConfiguredAiConnectionCheck>();
         services.AddSingleton<IPathPolicy>(_ => new WindowsPathPolicy(protectedList));
         services.AddSingleton<PlanValidator>();
         services.AddSingleton<IPlanSafetyCheck, PlanSafetyCheck>();

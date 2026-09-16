@@ -222,3 +222,25 @@ Store provider ID, endpoint (where allowed), model ID, capability cache, timeout
   test fixes that. Its buttons open pages through the same `SearchRequest` and `OrganizeRequest`
   the pages' own buttons use.
 - Review: `docs/security/2026-09-16-ask-deskai-review.md`.
+
+## Checking the connection (2026-09-17)
+
+`IAiConnectionCheck` (Core) with `ConfiguredAiConnectionCheck` (AI) is the one AI path that
+carries no information about the computer at all. It posts a fixed greeting — "Reply with the
+single word: ok", `max_tokens` 5, `temperature` 0 — to the same address the real features use:
+the compile-time `CloudProvider.ChatCompletionsEndpoint` for an online service, or the loopback
+address the person typed for an AI on their computer. A working check therefore proves the real
+path, not a separate one.
+
+Rules it keeps:
+
+- It reads the **saved** choice, never what is typed on screen, so it can only reach a
+  destination the rest of DeskAI would reach, with the key belonging to that one service.
+- Consent, a known catalog service, and a saved credential reference are all required before an
+  online check is sent; anything missing is explained instead of guessed at.
+- An online check reserves one request from the per-service daily cap before sending. A cap a
+  button can skip is not a cap.
+- The reply is read only far enough to know something answered. Nothing in it is believed, and
+  the service's own refusal text is shown only through `ServiceReply.Explanation`, which strips
+  control characters, shortens it, and replaces the key if the service echoes it back.
+- Sharing choices do not widen it. There is nothing in the request for them to widen.
