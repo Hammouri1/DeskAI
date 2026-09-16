@@ -1,5 +1,38 @@
 # Release notes
 
+## 1.1 — 2026-09-16 (not tagged yet)
+
+Built the same day, after the owner's first look at 1.0. Version number in
+`Directory.Build.props` still reads 1.0.0; bumping it is the owner's call before tagging.
+
+**Fixes**
+
+- The Desktop connects even when DeskAI itself was unzipped onto it. A folder that merely
+  contains a protected place (DeskAI's own program folder) connects with that part skipped;
+  a folder inside a protected place is still refused.
+- Pinned search tiles no longer clip "No folders connected": words go on a caption line and only
+  a number uses the big style.
+
+**Only your own four folders (ADR 0032)**
+
+- DeskAI can be given only your Desktop, Downloads, Documents, and Pictures, or folders inside
+  them, checked when connecting and again before tidying. A **Your folders** card on Home and My
+  workspace lists the four with one Connect or Tidy button each; it replaces "Tidy my Desktop".
+
+**AI that does something (ADR 0033, 0034, 0035)**
+
+- **Let AI read this** on Search and Automatic tasks: your own words go to your service, alone;
+  the reading comes back as plain words DeskAI reads itself, in the box, for you to change.
+- **Plan this folder with AI** on Organize: the AI names up to 12 plain folders and says which
+  file goes where; every name is checked four times, and the plan is the ordinary preview,
+  Tidy, and undo.
+- **Ask DeskAI** on Home: ask "what's taking space in Downloads?" or "tidy my Desktop"; only
+  the question is sent; DeskAI answers from what it remembers, in its own words, with one
+  button to open Search or Organize or connect a folder.
+
+Every request still shows you exactly what would be sent first, counts against the daily limit,
+and never carries what is inside your files or where they are.
+
 ## 1.0.0 — 2026-09-16
 
 The first stable release. Everything below was built and tested between 2026-09-07 and

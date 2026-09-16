@@ -16,75 +16,80 @@ appending to them.
 
 ## Where things stand
 
-- Updated: 2026-09-16, after commit `a09fc47` on `main`, tree clean. `v0.5-background-checking`
-  and `v0.7-workspace-profiles` are **merged into `main`** (merge commit `0530a05`); work
-  continues on `main` or a new branch from it. Nothing has been pushed to GitHub from this
-  checkout yet.
-- **The whole roadmap is complete in code, tests, and documents: V0.1–V1.0.** On 2026-09-16 one
-  session did, in order, each with its own commit(s): the command-center redesign of every page
-  (`docs/superpowers/specs/2026-09-16-command-center-redesign-design.md`), V0.8 (ADR 0030,
-  `docs/security/2026-09-16-v0.8-privacy-review.md`), V0.9 (ADR 0031,
-  `docs/security/2026-09-16-tidy-while-away-review.md`, written before code), and V1.0
-  (`docs/security/2026-09-16-v1.0-release-review.md`, `LICENSE` (MIT), `CONTRIBUTING.md`, root
-  `SECURITY.md`, `docs/USER-GUIDE.md`, `docs/INSTALL.md`, `docs/RELEASE-NOTES.md`). Version is
-  `1.0.0` in `Directory.Build.props`.
-- Verification at the end, with the owner's DeskAI closed: full Release build of
-  `DeskAI.sln`; **1192 tests pass, none skipped**; `dotnet format` clean; the launchable exe is
-  at the usual path below (built 2026-09-16 14:02). While the owner's own `DeskAI.App.exe` is
-  open, the App's final copy step fails with locked DLLs; compile it into a scratch folder then
+- Updated: 2026-09-16, after commit `00692f9` on `main` plus this handoff commit, tree clean.
+  Nothing has been pushed to GitHub from this checkout yet; no tag exists.
+- **V1.1 is complete in code, tests, and documents.** It came out of the owner's first look at
+  V1.0 (two screenshots: a clipped tile, "This location is protected" on the Desktop) and their
+  four complaints: the Desktop would not connect, no way to connect Downloads and the others,
+  the UI needed fixing, and "no real use of the AI". Six commits in the agreed order:
+  `f977673` Desktop bug, `4ec785c` tile clip, `275bad4` four-folder rule and Your folders card
+  (ADR 0032), `39e6deb` AI reads a sentence (ADR 0033), `f3b8d27` Plan this folder (ADR 0034),
+  `00692f9` Ask DeskAI (ADR 0035). `ROADMAP.md` has the V1.1 section; each AI feature has a
+  security review in `docs/security/2026-09-16-*.md`.
+- Verification at the end, with the owner's DeskAI closed: full Release build of `DeskAI.sln`
+  with **no errors and no warnings** (the three pre-existing analyzer warnings were not
+  touched: they are in files this version did not change — see item 4); **1344 tests pass, none
+  skipped**; `dotnet format` clean. The launchable exe is at the usual path below, built
+  2026-09-16 15:19. While the owner's own `DeskAI.App.exe` is open the App's final copy step
+  fails with locked DLLs; compile into a scratch folder then
   (`dotnet build src/DeskAI.App -c Release -p:OutDir=<somewhere else>`) and ask them to close it
-  for the real build. Three analyzer warnings from before this session remain (see item 5).
-- **The owner has not yet reported on anything from V0.7 onward.** They were given the exe at
-  the end of the session and asked to start with Home, the away switch on Organize, and the
-  backup and Start fresh cards; every manual list from "My workspace" to "A release zip" in
-  `MANUAL-TESTING.md` is unreported. The riskiest
-  untested-by-hand spots: the real theme repaint and the real wallpaper call (V0.7), the away
-  switch's dialog and the notice with the window closed (V0.9), and the release workflow, which
-  has never run on GitHub (no push or tag has been made from this machine's checkout).
-- GitHub Actions: `.github/workflows/build.yml` and `release.yml` exist but are unverified until
-  the repository is pushed. The release uses `softprops/action-gh-release@v2` and the
-  `CycloneDX` .NET tool; if either is unavailable, the workflow fails visibly rather than
-  publishing a partial release.
+  for the real build.
+- **The owner has not yet looked at anything from V0.7 onward, nor at V1.1.** Every manual list
+  from "My workspace" through "Ask DeskAI" in `MANUAL-TESTING.md` is unreported. The riskiest
+  spots by hand: the Your folders card connecting the real Desktop (their DeskAI lives on it —
+  the whole point of the first fix), the four "Send this to …?" dialogs (Ask AI, Plan, Let AI
+  read this, Ask DeskAI) against a real service, the real theme repaint and wallpaper (V0.7),
+  the away switch (V0.9), and the release workflow, which has never run on GitHub.
 
 ## What is left
 
-1. **The owner's look at everything since V0.6**, in `docs/MANUAL-TESTING.md`: "The
-   command-center look: every page / Home / the other pages", "Back up, restore, and Start
-   fresh", "A release zip", "Tidy while I'm away", plus the older "My workspace", "Folder
-   templates", "DeskAI's look", "Desktop and wallpaper", "V0.6 sign-off", and steps 2, 9, 19–24
-   of "Checking after the window is closed". Any bug found by hand gets a page test that fails
-   first. Expect layout clips like the 2026-09-16 "Unpin" one; a page test cannot see those.
-2. **Push and tag.** `git push origin main`, watch the build workflow go green, then
-   `git tag v1.0.0 && git push origin v1.0.0` and check the Release has the zip and the SBOM.
-   Unzip it on a clean account and walk "A release zip".
-3. **Code signing** when a certificate exists (ADR 0030 names SignPath and Azure Trusted Signing).
-4. **Deferred by decision, not to start unasked:** add-ons (ADR 0030 records the boundary they
-   must start from), localization beyond English, shortcut and icon suggestions, desktop layout
-   previews, local image generation, "keep both" unattended.
-5. **Small things noticed and left:** three pre-existing analyzer warnings (CA1716 on
-   `IWallpaperSetter.Set`, CA1870 in `FolderNameCheck`, CA1838 in `WindowsDesktop`) appear on a
-   full rebuild; they were not introduced this session and were left alone to keep the diff
-   honest. Renaming `Set` touches a reviewed contract (ADR 0029), so do it as its own small
-   commit with the wallpaper tests. `docs/PERFORMANCE.md` has one recorded run; add one after
-   any change to scanning.
+1. **The owner's look at V1.1, then V0.7–V1.0**, in `docs/MANUAL-TESTING.md`: start with "Your
+   folders" (inside "Desktop and wallpaper", steps 9–14), "Let AI read this", "Plan this
+   folder with AI", and "Ask DeskAI"; then the older lists named in the previous handoff
+   ("The command-center look", "Back up, restore, and Start fresh", "A release zip", "Tidy while
+   I'm away", "My workspace", "Folder templates", "DeskAI's look", "V0.6 sign-off", and
+   "Checking after the window is closed" steps 2, 9, 19–24). Any bug found by hand gets a page
+   test that fails first. Expect layout clips a page test cannot see (two were found on
+   2026-09-16 that way).
+2. **Decide the version number, then push and tag.** `Directory.Build.props` still says 1.0.0
+   and `RELEASE-NOTES.md` has a "1.1 — not tagged yet" section. Either tag `v1.0.0` at `5b661e1`
+   and `v1.1.0` at the head, or bump to 1.1.0 and tag once. Then `git push origin main`, watch
+   the build workflow, tag, and check the Release has the zip and the SBOM. Unzip on a clean
+   account and walk "A release zip".
+3. **Possible follow-ups the owner may ask for after trying V1.1** (not started, each its own
+   decision): a first-use-only dialog for Ask DeskAI instead of one per question (ADR 0035
+   names this as the natural next step); size and date boxes on the rule form, so an AI-read
+   sentence like "older than 90 days" lands in a box instead of being noted as left out; more
+   question kinds for Ask DeskAI (duplicates, old files); a narrow-window layout for the Your
+   folders rows on Home.
+4. **Small things noticed and left:** three pre-existing analyzer warnings (CA1716 on
+   `IWallpaperSetter.Set`, CA1870 in `FolderNameCheck`, CA1838 in `WindowsDesktop`) appear only
+   on a full rebuild of untouched files and were left alone; renaming `Set` touches a reviewed
+   contract (ADR 0029), so do it as its own small commit with the wallpaper tests.
+   `docs/PERFORMANCE.md` has one recorded run; add one after any change to scanning. Code
+   signing when a certificate exists (ADR 0030). Add-ons, localization, shortcut and icon
+   suggestions, desktop layout previews, local image generation, and "keep both" unattended stay
+   deferred by decision.
 
 ## Decisions made in conversation, not yet recorded elsewhere
 
-All of 2026-09-16's decisions are in ADR 0030, ADR 0031, and the three design documents. The
-ones worth repeating because they shape what comes next:
+All of 2026-09-16's V1.1 decisions are in ADR 0032–0035 and the three reviews. The ones worth
+repeating because they shape what comes next:
 
-- **Menu names stay** (Home, Organize, Search, Automatic tasks, My workspace, Privacy and AI).
-  Simpler names were offered and declined; the naming pass became grouping plus pills.
-- **Distribution is a zip on GitHub Releases, unsigned for now, no installer, no self-update.**
-- **Add-ons come "after we finish building the system"**, and DeskAI loads no outside code.
-- **Tidy while I'm away is "move a few, then wait"**: rule-placed files only, 25 per run, stop on
-  anything unexpected, undo first. "Only tell me" and "move everything" were the rejected options.
-- **License is MIT**, the owner's "for now yes"; the copyright line names the owner and
-  contributors.
-- **Merge into main at the end** was agreed as part of the plan.
-- **How to ask the owner things:** in plain words about what they will see and what DeskAI may
-  touch, never in roadmap or architecture vocabulary. Batched questions worked well this session
-  (four at once, each with a recommended option).
+- **"I don't want the software to touch the C: workspace or the main important data and system
+  folders. Just let the user choose Desktop, Downloads, Documents, Pictures."** Built as a hard
+  rule (ADR 0032), not a default: the Windows picker on Search and Organize stays, but a pick
+  outside the four is refused in plain words. If the owner later wants another folder allowed,
+  that is a change to `PersonalFolderPolicy` and its ADR, not a settings switch.
+- **All three AI ideas were accepted at once** ("i liked those AI ideas go with them") in the
+  order A (sentences), B (plan), C (ask). The shared design rule across them: AI returns a few
+  typed facts; DeskAI turns them into its own words and does the work deterministically. Keep
+  that shape for any further AI feature; do not add a free-text reply path.
+- **A dialog before every AI request**, including every Ask DeskAI question, was kept as the
+  safe default without asking the owner; it is the first thing to expect feedback on.
+- **The "Ask the owner in plain words" rule** from the previous handoff worked again: one
+  message with four numbered questions, each with a recommended option, got one reply that
+  settled everything.
 
 ## What a new chat must know
 
@@ -96,24 +101,36 @@ ones worth repeating because they shape what comes next:
   `AwayTidyService` alone implements, and that is the one unattended path (25 rule-placed files
   per run, stop on anything unexpected). The wallpaper setter is held only by `WallpaperService`.
   Reflection tests fail if any of that changes.
+- **The AI connection (`IOrganizationSuggestionProvider`) has two calls:** `SuggestAsync` for
+  files (Ask AI, and Plan this folder with `AiSuggestionTask.PlanFolder`) and `ReadSentenceAsync`
+  for a typed sentence (Search, rules, Ask DeskAI). Every adapter implements both. Three
+  services talk to it and each has a reflection test fixing what it may hold: `TidyAiService`,
+  `SentenceAiService`, `AskDeskAiService`. AI output is read strictly (`StructuredSuggestionParser`,
+  `AiSentenceReading`) and refused whole on anything off-shape; a planned folder name passes
+  `FolderNameCheck` in the parser, the service, the path policy, and the executor.
+- **Only the person's own four folders can be connected** (`PersonalFolderPolicy`, ADR 0032),
+  checked at connection and again before tidying. In page tests the sandbox's folders root
+  stands in for Documents, so every generated folder counts as inside a personal folder, and
+  every test Desktop contains a protected "program folder", as the owner's does.
+- A folder that *contains* a protected place connects with that part skipped; a folder *inside*
+  one is refused (`WindowsPathPolicy.ValidateRoot` returns Warning versus Blocked).
 - Every "nothing moves by itself" sentence in the app reads `AwayTidyService.CountActiveAsync`
   through `AwayTidyWords`; do not hard-code that promise anywhere again.
-- The backup file holds rules and saved searches only; restored rules arrive off. Start fresh
-  erases DeskAI's memory and touches no file.
-- Anything a person can see or do needs a page test in `DeskAI.Presentation.Tests` and a row
-  in the Feature Coverage Map in `docs/TESTING.md`. Tests read the XAML for layout rules
-  (`ShellLayoutTests`, `AccessibilityNameTests`, `NoPlaceholderUiTests`, `HelpPlacementTests`).
+- Anything a person can see or do needs a page test in `DeskAI.Presentation.Tests` and a row in
+  the Feature Coverage Map in `docs/TESTING.md`. Tests read the XAML for layout rules
+  (`ShellLayoutTests`, `AccessibilityNameTests`, `NoPlaceholderUiTests`, `HelpPlacementTests`);
+  every help topic has three parts with word limits (`HelpCatalogTests`).
 - Tests and development never touch real personal folders, the real wallpaper, or the real
   Desktop. `TestApp` replaces the credential vault, the internet, notifications, the tray, the
-  window painter, the wallpaper setter, and the known Desktop folder.
+  window painter, the wallpaper setter, and the four known folders.
 - The app is unpackaged WinUI 3, self-contained Windows App SDK, x64,
   `net10.0-windows10.0.26100.0`; libraries target `net10.0`. SQLite schema version is **14**
-  (V0.9 added `away_tidy` and `away_tidy_runs`).
+  (unchanged by V1.1: nothing new is stored).
 - Verification:
 
   ```powershell
   dotnet build DeskAI.sln -c Release --no-restore
-  dotnet test --solution DeskAI.sln -c Release --no-build --no-restore
+  dotnet test DeskAI.sln -c Release --no-build --no-restore
   dotnet format DeskAI.sln --no-restore --verify-no-changes
   ```
 
@@ -125,8 +142,11 @@ ones worth repeating because they shape what comes next:
 - Nothing moves a file without a preview and an approval, except an unattended run under a
   standing yes that a person gave on Organize for that folder, bounded as above and undoable.
 - AI never sees locations, folder names, file contents, or DeskAI's file IDs — at most type,
-  size and date, and name, each only if allowed, and only after a dialog showing the request.
-  AI plays no part in templates, looks, wallpaper, the Desktop shortcut, backups, or away runs.
+  size and date, and name, each only if allowed, and only after a dialog showing the request. A
+  sentence or question carries the typed words and today's date and nothing else. AI plays no
+  part in templates, looks, wallpaper, backups, or away runs.
+- AI never writes anything shown as fact: a category, a checked folder name, or a sentence in
+  DeskAI's vocabulary is all it can produce, and every reply on screen is DeskAI's wording.
 - PDF and Office files are refused before opening; content reading is plain text only, 64 KB.
 - No permanent deletion anywhere. Template undo removes only empty folders DeskAI made.
 - DeskAI never registers itself with Windows startup and never checks online for updates.
