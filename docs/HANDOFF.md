@@ -16,7 +16,7 @@ appending to them.
 
 ## Where things stand
 
-- Updated: 2026-09-16, after commit `00692f9` on `main` plus this handoff commit, tree clean.
+- Updated: 2026-09-16, after commit `4caa92a` on `main` plus this handoff commit, tree clean.
   Nothing has been pushed to GitHub from this checkout yet; no tag exists.
 - **V1.1 is complete in code, tests, and documents.** It came out of the owner's first look at
   V1.0 (two screenshots: a clipped tile, "This location is protected" on the Desktop) and their
@@ -25,10 +25,11 @@ appending to them.
   `f977673` Desktop bug, `4ec785c` tile clip, `275bad4` four-folder rule and Your folders card
   (ADR 0032), `39e6deb` AI reads a sentence (ADR 0033), `f3b8d27` Plan this folder (ADR 0034),
   `00692f9` Ask DeskAI (ADR 0035). `ROADMAP.md` has the V1.1 section; each AI feature has a
-  security review in `docs/security/2026-09-16-*.md`. Three more commits followed, after the
+  security review in `docs/security/2026-09-16-*.md`. Four more commits followed, after the
   owner asked for the work left to be continued: `19d57a0` cleared every analyzer warning,
-  `f397496` recorded a second performance run, and the head made **Ask DeskAI ask once per
-  service instead of before every question** (their pick from four offered follow-ups).
+  `f397496` recorded a second performance run, `2c34b4c` made **Ask DeskAI ask once per service
+  instead of before every question** (their pick from four offered follow-ups), and `4caa92a`
+  corrected a line in `PERFORMANCE.md`.
 - Verification at the end, with the owner's DeskAI closed: a **clean** (`--no-incremental`)
   Release build of `DeskAI.sln` with **no errors and no warnings**; **1349 tests pass, none
   skipped**; `dotnet format` clean. A note for the next session: an incremental build hides
@@ -36,7 +37,8 @@ appending to them.
   from an incremental build and a clean one then showed five, two of them introduced by V1.1
   itself; they were all fixed in `19d57a0`. **Check warnings with `--no-incremental`.**
   The launchable exe is at the usual path below, built
-  2026-09-16 15:19. While the owner's own `DeskAI.App.exe` is open the App's final copy step
+  2026-09-16 15:42, which is the same code as `4caa92a` (the two commits after it are documents
+  only). While the owner's own `DeskAI.App.exe` is open the App's final copy step
   fails with locked DLLs; compile into a scratch folder then
   (`dotnet build src/DeskAI.App -c Release -p:OutDir=<somewhere else>`) and ask them to close it
   for the real build.
