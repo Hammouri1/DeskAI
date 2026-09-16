@@ -769,7 +769,10 @@ Use a new folder under Windows Temp with made-up files only: `holiday.jpg`, `not
 3. Open it again and press **Add**. Expected: "Added 2 searches." on the Minimal card, and two tiles
    reading "No folders connected" — not "0 files".
 4. Connect the test folder in **Search**, come back to My workspace. Expected: the Screenshots tile
-   now shows a number, and the caption says when it was counted. No tile shows a file name.
+   now shows a number, and the caption says when it was counted. No tile shows a file name. Both
+   buttons on every tile, **Open in Search** and **Unpin**, are fully visible with nothing cut
+   off. (Found by the owner on 2026-09-16: tiles were 216 wide and clipped "Unpin" to "Unpir";
+   a layout fault a page test cannot see, so this step is the check.)
 5. Press **See what it adds** on **Student**. Expected: Screenshots listed with "You already have a
    search called Screenshots." in the caution colour, and three rules written as sentences. Add.
    Expected: "Added 2 searches and 3 rules. Skipped 1 you already had: Screenshots. The rules are

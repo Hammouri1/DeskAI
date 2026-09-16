@@ -16,7 +16,8 @@ appending to them.
 
 ## Where things stand
 
-- Updated: 2026-09-16, after commit `6eab611` (this file's own commit follows it), tree clean,
+- Updated: 2026-09-16, after commit `6eab611` plus the tile-width fix committed with this file,
+  tree clean,
   branch `v0.7-workspace-profiles`, started from `v0.5-background-checking`. **Neither branch
   is merged to `main` yet.**
 - **V0.1–V0.7 complete in code and automated tests.** V0.7 closed on 2026-09-16 with five
@@ -36,6 +37,40 @@ appending to them.
 
 ## What is left
 
+0. **NEXT, chosen by the owner on 2026-09-16 after seeing My workspace running: a visual
+   redesign and a naming pass across the whole app.** The owner showed a reference (a dark,
+   professional "command center" dashboard: a left navigation pane with small grouped section
+   labels, a top bar with a search box, a welcoming hero card, a row of soft pastel stat tiles
+   each with an icon and one big number, and two-column panels of rounded cards with date
+   captions and small status pills) and said, in their words: "i want my system to look
+   professional like this, i am not asking you to just copy and paste the design but be creative
+   and also make sure that all the screens and features are named in a simple way so normal
+   users feel that they can use the system easily." How to do it:
+   - Start with `superpowers:brainstorming` and a design document under
+     `docs/superpowers/specs/` **before any XAML**, and get the owner's yes on it. Show the
+     owner what the changes look like in plain words per page (what they will see), not in
+     style-token names. Ask questions in plain words (see "How to ask the owner things" below).
+   - Keep every rule in `docs/UI-UX.md`: the accent means "safe or confirmed" and is never
+     decoration; colour never carries state alone; the scope reminder in the pane stays truthful;
+     no page implies a capability that does not exist; the four looks keep working (a redesign
+     must go through the same theme brushes, and `DeskLookCatalogTests` must still pass).
+     Pastel stat tiles like the reference's are fine for *counts* (files, folders, searches) but
+     must not use the accent green for anything that is not a permission or a confirmation.
+   - The naming pass covers the side menu ("Home", "Organize", "Search", "Automatic tasks", "My
+     workspace", "Privacy and AI"), every section title, every button, and every dialog title.
+     Candidates to test on the owner: "Organize" → "Tidy up", "Automatic tasks" → "Checks that
+     run for you", "Privacy and AI" → "Privacy", "Starter packs" → "Ready-made setups", "Folder
+     templates" → "Make folders". Whatever is chosen, `HelpCatalog` titles, `MANUAL-TESTING.md`,
+     `UI-UX.md`, the Feature Coverage Map, and every page test that asserts a label must change
+     in the same commit. `HelpCatalog.BannedWords` still applies.
+   - Suggested order, one commit each with page tests where a test can see it: (1) the shell —
+     pane sections, top bar, one type ramp; (2) Home as the hero-plus-stat-tiles page; (3) the
+     other pages one at a time, My workspace last since it was just built. Every page has a
+     manual list; add "looks the way the design says" steps to each.
+   - **Fixed on 2026-09-16 while looking at the owner's screenshot:** pinned-search and look
+     tiles were 216 wide and cut "Unpin" off as "Unpir". Widened to 268 (`WorkspacePage.xaml`).
+     A page test cannot see a layout clip, so the check is a manual step under "My workspace".
+     Expect more of these when the owner walks the V0.7 lists.
 1. **The owner's look at V0.7**, in `docs/MANUAL-TESTING.md`: the lists "My workspace", "Folder
    templates", "DeskAI's look", and "Desktop and wallpaper". The dialog, keyboard, Narrator,
    theme, and high-contrast checks there are not covered by any automated test, and neither is

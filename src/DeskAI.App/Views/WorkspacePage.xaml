@@ -42,7 +42,7 @@
                                       AutomationProperties.Name="Pinned searches">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="216" />
+                                    <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="268" />
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
@@ -301,7 +301,7 @@
                                   AutomationProperties.Name="DeskAI's looks">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="216" />
+                                <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="268" />
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
