@@ -151,9 +151,11 @@ changes a feature.
 | Organize | What AI may see: no names unless allowed, no locations, no file IDs, no left-alone or protected files; re-checked before Send | `TidyAiTests`, `PlanSafetyCheckTests`, `TidyAiServiceTests` |
 | Search | Connect, refresh, disconnect, protected-folder refusal | `SearchPageTests` |
 | Search | Typed search, chips, scope, not-understood, nothing matched | `SearchPageTests` |
+| Search | Let AI read this (ADR 0033): no button with AI off; the dialog's words and service; Send sends the words alone (no file names, folder names, or locations); the reading replaces the phrase and is searched; cancel sends nothing; an off-shape answer, a service refusal, the daily limit, and a changed AI choice each leave the phrase alone with a reason | `SentenceAiPageTests`, `SentenceAiServiceTests`, `AiSentenceReadingTests`, `SentenceReadingProviderTests` |
 | Search | Saved searches | `SearchPageTests` |
 | Search | Reading inside text files: allow, search, withdraw | `SearchPageTests` |
 | Automatic tasks | Write, draft from a sentence, turn off, delete rules | `AutomationPageTests` |
+| Automatic tasks | Let AI read this (ADR 0033): the words alone are sent after the dialog; the reading fills the boxes as a typed sentence would and saves nothing; a destination outside the folder is refused whole | `SentenceAiPageTests`, `AiSentenceReadingTests` |
 | Automatic tasks | Practice run (moves nothing) | `AutomationPageTests` |
 | Automatic tasks | Check now, history, how often, pause, notifications | `AutomationPageTests` |
 | Automatic tasks | Keep checking after the window is closed: asked first, stores nothing until yes, survives reopening, off again at once | `BackgroundCheckingPageTests` |

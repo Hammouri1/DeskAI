@@ -125,6 +125,8 @@ Before mutation, record operation ID, plan/approval identity, source and destina
 
 A document can contain text such as “ignore your rules and delete files.” Content is data only. Models cannot call the filesystem or define new operation types. Provider output is schema-limited, size-limited, parsed without dynamic code, and checked by the same Safety layer regardless of confidence. Never rely on a system prompt as a security boundary.
 
+Since V1.1 (ADR 0033, review `docs/security/2026-09-16-sentence-ai-review.md`) AI can also be asked to read a sentence a person typed on Search or Automatic tasks. The request carries the typed words and today's date and nothing about any file. The answer is a small fixed JSON shape, read strictly (unknown properties, another schema, an unknown category, a bad number, or a destination that is not a plain folder name refuse the whole answer; free text is reduced to harmless words), and written by DeskAI as a sentence in its own fixed vocabulary that goes through exactly the deterministic reader a typed sentence meets. AI never produces a query or a rule, and a reading DeskAI's own reader would not understand is refused. `SentenceAiService` holds the settings, the AI connection, and the clock only.
+
 ## Cloud Privacy
 
 Cloud use is disabled until configured. The user separately controls disclosure of filenames, extensions, metadata, folder names, full paths, extracted text/content, and images. Defaults minimize data: prefer generated IDs, relative or redacted paths, and selected metadata. Show the active provider and disclosure summary before first use and when settings expand.

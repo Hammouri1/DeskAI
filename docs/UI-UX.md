@@ -195,11 +195,15 @@ Changing from local/rule-only to cloud requires provider selection and a disclos
 
 Always show actual scope (“Searching 3 authorized folders”). Natural-language input translates to visible filter chips so the user can correct interpretation. Results show path context, classification source, and why they matched. A Smart Collection is labeled virtual; saving it does not move files.
 
+**Let AI read this (V1.1, 2026-09-16, ADR 0033).** Beside Search, only while AI is set up, a plain button named for the service ("Let OpenRouter read this"), off while the box is empty, with its own "?". It opens "Send this to OpenRouter?", which shows the exact words in a box, says the service and its address, and says nothing about any file is sent and the AI cannot search, move, or change anything itself; Enter, Esc, and the X cancel; **Send** is plain. The AI's reading replaces the phrase in the box as plain words DeskAI reads on its own ("photos holiday"), the chips and results follow as if it had been typed, and a line under the box says "OpenRouter read it as "photos holiday". Change it if that is not what you meant." A refusal or a service problem is said on the same line and the phrase is left alone.
+
 Reading inside files is a separate, visible permission. Connecting a folder never grants it; a second dialog asks, and names what is opened, what is not, and that nothing read is saved or sent. Each folder row states in words whether DeskAI may read inside it, because a permission a person cannot see is one they cannot reconsider, and withdrawing it takes one click with no confirmation. Results found by their contents appear in their own section with a snippet showing why they matched, and the section always says how many files were actually opened — “nothing matched” and “nothing matched in the first fifty files” mean different things. No safety sentence anywhere may claim DeskAI never opens files: that stops being true the moment someone grants this, so the wording is conditional on the permission instead.
 
 ## Rules and Automation
 
 Use a readable “When / If / Then / Scope” editor. When AI drafts a rule, show the deterministic interpretation and a simulation against sample/current indexed files before approval. Clearly distinguish enabled, scheduled/watched, manual-only, paused, and needs-review. Provide a kill switch/pause-all action.
+
+**Let AI read this (V1.1, 2026-09-16, ADR 0033).** Next to **Read my sentence**, only while AI is set up, the same plain button and dialog as on Search. The AI's reading replaces the sentence with plain words ("move .pdf statement into Bank") and is read into the boxes exactly as a typed sentence is, so the usual "DeskAI read that as: …" line follows and nothing is saved until **Add**. A destination the AI names that is not a plain folder name is refused whole and the boxes stay empty.
 
 ## My workspace (V0.7, built 2026-09-14)
 

@@ -68,9 +68,16 @@ lets you undo it. Nothing is ever deleted.
 ## AI, if you want it
 
 AI is off unless you turn it on in Privacy and AI: either a service running on your computer or
-an online service you already pay for, with your own key. AI only ever suggests where a file
-might belong. Before anything is sent, DeskAI shows you exactly what the service would see and
-you press Send. What is inside your files is never sent.
+an online service you already pay for, with your own key. AI only ever suggests. Before anything
+is sent, DeskAI shows you exactly what the service would see and you press Send. What is inside
+your files is never sent.
+
+Once it is on, AI can help in two more places. On **Search** and on **Automatic tasks**, type
+what you want in your own words ("the slides from my trip last summer", "put my bank statements
+somewhere tidy") and press **Let AI read this**. Only those words are sent, nothing about your
+files. The AI's reading comes back as plain words in the box, which DeskAI then searches or
+fills into the rule boxes, and you can change them. On **Organize**, AI can suggest where
+files it cannot place by type belong.
 
 ## Backups, moving computers, and leaving
 

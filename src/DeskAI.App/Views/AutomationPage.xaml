@@ -364,7 +364,18 @@
                             <Button Content="Read my sentence"
                                     Command="{x:Bind ViewModel.DraftFromSentenceCommand}" />
                             <controls:HelpButton Topic="automation.sentence" />
+                            <!-- Only while AI is set up: the typed words alone, after a dialog, into the boxes below. -->
+                            <Button Content="{x:Bind ViewModel.AskAiText, Mode=OneWay}"
+                                    Visibility="{x:Bind ViewModel.HasAi, Mode=OneWay}"
+                                    IsEnabled="{x:Bind ViewModel.CanAskAi, Mode=OneWay}"
+                                    Click="OnAskAiClick" />
+                            <controls:HelpButton Topic="automation.askAi"
+                                                 Visibility="{x:Bind ViewModel.HasAi, Mode=OneWay}" />
                         </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap" MaxWidth="620"
+                                   HorizontalAlignment="Left"
+                                   Visibility="{x:Bind ViewModel.HasAiMessage, Mode=OneWay}"
+                                   Text="{x:Bind ViewModel.AiMessage, Mode=OneWay}" />
 
                         <Border Height="1" Margin="0,4" Background="{ThemeResource DeskLineBrush}" />
 

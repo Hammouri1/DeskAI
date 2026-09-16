@@ -141,6 +141,52 @@ public sealed class CloudChatCompletionsSuggestionProvider(
         }
     }
 
+    /// <inheritdoc />
+    /// <remarks>The same key, address, and error words as asking about files; only the prompt differs.</remarks>
+    public async Task<AiSentenceResponse> ReadSentenceAsync(
+        AiSentenceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var name = _provider.DisplayName;
+
+        string? key;
+        try
+        {
+            key = await credentialVault
+                .RetrieveAsync(_provider.CredentialReference, cancellationToken)
+                .ConfigureAwait(false);
+        }
+        catch (Win32Exception)
+        {
+            return ChatCompletionsSentenceCall.Failure(name, AiProviderStatus.AuthenticationFailed, $"Windows could not open your saved {name} key.");
+        }
+
+        if (string.IsNullOrWhiteSpace(key))
+        {
+            return ChatCompletionsSentenceCall.Failure(name, AiProviderStatus.AuthenticationFailed, $"Add your {name} key in Settings first.");
+        }
+
+        return await ChatCompletionsSentenceCall.PostAsync(
+            transport,
+            _provider.ChatCompletionsEndpoint,
+            new Dictionary<string, string> { ["Authorization"] = $"Bearer {key}" },
+            _modelId,
+            name,
+            request,
+            response =>
+            {
+                var said = ServiceExplanation(response.Body, key);
+                return ChatCompletionsSentenceCall.Failure(
+                    name,
+                    MapStatus(response.StatusCode),
+                    said is null
+                        ? MessageFor(response.StatusCode, name)
+                        : $"{MessageFor(response.StatusCode, name)} {name} said: \"{said}\"");
+            },
+            cancellationToken).ConfigureAwait(false);
+    }
+
     private static int? ReadInt(JsonElement parent, string name) =>
         parent.TryGetProperty(name, out var value) && value.TryGetInt32(out var number) ? number : null;
 

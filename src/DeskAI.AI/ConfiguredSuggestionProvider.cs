@@ -64,6 +64,54 @@ public sealed class ConfiguredSuggestionProvider(
         };
     }
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// The same consent, catalog, and daily-cap rules as asking about files. There is no sharing
+    /// check because a sentence carries nothing about a file; the person sees the sentence itself
+    /// in the dialog before Send.
+    /// </remarks>
+    public async Task<AiSentenceResponse> ReadSentenceAsync(
+        AiSentenceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var settings = await settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(false);
+        var cloudProvider = CloudProviderCatalog.Find(settings.ProviderId);
+        if (settings.Mode == AiMode.Cloud && settings.CloudConsentGranted &&
+            cloudProvider is not null && settings.CredentialReference is not null &&
+            !await usageBudget.TryReserveRequestAsync(
+                cloudProvider.Id,
+                Math.Clamp(settings.DailyRequestLimit, 1, 1000),
+                DateOnly.FromDateTime(clock.UtcNow.UtcDateTime),
+                cancellationToken).ConfigureAwait(false))
+        {
+            return new AiSentenceResponse(
+                AiProviderStatus.CostLimitReached,
+                "AI unavailable",
+                null,
+                "You have reached today's online AI limit. Nothing was sent.");
+        }
+
+        return settings.Mode switch
+        {
+            AiMode.RuleEngineOnly => await new NoAiSuggestionProvider()
+                .ReadSentenceAsync(request, cancellationToken).ConfigureAwait(false),
+            AiMode.Local when settings.Endpoint is not null => await new LocalOpenAiCompatibleSuggestionProvider(
+                    transport, settings.Endpoint, settings.ModelId)
+                .ReadSentenceAsync(request, cancellationToken).ConfigureAwait(false),
+            AiMode.Cloud when !settings.CloudConsentGranted => RefusedSentence(
+                "Online AI is selected, but sharing has not been approved."),
+            AiMode.Cloud when cloudProvider is not null && settings.CredentialReference is not null =>
+                await new CloudChatCompletionsSuggestionProvider(
+                        transport, credentialVault, cloudProvider, settings.ModelId)
+                    .ReadSentenceAsync(request, cancellationToken).ConfigureAwait(false),
+            _ => RefusedSentence("AI is not set up yet. DeskAI did not send anything."),
+        };
+    }
+
     private static OrganizationSuggestionResponse Refused(string message) =>
         new(AiProviderStatus.Disabled, "AI unavailable", [], message);
+
+    private static AiSentenceResponse RefusedSentence(string message) =>
+        new(AiProviderStatus.Disabled, "AI unavailable", null, message);
 }

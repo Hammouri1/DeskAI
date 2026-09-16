@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
+using DeskAI.Core.Ai;
 using DeskAI.Core.Rules;
 using DeskAI.Core.Tidy;
 
@@ -63,6 +64,9 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
     private readonly IClock _clock;
     private readonly BackgroundPresenceController _presence;
     private readonly AwayTidyService _away;
+    private readonly SentenceAiService _sentenceAi;
+    private SentenceAiStatus? _aiStatus;
+    private string _aiMessage = string.Empty;
     private int _awayFolders;
     private CheckFrequencyOption _selectedFrequency;
     private bool _isPaused;
@@ -91,7 +95,8 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
         AutomaticCheckCoordinator checks,
         IClock clock,
         BackgroundPresenceController presence,
-        AwayTidyService away)
+        AwayTidyService away,
+        SentenceAiService sentenceAi)
     {
         _rules = rules;
         _simulation = simulation;
@@ -101,6 +106,7 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
         _clock = clock;
         _presence = presence;
         _away = away;
+        _sentenceAi = sentenceAi;
         _selectedFrequency = FrequencyOptions[1];
         CheckNowCommand = new AsyncRelayCommand(CheckNowAsync, () => !IsBusy);
         ClearHistoryCommand = new AsyncRelayCommand(ClearHistoryAsync, () => !IsBusy);
@@ -379,7 +385,78 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
     public string Sentence
     {
         get => _sentence;
-        set => SetProperty(ref _sentence, value);
+        set
+        {
+            if (SetProperty(ref _sentence, value))
+            {
+                OnPropertyChanged(nameof(CanAskAi));
+            }
+        }
+    }
+
+    /// <summary>Whether AI is set up at all; the "Let AI read this" button exists only then.</summary>
+    public bool HasAi => _aiStatus?.IsSetUp == true;
+
+    public bool CanAskAi => HasAi && !string.IsNullOrWhiteSpace(Sentence) && !IsBusy;
+
+    public string AskAiText => HasAi ? $"Let {_aiStatus!.ServiceName} read this" : "Let AI read this";
+
+    /// <summary>What AI made of the sentence, or why it could not be asked. Empty when nothing was asked.</summary>
+    public string AiMessage
+    {
+        get => _aiMessage;
+        private set
+        {
+            if (SetProperty(ref _aiMessage, value))
+            {
+                OnPropertyChanged(nameof(HasAiMessage));
+            }
+        }
+    }
+
+    public bool HasAiMessage => !string.IsNullOrEmpty(AiMessage);
+
+    /// <summary>Says who would get the sentence and where. Sends nothing.</summary>
+    public async Task<SentenceAiQuestion?> PrepareAiDraftAsync()
+    {
+        var prepared = await _sentenceAi.PrepareAsync(SentenceTask.RuleSentence, Sentence).ConfigureAwait(true);
+        if (prepared.Question is null)
+        {
+            AiMessage = prepared.Explanation;
+        }
+
+        return prepared.Question;
+    }
+
+    /// <summary>
+    /// Sends the prepared sentence; on success the AI's reading replaces the sentence and is
+    /// read into the boxes exactly as a typed one would be. Nothing is saved.
+    /// </summary>
+    public async Task AskAiToDraftAsync(SentenceAiQuestion question)
+    {
+        ArgumentNullException.ThrowIfNull(question);
+        IsBusy = true;
+        SentenceAiAnswer answer;
+        try
+        {
+            answer = await _sentenceAi.AskAsync(question).ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            AiMessage = $"DeskAI stopped safely: {exception.Message}";
+            return;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        AiMessage = answer.Message;
+        if (answer.Succeeded && answer.Reading is { } reading)
+        {
+            Sentence = reading;
+            DraftFromSentence();
+        }
     }
 
     public string NewRuleName
@@ -497,6 +574,7 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
                 ToggleRuleCommand.NotifyCanExecuteChanged();
                 DeleteRuleCommand.NotifyCanExecuteChanged();
                 OnPropertyChanged(nameof(IsIdle));
+                OnPropertyChanged(nameof(CanAskAi));
             }
         }
     }
@@ -507,6 +585,10 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
     {
         try
         {
+            _aiStatus = await _sentenceAi.GetStatusAsync().ConfigureAwait(true);
+            OnPropertyChanged(nameof(HasAi));
+            OnPropertyChanged(nameof(CanAskAi));
+            OnPropertyChanged(nameof(AskAiText));
             _awayFolders = await _away.CountActiveAsync().ConfigureAwait(true);
             OnPropertyChanged(nameof(OwnPromise));
             OnPropertyChanged(nameof(OwnPromiseDetail));

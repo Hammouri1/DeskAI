@@ -35,6 +35,19 @@ public sealed partial class AutomationPage : Page
     }
 
     /// <summary>
+    /// Shows exactly the words that would be sent and to whom, and sends only if the person
+    /// presses Send. The AI's reading fills the boxes below; nothing is saved by it.
+    /// </summary>
+    private async void OnAskAiClick(object sender, RoutedEventArgs e)
+    {
+        var question = await ViewModel.PrepareAiDraftAsync();
+        if (question is not null && await SentenceAiDialogs.ConfirmSendAsync(XamlRoot, question))
+        {
+            await ViewModel.AskAiToDraftAsync(question);
+        }
+    }
+
+    /// <summary>
     /// Turning this on asks before it does anything, because it changes what closing the
     /// window means. Turning it off needs no dialog: stopping is always safe.
     /// </summary>

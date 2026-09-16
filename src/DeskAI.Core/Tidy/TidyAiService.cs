@@ -256,22 +256,8 @@ public sealed class TidyAiService(
     /// <summary>Who would be asked, and where that is. Not set up means nothing can be sent.</summary>
     private static (bool IsSetUp, string Name, string Destination) Target(AiSettings settings)
     {
-        if (settings.Mode == AiMode.Local &&
-            Uri.TryCreate(settings.Endpoint, UriKind.Absolute, out var local) &&
-            local.IsLoopback)
-        {
-            return (true, "Local AI", $"{local.Authority} on this computer");
-        }
-
-        if (settings.Mode == AiMode.Cloud &&
-            settings.CloudConsentGranted &&
-            settings.CredentialReference is not null &&
-            CloudProviderCatalog.Find(settings.ProviderId) is { } provider)
-        {
-            return (true, provider.DisplayName, provider.ChatCompletionsEndpoint.Host);
-        }
-
-        return (false, "AI", string.Empty);
+        var target = AiTarget.Of(settings);
+        return (target.IsSetUp, target.Name, target.Destination);
     }
 
     private static HashSet<DisclosureCategory> Shareable(AiSettings settings) =>

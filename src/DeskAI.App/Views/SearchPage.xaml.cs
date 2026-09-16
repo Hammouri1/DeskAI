@@ -43,6 +43,19 @@ public sealed partial class SearchPage : Page
         }
     }
 
+    /// <summary>
+    /// Shows exactly the words that would be sent and to whom, and sends only if the person
+    /// presses Send. The AI's reading lands in the box and is searched; cancelling sends nothing.
+    /// </summary>
+    private async void OnAskAiClick(object sender, RoutedEventArgs e)
+    {
+        var question = await ViewModel.PrepareAiReadingAsync();
+        if (question is not null && await SentenceAiDialogs.ConfirmSendAsync(XamlRoot, question))
+        {
+            await ViewModel.AskAiToReadAsync(question);
+        }
+    }
+
     /// <summary>Asks for a name, then saves the phrase currently in the box.</summary>
     private async void OnSaveSearchClick(object sender, RoutedEventArgs e)
     {

@@ -3,6 +3,7 @@ using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DeskAI.Core.Abstractions;
+using DeskAI.Core.Ai;
 using DeskAI.Core.Search;
 
 namespace DeskAI.App.ViewModels;
@@ -116,6 +117,9 @@ public sealed class SearchViewModel : ObservableObject
     private readonly ISavedSearchRepository _savedSearches;
     private readonly IClock _clock;
     private readonly SearchRequest _request;
+    private readonly SentenceAiService _sentenceAi;
+    private SentenceAiStatus? _aiStatus;
+    private string _aiMessage = string.Empty;
     private string _phrase = string.Empty;
     private string _folderMessage = "No folders connected yet.";
     private bool _isFolderBusy;
@@ -134,7 +138,8 @@ public sealed class SearchViewModel : ObservableObject
         ContentSearchService insideFiles,
         ISavedSearchRepository savedSearches,
         IClock clock,
-        SearchRequest request)
+        SearchRequest request,
+        SentenceAiService sentenceAi)
     {
         _search = search;
         _folders = folders;
@@ -142,6 +147,7 @@ public sealed class SearchViewModel : ObservableObject
         _savedSearches = savedSearches;
         _clock = clock;
         _request = request;
+        _sentenceAi = sentenceAi;
         SearchCommand = new AsyncRelayCommand(RunAsync, () => !IsBusy);
         RunSavedSearchCommand = new AsyncRelayCommand<Guid>(RunSavedSearchAsync, _ => !IsBusy);
         DeleteSavedSearchCommand = new AsyncRelayCommand<Guid>(DeleteSavedSearchAsync, _ => !IsBusy);
@@ -213,7 +219,73 @@ public sealed class SearchViewModel : ObservableObject
             if (SetProperty(ref _phrase, value))
             {
                 OnPropertyChanged(nameof(CanSaveCurrentSearch));
+                OnPropertyChanged(nameof(CanAskAi));
             }
+        }
+    }
+
+    /// <summary>Whether AI is set up at all; the "Let AI read this" button exists only then.</summary>
+    public bool HasAi => _aiStatus?.IsSetUp == true;
+
+    public bool CanAskAi => HasAi && !string.IsNullOrWhiteSpace(Phrase) && !IsBusy;
+
+    public string AskAiText => HasAi ? $"Let {_aiStatus!.ServiceName} read this" : "Let AI read this";
+
+    /// <summary>What AI made of the phrase, or why it could not be asked. Empty when nothing was asked.</summary>
+    public string AiMessage
+    {
+        get => _aiMessage;
+        private set
+        {
+            if (SetProperty(ref _aiMessage, value))
+            {
+                OnPropertyChanged(nameof(HasAiMessage));
+            }
+        }
+    }
+
+    public bool HasAiMessage => !string.IsNullOrEmpty(AiMessage);
+
+    /// <summary>
+    /// Says who would get the phrase and where. Sends nothing; the page shows this in a dialog
+    /// and calls <see cref="AskAiToReadAsync"/> only if Send is pressed.
+    /// </summary>
+    public async Task<SentenceAiQuestion?> PrepareAiReadingAsync()
+    {
+        var prepared = await _sentenceAi.PrepareAsync(SentenceTask.SearchPhrase, Phrase).ConfigureAwait(true);
+        if (prepared.Question is null)
+        {
+            AiMessage = prepared.Explanation;
+        }
+
+        return prepared.Question;
+    }
+
+    /// <summary>Sends the prepared phrase; on success the AI's reading replaces the phrase and is searched.</summary>
+    public async Task AskAiToReadAsync(SentenceAiQuestion question)
+    {
+        ArgumentNullException.ThrowIfNull(question);
+        IsBusy = true;
+        SentenceAiAnswer answer;
+        try
+        {
+            answer = await _sentenceAi.AskAsync(question).ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpectedFolderFailure(exception))
+        {
+            AiMessage = $"DeskAI stopped safely: {exception.Message}";
+            return;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+
+        AiMessage = answer.Message;
+        if (answer.Succeeded && answer.Reading is { } reading)
+        {
+            Phrase = reading;
+            await RunAsync().ConfigureAwait(true);
         }
     }
 
@@ -252,6 +324,7 @@ public sealed class SearchViewModel : ObservableObject
             if (SetProperty(ref _isBusy, value))
             {
                 SearchCommand.NotifyCanExecuteChanged();
+                OnPropertyChanged(nameof(CanAskAi));
             }
         }
     }
@@ -289,6 +362,19 @@ public sealed class SearchViewModel : ObservableObject
     {
         await ReloadFoldersAsync().ConfigureAwait(true);
         await ReloadSavedSearchesAsync().ConfigureAwait(true);
+        try
+        {
+            _aiStatus = await _sentenceAi.GetStatusAsync().ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpectedFolderFailure(exception))
+        {
+            // No AI button rather than a broken one; searching itself is unaffected.
+            _aiStatus = null;
+        }
+
+        OnPropertyChanged(nameof(HasAi));
+        OnPropertyChanged(nameof(CanAskAi));
+        OnPropertyChanged(nameof(AskAiText));
 
         if (_request.TakePhrase() is { } typed)
         {

@@ -20,7 +20,7 @@
 
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="16">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                         <TextBox x:Name="PhraseBox"
                                  MaxLength="256"
                                  PlaceholderText="photos from last month"
@@ -35,7 +35,23 @@
                         <Button Grid.Column="1"
                                 Content="Search"
                                 Command="{x:Bind ViewModel.SearchCommand}" />
+                        <!--
+                            Only while AI is set up. It sends the typed words alone, after a dialog,
+                            and the AI's reading lands in the box as a plain search to check.
+                        -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6"
+                                    Visibility="{x:Bind ViewModel.HasAi, Mode=OneWay}">
+                            <Button Content="{x:Bind ViewModel.AskAiText, Mode=OneWay}"
+                                    IsEnabled="{x:Bind ViewModel.CanAskAi, Mode=OneWay}"
+                                    Click="OnAskAiClick" />
+                            <controls:HelpButton Topic="search.askAi" />
+                        </StackPanel>
                     </Grid>
+
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap" MaxWidth="620"
+                               HorizontalAlignment="Left"
+                               Visibility="{x:Bind ViewModel.HasAiMessage, Mode=OneWay}"
+                               Text="{x:Bind ViewModel.AiMessage, Mode=OneWay}" />
 
                     <ProgressBar IsIndeterminate="True"
                                  Visibility="{x:Bind ViewModel.IsBusy, Mode=OneWay}" />

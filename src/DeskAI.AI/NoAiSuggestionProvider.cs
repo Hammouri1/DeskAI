@@ -17,4 +17,17 @@ public sealed class NoAiSuggestionProvider : IOrganizationSuggestionProvider
             [],
             "AI is off. DeskAI continues using deterministic rules."));
     }
+
+    public Task<AiSentenceResponse> ReadSentenceAsync(
+        AiSentenceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(new AiSentenceResponse(
+            AiProviderStatus.Disabled,
+            "AI is off",
+            null,
+            "AI is off. Turn it on in Privacy and AI first."));
+    }
 }

@@ -149,3 +149,33 @@ Store provider ID, endpoint (where allowed), model ID, capability cache, timeout
   and starts unticked; no percentage is shown.
 - At most 100 files per request; one press is one request against the daily limit.
 - See ADR 0020 and `docs/security/2026-09-10-real-folder-ai-disclosure-review.md`.
+
+## V1.1: Reading a Typed Sentence (ADR 0033)
+
+- **Let AI read this** on Search and on Automatic tasks sends the words the person typed, and
+  nothing else: no file names, sizes, dates, folder names, locations, or IDs, because the
+  sentence is the only input the task has. Today's date goes with it so "last summer" can be
+  worked out. A dialog shows the exact sentence, the service, and its address first; only
+  Send sends. The same consent switch, closed catalog, fixed address, key handling, timeout,
+  and daily cap apply as for asking about files; there is no sharing check because nothing
+  about a file is involved.
+- The provider contract gained one call, `ReadSentenceAsync`, alongside `SuggestAsync`. The
+  prompt (`AiPromptFactory.CreateSentencePrompt`) asks for a small fixed JSON shape per task:
+  for a search, endings, categories from the closed list, a larger-than and smaller-than size
+  in bytes, a number of days, and free text; for a rule, one ending, one category, sizes, an
+  older-than number of days, name text, and a destination folder name. Adapters return the
+  answer text unread.
+- **AI never produces a query or a rule.** `AiSentenceReading` in Core reads the JSON strictly
+  (unknown properties, another schema version, an unknown category, a bad number, or a
+  destination that is not a plain folder name refuse the whole answer; free text is reduced to
+  letters, digits, spaces, and hyphens, with the words to/into/in removed) and writes the facts
+  as a sentence in DeskAI's own fixed vocabulary — "photos larger than 5 mb last 30 days
+  holiday", "move .pdf statement into Bank". That sentence is put in the box and goes through
+  exactly the deterministic reader a typed one meets. So AI gains no reach a person typing does
+  not have, the reading is visible and editable, and a saved or pinned search still holds words
+  DeskAI can read on its own tomorrow.
+- `SentenceAiService` holds the settings, the AI connection, and the clock, and nothing that
+  can see a file (a reflection test fixes that). It refuses an empty or over-long sentence
+  before building anything, refuses to send if the AI choice changed since the dialog, and
+  refuses a reading DeskAI's own reader would not understand.
+- Review: `docs/security/2026-09-16-sentence-ai-review.md`.

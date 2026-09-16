@@ -55,6 +55,9 @@ public static class DeskAiApplicationServices
         // Talks to AI about your own folders. It holds nothing that can look in a folder or
         // change a file, and it sends only after the page has shown what would be sent.
         services.AddSingleton<TidyAiService>();
+        // Reads a typed sentence through AI (V1.1, ADR 0033). It holds the settings, the AI
+        // connection, and the clock, and nothing that can see a file; a test asserts it.
+        services.AddSingleton<SentenceAiService>();
         services.AddSingleton<TidyRunService>();
         // Tidy while I'm away (V0.9, ADR 0031): the one type reachable from an automatic check that
         // can move a file, under a standing approval with a hard ceiling. A test names it as such.

@@ -961,3 +961,31 @@ Use a new folder under Windows Temp with made-up files only: `holiday.jpg`, `not
     Expected: everything readable, the promise line keeps its rail.
 12. Tab through the page and the dialog with the keyboard only, then with Narrator on. Expected:
     every button reachable and named.
+
+## Let AI read this (V1.1, added 2026-09-16)
+
+Needs an AI key you already have (Privacy and AI). Each Send is one paid request to your
+service; the whole list is about six. Nothing here moves a file.
+
+1. With AI off, open **Search** and **Automatic tasks**. Expected: no "Let AI read this" button
+   anywhere on either page.
+2. Turn on your service in Privacy and AI. Back on Search, type "the slides from my trip last
+   summer". Expected: a plain **Let <service> read this** button beside Search with a "?", off
+   until you typed something.
+3. Press it. Expected: "Send this to <service>?" showing exactly your words in a box, the
+   service and its address, and that nothing about your files is sent. Press **Esc**, then try
+   **Enter**, then the **X**. Expected: each cancels; nothing appears on the page.
+4. Press it again and **Send**. Expected: within a few seconds the box now holds plain words
+   such as "slides last 90 days trip", the chips and results follow, and a line says
+   "<service> read it as "…". Change it if that is not what you meant." Press **Save this
+   search**, then open My workspace and pin it. Expected: it counts like any other search.
+5. Type something meaningless such as "asdf qwer" and send it. Expected: either a reading or a
+   plain "did not find anything DeskAI can look for" line; the box keeps your words.
+6. In Privacy and AI, set the daily limit to 1, then send two readings. Expected: the second
+   says you have reached today's online AI limit and nothing was sent.
+7. Open **Automatic tasks**, type "put my bank statements somewhere tidy", press **Let
+   <service> read this**, **Send**. Expected: the sentence becomes plain words such as
+   "move .pdf statement into Bank", the boxes below fill in, "DeskAI read that as: …" appears,
+   and no rule is added until you name it and press Add.
+8. Press the "?" beside each button and check it reads clearly. Tab to the buttons and through
+   the dialog with the keyboard, then with Narrator on.

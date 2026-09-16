@@ -103,6 +103,22 @@ public sealed class LocalOpenAiCompatibleSuggestionProvider : IOrganizationSugge
         }
     }
 
+    public Task<AiSentenceResponse> ReadSentenceAsync(
+        AiSentenceRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return ChatCompletionsSentenceCall.PostAsync(
+            _transport,
+            _endpoint,
+            new Dictionary<string, string>(),
+            _modelId,
+            "Local AI",
+            request,
+            response => ChatCompletionsSentenceCall.Failure("Local AI", MapStatus(response.StatusCode), MessageFor(response.StatusCode)),
+            cancellationToken);
+    }
+
     private static int? ReadInt(JsonElement parent, string name) =>
         parent.TryGetProperty(name, out var value) && value.TryGetInt32(out var number) ? number : null;
 

@@ -476,6 +476,11 @@ three AI features (A: plain language for Search and rules, B: "Plan this folder"
   DeskAI connects Desktop, Downloads, Documents, Pictures, or folders inside them, and nothing
   else, checked at connection and again before tidying. A **Your folders** card on Home and My
   workspace lists the four with one Connect / Tidy button each, replacing "Tidy my Desktop".
+- ✅ 2026-09-16: **AI feature A — plain language on Search and Automatic tasks** (ADR 0033,
+  review `docs/security/2026-09-16-sentence-ai-review.md`). "Let <service> read this" sends the
+  typed words alone after a dialog; the AI answers with a few typed facts; DeskAI writes them as
+  a sentence in its own fixed vocabulary and reads it exactly as a typed one, so AI gains no new
+  reach and saved searches keep working.
 
 ## Explicitly Deferred Beyond V1 Unless Reprioritized
 
