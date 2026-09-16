@@ -25,6 +25,13 @@ folder. Record them below when something changes that could move them.
 | Date | Machine | Files | Connect | Refresh | Search | Home summary | Tidy preview |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | 2026-09-16 | Owner's development PC, Windows 11, Release build | 3,000 generated | 128 ms | 33 ms | 24 ms (200 shown) | 24 ms | 63 ms (500 of 500) |
+| 2026-09-16 (after V1.1) | Same PC and build | 3,000 generated | 124 ms | 36 ms | 21 ms (200 shown) | 33 ms | 74 ms (500 of 500) |
+
+The second run is after V1.1. Connect, refresh, and search are unchanged within the noise of a
+single run, which is what was expected: the new four-folder rule costs one path comparison per
+connect, not per file. **Home takes about 9 ms longer** because the page now also loads the Your
+folders card (one list of connected folders) and the Ask DeskAI card (one settings read) before
+it draws. That is two small database reads, and it is the price of the two cards.
 
 Note: the table is updated by hand from the probe's output (`%TEMP%\DeskAI-perf.txt`). A
 connect stops at the scan bound and the page says so, and a tidy preview stops at 500 loose

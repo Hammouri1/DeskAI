@@ -26,10 +26,13 @@ appending to them.
   (ADR 0032), `39e6deb` AI reads a sentence (ADR 0033), `f3b8d27` Plan this folder (ADR 0034),
   `00692f9` Ask DeskAI (ADR 0035). `ROADMAP.md` has the V1.1 section; each AI feature has a
   security review in `docs/security/2026-09-16-*.md`.
-- Verification at the end, with the owner's DeskAI closed: full Release build of `DeskAI.sln`
-  with **no errors and no warnings** (the three pre-existing analyzer warnings were not
-  touched: they are in files this version did not change — see item 4); **1344 tests pass, none
-  skipped**; `dotnet format` clean. The launchable exe is at the usual path below, built
+- Verification at the end, with the owner's DeskAI closed: a **clean** (`--no-incremental`)
+  Release build of `DeskAI.sln` with **no errors and no warnings**; **1344 tests pass, none
+  skipped**; `dotnet format` clean. A note for the next session: an incremental build hides
+  analyzer warnings in projects it does not recompile. This session first reported "no warnings"
+  from an incremental build and a clean one then showed five, two of them introduced by V1.1
+  itself; they were all fixed in `19d57a0`. **Check warnings with `--no-incremental`.**
+  The launchable exe is at the usual path below, built
   2026-09-16 15:19. While the owner's own `DeskAI.App.exe` is open the App's final copy step
   fails with locked DLLs; compile into a scratch folder then
   (`dotnet build src/DeskAI.App -c Release -p:OutDir=<somewhere else>`) and ask them to close it
@@ -62,14 +65,15 @@ appending to them.
    sentence like "older than 90 days" lands in a box instead of being noted as left out; more
    question kinds for Ask DeskAI (duplicates, old files); a narrow-window layout for the Your
    folders rows on Home.
-4. **Small things noticed and left:** three pre-existing analyzer warnings (CA1716 on
-   `IWallpaperSetter.Set`, CA1870 in `FolderNameCheck`, CA1838 in `WindowsDesktop`) appear only
-   on a full rebuild of untouched files and were left alone; renaming `Set` touches a reviewed
-   contract (ADR 0029), so do it as its own small commit with the wallpaper tests.
-   `docs/PERFORMANCE.md` has one recorded run; add one after any change to scanning. Code
-   signing when a certificate exists (ADR 0030). Add-ons, localization, shortcut and icon
-   suggestions, desktop layout previews, local image generation, and "keep both" unattended stay
-   deferred by decision.
+4. **Small things, now done:** every analyzer warning is cleared (`19d57a0`).
+   `IWallpaperSetter.Set` is now `Apply`, recorded in ADR 0029 because the contract is reviewed;
+   the wallpaper P/Invoke reads into a character buffer; `FolderNameCheck` uses a cached
+   `SearchValues`. `docs/PERFORMANCE.md` has a second recorded run, after V1.1: connect,
+   refresh, and search unchanged, Home about 9 ms slower because it now loads the Your folders
+   and Ask DeskAI cards first.
+5. **Still deferred by decision, not to start unasked:** code signing when a certificate exists
+   (ADR 0030), add-ons, localization, shortcut and icon suggestions, desktop layout previews,
+   local image generation, and "keep both" unattended.
 
 ## Decisions made in conversation, not yet recorded elsewhere
 
