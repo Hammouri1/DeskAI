@@ -1,4 +1,5 @@
 using DeskAI.App.ViewModels;
+using DeskAI.Core.Abstractions;
 using DeskAI.Core.Tidy;
 
 namespace DeskAI.Presentation.Tests;
@@ -144,6 +145,45 @@ public sealed class DesktopAndWallpaperPageTests
         Assert.True(organize.NeedsPermission);
         Assert.False(organize.HasSuggestions);
         Assert.Equal(3, Directory.EnumerateFiles(app.DesktopPath).Count());
+    }
+
+    /// <summary>
+    /// Found by the owner 2026-09-16: "Tidy my Desktop" said the Desktop was protected. DeskAI
+    /// was running from a folder on the Desktop, and its own program folder is protected, so
+    /// the Desktop "overlapped" a protected place. The Desktop connects; the program folder is
+    /// skipped and its files are never remembered.
+    /// </summary>
+    [Fact]
+    public async Task Tidy_my_Desktop_works_when_DeskAI_itself_lives_on_the_Desktop_and_skips_its_own_folder()
+    {
+        await using var app = await TestApp.StartAsync();
+        app.MakeFolder("Desktop", "report.pdf");
+        app.MakeFile(@"Desktop\DeskAI\app", "DeskAI.App.exe");
+        app.MakeFile(@"Desktop\DeskAI\app", "deskai.db");
+        var page = app.Get<WorkspaceViewModel>();
+        await page.InitializeAsync();
+
+        var id = await page.ConnectDesktopAsync();
+
+        Assert.NotNull(id);
+        Assert.True(page.IsDesktopConnected);
+        Assert.Equal("Your Desktop is connected. Tidy it in Organize.", page.DesktopStatus);
+        var remembered = await app.Get<IMetadataIndexService>().GetStatisticsAsync(id.Value, TestContext.Current.CancellationToken);
+        Assert.Equal(1, remembered.FileCount);
+    }
+
+    [Fact]
+    public async Task A_folder_inside_DeskAI_s_own_program_folder_still_cannot_be_connected()
+    {
+        await using var app = await TestApp.StartAsync();
+        app.MakeFile(@"Desktop\DeskAI\app\logs", "today.log");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+
+        await search.ConnectFolderAsync(Path.Combine(app.ProgramFolderPath, "logs"));
+
+        Assert.Equal("This location is protected and cannot be connected.", search.FolderMessage);
+        Assert.Empty(search.Folders);
     }
 
     [Fact]

@@ -89,4 +89,37 @@ public sealed class WindowsPathPolicyTests
 
         Assert.Equal(ValidationReasonCode.ProtectedRoot, result.ReasonCode);
     }
+
+    [Fact]
+    public void ValidateRoot_BlocksARootInsideAProtectedLocation()
+    {
+        var policy = new WindowsPathPolicy(permanentlyProtectedRoots: [@"C:\DeskAITests"]);
+
+        var result = policy.ValidateRoot(Root);
+
+        Assert.Equal(ValidationStatus.Blocked, result.Status);
+        Assert.Equal(ValidationReasonCode.ProtectedRoot, result.ReasonCode);
+    }
+
+    /// <summary>
+    /// Found 2026-09-16: DeskAI's own program folder is protected, and when DeskAI runs from a
+    /// folder on the Desktop the Desktop "overlapped" it and could not be connected. A folder
+    /// that merely contains a protected place may be connected; the protected part is skipped
+    /// entry by entry, which the second half of this test pins down.
+    /// </summary>
+    [Fact]
+    public void ValidateRoot_WarnsButAllowsARootThatContainsAProtectedLocation()
+    {
+        var policy = new WindowsPathPolicy(
+            permanentlyProtectedRoots: [@"C:\DeskAITests\AuthorizedRoot\DeskAI\app"]);
+
+        var result = policy.ValidateRoot(Root);
+
+        Assert.Equal(ValidationStatus.Warning, result.Status);
+        Assert.Equal(ValidationReasonCode.ProtectedRoot, result.ReasonCode);
+        Assert.Equal(ValidationStatus.Blocked, policy.ValidateRelativePath(Root, @"DeskAI\app\DeskAI.App.exe").Status);
+        Assert.Equal(ValidationStatus.Blocked, policy.ValidateRelativePath(Root, @"DeskAI\app").Status);
+        Assert.Equal(ValidationStatus.Blocked, policy.ValidateRelativePath(Root, @"DeskAI").Status);
+        Assert.Equal(ValidationStatus.Allowed, policy.ValidateRelativePath(Root, @"DeskAI-notes.txt").Status);
+    }
 }

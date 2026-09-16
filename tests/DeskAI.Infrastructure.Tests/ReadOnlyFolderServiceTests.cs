@@ -27,11 +27,17 @@ public sealed class ReadOnlyFolderServiceTests
         Assert.Equal(result.Root, await repository.FindAsync(result.Root.Id, TestContext.Current.CancellationToken));
     }
 
+    /// <summary>
+    /// Until 2026-09-16 a root containing a protected place was refused, which made the Desktop
+    /// unconnectable whenever DeskAI itself had been unzipped onto it. The root now connects and
+    /// the protected part is skipped, never listed.
+    /// </summary>
     [Fact]
-    public async Task AuthorizeAndPreviewAsync_RefusesRootContainingProtectedChild()
+    public async Task AuthorizeAndPreviewAsync_ConnectsRootContainingProtectedChildAndSkipsThatChild()
     {
         using var sandbox = new TemporaryDirectory();
         var protectedChild = sandbox.CreateDummyDirectory("Credentials");
+        File.WriteAllText(System.IO.Path.Combine(protectedChild, "token.txt"), "dummy");
         sandbox.CreateDummyFile("visible.txt");
         var repository = new InMemoryAuthorizedRootRepository();
         var service = CreateService(repository, new WindowsPathPolicy([protectedChild]));
@@ -41,7 +47,28 @@ public sealed class ReadOnlyFolderServiceTests
             new MetadataScanOptions(3, 20),
             TestContext.Current.CancellationToken);
 
+        Assert.True(result.IsAllowed);
+        Assert.Single(await repository.ListAsync(TestContext.Current.CancellationToken));
+        Assert.Contains(result.Files, file => file.RelativePath == "visible.txt");
+        Assert.DoesNotContain(result.Files, file => file.RelativePath.Contains("token.txt", StringComparison.Ordinal));
+        Assert.Contains(result.Issues, issue => issue.Code == ScanIssueCode.ProtectedEntrySkipped);
+    }
+
+    [Fact]
+    public async Task AuthorizeAndPreviewAsync_RefusesRootInsideProtectedLocation()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var inside = sandbox.CreateDummyDirectory("logs");
+        var repository = new InMemoryAuthorizedRootRepository();
+        var service = CreateService(repository, new WindowsPathPolicy([sandbox.Path]));
+
+        var result = await service.AuthorizeAndPreviewAsync(
+            inside,
+            new MetadataScanOptions(3, 20),
+            TestContext.Current.CancellationToken);
+
         Assert.False(result.IsAllowed);
+        Assert.Equal("This location is protected and cannot be connected.", result.Explanation);
         Assert.Empty(await repository.ListAsync(TestContext.Current.CancellationToken));
     }
 

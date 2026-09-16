@@ -95,6 +95,8 @@ The policy must protect Windows, Program Files, Program Files (x86), ProgramData
 
 User-configured protected files/folders and favorites are also denied for mutation. Protected items must be excluded from AI disclosure.
 
+A folder *inside* a protected location can never be connected. A folder that *contains* one can (since 2026-09-16, when the owner found that DeskAI unzipped onto the Desktop made the Desktop "protected", because DeskAI's own program folder is on the list): the root passes with a warning, and the protected part is refused entry by entry by the same relative-path check the scanner, the planner, and the executor all consult, so it is never listed, remembered, sent to AI, or used as a destination. Drive roots stay refused on their own rule.
+
 ### Collisions and overwrites
 
 Never silently overwrite, merge, or replace. A collision produces a visible conflict. Deterministic options may include skip, explicitly selected unique suffix, or a user-chosen destination. Revalidation repeats at execution time.

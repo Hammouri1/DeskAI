@@ -125,8 +125,20 @@ public sealed class WindowsPathPolicy : IPathPolicy
             return ValidationResult.Blocked(ValidationReasonCode.UnsupportedPath, "The root path is malformed or unsupported.");
         }
 
-        return _permanentlyProtectedRoots.Any(path => PathsOverlap(path, canonicalRoot))
-            ? ValidationResult.Blocked(ValidationReasonCode.ProtectedRoot, "The root overlaps a permanently protected location.")
+        // A root inside a protected location is refused outright. A root that merely contains
+        // one (the Desktop when DeskAI itself was unzipped there, found 2026-09-16) may be
+        // connected: the protected part is refused entry by entry through
+        // ValidateRelativePath, which the scanner, the planner, and the executor all consult.
+        if (_permanentlyProtectedRoots.Any(path => IsContainedBy(path, canonicalRoot)))
+        {
+            return ValidationResult.Blocked(ValidationReasonCode.ProtectedRoot, "The root is inside a permanently protected location.");
+        }
+
+        return _permanentlyProtectedRoots.Any(path => IsContainedBy(canonicalRoot, path))
+            ? new ValidationResult(
+                ValidationStatus.Warning,
+                ValidationReasonCode.ProtectedRoot,
+                "The root contains a permanently protected location, which is skipped.")
             : ValidationResult.Allowed();
     }
 

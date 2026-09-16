@@ -61,6 +61,9 @@ internal sealed class TestApp : IAsyncDisposable
     /// <summary>The generated folder standing in for the person's Desktop. Created on first use.</summary>
     public string DesktopPath => System.IO.Path.Combine(Sandbox, "Desktop");
 
+    /// <summary>The protected stand-in for DeskAI's own program folder, inside the test Desktop.</summary>
+    public string ProgramFolderPath => System.IO.Path.Combine(DesktopPath, "DeskAI", "app");
+
     public T Get<T>() where T : notnull => _services.GetRequiredService<T>();
 
     public static Task<TestApp> StartAsync() => StartAsync(new TemporaryDirectory(), stoppable: false);
@@ -87,9 +90,15 @@ internal sealed class TestApp : IAsyncDisposable
         var services = new ServiceCollection();
         var database = System.IO.Path.Combine(directory.Path, "deskai.db");
         services.AddLogging();
+        // Like the real app, DeskAI's own program folder is protected, and as on the owner's
+        // machine it sits inside the Desktop. The Desktop must still connect (found 2026-09-16).
+        var desktop = System.IO.Path.Combine(directory.Path, "folders", "Desktop");
         services.AddDeskAiApplication(
             database,
-            [System.IO.Path.Combine(directory.Path, "protected")]);
+            [
+                System.IO.Path.Combine(directory.Path, "protected"),
+                System.IO.Path.Combine(desktop, "DeskAI", "app"),
+            ]);
 
         // Replace, never add alongside: a second registration would leave the real one
         // reachable through IEnumerable<T>.
@@ -102,7 +111,6 @@ internal sealed class TestApp : IAsyncDisposable
         // The real wallpaper and the real Desktop must be unreachable from any test. Both
         // are replaced, and the Desktop is asserted to be inside this test's own folder.
         Replace<IWallpaperSetter>(services, new RecordingWallpaperSetter());
-        var desktop = System.IO.Path.Combine(directory.Path, "folders", "Desktop");
         if (!desktop.StartsWith(directory.Path, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException("A test Desktop must live inside the test's own folder.");
