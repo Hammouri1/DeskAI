@@ -124,6 +124,7 @@ changes a feature.
 | Every page | The AI pill says "AI off" until a service is really ready, then names it; pressing it only opens Privacy and AI | `ShellPageTests` |
 | Every page | Dark mode switch: saves light or dark for the DeskAI window only, repaints at once, remembered after reopening, shows what the window paints while following Windows | `ShellPageTests` |
 | Every page | Tile tints exist in dark, light, and high contrast, are never the accent, and no page paints a tile with anything else | `ShellLayoutTests` |
+| Organize, Search, Automatic tasks, My workspace | State pills read the value the page already decides on: Allowed to tidy / Look only, Can read inside / Names, sizes, dates, Paused / the checking frequency, On / Off on a rule, Chosen on a look | `StatePillTests`, `TidyPageTests`, `SearchPageTests`, `AutomationPageTests`, `LookPageTests` |
 | Notice | Review in Organize: opens the folder with the most matches, says what its rules place there, asks for permission first if needed, used once, moves nothing | `ReviewInOrganizePageTests` |
 | Organize | Pick or connect a folder; protected folder refused | `TidyPageTests` |
 | Organize | Tidy permission: asked first, allowed, taken back, erased on disconnect | `TidyPageTests`, `SqliteAuthorizedRootRepositoryTests`, `RootCapabilitiesTests` |

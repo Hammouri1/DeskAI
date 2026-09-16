@@ -808,6 +808,31 @@ Use a temporary folder of made-up files. Never connect a personal folder.
    number and caption is still readable.
 7. Tab through the page and press each "?" with the keyboard, then with Narrator on.
 
+## The command-center look: the other pages (added 2026-09-16)
+
+Use temporary folders of made-up files only.
+
+1. **Organize** with a connected folder that may not be tidied yet. Expected: a grey pill "Look
+   only" beside the folder list. Press Allow tidying and allow. Expected: the pill becomes a
+   green "Allowed to tidy" with a tick. Each suggestion group shows its count in a small grey
+   pill. Stop tidying: the pill goes back to grey "Look only".
+2. **Search**: run "photos from last month". Expected: the "DeskAI read this as" chips are grey
+   pills with a small tag icon, not green. In the folder list each row shows a grey "Names,
+   sizes, dates" pill; allow reading inside and it becomes a green "Can read inside" pill next to
+   the sentence saying so.
+3. **Automatic tasks** in a wide window. Expected: rules and "Write a rule" on the left,
+   "Checking for you" on the right at the top, with a grey pill "Every 15 minutes". Pause all
+   checks: an orange "Paused" pill replaces it. Each rule row shows a green "On" pill or a grey
+   "Off" pill matching its Turn on / Turn off button. Narrow the window below about 1100 pixels:
+   "Checking for you" moves above the rules.
+4. **Privacy and AI**: the five facts (Internet, AI, Shared with online AI, Folders you connected,
+   Usage tracking) sit as small cards inside the green-railed header and change when you save a
+   different AI choice.
+5. **My workspace**: pinned searches are blue-tinted tiles with a search icon and the count set
+   large; the chosen look shows a small green "Chosen" pill with a tick and the others show none.
+6. Repeat 1–5 in light mode, in each look, and in high contrast; every pill keeps its icon and
+   word, and nothing is cut off.
+
 ## My workspace (V0.7, added 2026-09-14)
 
 Use a new folder under Windows Temp with made-up files only: `holiday.jpg`, `notes.txt`,

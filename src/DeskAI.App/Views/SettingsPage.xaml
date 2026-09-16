@@ -5,37 +5,55 @@
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
-        <StackPanel Margin="32,24,32,40" MaxWidth="820" HorizontalAlignment="Left" Spacing="24">
+        <StackPanel Margin="28,24,28,40" MaxWidth="920" HorizontalAlignment="Left" Spacing="22">
 
+            <!--
+                The hero states the facts a person most wants from a privacy page as five small
+                readouts, so nothing has to be scrolled to. Each is a value from the saved settings,
+                never a fixed reassurance; "Usage tracking" is the one fixed word, because DeskAI
+                has no telemetry at all.
+            -->
             <Border Style="{StaticResource HeroPanelStyle}">
-                <Grid>
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
-                        <StackPanel Spacing="8">
-                            <TextBlock Style="{StaticResource DeskDisplayStyle}"
-                                       Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
-                                       Text="Privacy and AI" />
-                            <TextBlock MaxWidth="520" TextWrapping="Wrap"
-                                       Foreground="{ThemeResource TextOnAccentFillColorSecondaryBrush}"
-                                       Text="You decide whether AI is used at all, which service it uses, and exactly what it is allowed to see." />
-                        </StackPanel>
-                    </Grid>
-                </Grid>
-            </Border>
-
-            <Border Style="{StaticResource CardStyle}">
-                <StackPanel Spacing="14">
-                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="At a glance" />
-                    <Grid ColumnDefinitions="200,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" RowSpacing="11">
-                        <TextBlock Grid.Row="0" Style="{StaticResource BodySecondaryStyle}" Text="Internet" />
-                        <TextBlock Grid.Row="0" Grid.Column="1" FontWeight="SemiBold" Text="{Binding InternetUse}" />
-                        <TextBlock Grid.Row="1" Style="{StaticResource BodySecondaryStyle}" Text="AI" />
-                        <TextBlock Grid.Row="1" Grid.Column="1" FontWeight="SemiBold" Text="{Binding AiProcessing}" />
-                        <TextBlock Grid.Row="2" Style="{StaticResource BodySecondaryStyle}" Text="Shared with online AI" />
-                        <TextBlock Grid.Row="2" Grid.Column="1" FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding CloudDataShared}" />
-                        <TextBlock Grid.Row="3" Style="{StaticResource BodySecondaryStyle}" Text="Folders you connected" />
-                        <TextBlock Grid.Row="3" Grid.Column="1" FontWeight="SemiBold" Text="{Binding AuthorizedFolderCount}" />
-                        <TextBlock Grid.Row="4" Style="{StaticResource BodySecondaryStyle}" Text="Usage tracking" />
-                        <TextBlock Grid.Row="4" Grid.Column="1" FontWeight="SemiBold" Text="Off" />
+                <StackPanel Spacing="16">
+                    <StackPanel Spacing="8">
+                        <TextBlock Style="{StaticResource DeskDisplayStyle}"
+                                   Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                                   Text="Privacy and AI" />
+                        <TextBlock MaxWidth="560" TextWrapping="Wrap"
+                                   Foreground="{ThemeResource TextOnAccentFillColorSecondaryBrush}"
+                                   Text="You decide whether AI is used at all, which service it uses, and exactly what it is allowed to see." />
+                    </StackPanel>
+                    <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="10" AutomationProperties.Name="At a glance">
+                        <Border Style="{StaticResource SoftCardStyle}" Padding="12,10">
+                            <StackPanel Spacing="4">
+                                <TextBlock Style="{StaticResource CaptionStyle}" Text="Internet" />
+                                <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding InternetUse}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Style="{StaticResource SoftCardStyle}" Padding="12,10">
+                            <StackPanel Spacing="4">
+                                <TextBlock Style="{StaticResource CaptionStyle}" Text="AI" />
+                                <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding AiProcessing}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="2" Style="{StaticResource SoftCardStyle}" Padding="12,10">
+                            <StackPanel Spacing="4">
+                                <TextBlock Style="{StaticResource CaptionStyle}" Text="Shared with online AI" />
+                                <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding CloudDataShared}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="3" Style="{StaticResource SoftCardStyle}" Padding="12,10">
+                            <StackPanel Spacing="4">
+                                <TextBlock Style="{StaticResource CaptionStyle}" Text="Folders you connected" />
+                                <TextBlock FontWeight="SemiBold" Text="{Binding AuthorizedFolderCount}" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="4" Style="{StaticResource SoftCardStyle}" Padding="12,10">
+                            <StackPanel Spacing="4">
+                                <TextBlock Style="{StaticResource CaptionStyle}" Text="Usage tracking" />
+                                <TextBlock FontWeight="SemiBold" Text="Off" />
+                            </StackPanel>
+                        </Border>
                     </Grid>
                 </StackPanel>
             </Border>

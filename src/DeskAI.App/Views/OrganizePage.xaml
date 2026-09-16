@@ -7,7 +7,7 @@
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
-        <StackPanel Margin="32,28,32,44" MaxWidth="880" HorizontalAlignment="Left" Spacing="22">
+        <StackPanel Margin="28,24,28,44" MaxWidth="920" HorizontalAlignment="Left" Spacing="22">
 
             <!-- One job, said once: what this page is for and the promise that goes with it. -->
             <StackPanel Spacing="6" MaxWidth="640" HorizontalAlignment="Left">
@@ -49,17 +49,35 @@
                 </StackPanel>
             </Expander>
 
-            <!-- Which folder. The list holds folders already connected; the button adds one. -->
+            <!--
+                Which folder. The list holds folders already connected; the button adds one. The
+                pill beside it states the folder's permission in a word, with the accent only when
+                tidying is allowed, because that is the one state that is a permission.
+            -->
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="12">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
                         <ComboBox HorizontalAlignment="Stretch"
                                   PlaceholderText="Pick a folder"
                                   AutomationProperties.Name="Folder to tidy"
                                   Visibility="{x:Bind ViewModel.HasFolders, Mode=OneWay}"
                                   ItemsSource="{x:Bind ViewModel.Folders}"
                                   SelectedItem="{x:Bind ViewModel.SelectedFolder, Mode=TwoWay}" />
-                        <Button Grid.Column="1" Content="Choose another folder"
+                        <Border Grid.Column="1" Style="{StaticResource AccentPillStyle}"
+                                Visibility="{x:Bind ViewModel.CanStopTidying, Mode=OneWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
+                                <TextBlock Style="{StaticResource PillTextStyle}" Text="Allowed to tidy" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Style="{StaticResource PillStyle}"
+                                Visibility="{x:Bind ViewModel.NeedsPermission, Mode=OneWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="11" Glyph="&#xE8A5;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                                <TextBlock Style="{StaticResource PillTextStyle}" Text="Look only" />
+                            </StackPanel>
+                        </Border>
+                        <Button Grid.Column="2" Content="Choose another folder"
                                 Click="OnChooseFolderClick" />
                     </Grid>
                     <StackPanel Orientation="Horizontal" Spacing="12">
@@ -204,9 +222,9 @@
                                         <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"
                                                    Foreground="{ThemeResource DeskTextPrimaryBrush}"
                                                    Text="{x:Bind DisplayName}" />
-                                        <TextBlock Grid.Column="3" VerticalAlignment="Center"
-                                                   Style="{StaticResource CaptionStyle}"
-                                                   Text="{x:Bind CountText}" />
+                                        <Border Grid.Column="3" Style="{StaticResource PillStyle}">
+                                            <TextBlock Style="{StaticResource PillTextStyle}" Text="{x:Bind CountText}" />
+                                        </Border>
                                     </Grid>
                                     <!-- Only the "AI isn't sure" group has a note: its files wait to be ticked. -->
                                     <TextBlock Style="{StaticResource CaptionStyle}"

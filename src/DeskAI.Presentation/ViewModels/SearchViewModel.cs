@@ -70,6 +70,9 @@ public sealed record ConnectedFolderViewModel(
 
     public string ContentAction => CanReadContent ? "Stop reading inside" : "Read inside files";
 
+    /// <summary>The inverse of <see cref="CanReadContent"/>, so the row can show the plain pill without a converter.</summary>
+    public bool IsNamesOnly => !CanReadContent;
+
     public static ConnectedFolderViewModel From(ConnectedFolder folder)
     {
         ArgumentNullException.ThrowIfNull(folder);

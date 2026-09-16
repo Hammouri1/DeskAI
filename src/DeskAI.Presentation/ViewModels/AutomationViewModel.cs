@@ -12,6 +12,9 @@ public sealed record RuleViewModel(Guid Id, string Name, string Sentence, bool I
 {
     public string State => IsEnabled ? "On" : "Off";
 
+    /// <summary>The inverse of <see cref="IsEnabled"/>, so the page can show the Off pill without a converter.</summary>
+    public bool IsOff => !IsEnabled;
+
     public string ToggleAction => IsEnabled ? "Turn off" : "Turn on";
 }
 
@@ -188,11 +191,15 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
                 }
 
                 OnPropertyChanged(nameof(AutomaticCheckSummary));
+                OnPropertyChanged(nameof(IsRunning));
                 SaveCheckSettings();
                 RefreshPresence();
             }
         }
     }
+
+    /// <summary>The inverse of <see cref="IsPaused"/>, so the page can show the state pill without a converter.</summary>
+    public bool IsRunning => !IsPaused;
 
     /// <summary>
     /// Whether Windows should show a notification when a check finds something.
