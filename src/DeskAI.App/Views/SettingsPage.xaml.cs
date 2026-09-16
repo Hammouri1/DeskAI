@@ -136,7 +136,7 @@ public sealed partial class SettingsPage : Page
         return panel;
     }
 
-    private void AddGroup(StackPanel panel, string title, IReadOnlyList<RestoreLine> lines)
+    private static void AddGroup(StackPanel panel, string title, IReadOnlyList<RestoreLine> lines)
     {
         if (lines.Count == 0)
         {

@@ -9,6 +9,8 @@ namespace DeskAI.Presentation.Tests;
 /// </summary>
 public sealed class HomeAndShellTests
 {
+    private static readonly string[] Greetings = ["Good morning", "Good afternoon", "Good evening"];
+
     [Fact]
     public async Task With_nothing_connected_Home_and_the_side_menu_say_so()
     {
@@ -36,7 +38,7 @@ public sealed class HomeAndShellTests
         await using var app = await TestApp.StartAsync();
         var home = app.Get<DashboardViewModel>();
         await home.InitializeAsync();
-        Assert.Contains(home.Greeting, new[] { "Good morning", "Good afternoon", "Good evening" });
+        Assert.Contains(home.Greeting, Greetings);
         Assert.Equal("0", home.FoldersConnected);
         Assert.Equal("0", home.TotalFiles);
         Assert.Equal("0", home.OldFilesHeadline);
