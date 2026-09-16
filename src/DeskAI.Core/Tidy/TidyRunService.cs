@@ -52,16 +52,26 @@ public sealed record LastTidy(
 /// <param name="Total">Files it set out to move.</param>
 /// <param name="NeedsReview">Files DeskAI could not tell about, with where to look. Never moved.</param>
 /// <param name="MovedFiles">The proved moves by operation ID, so undoing them can name them.</param>
+/// <param name="MadeFolders">Folders the run is recorded as having made, by operation ID.</param>
+/// <param name="TotalFolders">Folders it set out to make.</param>
 public sealed record InterruptedTidy(
     Guid TransactionId,
     bool IsUndo,
     int Moved,
     int Total,
     IReadOnlyList<TidyFileOutcome> NeedsReview,
-    IReadOnlyDictionary<Guid, string> MovedFiles)
+    IReadOnlyDictionary<Guid, string> MovedFiles,
+    IReadOnlyDictionary<Guid, string> MadeFolders,
+    int TotalFolders)
 {
-    /// <summary>Only a tidy that moved something offers to put it back.</summary>
-    public bool CanUndo => !IsUndo && Moved > 0;
+    /// <summary>
+    /// The run set out only to make folders (a folder template), so it is described and undone
+    /// by folders rather than files.
+    /// </summary>
+    public bool IsFolders => Total == 0 && TotalFolders > 0;
+
+    /// <summary>Only a tidy that moved something, or a folder run that made something, offers undo.</summary>
+    public bool CanUndo => !IsUndo && (IsFolders ? MadeFolders.Count > 0 : Moved > 0);
 }
 
 /// <summary>
@@ -154,6 +164,7 @@ public sealed class TidyRunService(
         }
 
         var moves = record.Operations.Where(operation => operation.Kind != PlanOperationKind.CreateDirectory).ToArray();
+        var folders = record.Operations.Where(operation => operation.Kind == PlanOperationKind.CreateDirectory).ToArray();
         var isUndo = record.Kind == ExecutionTransactionKind.Undo;
         var review = moves
             .Where(operation => operation.State == JournalOperationState.NeedsReview)
@@ -161,7 +172,11 @@ public sealed class TidyRunService(
                 operation.SourceRelativePath ?? operation.DestinationRelativePath,
                 WhereToLook(operation)))
             .ToArray();
-        return new InterruptedTidy(record.Id, isUndo, CompletedMoves(record).Count, moves.Length, review, CompletedMoves(record));
+        var made = folders
+            .Where(operation => operation.State == JournalOperationState.Completed)
+            .ToDictionary(operation => operation.OperationId, operation => operation.DestinationRelativePath);
+        return new InterruptedTidy(
+            record.Id, isUndo, CompletedMoves(record).Count, moves.Length, review, CompletedMoves(record), made, folders.Length);
     }
 
     /// <summary>"Keep them": the interrupted record becomes an ordinary tidy of what moved.</summary>
@@ -198,12 +213,16 @@ public sealed class TidyRunService(
         // Asked before closing, so refusing leaves the question open exactly as it was.
         if (!RootCapabilities.CanTidy(root))
         {
-            return new(true, false, 0, [], "Undo moves files too, so DeskAI needs your permission to tidy this folder again.");
+            return new(true, false, 0, [], interrupted.IsFolders
+                ? "Undo removes the folders DeskAI made, so DeskAI needs your permission to tidy this folder again."
+                : "Undo moves files too, so DeskAI needs your permission to tidy this folder again.");
         }
 
         if (!interrupted.CanUndo)
         {
-            return new(false, false, 0, [], "Nothing had moved, so there is nothing to put back.");
+            return new(false, false, 0, [], interrupted.IsFolders
+                ? "No folder had been made, so there is nothing to remove."
+                : "Nothing had moved, so there is nothing to put back.");
         }
 
         if (await KeepInterruptedAsync(rootId, interrupted.TransactionId, cancellationToken).ConfigureAwait(false) is { } problem)
@@ -211,7 +230,12 @@ public sealed class TidyRunService(
             return new(false, false, 0, [], problem);
         }
 
-        return await UndoAsync(rootId, interrupted.TransactionId, interrupted.MovedFiles, cancellationToken).ConfigureAwait(false);
+        return await UndoAsync(
+            rootId,
+            interrupted.TransactionId,
+            interrupted.MovedFiles,
+            interrupted.IsFolders ? interrupted.MadeFolders : null,
+            cancellationToken).ConfigureAwait(false);
     }
 
     private static Dictionary<Guid, string> CompletedMoves(ExecutionJournalEntry record) =>
@@ -297,22 +321,39 @@ public sealed class TidyRunService(
     }
 
     /// <param name="movedFiles">The files the tidy moved, from its <see cref="TidyRunResult"/>.</param>
+    public Task<TidyUndoResult> UndoAsync(
+        Guid rootId,
+        Guid transactionId,
+        IReadOnlyDictionary<Guid, string> movedFiles,
+        CancellationToken cancellationToken = default) =>
+        UndoAsync(rootId, transactionId, movedFiles, null, cancellationToken);
+
+    /// <param name="madeFolders">
+    /// Set for a run that only made folders: the folders it made, by operation ID. The result is
+    /// then counted and worded in folders removed rather than files put back.
+    /// </param>
     public async Task<TidyUndoResult> UndoAsync(
         Guid rootId,
         Guid transactionId,
         IReadOnlyDictionary<Guid, string> movedFiles,
+        IReadOnlyDictionary<Guid, string>? madeFolders,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(movedFiles);
+        var byFolders = madeFolders is not null;
         var root = await roots.FindAsync(rootId, cancellationToken).ConfigureAwait(false);
         if (root is null)
         {
-            return new(false, false, 0, [], "That folder is no longer connected, so nothing was moved back.");
+            return new(false, false, 0, [], byFolders
+                ? "That folder is no longer connected, so nothing was removed."
+                : "That folder is no longer connected, so nothing was moved back.");
         }
 
         if (!RootCapabilities.CanTidy(root))
         {
-            return new(true, false, 0, [], "Undo moves files too, so DeskAI needs your permission to tidy this folder again.");
+            return new(true, false, 0, [], byFolders
+                ? "Undo removes the folders DeskAI made, so DeskAI needs your permission to tidy this folder again."
+                : "Undo moves files too, so DeskAI needs your permission to tidy this folder again.");
         }
 
         UndoResult result;
@@ -325,9 +366,10 @@ public sealed class TidyRunService(
             return new(false, false, 0, [], exception.Message);
         }
 
+        var named = madeFolders ?? movedFiles;
         var restored = 0;
         var notRestored = new List<TidyFileOutcome>();
-        foreach (var item in result.Operations.Where(item => movedFiles.ContainsKey(item.OperationId)))
+        foreach (var item in result.Operations.Where(item => named.ContainsKey(item.OperationId)))
         {
             if (item.Outcome == ExecutionOutcome.Completed)
             {
@@ -335,13 +377,17 @@ public sealed class TidyRunService(
             }
             else
             {
-                notRestored.Add(new(movedFiles[item.OperationId], item.Error ?? "It was not moved back."));
+                notRestored.Add(new(named[item.OperationId], item.Error ?? (byFolders ? "It was left in place." : "It was not moved back.")));
             }
         }
 
-        var summary = notRestored.Count == 0
-            ? $"Undone. {Files(restored)} went back where {(restored == 1 ? "it was" : "they were")}."
-            : $"{restored} of {restored + notRestored.Count} files went back. The rest stayed where they are now.";
+        var summary = byFolders
+            ? notRestored.Count == 0
+                ? $"Undone. {Folders(restored)} removed."
+                : $"{restored} of {Folders(restored + notRestored.Count)} removed. The rest were left in place."
+            : notRestored.Count == 0
+                ? $"Undone. {Files(restored)} went back where {(restored == 1 ? "it was" : "they were")}."
+                : $"{restored} of {restored + notRestored.Count} files went back. The rest stayed where they are now.";
         return new(false, true, restored, notRestored, summary);
     }
 

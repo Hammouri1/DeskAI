@@ -16,81 +16,116 @@ appending to them.
 
 ## Where things stand
 
-- Updated: 2026-09-12, at commit `4da8d60`, branch `main`, tree clean.
-- V0.1–V0.4 complete. V0.4's last piece, confirming duplicates by reading files after the
-  person agrees each time, landed 2026-09-11 (ADR 0024).
-- V0.5 complete **except** checking after the window is closed.
-- V0.6 "Organize Your Own Folders" complete in code and automated tests (2026-09-11;
-  ADR 0019–0023, review `docs/security/2026-09-11-v0.6-milestone-review.md`).
-- V0.7 is marked Future. Nothing in it is started.
+- Updated: 2026-09-16, at the end of the session that closed the roadmap. Branch
+  `v0.7-workspace-profiles` holds everything since V0.5; it was merged into `main` at the end
+  of that session (see "What is left" if the merge is not there — then do it first).
+- **The whole roadmap is complete in code, tests, and documents: V0.1–V1.0.** On 2026-09-16 one
+  session did, in order, each with its own commit(s): the command-center redesign of every page
+  (`docs/superpowers/specs/2026-09-16-command-center-redesign-design.md`), V0.8 (ADR 0030,
+  `docs/security/2026-09-16-v0.8-privacy-review.md`), V0.9 (ADR 0031,
+  `docs/security/2026-09-16-tidy-while-away-review.md`, written before code), and V1.0
+  (`docs/security/2026-09-16-v1.0-release-review.md`, `LICENSE` (MIT), `CONTRIBUTING.md`, root
+  `SECURITY.md`, `docs/USER-GUIDE.md`, `docs/INSTALL.md`, `docs/RELEASE-NOTES.md`). Version is
+  `1.0.0` in `Directory.Build.props`.
+- Verification at the end: Release build of every project; **1192 tests pass, none skipped**;
+  `dotnet format` clean. The App's final copy into `src\DeskAI.App\bin\x64\Release\...` could
+  not complete because the owner's own `DeskAI.App.exe` was running the whole session and
+  locked the DLLs there; the App was compiled and verified into a scratch folder instead
+  (`dotnet build src/DeskAI.App -c Release -p:OutDir=<somewhere else>`). **Close DeskAI and run
+  the three verification commands once** to get the launchable exe at the usual path.
+- **The owner has not yet seen anything from V0.7 onward running.** Every manual list from
+  "My workspace" to "A release zip" in `MANUAL-TESTING.md` is unreported. The riskiest
+  untested-by-hand spots: the real theme repaint and the real wallpaper call (V0.7), the away
+  switch's dialog and the notice with the window closed (V0.9), and the release workflow, which
+  has never run on GitHub (no push or tag has been made from this machine's checkout).
+- GitHub Actions: `.github/workflows/build.yml` and `release.yml` exist but are unverified until
+  the repository is pushed. The release uses `softprops/action-gh-release@v2` and the
+  `CycloneDX` .NET tool; if either is unavailable, the workflow fails visibly rather than
+  publishing a partial release.
 
 ## What is left
 
-1. **Checks after the window is closed** (V0.5, the one open code item). ADR 0017 decided the
-   mode and deliberately left it unbuildable: `AutomaticCheckMode.InBackground` exists in
-   `DeskAI.Core/Rules/AutomaticCheckSettings.cs`, no code produces it, and it is absent from
-   the UI. `docs/SECURITY.md` requires its own focused review before it ships, because a
-   process running while nobody is present is a different threat case.
-2. **The owner's "V0.6 sign-off" list** in `docs/MANUAL-TESTING.md` — dialogs, keyboard and
-   screen-reader use, a real crash, two windows. Only the owner can do these; they are not a
-   coding task.
-3. **V0.7**, only if the owner asks for it.
+1. **The owner's look at everything since V0.6**, in `docs/MANUAL-TESTING.md`: "The
+   command-center look: every page / Home / the other pages", "Back up, restore, and Start
+   fresh", "A release zip", "Tidy while I'm away", plus the older "My workspace", "Folder
+   templates", "DeskAI's look", "Desktop and wallpaper", "V0.6 sign-off", and steps 2, 9, 19–24
+   of "Checking after the window is closed". Any bug found by hand gets a page test that fails
+   first. Expect layout clips like the 2026-09-16 "Unpin" one; a page test cannot see those.
+2. **Push and tag.** `git push origin main`, watch the build workflow go green, then
+   `git tag v1.0.0 && git push origin v1.0.0` and check the Release has the zip and the SBOM.
+   Unzip it on a clean account and walk "A release zip".
+3. **Code signing** when a certificate exists (ADR 0030 names SignPath and Azure Trusted Signing).
+4. **Deferred by decision, not to start unasked:** add-ons (ADR 0030 records the boundary they
+   must start from), localization beyond English, shortcut and icon suggestions, desktop layout
+   previews, local image generation, "keep both" unattended.
+5. **Small things noticed and left:** three pre-existing analyzer warnings (CA1716 on
+   `IWallpaperSetter.Set`, CA1870 in `FolderNameCheck`, CA1838 in `WindowsDesktop`) appear on a
+   full rebuild; they were not introduced this session and were left alone to keep the diff
+   honest. `docs/PERFORMANCE.md` has one recorded run; add one after any change to scanning.
 
-## Decisions already agreed but not yet built
+## Decisions made in conversation, not yet recorded elsewhere
 
-Recorded here so a new chat does not re-ask. Agreed with the owner on 2026-09-12 while
-designing item 1 above:
+All of 2026-09-16's decisions are in ADR 0030, ADR 0031, and the three design documents. The
+ones worth repeating because they shape what comes next:
 
-- "After the window is closed" means the same DeskAI keeps running with a visible tray icon
-  until sign-out or restart. It does **not** add itself to Windows startup.
-- The dialog that turns background checking on also shows the notification switch — still off
-  unless turned on — and says plainly that with it off a find is only seen on reopening.
-- Launching DeskAI again while it is hidden reveals the running one and exits the second
-  launch; it never starts a second DeskAI and never silently quits the first.
-- Preferred mechanism: `Shell_NotifyIcon` through a small adapter in `DeskAI.App`, no new
-  package. Not yet approved as part of a full design.
-- The honest limit to state in the design and the UI: a check produces a count and a notice
-  and cannot move a file, so background checking only keeps the count current. "Tidy while I
-  am away" is not in V0.5, not in V0.6, and not on the roadmap.
-
-No design document or ADR has been written for this yet. The next step for item 1 is the
-design and security review, committed before any code.
+- **Menu names stay** (Home, Organize, Search, Automatic tasks, My workspace, Privacy and AI).
+  Simpler names were offered and declined; the naming pass became grouping plus pills.
+- **Distribution is a zip on GitHub Releases, unsigned for now, no installer, no self-update.**
+- **Add-ons come "after we finish building the system"**, and DeskAI loads no outside code.
+- **Tidy while I'm away is "move a few, then wait"**: rule-placed files only, 25 per run, stop on
+  anything unexpected, undo first. "Only tell me" and "move everything" were the rejected options.
+- **License is MIT**, the owner's "for now yes"; the copyright line names the owner and
+  contributors.
+- **Merge into main at the end** was agreed as part of the plan.
+- **How to ask the owner things:** in plain words about what they will see and what DeskAI may
+  touch, never in roadmap or architecture vocabulary. Batched questions worked well this session
+  (four at once, each with a recommended option).
 
 ## What a new chat must know
 
 - `AGENTS.md` is the main instruction file; `CLAUDE.md` adds the workflow. If documents
   conflict, `docs/SECURITY.md` wins.
 - The permanent rule: AI decides what it recommends, deterministic code decides what is
-  allowed to happen. An automatic check holds no executor and a reflection test fails if one
-  is added.
-- `FolderTidyExecutor` is the only code in DeskAI that moves a file. The practice page and its
-  executor were removed in ADR 0023.
+  allowed to happen. `FolderTidyExecutor` is the only code that moves a file or makes or removes
+  a folder. An automatic check holds no executor; the coordinator holds `IAwayTidyRunner`, which
+  `AwayTidyService` alone implements, and that is the one unattended path (25 rule-placed files
+  per run, stop on anything unexpected). The wallpaper setter is held only by `WallpaperService`.
+  Reflection tests fail if any of that changes.
+- Every "nothing moves by itself" sentence in the app reads `AwayTidyService.CountActiveAsync`
+  through `AwayTidyWords`; do not hard-code that promise anywhere again.
+- The backup file holds rules and saved searches only; restored rules arrive off. Start fresh
+  erases DeskAI's memory and touches no file.
 - Anything a person can see or do needs a page test in `DeskAI.Presentation.Tests` and a row
-  in the Feature Coverage Map in `docs/TESTING.md`. Engine tests alone do not finish a
-  feature. A bug found by hand gets a test that fails before the fix.
-- Tests and development never touch real personal folders. Generated files in temporary
-  directories only.
-- The app is unpackaged WinUI 3 (`WindowsPackageType=None`), self-contained Windows App SDK,
-  x64, `net10.0-windows10.0.26100.0`; libraries target `net10.0`.
+  in the Feature Coverage Map in `docs/TESTING.md`. Tests read the XAML for layout rules
+  (`ShellLayoutTests`, `AccessibilityNameTests`, `NoPlaceholderUiTests`, `HelpPlacementTests`).
+- Tests and development never touch real personal folders, the real wallpaper, or the real
+  Desktop. `TestApp` replaces the credential vault, the internet, notifications, the tray, the
+  window painter, the wallpaper setter, and the known Desktop folder.
+- The app is unpackaged WinUI 3, self-contained Windows App SDK, x64,
+  `net10.0-windows10.0.26100.0`; libraries target `net10.0`. SQLite schema version is **14**
+  (V0.9 added `away_tidy` and `away_tidy_runs`).
 - Verification:
 
   ```powershell
   dotnet build DeskAI.sln -c Release --no-restore
-  dotnet test DeskAI.sln -c Release --no-build --no-restore
+  dotnet test --solution DeskAI.sln -c Release --no-build --no-restore
   dotnet format DeskAI.sln --no-restore --verify-no-changes
   ```
 
 - Launchable app after a Release build:
-  `src\DeskAI.App\bin\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`
+  `src\DeskAI.App\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`
 
 ## Known limits worth repeating
 
-- Nothing moves a file without a preview and an approval, and there is no path from a rule or
-  an automatic check straight to a move.
+- Nothing moves a file without a preview and an approval, except an unattended run under a
+  standing yes that a person gave on Organize for that folder, bounded as above and undoable.
 - AI never sees locations, folder names, file contents, or DeskAI's file IDs — at most type,
   size and date, and name, each only if allowed, and only after a dialog showing the request.
+  AI plays no part in templates, looks, wallpaper, the Desktop shortcut, backups, or away runs.
 - PDF and Office files are refused before opening; content reading is plain text only, 64 KB.
-- No permanent automatic deletion anywhere.
+- No permanent deletion anywhere. Template undo removes only empty folders DeskAI made.
+- DeskAI never registers itself with Windows startup and never checks online for updates.
+- Put back restores the wallpaper picture only. Tidying the Desktop leaves shortcuts alone.
 
 ---
 
@@ -98,8 +133,8 @@ design and security review, committed before any code.
 
 At the end of every roadmap version, before the owner clears the chat:
 
-1. Rewrite "Where things stand", "What is left", and "Decisions already agreed but not yet
-   built" to match reality — including the commit and the date.
+1. Rewrite "Where things stand", "What is left", and "Decisions made in conversation, not yet
+   recorded elsewhere" to match reality — including the commit and the date.
 2. Move anything finished out of here and into `ROADMAP.md`.
 3. Write down every decision the owner made in conversation that is not yet in code, an ADR,
    or a design document. A decision that exists only in the cleared chat is lost.

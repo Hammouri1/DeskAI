@@ -112,12 +112,19 @@ changes a feature.
 | Page | Feature | Page tests |
 |---|---|---|
 | Home | Totals, categories, largest files, last checked | `HomeAndShellTests` |
+| Home | Greeting by time of day; the four Quick look tiles (folders, files, sitting unused, possible duplicates) read the remembered numbers, and the duplicates caption stays hedged | `HomeAndShellTests`, `ShellLayoutTests` |
 | Home | Possible copies (same size, never "confirmed") | `HomeAndShellTests` |
 | Home | Check if they're really copies: dialog says what is read first, Cancel reads nothing, identical / different / not checked with reasons, nothing kept, sent, or changed | `CopyCheckPageTests`, `DuplicateCheckTests`, `DuplicateCheckServiceTests`, `FileFingerprinterTests` |
 | Home | Health score with its parts | `HomeAndShellTests` |
 | Home | Honest wording about what can change | `HomeAndShellTests` |
 | Side menu | What is connected and whether files are read | `HomeAndShellTests` |
 | Side menu | Notice when a check finds something; opt-in notification | `HomeAndShellTests` |
+| Every page | The grouped menu keeps the six names the owner chose, in the top bar's order, under three plain group labels | `ShellLayoutTests`, `ShellPageTests` |
+| Every page | Top bar: the page name; "Find a file…" opens Search with the phrase already run, once, and a blank phrase does nothing | `ShellPageTests` |
+| Every page | The AI pill says "AI off" until a service is really ready, then names it; pressing it only opens Privacy and AI | `ShellPageTests` |
+| Every page | Dark mode switch: saves light or dark for the DeskAI window only, repaints at once, remembered after reopening, shows what the window paints while following Windows | `ShellPageTests` |
+| Every page | Tile tints exist in dark, light, and high contrast, are never the accent, and no page paints a tile with anything else | `ShellLayoutTests` |
+| Organize, Search, Automatic tasks, My workspace | State pills read the value the page already decides on: Allowed to tidy / Look only, Can read inside / Names, sizes, dates, Paused / the checking frequency, On / Off on a rule, Chosen on a look | `StatePillTests`, `TidyPageTests`, `SearchPageTests`, `AutomationPageTests`, `LookPageTests` |
 | Notice | Review in Organize: opens the folder with the most matches, says what its rules place there, asks for permission first if needed, used once, moves nothing | `ReviewInOrganizePageTests` |
 | Organize | Pick or connect a folder; protected folder refused | `TidyPageTests` |
 | Organize | Tidy permission: asked first, allowed, taken back, erased on disconnect | `TidyPageTests`, `SqliteAuthorizedRootRepositoryTests`, `RootCapabilitiesTests` |
@@ -149,8 +156,45 @@ changes a feature.
 | Automatic tasks | Write, draft from a sentence, turn off, delete rules | `AutomationPageTests` |
 | Automatic tasks | Practice run (moves nothing) | `AutomationPageTests` |
 | Automatic tasks | Check now, history, how often, pause, notifications | `AutomationPageTests` |
+| Automatic tasks | Keep checking after the window is closed: asked first, stores nothing until yes, survives reopening, off again at once | `BackgroundCheckingPageTests` |
+| Automatic tasks | The icon near the clock: appears when turned on, says how often or paused, never a file name | `BackgroundCheckingPageTests`, `BackgroundCheckingChoiceTests` |
+| Automatic tasks | Pause from the icon; the page and the icon never disagree | `BackgroundCheckingPageTests` |
+| Automatic tasks | Wording follows the mode: never claims checking stops on close while it does not, always says nothing moves by itself, always says no Windows startup | `BackgroundCheckingPageTests`, `BackgroundCheckingChoiceTests` |
+| Whole app | Never registers itself to start with Windows | `NeverStartsWithWindowsTests` |
+| Organize | Tidy while I'm away: the switch is off and disabled until tidying is allowed and a rule is on; the dialog names the folder, the rules, and the 25-file ceiling | `AwayTidyPageTests` |
+| Organize | After the yes a check moves only rule-placed loose files (never type-placed, AI, subfolder, or clashing files), at most 25 per run; the away card, the notice, and Undo follow, also after reopening; Got it clears the card | `AwayTidyPageTests` |
+| Organize | A same-name clash stops the run before anything moves; a rule added, edited, toggled, or removed turns the mode off with the reason before the next run and when the folder is shown; withdrawing tidy permission ends it; a busy file stays and the mode stops after the run | `AwayTidyPageTests` |
+| Home, Automatic tasks | Every "nothing moves by itself" promise follows the mode: pill, hero sentence, first card, checking summary, keep-running dialog, More details | `AwayTidyPageTests`, `BackgroundCheckingPageTests` |
+| Whole app | Start fresh and disconnecting end the mode; the away service is the only unattended path, holds no AI, reader, fingerprinter, credential, or file store, and the check service still holds no executor | `AwayTidyPageTests`, `FreshStartPageTests` |
+| Whole app | Launching DeskAI again reveals the running one rather than starting a second | `SingleInstanceDecisionTests` |
+| My workspace | Starter packs: five cards, no Custom; preview lists every search and rule and adds nothing; Add writes what happened on that card; names already used are skipped and named, never replaced; adding twice adds nothing; the 50-search limit | `WorkspacePageTests`, `StarterPackServiceTests`, `StarterPackCatalogTests` |
+| My workspace | A pack's rules arrive Off, change neither Tidy nor a check until turned on, and move no file | `WorkspacePageTests`, `StarterPackServiceTests`, `StarterPackCatalogTests` |
+| My workspace | Every pack search means what its name says (each phrase checked against the translator) | `StarterPackCatalogTests` |
+| My workspace | Pinned tiles: count, "No folders connected", "Search not understood", "200+" at the limit, no file names; pin up to eight, refused beside the list, unpin | `WorkspacePageTests`, `PinnedSearchServiceTests`, `SqliteSavedSearchRepositoryTests`, `SqliteDatabaseInitializerTests` |
+| My workspace | Open in Search lands on that saved search's results; used once; a removed search is said to be gone | `WorkspacePageTests` |
+| My workspace | Nothing here can reach a file, a credential, or AI | `StarterPackServiceTests`, `PinnedSearchServiceTests` |
+| My workspace | Folder templates: six cards (five packs and "Your own folders"); with nothing connected the section points to Organize; the preview lists new, already there (by the name on disk), and can't-be-made folders and changes nothing; without the tidy permission it asks first and looks at nothing | `FolderTemplatePageTests`, `FolderTemplateServiceTests`, `FolderNameLookupTests` |
+| My workspace | Make makes exactly the listed folders, never re-makes one already there, names each folder not made with its reason, and writes the result on that card; the approval covers exactly the folders shown; the folder changing between preview and Make is refused with a fresh list | `FolderTemplatePageTests`, `FolderTemplateServiceTests` |
+| My workspace | Typed folder names: separators, drive letters, traversal, device names, trailing dots, more than 8, duplicates, and blanks refused with a reason and nothing looked at; accepted names made; every accepted name also passes the path policy | `FolderTemplatePageTests`, `FolderNameCheckTests`, `FolderTemplatePolicyTests` |
+| My workspace | Undo removes only the empty folders DeskAI made, leaves one that gained a file with a reason, survives reopening, needs the tidy permission again, and is taken off the page once a tidy ran after it | `FolderTemplatePageTests`, `FolderTemplateServiceTests`, `FolderTidyExecutorTests` |
+| My workspace / Organize | A template run that stopped part-way is described on Organize as folders ("1 of 2 folders made"), can be removed or kept, and blocks templates in that folder until answered; a folder-only record never settles as "0 of 0 files" | `FolderTemplatePageTests`, `FolderTidyExecutorTests` |
+| My workspace | Every catalog folder name passes the real path policy; each pack rule's destination is in its template; adding a pack still makes no folder; no Workspace type holds an executor; the template service holds no scanner, reader, credential, rule evaluator, or AI | `FolderTemplatePolicyTests`, `FolderTemplateCatalogTests`, `FolderTemplatePageTests`, `FolderTemplateServiceTests` |
+| My workspace | DeskAI's look: four looks with Slate chosen and Follow Windows by default; choosing a look repaints the window at once, marks it chosen, and is remembered after reopening; light / dark / follow Windows; choosing the same again does nothing; a made-up look changes nothing; a stored look that no longer exists shows as Slate | `LookPageTests`, `SqliteAppearanceSettingsRepositoryTests` |
+| My workspace | A look can change only the neutral colours, never the accent, caution, or danger colour; every look keeps the shared text readable (7:1 primary, 4.5:1 secondary) on its ground and surfaces; every colour is six-digit hex | `DeskLookCatalogTests` |
+| My workspace | Wallpaper: choosing a picture shows its name and what Windows shows now and changes nothing; Use as wallpaper sets it, writes the old one down first, and offers Put back, also after reopening; Put back restores it (or a plain colour) and clears the offer; a wallpaper changed in Windows since is said beside Put back; Windows refusing leaves no offer behind | `DesktopAndWallpaperPageTests`, `WallpaperServiceTests`, `DesktopAdapterTests` |
+| My workspace | Wallpaper refusals with a reason: nothing chosen, a network path, a URL, a relative path, a non-picture extension, a missing file, a link, a folder, an empty file, a file over 50 MB; the file going missing between preview and use | `DesktopAndWallpaperPageTests`, `WallpaperServiceTests` |
+| My workspace | Wallpaper containment: the service holds only the setter, the inspector, and the store; nothing that runs with no window (checks, presence) can take the setter; no registry API in any source file | `WallpaperServiceTests`, `AutomaticCheckServiceTests`, `NeverStartsWithWindowsTests` |
+| My workspace / Organize | Tidy my Desktop: connects the Desktop found through the known-folder API for names only (no content, no tidy permission), hands it to Organize, which asks permission first; pressing again reuses it; shortcuts (`.lnk`, `.url`) are left alone; nothing moves until Tidy; no Desktop folder means the button is off with a reason | `DesktopAndWallpaperPageTests` |
+| Whole app | No test can touch the real wallpaper or the real Desktop: both are replaced in `TestApp`, and the test Desktop is asserted to sit inside the test's own folder and differ from the real one | `DesktopAndWallpaperPageTests`, `TestApp` |
 | Privacy and AI | Sharing choices, AI modes, key storage and removal, daily limit | `SettingsPageTests`, `AiJourneyTests` |
 | Privacy and AI | Pasted key trimmed, spaced key refused, wrong-looking key warned | `SettingsPageTests` |
+| Privacy and AI | Back up: the file holds rules and saved searches and no folder, path, key, or setting; the status says so | `BackupPageTests` |
+| Privacy and AI | Restore: preview adds nothing and names what is skipped and why; restore adds once with new IDs, rules Off, names already used skipped; a second restore adds nothing; pins kept only while there is room | `BackupPageTests` |
+| Privacy and AI | Restore refuses a file that is not a backup, a newer version, a non-.json file, and an oversized file in plain words; a hostile or unknown rule in the file is skipped with a reason and the rest restored | `BackupPageTests` |
+| Privacy and AI | Start fresh forgets every folder, rule, search, key, AI choice, check history and setting, look, and wallpaper memory, hides the icon, and touches no file; the backup and fresh-start services hold nothing that reaches a file | `FreshStartPageTests`, `BackupPageTests` |
+| Privacy and AI | The version line | `FreshStartPageTests` |
+| Every page | Every button without visible text and every box, list, and switch carries a name for screen readers | `AccessibilityNameTests` |
+| Whole app | Performance probe on a few thousand generated files (opt-in, `DESKAI_PERF`), recorded in `docs/PERFORMANCE.md` | `PerformanceProbe` |
 | Organize | Ask AI after turning AI on: one request to the chosen service, rejected key in plain words, removing the key stops it, daily limit | `AiJourneyTests`, `SettingsPageTests`, `CloudSuggestionProviderTests` |
 | Every page | "?" help next to each feature: complete, short, no jargon, placed | `HelpCatalogTests`, `HelpPlacementTests` |
 

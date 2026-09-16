@@ -1,16 +1,173 @@
+using System.Globalization;
+using System.Reflection;
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeskAI.AI;
+using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Ai;
+using DeskAI.Core.Backup;
+using DeskAI.Core.Rules;
 
 namespace DeskAI.App.ViewModels;
 
 public sealed class SettingsViewModel(
     IAiSettingsRepository settingsRepository,
     IAuthorizedRootRepository rootRepository,
-    ICredentialVault credentialVault) : ObservableObject
+    ICredentialVault credentialVault,
+    BackupService backup,
+    FreshStartService freshStart,
+    IUserFileStore files,
+    BackgroundPresenceController presence,
+    IClock clock) : ObservableObject
 {
     private AiSettings _loaded = AiSettings.Default;
+    private string _backupStatus = string.Empty;
+    private string _freshStartStatus = string.Empty;
+
+    /// <summary>The version people see, from the build. A release tag sets it.</summary>
+    public static string Version { get; } =
+        typeof(SettingsViewModel).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion
+            is { Length: > 0 } informational
+            ? "DeskAI " + informational.Split('+')[0]
+            : "DeskAI";
+
+    /// <summary>The name the save dialog suggests for a backup file, dated so two are told apart.</summary>
+    public string SuggestedBackupFileName =>
+        $"DeskAI backup {clock.UtcNow.ToLocalTime().ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)}.json";
+
+    /// <summary>What the last backup or restore did, written under those buttons.</summary>
+    public string BackupStatus
+    {
+        get => _backupStatus;
+        private set
+        {
+            if (SetProperty(ref _backupStatus, value))
+            {
+                OnPropertyChanged(nameof(HasBackupStatus));
+            }
+        }
+    }
+
+    public bool HasBackupStatus => !string.IsNullOrEmpty(BackupStatus);
+
+    public string FreshStartStatus
+    {
+        get => _freshStartStatus;
+        private set
+        {
+            if (SetProperty(ref _freshStartStatus, value))
+            {
+                OnPropertyChanged(nameof(HasFreshStartStatus));
+            }
+        }
+    }
+
+    public bool HasFreshStartStatus => !string.IsNullOrEmpty(FreshStartStatus);
+
+    /// <summary>Writes every rule and saved search to the file the person chose. Nothing else goes in it.</summary>
+    public async Task ExportBackupAsync(string path)
+    {
+        try
+        {
+            var made = await backup.ExportAsync();
+            await files.WriteTextAsync(path, BackupService.ToText(made));
+            BackupStatus = $"Saved {Count(made.Rules.Count, "rule")} and {Count(made.SavedSearches.Count, "saved search", "saved searches")} "
+                + $"to {Path.GetFileName(path)}. The file holds no folders, keys, or locations.";
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            BackupStatus = $"DeskAI could not save the backup: {exception.Message}";
+        }
+    }
+
+    /// <summary>
+    /// What restoring the chosen file would add and skip. Adds nothing; the page shows it and
+    /// only Restore in that dialog restores.
+    /// </summary>
+    /// <returns>The preview, or null when the reason is already written in <see cref="BackupStatus"/>.</returns>
+    public async Task<RestorePreview?> PreviewRestoreAsync(string path)
+    {
+        try
+        {
+            var text = await files.ReadTextAsync(path, DeskAiBackup.MaxBytes);
+            var preview = await backup.PreviewAsync(text);
+            if (preview.Problem is not null)
+            {
+                BackupStatus = preview.Problem;
+                return null;
+            }
+
+            BackupStatus = string.Empty;
+            return preview;
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            BackupStatus = $"DeskAI could not read that file: {exception.Message}";
+            return null;
+        }
+    }
+
+    /// <summary>Adds what the file holds. Restored rules arrive switched off.</summary>
+    public async Task RestoreBackupAsync(string path)
+    {
+        try
+        {
+            var text = await files.ReadTextAsync(path, DeskAiBackup.MaxBytes);
+            var outcome = await backup.RestoreAsync(text);
+            if (outcome.Problem is not null)
+            {
+                BackupStatus = outcome.Problem;
+                return;
+            }
+
+            var skipped = outcome.SkippedNames.Count == 0
+                ? string.Empty
+                : $" Skipped {outcome.SkippedNames.Count} you already had or DeskAI can't use: {string.Join(", ", outcome.SkippedNames)}.";
+            var rulesNote = outcome.RulesAdded == 0
+                ? string.Empty
+                : " Restored rules are switched off — turn them on in Automatic tasks.";
+            BackupStatus = $"Restored {Count(outcome.RulesAdded, "rule")} and {Count(outcome.SearchesAdded, "saved search", "saved searches")}.{skipped}{rulesNote}";
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            BackupStatus = $"DeskAI could not restore that file: {exception.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Forgets everything DeskAI remembers. Called only after the page's dialog was confirmed.
+    /// </summary>
+    /// <remarks>
+    /// The icon near the clock is refreshed from the now-default settings, so a DeskAI that was
+    /// keeping running with no window is no longer doing so. No file on disk is touched.
+    /// </remarks>
+    public async Task StartFreshAsync()
+    {
+        try
+        {
+            var outcome = await freshStart.StartFreshAsync();
+            presence.Refresh(AutomaticCheckSettings.Default);
+            await InitializeAsync();
+            FreshStartStatus =
+                $"Done. DeskAI forgot {Count(outcome.FoldersForgotten, "folder")}, {Count(outcome.RulesRemoved, "rule")}, "
+                + $"{Count(outcome.SearchesRemoved, "saved search", "saved searches")}, and {Count(outcome.KeysRemoved, "saved key")}. "
+                + "Your files were not touched.";
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            FreshStartStatus = $"DeskAI stopped part-way: {exception.Message}";
+        }
+    }
+
+    private static string Count(int count, string singular, string? plural = null) =>
+        count == 1 ? $"1 {singular}" : $"{count} {plural ?? singular + "s"}";
+
+    private static bool IsExpectedFailure(Exception exception) =>
+        exception is IOException
+            or UnauthorizedAccessException
+            or InvalidOperationException
+            or System.Data.Common.DbException
+            or System.ComponentModel.Win32Exception;
     private bool _shareExtension = true;
     private bool _shareMetadata;
     private bool _shareFileName;

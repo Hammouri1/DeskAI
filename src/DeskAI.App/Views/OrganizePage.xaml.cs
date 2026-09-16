@@ -84,6 +84,72 @@ public sealed partial class OrganizePage : Page
     }
 
     /// <summary>
+    /// The away switch. On opens the dialog that names the rules and the ceiling, and only its
+    /// yes records anything; off needs no dialog, because taking a permission back never does.
+    /// </summary>
+    private async void OnAwayToggled(object sender, RoutedEventArgs e)
+    {
+        if (AwaySwitch.IsOn == ViewModel.IsAwayOn)
+        {
+            // The binding just moved the switch to match the stored state; nothing to do.
+            return;
+        }
+
+        if (!AwaySwitch.IsOn)
+        {
+            await ViewModel.TurnAwayOffAsync();
+            return;
+        }
+
+        var question = await ViewModel.PrepareAwayQuestionAsync();
+        if (question is null || !await ConfirmAwayAsync(question))
+        {
+            AwaySwitch.IsOn = ViewModel.IsAwayOn;
+            return;
+        }
+
+        await ViewModel.TurnAwayOnAsync();
+        AwaySwitch.IsOn = ViewModel.IsAwayOn;
+    }
+
+    private async Task<bool> ConfirmAwayAsync(AwayTidyQuestion question)
+    {
+        var content = new StackPanel { Spacing = 12, MaxWidth = 480 };
+        content.Children.Add(new TextBlock { Text = question.Intro, TextWrapping = TextWrapping.Wrap });
+        foreach (var rule in question.Rules)
+        {
+            content.Children.Add(new TextBlock
+            {
+                Text = "• " + rule,
+                TextWrapping = TextWrapping.Wrap,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            });
+        }
+
+        content.Children.Add(new Border
+        {
+            Padding = new Thickness(12, 10, 12, 10),
+            CornerRadius = new CornerRadius(0, 4, 4, 0),
+            BorderThickness = new Thickness(3, 0, 0, 0),
+            Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["DeskSurfaceBrush"],
+            BorderBrush = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["DeskAccentBrush"],
+            Child = new TextBlock { Text = question.Promise, TextWrapping = TextWrapping.Wrap },
+        });
+
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = question.Title,
+            Content = content,
+            PrimaryButtonText = "Tidy while I'm away",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+            PrimaryButtonStyle = (Style)Application.Current.Resources["AccentButtonStyle"],
+        };
+        return await dialog.ShowAsync() == ContentDialogResult.Primary;
+    }
+
+    /// <summary>
     /// Undo moves files too, so after the tidy permission was taken back it asks for it again,
     /// with the same dialog, before trying once more.
     /// </summary>

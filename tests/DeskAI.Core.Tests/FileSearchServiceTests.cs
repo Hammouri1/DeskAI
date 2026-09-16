@@ -184,7 +184,7 @@ public sealed class FileSearchServiceTests
         Assert.Contains(outcome.Translation.Chips, chip => chip.Filter == QueryFilter.ChangedAfter);
     }
 
-    private static IndexedFile Entry(Guid rootId, int seed, string relativePath, FileCategory category) => new(
+    internal static IndexedFile Entry(Guid rootId, int seed, string relativePath, FileCategory category) => new(
         rootId,
         new Guid(seed, 0, 0, [0, 0, 0, 0, 0, 0, 0, 0]),
         relativePath,
@@ -195,7 +195,7 @@ public sealed class FileSearchServiceTests
         Now,
         Now);
 
-    private sealed class FakeRoots : IAuthorizedRootRepository
+    internal sealed class FakeRoots : IAuthorizedRootRepository
     {
         private readonly List<AuthorizedRoot> _roots = [];
 
@@ -237,7 +237,7 @@ public sealed class FileSearchServiceTests
     /// Applies only the filters this suite exercises. It records which roots were asked, so
     /// a test can prove a folder was never even consulted.
     /// </summary>
-    private sealed class FakeIndex : IFileIndex
+    internal sealed class FakeIndex : IFileIndex
     {
         private readonly Dictionary<Guid, List<IndexedFile>> _files = [];
 

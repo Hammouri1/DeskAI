@@ -127,6 +127,163 @@ picker, notifications), and the composition root, which calls `AddDeskAiApplicat
 only the Windows-facing pieces. Code-behind is limited to view behavior and confirmation
 dialogs. App must not manipulate files or call provider HTTP APIs directly.
 
+### My workspace (V0.7, ADR 0026)
+
+`DeskAI.Core.Workspace` holds the first V0.7 slice: starter packs and pinned saved searches.
+Nothing in it changes a file.
+
+`StarterPackCatalog` is a fixed list of five `StarterPack` values, each a set of
+`StarterPackSearch` (name and phrase) and `StarterPackRule` (name, typed conditions, destination).
+`StarterPackRule.ToRule` is the one place a pack rule becomes an `AutomationRule`, through the
+ordinary factory and `MoveToFolderAction` checks, always with `isEnabled: false`.
+
+`StarterPackService.PreviewAsync` lists what a pack would add and why anything would be skipped —
+a name already used, compared case-insensitively, or the 50-search limit — and saves nothing.
+`AddAsync` works that plan out again from stored state rather than trusting the preview, saves
+through `ISavedSearchRepository` and `IRuleRepository`, pins new searches while fewer than
+`SavedSearch.MaxPinned` (8) are pinned, and returns a `StarterPackOutcome`. A failure part-way
+leaves what was added and says so. `PinnedSearchService` pins and unpins, and counts a pinned
+search through `FileSearchService`, returning `PinnedCount` with a kind that keeps a count apart
+from "no folders" and "not understood", and marks a count that reached the search limit. Both
+services take only repositories, `FileSearchService`, and the clock; tests fail if either is given
+an executor, journal, planner, scanner, reader, credential vault, or AI provider.
+
+In Presentation, `WorkspaceViewModel` drives the page and `SearchRequest` — shaped like
+`OrganizeRequest` — hands one saved-search ID to `SearchViewModel`, which takes it once in
+`InitializeAsync` and runs that search as pressing Run would. `WorkspacePage` shows the pack
+preview in a `ContentDialog` and navigates through `MainWindow.GoTo` so the side menu follows.
+
+### Folder templates (V0.7 piece C, ADR 0027)
+
+`DeskAI.Core.Templates` is deliberately a different namespace from `Workspace`: a reflection test
+asserts no `Workspace` type holds the executor or the journal, and `FolderTemplateService` is the
+one My workspace service that does. It makes empty folders and nothing else.
+
+`FolderTemplateCatalog` is five fixed `FolderTemplate` values, one per starter pack, each folder
+name matching that pack's rule destinations (a test checks both). `FolderTemplate.Own` wraps names
+a person typed once `FolderNameCheck.Parse` has accepted them: single plain names, no separators or
+drive letters or traversal, none of the characters Windows refuses, no device names, no trailing
+dot, up to 8, no duplicates, each refusal a sentence a person can act on.
+
+`FolderTemplateService.PreviewAsync` (or `PreviewOwnAsync`) finds the root, requires
+`RootCapabilities.CanTidy`, runs `CheckStillSafeAsync`, refuses while the folder has an unfinished
+journal record, then asks `IFolderNameLookup` — a new narrow contract, implemented by
+`FolderNameLookup` in Infrastructure, that lists the folder's top level once and reports for each
+name whether a folder, a file, a link, or nothing is there, by the name on disk — and builds an
+`OrganizationPlan` of `CreateDirectoryOperation`s for the missing names. `IPlanSafetyCheck` sees
+every name; a blocked one becomes a "Can't be made" line and is left out of the plan. The preview
+carries the plan. `MakeAsync` looks again from fresh state; if a different set of folders would be
+made it makes nothing and returns the fresh preview for the page to show. Otherwise it approves
+exactly the previewed plan's operations and calls `IFolderTidyExecutor.ExecuteAsync` with no
+expected files. It reads the journal record afterwards so a folder the executor found already
+there is reported as such and never as made. `UndoAsync` needs the tidy permission and calls the
+executor's undo, which removes only recorded, still-empty folders. `FindLastAsync` reads the
+folder's newest records and offers the latest run made only of create-folder operations, if it
+has not been undone and nothing ran in the folder since.
+
+### Desktop and wallpaper (V0.7 piece E, ADR 0029)
+
+`DeskAI.Core.Desktop.WallpaperService` is the one place DeskAI changes a Windows setting. It
+takes three narrow contracts from `Core.Abstractions` and nothing else: `IWallpaperSetter`
+(`ReadCurrent`, `Set`), `IPictureInspector` (kind and size of one path, never its contents), and
+`IAppSettingsStore` (the `app_settings` key/value table). `PreviewAsync` checks the picked path
+— fully qualified, local, not UNC or a URL, jpg/jpeg/png/bmp, an existing plain file that is not
+a reparse point, 1 byte to 50 MB — and describes what Windows shows now. `UseAsync` checks again,
+writes the current wallpaper to `wallpaper.previous` before calling the setter (unless DeskAI's
+own last-set picture is still showing and a previous is already recorded), then records
+`wallpaper.set`; if Windows refuses, the recorded previous is rolled back so Put back is not
+offered for a change that never happened. `FindRestoreAsync` describes the recorded previous and
+whether Windows now shows something else; `PutBackAsync` restores it (an empty string means a
+plain colour) if its file still exists, then clears both keys.
+
+Infrastructure implements the three contracts in `Infrastructure/Desktop`:
+`WindowsWallpaperSetter` (`SystemParametersInfoW` with `SPI_GETDESKWALLPAPER` /
+`SPI_SETDESKWALLPAPER`, `SPIF_UPDATEINIFILE | SPIF_SENDCHANGE`; classic `DllImport`),
+`FilePictureInspector`, and `WindowsKnownFolders` (`Environment.GetFolderPath`), plus
+`SqliteAppSettingsStore`. The app adds `IPicturePickerService` (`FileOpenPicker`, picture
+extensions only) beside the folder picker.
+
+`WorkspaceViewModel.PreviewWallpaperAsync` / `UseWallpaperAsync` / `PutWallpaperBackCommand`
+drive the wallpaper card; `ConnectDesktopAsync` asks `IKnownFolders.Desktop`, reuses an already
+connected Desktop or calls `ConnectedFolderService.ConnectAsync` (the picker's path: metadata
+scope, bounded scan, policy), then leaves the folder ID in `OrganizeRequest` for the page to
+navigate to Organize, where `TidyViewModel` takes it and asks permission as usual. `TestApp`
+replaces `IWallpaperSetter` with a recording one and `IKnownFolders` with a folder inside its
+own temp directory, and asserts the latter, so no test can reach the real wallpaper or Desktop.
+
+### Tidy while I'm away (V0.9, ADR 0031)
+
+`DeskAI.Core.Tidy.AwayTidyApproval` is the standing yes: the folder and every enabled rule at its
+version, with `Covers(rules)` returning the same `RuleApprovalCheck` statuses ADR 0016 uses, minus
+the outcome fingerprint. `AwayTidyRun` records one unattended run (counts, time, transaction,
+stop reason, seen time). `IAwayTidyRepository` / `SqliteAwayTidyRepository` store both in
+`away_tidy` and `away_tidy_runs` (schema 14), cascading with the folder; the approval insert
+selects through `tidy_permissions`, so a yes for a folder that may not be tidied inserts nothing.
+
+`AwayTidyService` implements `IAwayTidyRunner`, the one parameter `AutomaticCheckCoordinator`
+takes that can move a file (`AutomaticCheckService` still takes none). After a check that ran,
+the coordinator calls `RunAllAsync`, which for each active approval re-checks the rules, the
+folder, and the permission, asks `TidySuggestionService` for the ordinary preview with no AI
+advice and no keep-both choices, refuses on a scan problem or any rule-placed clash, takes at
+most `AwayTidyLimits.MaxFilesPerRun` rule-placed moves, and runs them through
+`TidyRunService.TidyAsync` — the same approval, executor, journal, and per-file re-checks as a
+hand tidy. A refused file stops the mode after the run. The coordinator raises `Tidied` with an
+`AwayTidySummary` (counts, one folder name, the folder to review), which `ShellViewModel` turns
+into the notice and a count-only notification. `AwayTidyWords` holds the sentences every page
+uses so no promise can drift from the mode: `TidyViewModel` (switch, line, card),
+`DashboardViewModel` (pill, hero sentence), `AutomationViewModel` (first card, summary), and
+`BackgroundCheckingChoice.Ask/MoreDetails` (the keep-running dialog) all read
+`CountActiveAsync`.
+
+### Back up, restore, and Start fresh (V0.8, ADR 0030)
+
+`DeskAI.Core.Backup` holds `BackupService` and `FreshStartService`; neither takes anything that can
+reach a file on disk, and `BackupPageTests` asserts it by reading their constructors.
+
+`BackupService(IRuleRepository, ISavedSearchRepository, IClock)` turns the stored rules and saved
+searches into a `DeskAiBackup` (version, time, `BackupRule` = name + `RuleConditionData`s +
+`RuleActionData`, `BackupSearch` = name + phrase + pinned) and back. `ToText` serializes with
+`System.Text.Json`; `Parse` is strict (1 MB, unknown members refused, newer version refused, at
+most 200 items). `PreviewAsync` rebuilds every rule through `RuleCodec` and
+`AutomationRule.Create` with `isEnabled: false` and every search through `SavedSearch.Create`,
+marks a name already stored (case-insensitive) or a rule that fails those checks as skipped with
+a reason, and adds nothing. `RestoreAsync` works the plan out again from stored state and saves
+only the accepted lines with new IDs; a pin is kept only while fewer than eight are pinned. The
+on/off flag is not in the file, so "restored rules arrive off" is structural.
+
+`FreshStartService` forgets DeskAI's memory in a fixed order: every folder through
+`ConnectedFolderService.DisconnectAsync` (cascading to index, permissions, plans, journal), any
+root left in the repository, rules, saved searches, every catalog service's credential and the AI
+settings, check history and settings, the look, and the two wallpaper keys. It touches no file.
+
+`IUserFileStore` (Core) is the one contract for a file the person chose in a Windows dialog;
+`UserFileStore` (Infrastructure, `Files/`) accepts only a fully qualified local `.json` path,
+refuses a link and an oversized file before opening, and opens read-only. The app adds
+`IBackupFilePickerService` (`FileSavePicker` / `FileOpenPicker`, `.json` only) beside the other
+pickers; `SettingsViewModel` drives the card and the page shows the preview dialog.
+
+### DeskAI's look (V0.7 piece D, ADR 0028)
+
+`DeskAI.Core.Appearance` holds `ThemeMode` (follow Windows, light, dark), `LookPalette` (five
+neutral "#RRGGBB" colours), `DeskLook` (id, name, line, a dark and a light palette),
+`DeskLookCatalog` (Slate, Graphite, Sand, Ocean; Slate is the default), and `AppearanceSettings`
+(mode and look id, with `Look` falling back to Slate for an unknown id).
+`IAppearanceSettingsRepository` is implemented by `SqliteAppearanceSettingsRepository` on the
+`app_settings` key/value table that has existed since schema 1, so no schema change was needed;
+unrecognised stored values fall back to the default. Presentation defines `IAppearanceApplier`
+with a no-op, the way `IBackgroundPresence` is done, and `WorkspaceViewModel` saves the choice
+then calls the applier. The app replaces the no-op with `WindowsAppearanceApplier`, which
+recolours the brushes in `DeskAITheme.xaml`'s dark and light theme dictionaries in place and sets
+`RequestedTheme` on the window's root element; `App.OnLaunched` applies the stored choice before
+the window is activated. Page tests use a recording applier.
+
+The recovery fix that made this safe: `FolderTidyExecutor.Settle` measures a record with no move
+operations by the folders it made rather than the files it moved (before, such a record settled
+as `Failed` and could never be undone), `InterruptedTidy` carries `MadeFolders` and `TotalFolders`
+with `IsFolders`, and `TidyRunService.UndoAsync` words a folder-only undo in folders removed.
+Organize shows "DeskAI stopped while making folders: 1 of 2 folders made." with **Remove that
+folder** / **Keep it**.
+
 ## Initial Domain Model
 
 Names may evolve, but concepts should remain explicit:
@@ -201,7 +358,7 @@ SQLite is local application state, not a source of authority over the current fi
 
 Use migrations, foreign keys, transactions, indexes, UTC timestamps, and an explicit retention strategy. Repositories are justified when they separate Core use cases from SQLite—not as one generic repository for every table. API keys stay in a Windows-protected credential store and SQLite holds only a credential reference.
 
-Schema version 1 introduced migration tracking, local settings, and authorized roots. Versions 2–3 added plans, operations, journal outcomes, and undo links. Version 4 added authorization scope. Version 5 adds non-secret AI mode, endpoint/model, disclosure flags, limits, consent, and a credential reference. Version 6 adds an atomic per-provider daily request counter. Version 7 adds `indexed_files`, keyed on `(root_id, file_id)` with a foreign key to `authorized_roots` using `ON DELETE CASCADE`, plus indexes on path, name, category, size, and modification time. Version 8 adds `saved_searches`, holding a name, the typed phrase, and a creation time. Version 9 adds `automation_rules`, holding a name, version, enabled flag, the conditions as a JSON array of plain kind/value pairs, and the action as a kind/value pair; like saved searches it has no root column, for the same reason, and its name index is case-insensitive so two rules cannot differ only by capitalisation. It deliberately has no root column and no foreign key: a saved search must not be able to outlive or widen an authorization, so scope is resolved from the authorized roots each time one runs. A case-insensitive unique index on the name stops two saved searches differing only by capitalisation. API-key bytes never enter SQLite.
+Schema version 1 introduced migration tracking, local settings, and authorized roots. Versions 2–3 added plans, operations, journal outcomes, and undo links. Version 4 added authorization scope. Version 5 adds non-secret AI mode, endpoint/model, disclosure flags, limits, consent, and a credential reference. Version 6 adds an atomic per-provider daily request counter. Version 7 adds `indexed_files`, keyed on `(root_id, file_id)` with a foreign key to `authorized_roots` using `ON DELETE CASCADE`, plus indexes on path, name, category, size, and modification time. Version 8 adds `saved_searches`, holding a name, the typed phrase, and a creation time. Version 9 adds `automation_rules`, holding a name, version, enabled flag, the conditions as a JSON array of plain kind/value pairs, and the action as a kind/value pair; like saved searches it has no root column, for the same reason, and its name index is case-insensitive so two rules cannot differ only by capitalisation. It deliberately has no root column and no foreign key: a saved search must not be able to outlive or widen an authorization, so scope is resolved from the authorized roots each time one runs. A case-insensitive unique index on the name stops two saved searches differing only by capitalisation. Versions 10–12 add automatic-check settings, check history, and the tidy permission. Version 13 (V0.7) adds `is_pinned` to `saved_searches`, defaulting to 0 so existing searches start unpinned; the migration looks for the column first because SQLite has no "add column if missing". Saving a search again never changes its pin. API-key bytes never enter SQLite.
 
 Version 4 previously recorded the constant `CurrentSchemaVersion` instead of the literal `4`, so no database ever stored that row. The migration now records `4`, and `INSERT OR IGNORE` backfills it on existing installations.
 

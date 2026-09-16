@@ -1,8 +1,10 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Rules;
+using DeskAI.Core.Tidy;
 
 namespace DeskAI.App.ViewModels;
 
@@ -10,6 +12,9 @@ namespace DeskAI.App.ViewModels;
 public sealed record RuleViewModel(Guid Id, string Name, string Sentence, bool IsEnabled)
 {
     public string State => IsEnabled ? "On" : "Off";
+
+    /// <summary>The inverse of <see cref="IsEnabled"/>, so the page can show the Off pill without a converter.</summary>
+    public bool IsOff => !IsEnabled;
 
     public string ToggleAction => IsEnabled ? "Turn off" : "Turn on";
 }
@@ -48,7 +53,7 @@ public sealed record CheckFrequencyOption(AutomaticCheckFrequency Value, string 
 /// where someone would reasonably assume otherwise.
 /// </para>
 /// </remarks>
-public sealed class AutomationViewModel : ObservableObject
+public sealed class AutomationViewModel : ObservableObject, IDisposable
 {
     private readonly IRuleRepository _rules;
     private readonly RuleSimulationService _simulation;
@@ -56,10 +61,14 @@ public sealed class AutomationViewModel : ObservableObject
     private readonly IAutomaticCheckHistoryRepository _checkHistory;
     private readonly AutomaticCheckCoordinator _checks;
     private readonly IClock _clock;
+    private readonly BackgroundPresenceController _presence;
+    private readonly AwayTidyService _away;
+    private int _awayFolders;
     private CheckFrequencyOption _selectedFrequency;
     private bool _isPaused;
     private bool _notifyWhenSomethingIsFound;
     private bool _isApplyingStoredSettings;
+    private AutomaticCheckMode _mode = AutomaticCheckMode.WhileAppIsOpen;
     private string _lastCheckedDescription = "DeskAI has not checked yet.";
     private string _sentence = string.Empty;
     private string _newRuleName = string.Empty;
@@ -72,6 +81,7 @@ public sealed class AutomationViewModel : ObservableObject
     private string _practiceDetail = string.Empty;
     private bool _hasPractised;
     private bool _isBusy;
+    private bool _disposed;
 
     public AutomationViewModel(
         IRuleRepository rules,
@@ -79,7 +89,9 @@ public sealed class AutomationViewModel : ObservableObject
         IAutomaticCheckSettingsRepository checkSettings,
         IAutomaticCheckHistoryRepository checkHistory,
         AutomaticCheckCoordinator checks,
-        IClock clock)
+        IClock clock,
+        BackgroundPresenceController presence,
+        AwayTidyService away)
     {
         _rules = rules;
         _simulation = simulation;
@@ -87,6 +99,8 @@ public sealed class AutomationViewModel : ObservableObject
         _checkHistory = checkHistory;
         _checks = checks;
         _clock = clock;
+        _presence = presence;
+        _away = away;
         _selectedFrequency = FrequencyOptions[1];
         CheckNowCommand = new AsyncRelayCommand(CheckNowAsync, () => !IsBusy);
         ClearHistoryCommand = new AsyncRelayCommand(ClearHistoryAsync, () => !IsBusy);
@@ -95,6 +109,12 @@ public sealed class AutomationViewModel : ObservableObject
         PractiseCommand = new AsyncRelayCommand(PractiseAsync, () => !IsBusy);
         ToggleRuleCommand = new AsyncRelayCommand<Guid>(ToggleRuleAsync, _ => !IsBusy);
         DeleteRuleCommand = new AsyncRelayCommand<Guid>(DeleteRuleAsync, _ => !IsBusy);
+
+        // The controller is a singleton but this view model is transient, so subscribing to
+        // it here — once per instance, unsubscribed in Dispose — rather than to
+        // IBackgroundPresence's own events keeps one menu click from toggling pause once per
+        // page visit that ever happened.
+        _presence.SettingsChangedOutsideThePage += OnSettingsChangedOutsideThePage;
     }
 
     public ObservableCollection<RuleViewModel> Rules { get; } = [];
@@ -155,6 +175,7 @@ public sealed class AutomationViewModel : ObservableObject
             {
                 OnPropertyChanged(nameof(AutomaticCheckSummary));
                 SaveCheckSettings();
+                RefreshPresence();
             }
         }
     }
@@ -175,10 +196,15 @@ public sealed class AutomationViewModel : ObservableObject
                 }
 
                 OnPropertyChanged(nameof(AutomaticCheckSummary));
+                OnPropertyChanged(nameof(IsRunning));
                 SaveCheckSettings();
+                RefreshPresence();
             }
         }
     }
+
+    /// <summary>The inverse of <see cref="IsPaused"/>, so the page can show the state pill without a converter.</summary>
+    public bool IsRunning => !IsPaused;
 
     /// <summary>
     /// Whether Windows should show a notification when a check finds something.
@@ -206,6 +232,116 @@ public sealed class AutomationViewModel : ObservableObject
     }
 
     /// <summary>
+    /// Whether this DeskAI can offer to keep running with no window at all.
+    /// </summary>
+    /// <remarks>
+    /// False when there is no notification area to show an icon in. The switch is then
+    /// absent rather than present and inert: an option that cannot work is worse than no
+    /// option, because it promises something.
+    /// </remarks>
+    public bool CanKeepRunning => _presence.CanShowAnIcon;
+
+    /// <summary>Whether DeskAI keeps checking after the window is closed.</summary>
+    public bool KeepsRunningWhenClosed => _mode == AutomaticCheckMode.InBackground;
+
+    /// <summary>The "More details" paragraph, which changes with the mode.</summary>
+    public string MoreDetails => BackgroundCheckingChoice.MoreDetails(_mode, _awayFolders);
+
+    /// <summary>
+    /// The first card's headline: "never moves a file on its own" only while that is true.
+    /// </summary>
+    /// <remarks>
+    /// Read from the folders with "Tidy while I'm away" on each time the page opens. A promise
+    /// about what DeskAI does is the one sentence that must never outlive its truth (ADR 0031).
+    /// </remarks>
+    public string OwnPromise => AwayTidyWords.Promise(_awayFolders);
+
+    public string OwnPromiseDetail => _awayFolders == 0
+        ? "DeskAI can look at your connected folders for you and tell you when your rules match something. Looking is all it does: it cannot move, rename, or delete anything from this page. Anything real still goes through the preview where you approve it first."
+        : $"DeskAI looks at your connected folders for you and tells you when your rules match something. In the {AwayTidyWords.Folders(_awayFolders)} where you turned on Tidy while I'm away (on Organize), it also moves what your rules match, at most {AwayTidyLimits.MaxFilesPerRun} files each time, and it never deletes anything. Everywhere else, nothing moves until you press Tidy.";
+
+    /// <summary>
+    /// The words someone is shown before this is turned on. Stores nothing.
+    /// </summary>
+    /// <remarks>
+    /// Asking is separated from doing so that a page test can assert what a person was
+    /// actually told, and so that closing the dialog is genuinely a decision not to.
+    /// </remarks>
+    public BackgroundCheckingQuestion AskAboutKeepingRunning() =>
+        BackgroundCheckingChoice.Ask(CurrentSettings(), _awayFolders);
+
+    /// <summary>The person said yes, together with what they chose about notifications.</summary>
+    public async Task KeepRunningAsync(bool notifyWhenSomethingIsFound)
+    {
+        _mode = AutomaticCheckMode.InBackground;
+        _notifyWhenSomethingIsFound = notifyWhenSomethingIsFound;
+        OnPropertyChanged(nameof(NotifyWhenSomethingIsFound));
+        OnPropertyChanged(nameof(KeepsRunningWhenClosed));
+        OnPropertyChanged(nameof(MoreDetails));
+        OnPropertyChanged(nameof(AutomaticCheckSummary));
+        await SaveCheckSettingsAsync().ConfigureAwait(true);
+        RefreshPresence();
+    }
+
+    /// <summary>The person turned it off. The icon goes at once.</summary>
+    public async Task StopKeepingRunningAsync()
+    {
+        _mode = AutomaticCheckMode.WhileAppIsOpen;
+        OnPropertyChanged(nameof(KeepsRunningWhenClosed));
+        OnPropertyChanged(nameof(MoreDetails));
+        OnPropertyChanged(nameof(AutomaticCheckSummary));
+        await SaveCheckSettingsAsync().ConfigureAwait(true);
+        RefreshPresence();
+    }
+
+    private AutomaticCheckSettings CurrentSettings() => new(
+        _mode,
+        SelectedFrequency.Value,
+        IsPaused,
+        NotifyWhenSomethingIsFound);
+
+    /// <summary>Hands the current settings to the one thing that owns the icon.</summary>
+    private void RefreshPresence() => _presence.Refresh(CurrentSettings());
+
+    /// <summary>
+    /// Something outside this page changed the settings — pause, from the icon's menu.
+    /// </summary>
+    /// <remarks>
+    /// Re-reads the whole stored record, not only the pause flag: a page opened before
+    /// someone turned background checking on elsewhere would otherwise keep believing the
+    /// old mode, and the icon's own <c>RefreshPresence</c> call — made from this instance's
+    /// <see cref="IsPaused"/> setter with this instance's stale <c>_mode</c> — would then hide
+    /// the icon on the very next pause or resume, even though the store still says it should
+    /// be showing. The flag keeps this from counting as a fresh decision and writing the
+    /// value straight back.
+    /// </remarks>
+    private async void OnSettingsChangedOutsideThePage(object? sender, EventArgs args)
+    {
+        try
+        {
+            var stored = await _checkSettings.LoadAsync().ConfigureAwait(true);
+            _isApplyingStoredSettings = true;
+            try
+            {
+                _mode = stored.Mode;
+                IsPaused = stored.IsPaused;
+            }
+            finally
+            {
+                _isApplyingStoredSettings = false;
+            }
+
+            OnPropertyChanged(nameof(KeepsRunningWhenClosed));
+            OnPropertyChanged(nameof(MoreDetails));
+            OnPropertyChanged(nameof(AutomaticCheckSummary));
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            Message = $"DeskAI could not read that setting: {exception.Message}";
+        }
+    }
+
+    /// <summary>
     /// What DeskAI is actually doing, in one sentence, derived from the current choice.
     /// </summary>
     /// <remarks>
@@ -216,18 +352,27 @@ public sealed class AutomationViewModel : ObservableObject
     /// </remarks>
     public string AutomaticCheckSummary => IsPaused
         ? "Automatic checks are paused. DeskAI is not looking at anything on its own."
-        : SelectedFrequency.Value switch
+        : (SelectedFrequency.Value, KeepsRunningWhenClosed) switch
         {
-            AutomaticCheckFrequency.OnlyWhenIAsk =>
-                "DeskAI only looks when you press Check now. It never moves anything by itself.",
-            AutomaticCheckFrequency.EveryFifteenMinutes =>
+            (AutomaticCheckFrequency.OnlyWhenIAsk, _) =>
+                "DeskAI only looks when you press Check now. " + AwayTidyWords.Sentence(_awayFolders),
+            (AutomaticCheckFrequency.EveryFifteenMinutes, true) =>
+                "DeskAI keeps looking every 15 minutes, even after you close the window, and "
+                    + "tells you if your rules match anything. " + AwayTidyWords.Sentence(_awayFolders),
+            (AutomaticCheckFrequency.EveryHour, true) =>
+                "DeskAI keeps looking every hour, even after you close the window, and tells "
+                    + "you if your rules match anything. " + AwayTidyWords.Sentence(_awayFolders),
+            (_, true) =>
+                "DeskAI keeps looking a few times a day, even after you close the window, and "
+                    + "tells you if your rules match anything. " + AwayTidyWords.Sentence(_awayFolders),
+            (AutomaticCheckFrequency.EveryFifteenMinutes, false) =>
                 "While DeskAI is open it looks every 15 minutes and tells you if your rules "
-                    + "match anything. It never moves anything by itself.",
-            AutomaticCheckFrequency.EveryHour =>
+                    + "match anything. " + AwayTidyWords.Sentence(_awayFolders),
+            (AutomaticCheckFrequency.EveryHour, false) =>
                 "While DeskAI is open it looks every hour and tells you if your rules match "
-                    + "anything. It never moves anything by itself.",
+                    + "anything. " + AwayTidyWords.Sentence(_awayFolders),
             _ => "While DeskAI is open it looks a few times a day and tells you if your rules "
-                + "match anything. It never moves anything by itself.",
+                + "match anything. " + AwayTidyWords.Sentence(_awayFolders),
         };
 
     /// <summary>A sentence someone typed, waiting to be read into the form.</summary>
@@ -362,6 +507,10 @@ public sealed class AutomationViewModel : ObservableObject
     {
         try
         {
+            _awayFolders = await _away.CountActiveAsync().ConfigureAwait(true);
+            OnPropertyChanged(nameof(OwnPromise));
+            OnPropertyChanged(nameof(OwnPromiseDetail));
+            OnPropertyChanged(nameof(MoreDetails));
             await ReloadAsync().ConfigureAwait(true);
             await LoadCheckSettingsAsync().ConfigureAwait(true);
         }
@@ -386,6 +535,7 @@ public sealed class AutomationViewModel : ObservableObject
         _isApplyingStoredSettings = true;
         try
         {
+            _mode = stored.Mode;
             SelectedFrequency = FrequencyOptions.FirstOrDefault(option => option.Value == stored.Frequency)
                 ?? FrequencyOptions[1];
             IsPaused = stored.IsPaused;
@@ -395,6 +545,10 @@ public sealed class AutomationViewModel : ObservableObject
         {
             _isApplyingStoredSettings = false;
         }
+
+        RefreshPresence();
+        OnPropertyChanged(nameof(KeepsRunningWhenClosed));
+        OnPropertyChanged(nameof(MoreDetails));
 
         DescribeLastCheck(lastChecked);
         await ReloadHistoryAsync().ConfigureAwait(true);
@@ -468,13 +622,14 @@ public sealed class AutomationViewModel : ObservableObject
             return;
         }
 
+        await SaveCheckSettingsAsync().ConfigureAwait(true);
+    }
+
+    private async Task SaveCheckSettingsAsync()
+    {
         try
         {
-            await _checkSettings.SaveAsync(new AutomaticCheckSettings(
-                AutomaticCheckMode.WhileAppIsOpen,
-                SelectedFrequency.Value,
-                IsPaused,
-                NotifyWhenSomethingIsFound)).ConfigureAwait(true);
+            await _checkSettings.SaveAsync(CurrentSettings()).ConfigureAwait(true);
         }
         catch (Exception exception) when (IsExpectedFailure(exception))
         {
@@ -805,4 +960,15 @@ public sealed class AutomationViewModel : ObservableObject
             or InvalidOperationException
             or FormatException
             or System.Data.Common.DbException;
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _disposed = true;
+        _presence.SettingsChangedOutsideThePage -= OnSettingsChangedOutsideThePage;
+    }
 }

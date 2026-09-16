@@ -554,3 +554,401 @@ folder. An online AI request costs a little of your own credit; one or two press
    pop-up stays readable in each.
 8. Nothing in any pop-up should be untrue about what DeskAI can do today. Report any sentence
    that promises more than the app does.
+
+## Checking after the window is closed (V0.5, added 2026-09-13)
+
+None of this is covered by an automated test — the icon near the clock, the window hiding,
+the second launch, and the Explorer restart all depend on Windows itself, and only a person
+at the keyboard can see them happen. Use a temporary folder with generated files and a rule
+that matches one of them, the same way as "Automatic checks" above. Never use a personal
+folder.
+
+### Turning it on and off
+
+1. Open **Automatic tasks** and turn on **Keep checking after I close the window**. Expected:
+   a dialog appears, states DeskAI will never add itself to Windows startup, and offers a
+   notification checkbox.
+2. Turn it on again three separate times and dismiss the dialog a different way each time:
+   press **Enter**, press **Esc**, and click the dialog's **X**. Expected: all three behave
+   like pressing "No thanks" — the switch goes back to Off and no icon appears.
+3. Turn it on and press **Keep running**. Expected: the icon appears near the clock
+   **immediately, while the window is still open** — not only once you close it.
+4. Look at the dialog itself in both light and dark Windows themes. Expected: the checkbox
+   and its caption are readable, match DeskAI's other dialogs, and nothing is cut off.
+5. Turn the switch off from the page. Expected: the icon disappears at once, with no need to
+   close the window first.
+
+### Closing and reopening the window
+
+6. With the mode on, close the window. Expected: DeskAI keeps running — check Task Manager —
+   and a one-time notice tells you it is still near the clock and how to quit it.
+7. Close the window again in the same run. Expected: the notice does **not** appear a second
+   time.
+8. Reopen DeskAI from the icon and close the window once more. Expected: the notice appears
+   again, since this is a new run.
+9. With the mode on, turn the switch off, then close the window immediately — click the X
+   right away, without clicking anything else or opening another page first. Expected: DeskAI
+   really exits at once. Check Task Manager: no `DeskAI.App.exe` left running, and no
+   notification claims it is still near the clock, because there is no icon to be near it.
+10. With the mode off, close the window. Expected: DeskAI really exits — nothing left in Task
+    Manager and no icon.
+
+### The icon and its menu
+
+11. Hover the icon. Expected: it says how often DeskAI is looking, or that it is paused, and
+    never shows a file or folder name.
+12. With the mode on, close the window, wait for one whole checking interval to pass, then
+    hover the icon again. Expected: the wording or count has changed, proving checks keep
+    happening with no window open.
+13. Right-click the icon. Expected: exactly three items, in this order — **Open DeskAI**,
+    **Pause checking**, **Quit DeskAI** — with **Open DeskAI** shown bold as the default.
+    There is no "Check now" and nothing here starts anything.
+14. Left-click the icon, and separately choose **Open DeskAI** from the menu. Expected: both
+    bring the window to the front.
+15. Open the menu, then click elsewhere on the desktop. Expected: the menu closes without
+    choosing anything.
+16. Launch DeskAI, choose **Pause checking** from the icon without ever opening **Automatic
+    tasks**, then open DeskAI. Expected: the page already shows checking as paused — the icon
+    and the page never disagree.
+17. Pause from the icon, then unpause from the page (and the reverse). Expected: the tick
+    beside **Pause checking** always matches what the page says.
+18. Choose **Quit DeskAI**. Expected: the icon disappears and `DeskAI.App.exe` is gone from
+    Task Manager — no ghost icon left behind.
+
+### Launching again, Explorer, and signing out
+
+19. With the mode on and DeskAI hidden, launch DeskAI again (Start menu or the `.exe`).
+    Expected: the existing window is revealed and brought to the front, and Task Manager
+    still shows only one `DeskAI.App.exe`.
+20. With the mode off and DeskAI's window already open and visible, launch DeskAI again.
+    Expected: the second launch quietly exits and does nothing visible — this is expected,
+    since the window is already on screen, not a bug.
+21. Turn notifications on, let a check find something while the window is hidden, and click
+    the Windows notification. Expected: DeskAI's window is revealed.
+22. With DeskAI hidden, restart Explorer (Task Manager → Windows Explorer → Restart).
+    Expected: the icon comes back near the clock afterwards.
+23. Start a shutdown or sign-out with DeskAI hidden and cancel it before it finishes.
+    Expected: the icon is still there afterwards, rather than being permanently gone.
+24. Sign out and back in, or restart Windows. Expected: DeskAI does **not** start on its
+    own — it only runs again once you open it yourself.
+
+## Desktop and wallpaper (V0.7 piece E, added 2026-09-16)
+
+This is the one list that touches something real: your wallpaper. Before starting, note your
+current wallpaper (Settings > Personalization > Background) so you can check it comes back. For
+the Desktop part, use a **second Windows account** made for testing, or accept that DeskAI will
+remember the names of what is on your real Desktop (it moves nothing until you press Tidy).
+
+**Wallpaper**
+
+1. Open **My workspace**. Expected: a **Desktop and wallpaper** section whose line says the only
+   Windows setting DeskAI can change is the wallpaper, and only when you press the button.
+2. Press **Choose a picture…**. Expected: the Windows file dialog, showing pictures only. Cancel.
+   Expected: nothing changes, no line on the card.
+3. Choose a JPG or PNG you own. Expected: a dialog showing the picture, its name, "Windows shows
+   now: <your wallpaper's file name>" (or "a plain colour"), the green-edged promise about
+   remembering and slideshows, and the accent button **Use as wallpaper**. Press **Esc**, then
+   try **Enter**, then the **X**. Expected: each behaves like Cancel; your wallpaper is unchanged.
+4. Choose it again and press **Use as wallpaper**. Expected: your desktop changes at once; the
+   card says "<name> is now your wallpaper."; below it, "Your old wallpaper: <old name>." with
+   **Put the old wallpaper back**.
+5. Close DeskAI and open it again. Expected: the Put back line and button are still there.
+6. In Windows, set a different wallpaper yourself. Back in DeskAI (leave and return to My
+   workspace). Expected: an orange line saying Windows now shows a different wallpaper than the
+   one DeskAI set, and that Put back restores the old one anyway.
+7. Press **Put the old wallpaper back**. Expected: your original wallpaper is back; the card says
+   "<old name> is your wallpaper again."; the Put back line is gone.
+8. Try to choose a `.txt` file by typing its name in the dialog. Expected: "DeskAI can use JPG,
+   PNG, and BMP pictures." on the card and nothing changes. Check Settings > Personalization:
+   theme, accent, and lock screen are as they were.
+
+**Desktop**
+
+9. Press **Tidy my Desktop**. Expected: "Connect your Desktop?" saying names, sizes, and dates,
+   nothing inside, nothing moved. Cancel. Expected: nothing connected (check Search's folder
+   list).
+10. Press it again and **Connect my Desktop**. Expected: Organize opens on Desktop, asking "Allow
+    DeskAI to tidy Desktop?"; nothing on your desktop has changed; the card now says the Desktop
+    is connected.
+11. Allow tidying. Expected: loose files grouped by where they would go; shortcuts listed under
+    left alone; nothing moved until you press Tidy. If you tidy, Undo puts it back.
+12. Press the "?" on both cards and check they read clearly. Tab through the section and the
+    dialogs with the keyboard, then with Narrator on.
+
+## DeskAI's look (V0.7 piece D, added 2026-09-16)
+
+Nothing here touches a file, so no test folder is needed. Note your Windows theme and wallpaper
+before starting; they must be exactly the same at the end.
+
+1. Open **My workspace**. Expected: a **DeskAI's look** section with "Light or dark" (Follow
+   Windows chosen) and four cards — Slate, Graphite, Sand, Ocean — each with a two-part colour
+   strip and **Use this look**; Slate says "Chosen" in green.
+2. Press **Use this look** on **Ocean**. Expected: the whole window changes colour at once —
+   every page, the side menu, cards, and dialogs — with no restart; Ocean says "Chosen" and Slate
+   no longer does. The green accent (Allow tidying, Tidy, "Chosen") is the same green as before.
+   Orange caution lines are the same orange.
+3. Choose **Dark**, then **Light**, then **Follow Windows**. Expected: the window switches at
+   once each time and keeps the Ocean colours in both. With Follow Windows, change the Windows
+   app theme in Settings > Personalization > Colors. Expected: DeskAI follows it; Ocean stays.
+4. Try **Graphite** and **Sand** in both light and dark. Expected: all text readable everywhere,
+   including captions and the caution colour; nothing looks unchanged or half-painted. Open the
+   pack preview and the template preview dialogs. Expected: they take the look too.
+5. Close DeskAI and open it again. Expected: it opens straight into the chosen look and theme,
+   with no flash of the old colours.
+6. Turn on Windows high contrast. Expected: DeskAI uses the high-contrast colours entirely, the
+   look cards still say which is chosen, and choosing another look changes nothing visible until
+   high contrast is turned off again.
+7. Check Windows: theme, accent colour, and wallpaper are exactly as they were.
+8. Press the "?" next to DeskAI's look and check it reads clearly. Tab through the section with the
+   keyboard only, then with Narrator on. Expected: the theme choice and every button reachable
+   and named.
+
+## Folder templates (V0.7 piece C, added 2026-09-16)
+
+Use a new folder under Windows Temp with made-up files only, for example `notes.txt` and a
+folder called `slides`. Never use a personal folder.
+
+1. Open **My workspace** with nothing connected. Expected: under Starter packs, a **Folder
+   templates** section with "Connect a folder in Organize first." and a Go to Organize link;
+   the sentence under the page title says nothing here moves a file.
+2. Connect the test folder in **Search** (not Organize, so tidying is not allowed yet). Back on
+   My workspace. Expected: "Make them in" with the folder chosen, six cards — Student, Developer,
+   Gaming, Productivity, Minimal, Your own folders — each with its folder names on one line, and
+   the last with a text box.
+3. Press **See what it makes** on **Student**. Expected: the same "Allow DeskAI to tidy …?" dialog
+   Organize shows, naming the folder's path. Press **Cancel**. Expected: nothing happens, no
+   folder made. Press again and **Allow tidying**. Expected: the preview dialog "Make the Student
+   folders in <folder>?" listing Assignments, Screenshots, Notes under "DeskAI will make:", and
+   `slides` under "Already there, left as they are:", the green-edged promise line, and the
+   accent button reading **Make 3 folders**.
+4. Press **Esc**, then try again with **Enter**, then the **X**. Expected: each behaves like Cancel
+   and nothing is made (check in File Explorer).
+5. Open it again and press **Make 3 folders**. Expected: on the Student card, "Made 3 folders in
+   <folder>. Already there: slides." In File Explorer the three new folders exist and are empty;
+   `notes.txt` has not moved. Below the cards: "Made in <folder> at <time> …: Assignments,
+   Screenshots, Notes." with **Undo**.
+6. Put a file into the new `Screenshots` folder, then press **Undo**. Expected: "Removed 2 of 3
+   folders. Screenshots: The folder is no longer empty, so DeskAI left it in place." Assignments
+   and Notes are gone, Screenshots and `slides` remain, and the Undo line disappears.
+7. In the test folder make a *file* called `Installers` (no extension). Press **See what it makes**
+   on **Minimal**. Expected: Screenshots under "Already there, left as they are:", Installers
+   under "Can't be made:" with "A file called Installers is already there." in the caution
+   colour, the button **switched off** and reading **Make 0 folders**, and the line "Every folder
+   in this list is already there." Cancel; the Minimal card says "Every folder in this list is
+   already in <folder>." Delete the file and look again. Expected: Installers is under "DeskAI
+   will make:" and the button reads **Make 1 folder**.
+8. On **Your own folders** type `Tax, ..\Up` and press the button. Expected: on that card,
+   "..\Up can't be used. A folder name can't contain \ / : * ? " < > or |." and nothing made. Try
+   `CON`, `Notes.`, nine names, and `Notes, notes`. Expected: a plain reason each time. Type
+   `Tax 2026, Receipts` and press. Expected: the dialog "Make your folders in <folder>?" and after
+   Make, both folders exist, empty.
+9. Close DeskAI, open it again, go to My workspace. Expected: the "Made in <folder> …" line and
+   **Undo** are still there for the folders from step 8. Press Undo. Expected: "Removed 2
+   folders." and they are gone.
+10. In **Organize**, take back tidying for the folder (**Stop tidying**). On My workspace, press
+    **See what it makes**. Expected: the permission dialog again, not the preview.
+11. Add the **Student** starter pack. Expected: no folder appears in the test folder.
+12. Press the "?" next to Folder templates and check it reads clearly, including the line about
+    synced folders. Switch Windows between light, dark, and high contrast with the preview open.
+    Expected: everything readable, the promise line keeps its rail, the caution lines stay visible.
+13. Tab through the section and both dialogs with the keyboard only, then with Narrator on.
+    Expected: the folder choice, every button, and the text box are reachable and named.
+
+## The command-center look: every page (added 2026-09-16)
+
+Nothing here touches a file. Design: `docs/superpowers/specs/2026-09-16-command-center-redesign-design.md`.
+
+1. Open DeskAI. Expected: the side menu shows "DeskAI" with a small mark at the top, then three
+   small grey labels — **Your files** (Home, Organize, Search), **DeskAI for you** (Automatic
+   tasks, My workspace), **Settings** (Privacy and AI). The chosen page sits on a soft grey pill,
+   not a green one. The menu names are exactly the ones you chose to keep.
+2. Above the page: a top bar with the page name on the left, a **Find a file…** box, and a pill
+   reading **AI off**. Open each page and check the top-bar name matches the menu.
+3. Type `photos` in the box and press Enter. Expected: Search opens with "photos" already run
+   and the menu shows Search selected. Go to Home and back to Search: the box is empty and
+   nothing runs on its own. Press Enter in an empty box: nothing happens.
+4. In Privacy and AI, set up an online service and save. Expected: the pill reads
+   **AI: <service>**. Remove the key: it reads **AI off** again. Press the pill: Privacy and AI
+   opens. It never says a service is on while one is not set up.
+5. At the bottom of the menu, above the green scope reminder: **Dark mode**. Flip it. Expected:
+   the whole window changes at once; on My workspace "Light or dark" now shows Dark (or Light).
+   Close and reopen DeskAI: the choice is kept. Windows' own theme is unchanged.
+6. Choose **Follow Windows** on My workspace, then change the Windows app theme in Settings.
+   Expected: DeskAI follows and the switch shows the theme actually on screen.
+7. Cards have rounder corners everywhere; the green rail on the hero and the scope reminder is
+   unchanged. Try all four looks in both light and dark: the menu panel, the top bar, and the
+   cards take the look; green and orange are the same in every look.
+8. Turn on Windows high contrast. Expected: the top bar, the pills, the menu, and any tinted tile
+   use the high-contrast colours, and every pill still has its icon and word.
+9. Tab through the menu, the top bar, the switch, and the pill with the keyboard only, then with
+   Narrator on. Expected: each is reachable and named ("Find a file", "Dark mode for the DeskAI
+   window", the AI state).
+
+## The command-center look: Home (added 2026-09-16)
+
+Use a temporary folder of made-up files. Never connect a personal folder.
+
+1. Open **Home** with nothing connected. Expected: a welcome card with "Nothing connected yet"
+   on a green dot, "Good morning" / "Good afternoon" / "Good evening" matching the clock, the
+   sentence that your files are untouched, two grey pills ("Nothing moves by itself", "You
+   approve every change"), and soft grey circles with icons on the right. No green anywhere
+   except the dot, the rail, and the scope reminder.
+2. Under **QUICK LOOK**, four tinted tiles — blue, violet, amber, rose — each reading 0, with
+   "Connect a folder to look" under the last. None is green.
+3. Connect the folder in Search (put two same-size files over 4 KB in it) and return to Home.
+   Expected: the tiles show the folder count, file count with size, unused count, and the number
+   of possible duplicates with "Same size, not compared yet". The score card and "Where your
+   space is going" sit on the left; "Possible duplicates" (with an orange "up to …" pill and the
+   compare button) and "Largest files" on the right.
+4. Make the window narrower than about 1100 pixels. Expected: the circles disappear, the tiles
+   become two by two, and the right column moves under the left; nothing is cut off.
+5. Try all four looks in light and dark. Expected: the tiles keep their tints, the circles stay
+   neutral, and the text on every tile is readable.
+6. Turn on Windows high contrast. Expected: the tiles lose their tints and keep a border; every
+   number and caption is still readable.
+7. Tab through the page and press each "?" with the keyboard, then with Narrator on.
+
+## The command-center look: the other pages (added 2026-09-16)
+
+Use temporary folders of made-up files only.
+
+1. **Organize** with a connected folder that may not be tidied yet. Expected: a grey pill "Look
+   only" beside the folder list. Press Allow tidying and allow. Expected: the pill becomes a
+   green "Allowed to tidy" with a tick. Each suggestion group shows its count in a small grey
+   pill. Stop tidying: the pill goes back to grey "Look only".
+2. **Search**: run "photos from last month". Expected: the "DeskAI read this as" chips are grey
+   pills with a small tag icon, not green. In the folder list each row shows a grey "Names,
+   sizes, dates" pill; allow reading inside and it becomes a green "Can read inside" pill next to
+   the sentence saying so.
+3. **Automatic tasks** in a wide window. Expected: rules and "Write a rule" on the left,
+   "Checking for you" on the right at the top, with a grey pill "Every 15 minutes". Pause all
+   checks: an orange "Paused" pill replaces it. Each rule row shows a green "On" pill or a grey
+   "Off" pill matching its Turn on / Turn off button. Narrow the window below about 1100 pixels:
+   "Checking for you" moves above the rules.
+4. **Privacy and AI**: the five facts (Internet, AI, Shared with online AI, Folders you connected,
+   Usage tracking) sit as small cards inside the green-railed header and change when you save a
+   different AI choice.
+5. **My workspace**: pinned searches are blue-tinted tiles with a search icon and the count set
+   large; the chosen look shows a small green "Chosen" pill with a tick and the others show none.
+6. Repeat 1–5 in light mode, in each look, and in high contrast; every pill keeps its icon and
+   word, and nothing is cut off.
+
+## Tidy while I'm away (V0.9, added 2026-09-16)
+
+This is the first thing DeskAI does on its own. Use **only** a new folder under Windows Temp
+with made-up files: `invoice-a.pdf`, `invoice-b.pdf`, `holiday.jpg`, and `Old\invoice-old.pdf`.
+Never a personal folder.
+
+1. Connect the folder, allow tidying, and write a rule "name contains invoice → Sorted" in
+   Automatic tasks. On **Organize**, under the folder bar: a switch **Tidy this folder while I'm
+   away**, off, with "Off. DeskAI moves nothing here on its own." Turn the rule off: the switch
+   is disabled and the line says to turn on a rule first. Turn the rule back on.
+2. Flip the switch. Expected: a dialog "Tidy <folder> while you're away?" naming the rule as a
+   sentence, the 25-file ceiling, what stops it, that it never deletes, and Undo; the confirming
+   button reads **Tidy while I'm away** in green. Esc, Enter, and the X all cancel and the switch
+   goes back off. Flip it again and confirm. Expected: "On since <time>, for 1 rule…".
+3. Press **Check now** in Automatic tasks (or wait for the next check). Expected: the notice
+   "While you were away, DeskAI tidied 2 files in <folder>. Nothing was deleted." In File
+   Explorer: both invoices are in `Sorted`; `holiday.jpg` and `Old\invoice-old.pdf` have not
+   moved; nothing was deleted. Home's pill now reads "Moves files on its own in 1 folder you
+   chose", and Automatic tasks' first card says the narrower promise.
+4. Press **Review in Organize**. Expected: a **While you were away** card first, with the run's
+   count and time and no file names, **Undo the latest run**, and **Got it**. Press Undo: the
+   invoices are back. Close and reopen DeskAI: the card is still there until you press Got it.
+5. Put a file called `invoice-a.pdf` inside `Sorted` yourself and a loose `invoice-a.pdf` at the
+   top, then Check now. Expected: nothing moved; the notice says DeskAI stopped and needs you
+   to look; on Organize the switch is off with an orange line naming the clash.
+6. Turn it on again, then edit or add a rule. Open Organize. Expected: the switch is off with an
+   orange "A rule … since you agreed." line. Turn it on again, then press **Stop tidying this
+   folder**: the switch disappears; allow tidying again: it is off with "Tidying is no longer
+   allowed…" until you turn it on.
+7. Turn on **Keep checking after I close the window**. Expected: the dialog's limit line now
+   says DeskAI also moves what your rules match in the folder you chose, at most 25 files each
+   time. Close the window, add a made-up `invoice-c.pdf`, wait for a check. Expected: it moves,
+   the notification (if on) says "DeskAI tidied 1 file while you were away." with no file name,
+   and the icon's tooltip still shows counts only.
+8. With 30 made-up invoices, Check now. Expected: 25 move, 5 wait; the next check moves the
+   rest.
+9. Open **Privacy and AI** and press **Start fresh**. Expected: the switch is gone with the
+   folder; nothing on disk changed.
+10. Press the "?" next to the switch and check it reads clearly. Tab through the switch, the
+    dialog, and the card with the keyboard, then with Narrator on.
+
+## Back up, restore, and Start fresh (V0.8, added 2026-09-16)
+
+Use a temporary folder of made-up files, a rule, and a saved search. Never a personal folder.
+
+1. Open **Privacy and AI** and scroll to **Back up and restore**. Press **Save a backup file…**.
+   Expected: the Windows save dialog, suggesting `DeskAI backup <today>.json`. Cancel: nothing
+   happens. Save it to a temp folder. Expected: a line "Saved 1 rule and 1 saved search to
+   <name>. The file holds no folders, keys, or locations." Open the file in Notepad: rule and
+   search names and phrases only; no folder path, no key, no "IsEnabled".
+2. Delete the rule in Automatic tasks. Press **Restore from a backup file…**, pick the file.
+   Expected: a dialog "Restore from this backup?" listing the rule under Rules and the search
+   under Saved searches with "You already have a search called …" in orange, the green-railed
+   line that restored rules start switched off, and a button **Restore 1**. Esc, Enter, and the
+   X all cancel. Restore: the line says what was restored and skipped; in Automatic tasks the
+   rule is **Off**.
+3. Restore the same file again. Expected: the dialog says nothing would be added and the
+   Restore button is off.
+4. Edit the file in Notepad: change the destination to `..\Windows`. Restore. Expected: the rule
+   is listed with "DeskAI can't use this rule: …" and Restore is off. Pick a `.txt` file, a photo
+   renamed to `.json`, and an empty file. Expected: a plain sentence under the buttons each time,
+   nothing added.
+5. Turn on **Keep checking after I close the window** and save an AI key. Press **Start
+   fresh…**. Expected: a dialog saying exactly what is forgotten and that files are not touched;
+   Cancel changes nothing. Press **Forget everything**. Expected: "Done. DeskAI forgot …"; the
+   side menu says nothing is connected; the icon near the clock is gone; Automatic tasks shows
+   no rules; Search shows no folders; the AI pill reads "AI off"; Credential Manager has no
+   `DeskAI/…` entry; the files in your temp folder are exactly where they were.
+6. The bottom card shows "DeskAI 0.8.0" (or the release version) and says DeskAI never checks
+   for updates. Press the "?" on both new cards and check they read clearly.
+
+## A release zip (V0.8, added 2026-09-16)
+
+1. Push a tag such as `v0.8.0`. Expected: the Release workflow makes a GitHub Release with
+   `DeskAI-0.8.0-win-x64.zip` and `DeskAI-0.8.0-sbom.json`.
+2. On a machine or account without DeskAI, unzip and run `DeskAI.App.exe`. Expected: the
+   unknown-publisher notice described in `docs/INSTALL.md`, then DeskAI opens with nothing
+   connected, and Privacy and AI shows "DeskAI 0.8.0".
+3. Delete the folder. Expected: nothing left in Program Files, the Start menu, or Windows
+   startup; `%LocalAppData%\DeskAI` remains until Start fresh or a manual delete.
+
+## My workspace (V0.7, added 2026-09-14)
+
+Use a new folder under Windows Temp with made-up files only: `holiday.jpg`, `notes.txt`,
+`Screenshot 2026-09-14.png`, and `invoice-march.pdf`. Never use a personal folder.
+
+1. Look at the side menu. Expected: **My workspace** between Automatic tasks and Privacy and AI.
+   Open it. Expected: "Pin a saved search to see it here." with a Go to Search link, five pack
+   cards, and no Custom card.
+2. With nothing connected, press **See what it adds** on **Minimal**. Expected: a dialog "Add the
+   Minimal starter pack?" listing Screenshots and Installers, no Rules heading, and the green-edged
+   line "Rules start switched off…". Press **Esc**. Expected: nothing added, no line on the card.
+   Repeat with **Enter** and with the dialog's **X**: each behaves like Cancel.
+3. Open it again and press **Add**. Expected: "Added 2 searches." on the Minimal card, and two tiles
+   reading "No folders connected" — not "0 files".
+4. Connect the test folder in **Search**, come back to My workspace. Expected: the Screenshots tile
+   now shows a number, and the caption says when it was counted. No tile shows a file name. Both
+   buttons on every tile, **Open in Search** and **Unpin**, are fully visible with nothing cut
+   off. (Found by the owner on 2026-09-16: tiles were 216 wide and clipped "Unpin" to "Unpir";
+   a layout fault a page test cannot see, so this step is the check.)
+5. Press **See what it adds** on **Student**. Expected: Screenshots listed with "You already have a
+   search called Screenshots." in the caution colour, and three rules written as sentences. Add.
+   Expected: "Added 2 searches and 3 rules. Skipped 1 you already had: Screenshots. The rules are
+   switched off — turn them on in Automatic tasks."
+6. Open **Automatic tasks**. Expected: Slides, Assignments, and Screenshots rules, all **Off**.
+   Open **Organize** on the test folder (allow tidying if asked). Expected: no "Your rule" group.
+   Turn the Screenshots rule on, reopen Organize. Expected: a Screenshots group marked "Your rule".
+   In File Explorer, nothing has moved.
+7. Press **Add** on Minimal a second time. Expected: the dialog says you already have everything and
+   Add is switched off.
+8. On a tile, press **Open in Search**. Expected: Search opens with that search already run and the
+   side menu shows Search selected.
+9. Save several searches in Search until nine exist, pin them from **Your other saved searches**.
+   Expected: after eight, Pin is off and a line says to unpin one. Unpin one: Pin works again.
+10. Press each new "?" (My workspace, Pinned searches, Starter packs) and check they read clearly.
+11. Switch Windows between light, dark, and high contrast with the page and the dialog open.
+    Expected: everything readable, the promise line keeps its rail.
+12. Tab through the page and the dialog with the keyboard only, then with Narrator on. Expected:
+    every button reachable and named.

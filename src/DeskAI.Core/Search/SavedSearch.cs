@@ -26,12 +26,22 @@ public sealed record SavedSearch
     /// <summary>Keeps the list readable and bounds what one person can accumulate.</summary>
     public const int MaxSavedSearches = 50;
 
-    private SavedSearch(Guid id, string name, string phrase, DateTimeOffset createdAtUtc)
+    /// <summary>
+    /// How many saved searches may be pinned to My workspace at once.
+    /// </summary>
+    /// <remarks>
+    /// Pins are for the few searches someone reaches for daily. Past a handful the page stops
+    /// being glanceable and becomes a second copy of the saved-search list.
+    /// </remarks>
+    public const int MaxPinned = 8;
+
+    private SavedSearch(Guid id, string name, string phrase, DateTimeOffset createdAtUtc, bool isPinned)
     {
         Id = id;
         Name = name;
         Phrase = phrase;
         CreatedAtUtc = createdAtUtc;
+        IsPinned = isPinned;
     }
 
     public Guid Id { get; }
@@ -43,7 +53,17 @@ public sealed record SavedSearch
 
     public DateTimeOffset CreatedAtUtc { get; }
 
-    public static SavedSearch Create(Guid id, string name, string phrase, DateTimeOffset createdAtUtc)
+    /// <summary>Whether this search is shown as a tile on My workspace.</summary>
+    public bool IsPinned { get; }
+
+    public SavedSearch WithPinned(bool isPinned) => new(Id, Name, Phrase, CreatedAtUtc, isPinned);
+
+    public static SavedSearch Create(
+        Guid id,
+        string name,
+        string phrase,
+        DateTimeOffset createdAtUtc,
+        bool isPinned = false)
     {
         if (id == Guid.Empty)
         {
@@ -66,6 +86,6 @@ public sealed record SavedSearch
             ? throw new ArgumentException(
                 $"A saved search phrase cannot be longer than {NaturalLanguageQueryTranslator.MaxInputLength} characters.",
                 nameof(phrase))
-            : new SavedSearch(id, trimmedName, trimmedPhrase, createdAtUtc);
+            : new SavedSearch(id, trimmedName, trimmedPhrase, createdAtUtc, isPinned);
     }
 }

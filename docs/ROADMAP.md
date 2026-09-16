@@ -134,7 +134,7 @@ Goal: find and understand files without needing to move them.
 
 Exit criteria: results are scoped to authorized roots, index deletion/privacy controls work, score is explainable, and no cleanup action bypasses preview.
 
-## V0.5 — Rules and Automation (**Now**)
+## V0.5 — Rules and Automation (**Complete — 2026-09-13**)
 
 Goal: turn repeated intent into deterministic, auditable behavior.
 
@@ -163,7 +163,7 @@ Goal: turn repeated intent into deterministic, auditable behavior.
   as someone agreeing to what was understood — and every part understood is stated back. A
   bare "word files" is only read as a file ending when the word is a type DeskAI knows, so
   "invoice files" becomes a name to look for rather than an ending of ".invoice".
-- ◐ Folder watchers and/or scheduler selected through an ADR.
+- ✅ Folder watchers and/or scheduler selected through an ADR.
   Decided and half built on 2026-09-10. ADR 0017 chose a periodic check over a folder
   watcher: `FileSystemWatcher` holds a handle on a real personal folder, drops events under
   load without saying so, and storms during a cloud-sync pass, and rules read remembered
@@ -176,13 +176,17 @@ Goal: turn repeated intent into deterministic, auditable behavior.
   says instead that DeskAI never moves a file on its own, which is the promise that holds.
   See `docs/decisions/0017-periodic-rule-checks-and-background-choice.md` and
   `docs/security/2026-09-10-automatic-check-review.md`.
-  Checking after the window is closed is decided in the same ADR but NOT built: no code
-  produces that mode and it is absent from the UI. It is the remaining half, and it needs
-  its own security review because a process running while nobody is present is a different
-  threat case. That design and review landed on 2026-09-12 — see
-  `docs/decisions/0025-checking-after-the-window-is-closed.md` and
-  `docs/security/2026-09-12-background-checking-review.md` — ahead of any code, which is the
-  remaining work in V0.5.
+  Checking after the window is closed, decided and reviewed in ADR 0025
+  (`docs/decisions/0025-checking-after-the-window-is-closed.md`, review
+  `docs/security/2026-09-12-background-checking-review.md`), is now built too. A switch on
+  Automatic tasks asks first — naming that DeskAI will never add itself to Windows startup —
+  and, once agreed, the same DeskAI keeps running with a visible icon near the clock after
+  the window closes rather than exiting. That icon's tooltip says how often DeskAI is
+  looking or that it is paused, and its menu holds exactly three items: open DeskAI, pause
+  checking, and quit DeskAI. It starts nothing. Launching DeskAI again while it is hidden
+  reveals the running one instead of starting a second, so there is never more than one
+  DeskAI and one database writer. A check still only ever produces a count; leaving DeskAI
+  running keeps that count current and does not tidy anything while its owner is away.
 - ✅ Run history, notifications, pause/disable controls, missed-run behavior, and safe concurrency.
   Completed 2026-09-10. Every check that actually ran is recorded — including the ones that
   were stopped part-way and the ones that failed, because a history that omitted those would
@@ -279,24 +283,130 @@ move, and undo it after a restart; every refusal case is tested with generated t
 and each of those steps has a page test that performs it through the page, not only through
 the executor.
 
-## V0.7 — Workspace Profiles and Design (**Future**)
+## V0.7 — Workspace Profiles and Design (**Now — started 2026-09-14**)
 
 Goal: turn organization/search into tailored workspaces.
 
-- Student, Developer, Gaming, Productivity, Minimal, and Custom profiles.
-- Folder templates, pinned Smart Collections, and workspace setup suggestions.
-- Desktop layout previews and safe shortcut/icon suggestions.
+Built one piece at a time, safest first (design:
+`docs/superpowers/specs/2026-09-14-my-workspace-starter-packs-design.md`):
+
+- ✅ A + B, 2026-09-14: **My workspace** (ADR 0026). Profiles are one-time starter packs —
+  Student, Developer, Gaming, Productivity, Minimal — that preview, then add ordinary saved
+  searches and rules; rules always arrive switched off, and nothing a person already has is
+  replaced. Saved searches can be pinned (up to eight) as tiles with honest counts. No file or
+  Windows setting changes. There is no Custom pack; making your own stays in Search and
+  Automatic tasks.
+- ✅ C, 2026-09-16: **Folder templates** (ADR 0027, review
+  `docs/security/2026-09-14-folder-templates-review.md`). A template — one per pack, or names the
+  person types — makes empty folders one level inside a connected folder, after a preview of
+  exactly which folders and a yes, with the same "Allow tidying" permission Tidy uses, through
+  the one executor, journaled, and undoable (empty folders only) even after reopening. Nothing is
+  moved. Typed names pass a plain-language check and then the path policy. A run that stopped
+  part-way is asked about on Organize as folders. Adding a pack still changes nothing on disk.
+- ✅ D, 2026-09-16: **DeskAI's look** (ADR 0028). Four looks — Slate, Graphite, Sand, Ocean —
+  and a light / dark / follow-Windows choice, on My workspace. A look tints only the neutral
+  ground, surfaces, and lines; the accent, caution, and danger colours are not a look's to
+  change, so "green means safe or confirmed" holds in every look, and a test checks each look
+  keeps the shared text readable. Applied to the DeskAI window at once and at startup before it
+  shows; stored in the existing key/value settings table; unknown values fall back to Slate.
+  Changes nothing in Windows and no file.
+- ✅ E, 2026-09-16: **Desktop and wallpaper** (ADR 0029, review
+  `docs/security/2026-09-16-desktop-and-wallpaper-review.md`), scoped by the owner that day.
+  **Wallpaper:** pick one picture in the Windows file dialog, see it, press "Use as wallpaper";
+  the old wallpaper is written down before the change and "Put the old wallpaper back" restores
+  it, also after reopening. Only a plain local JPG/PNG/BMP under 50 MB; DeskAI never lists
+  folders for pictures and never makes or downloads one. This is DeskAI's first change to a
+  Windows setting, and the only one. **Desktop:** "Tidy my Desktop" connects the Desktop folder
+  through the known-folder API (names, sizes, dates) and opens it in Organize, where the
+  ordinary permission, preview, Tidy, and undo apply; shortcuts are left alone. Tests never touch
+  the real wallpaper or Desktop: both are replaced in `TestApp` and asserted to be sandboxed.
+- **Deferred beyond V0.7 (owner, 2026-09-16):** shortcut and icon suggestions, desktop layout
+  previews, and local image generation. Each would need new executor commands or a new
+  source of pictures, and its own review. There is still no desktop-shell mutation beyond the
+  wallpaper picture.
+
+**V0.7 is complete as of 2026-09-16.** The original bullet list for it is kept for the record:
+
+- Student, Developer, Gaming, Productivity, Minimal, and Custom profiles. (Built as one-time
+  starter packs; no Custom, by ADR 0026.)
+- Folder templates, pinned Smart Collections, and workspace setup suggestions. (Templates and
+  pinned searches built; "setup suggestions" are the packs.)
+- Desktop layout previews and safe shortcut/icon suggestions. (Deferred, see above.)
 - Themes and wallpapers; local image generation only after hardware/license/privacy design.
-- No direct desktop-shell mutation without a dedicated security/recovery design.
+  (Looks and wallpaper built; generation deferred.)
+- No direct desktop-shell mutation without a dedicated security/recovery design. (Held: the
+  wallpaper picture is the one change, reviewed.)
 
-## V0.8 — Extensibility and Distribution (**Future**)
+## V0.8 — Extensibility and Distribution (**Complete — 2026-09-16**)
 
-- Capability-scoped plugin contracts and manifest.
-- Isolation, signing/trust, compatibility, permissions, update, and revocation model before community plugins.
-- Accessibility, localization foundation, performance profiling, crash recovery, import/export, and privacy review.
-- Packaging, installer/uninstaller behavior, GitHub Actions, GitHub Releases, update policy, SBOM/dependency checks, and qualifying open-source code-signing options.
+Design: `docs/superpowers/specs/2026-09-16-v0.8-distribution-design.md`; decisions: ADR 0030;
+privacy review: `docs/security/2026-09-16-v0.8-privacy-review.md`. Built the same day as the
+command-center redesign (`docs/superpowers/specs/2026-09-16-command-center-redesign-design.md`),
+which restyled every page under the same rules and kept the menu names the owner chose.
 
-## V0.9 — Tidy While I'm Away (**Future**)
+- ✅ **GitHub builds and tests every push** (`.github/workflows/build.yml`): locked restore,
+  Release build, all tests, format check, and a known-vulnerable-dependency check that fails
+  the run.
+- ✅ **A release zip per tag** (`.github/workflows/release.yml`): self-contained x64 publish with
+  the tag as the version, zipped, with a CycloneDX software bill of materials, attached to a
+  GitHub Release. No installer and no signing (ADR 0030); `docs/INSTALL.md` explains install,
+  update, remove, and the unknown-publisher notice. DeskAI never checks online for updates;
+  Privacy and AI shows the version.
+- ✅ **Back up and restore** on Privacy and AI: a JSON file of rules and saved searches only,
+  written where the person chose; restore previews what would be added and skipped, rebuilds
+  every rule through the same checks a typed one passes, skips names already used, and
+  **restored rules arrive switched off**.
+- ✅ **Start fresh**: after a dialog, DeskAI forgets every folder, rule, search, key, AI choice,
+  history, setting, look, and wallpaper memory. No file is touched. The data-retention control
+  V1.0 asks for.
+- ✅ **Accessibility**: `AccessibilityNameTests` reads the pages so every icon-only button and
+  every input has a name for screen readers; keyboard and Narrator steps stay in the manual lists.
+- ✅ **Performance**: an opt-in probe over 3,000 generated files, recorded in `docs/PERFORMANCE.md`.
+- ✅ **Crash recovery**: already built (ADR 0022's interrupted-tidy recovery, the startup-failure
+  window, the contained unhandled-exception handler); recorded, not rebuilt.
+- **Deferred, recorded in ADR 0030:** add-ons (plugins) until the system is finished, with the
+  boundary they must start from written down; code signing until a certificate exists;
+  localization beyond culture-aware formatting until there is a second language.
+
+The original bullet list is kept for the record:
+
+- Capability-scoped plugin contracts and manifest. (Boundary recorded in ADR 0030; not built.)
+- Isolation, signing/trust, compatibility, permissions, update, and revocation model before community plugins. (Deferred with the above.)
+- Accessibility, localization foundation, performance profiling, crash recovery, import/export, and privacy review. (Done as listed; localization deferred.)
+- Packaging, installer/uninstaller behavior, GitHub Actions, GitHub Releases, update policy, SBOM/dependency checks, and qualifying open-source code-signing options. (Zip, workflows, SBOM, no-self-update policy done; signing options recorded.)
+
+## V0.9 — Tidy While I'm Away (**Complete — 2026-09-16**)
+
+Built after its security review (`docs/security/2026-09-16-tidy-while-away-review.md`), ADR 0031,
+and design (`docs/superpowers/specs/2026-09-16-tidy-while-away-design.md`), from the owner's
+choice "Move a few, then wait":
+
+- ✅ A per-folder switch on Organize, **Tidy this folder while I'm away**, offered only where
+  tidying is already allowed and at least one rule is on. Turning it on opens a dialog naming
+  the folder, the rules as worded, and the ceiling; its yes records `AwayTidyApproval` (the
+  folder and every enabled rule at its version) in its own cascading table (schema 14).
+- ✅ After each automatic check — including after the window is closed, if that is on —
+  `AwayTidyService` runs once per folder with the yes: only loose files a switched-on rule
+  places, never a type-placed or AI-placed file, never a subfolder's file, never a same-name
+  clash, at most **25 files per run**, through the same `TidyRunService` and executor as a
+  hand tidy, journaled and undoable.
+- ✅ Anything unexpected stops it with the reason kept and shown: a rule edited, added,
+  removed, or toggled (checked before every run and whenever the folder is shown); tidy
+  permission withdrawn; a clash (the run stops before anything moves); a file the executor
+  refused (the rest move, then the mode turns off); a folder that cannot be looked at.
+- ✅ Undo first: a "While you were away" card above everything on Organize with the runs
+  (counts and times, never a file name), **Undo the latest run**, and **Got it**; the notice in
+  the window says the count and folder and offers Review in Organize; the notification, if on,
+  carries a count only. Runs survive reopening.
+- ✅ Every "nothing moves by itself" promise — Home's pill and sentence, Automatic tasks' first
+  card and checking summary, the keep-running dialog and More details, the help topics — says
+  the narrower truth while any folder has the mode on, and the old sentence when none does.
+- ✅ Containment: `AutomaticCheckService` still holds no executor; the coordinator holds only
+  `IAwayTidyRunner`, which `AwayTidyService` alone implements; it holds no AI, reader,
+  fingerprinter, credential, or file store. Start fresh and disconnecting end the mode.
+- Nothing permanently deleted, unattended or otherwise. Unchanged.
+
+The original text is kept for the record:
 
 Goal: let a rule that has already been approved carry itself out while nobody is watching.
 
@@ -324,15 +434,29 @@ Depends on V0.5's "checks after the window is closed": an unattended tidy needs 
 running while nobody is present, and that mode is where running unattended is designed and
 reviewed. It does not depend on V0.7 or V0.8.
 
-## V1.0 — Stable Release (**Planned target**)
+## V1.0 — Stable Release (**Complete in code and documents — 2026-09-16; the owner's manual sign-off of V0.7–V1.0 is outstanding**)
 
-- Supported Windows versions and hardware guidance documented.
-- Polished organizer loop that works on folders people connect (V0.6), undo/history, protected items, rule-only mode, privacy controls, and at least one well-supported optional AI path.
-- Security threat review; destructive/escape scenarios tested.
-- Accessibility and keyboard navigation reviewed.
-- Clean install/update/uninstall and data-retention behavior verified.
-- User documentation, contribution guide, license, security reporting, and release notes present.
-- No placeholder UI presented as complete functionality.
+- ✅ Supported Windows versions and hardware guidance: `docs/INSTALL.md` (Windows 11 24H2 or
+  later, x64; an ordinary laptop is enough — `docs/PERFORMANCE.md` records a 3,000-file folder
+  connecting in about a tenth of a second).
+- ✅ The organizer loop on connected folders, undo and history, protected locations, rule-only
+  mode, privacy controls, and the optional AI path: V0.2–V0.9.
+- ✅ Security threat review with destructive and escape scenarios traced to tests:
+  `docs/security/2026-09-16-v1.0-release-review.md`.
+- ✅ Accessibility and keyboard: `AccessibilityNameTests`, pills and badges with icon and word,
+  high-contrast mapping, and the Tab and Narrator steps in every manual list.
+- ✅ Clean install, update, uninstall, and data retention: unzip and run, replace the folder,
+  Start fresh then delete; verified by `FreshStartPageTests` and `NeverStartsWithWindowsTests`,
+  with the manual release-zip list.
+- ✅ User documentation (`docs/USER-GUIDE.md`, `docs/INSTALL.md`), contribution guide
+  (`CONTRIBUTING.md`), license (MIT, `LICENSE`, the owner's choice of 2026-09-16), security
+  reporting (`SECURITY.md` at the root), release notes (`docs/RELEASE-NOTES.md`).
+- ✅ No placeholder UI presented as complete: `NoPlaceholderUiTests`.
+- Version 1.0.0 in `Directory.Build.props`; a `v1.0.0` tag makes the release zip.
+
+Still the owner's to do by hand, recorded in `HANDOFF.md`: walk the manual lists for the
+redesign, V0.8, and V0.9 (and the older V0.6 and background-checking sign-offs), and push the
+first tag.
 
 ## Explicitly Deferred Beyond V1 Unless Reprioritized
 

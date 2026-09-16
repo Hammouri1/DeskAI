@@ -66,12 +66,18 @@ public sealed class DashboardViewModel(
     StorageSummaryService storage,
     DuplicateFinderService duplicates,
     DuplicateCheckService copyCheck,
+    DeskAI.Core.Tidy.AwayTidyService away,
     IClock clock) : ObservableObject, IDisposable
 {
     private readonly StorageSummaryService _storage = storage;
     private readonly DuplicateFinderService _duplicates = duplicates;
     private readonly DuplicateCheckService _copyCheck = copyCheck;
+    private readonly DeskAI.Core.Tidy.AwayTidyService _away = away;
     private readonly IClock _clock = clock;
+    private int _awayFolders;
+
+    /// <summary>The pill on the hero: "Nothing moves by itself" only while that is true (ADR 0031).</summary>
+    public string PromisePill => DeskAI.Core.Tidy.AwayTidyWords.Pill(_awayFolders);
     private bool _isCheckingCopies;
     private string _copyCheckSummary = string.Empty;
     private CancellationTokenSource? _copyCheckStop;
@@ -240,8 +246,32 @@ public sealed class DashboardViewModel(
     private bool _hasHealth;
     private string _healthCoverage = string.Empty;
     private bool _hasHealthCoverage;
+    private string _greeting = "Hello";
+    private string _duplicateTileCaption = "Connect a folder to look";
     private string _heroState = "Nothing connected yet";
     private string _heroTitle = "Your files are untouched";
+
+    /// <summary>"Good morning", "Good afternoon", or "Good evening", from the clock when the page opened.</summary>
+    public string Greeting
+    {
+        get => _greeting;
+        private set => SetProperty(ref _greeting, value);
+    }
+
+    /// <summary>The greeting for a local time of day. Morning until noon, afternoon until six.</summary>
+    public static string GreetingFor(DateTimeOffset localTime) => localTime.Hour switch
+    {
+        < 12 => "Good morning",
+        < 18 => "Good afternoon",
+        _ => "Good evening",
+    };
+
+    /// <summary>The one line under the possible-duplicates number on its tile. Hedged like the rest.</summary>
+    public string DuplicateTileCaption
+    {
+        get => _duplicateTileCaption;
+        private set => SetProperty(ref _duplicateTileCaption, value);
+    }
     private string _heroMessage =
         "No folder of yours is connected, so nothing on your computer can be moved, renamed, or deleted.";
 
@@ -409,10 +439,14 @@ public sealed class DashboardViewModel(
 
     public async Task InitializeAsync()
     {
+        Greeting = GreetingFor(_clock.UtcNow.ToLocalTime());
+
         StorageSummary summary;
         DuplicateReport duplicates;
         try
         {
+            _awayFolders = await _away.CountActiveAsync().ConfigureAwait(true);
+            OnPropertyChanged(nameof(PromisePill));
             summary = await _storage.BuildAsync(_clock.UtcNow).ConfigureAwait(true);
             duplicates = await _duplicates.FindAsync().ConfigureAwait(true);
         }
@@ -465,10 +499,12 @@ public sealed class DashboardViewModel(
             DuplicateDetail = report.FoldersIncluded == 0
                 ? "Connect a folder to look for possible copies."
                 : "No files share a size, so nothing looks duplicated.";
+            DuplicateTileCaption = report.FoldersIncluded == 0 ? "Connect a folder to look" : "Nothing looks duplicated";
             return;
         }
 
         DuplicateHeadline = report.TotalFiles.ToString("N0", CultureInfo.CurrentCulture);
+        DuplicateTileCaption = "Same size, not compared yet";
         DuplicateDetail =
             $"These share an exact size, so up to {DescribeSize(report.ReclaimableBytes)} might be duplicated. "
             + "DeskAI has not compared their contents, so they are not confirmed copies.";
@@ -599,7 +635,10 @@ public sealed class DashboardViewModel(
         HeroMessage =
             "DeskAI remembers names, sizes, and dates for these files. It opens a file only if you "
             + "allowed that for its folder. It moves files only in a folder you allowed it to tidy, "
-            + "only when you press Tidy, and it never deletes anything.";
+            + (_awayFolders == 0
+                ? "only when you press Tidy, "
+                : $"when you press Tidy or, in the {DeskAI.Core.Tidy.AwayTidyWords.Folders(_awayFolders)} where you turned on Tidy while I'm away, on its own, ")
+            + "and it never deletes anything.";
 
         TotalSize = DescribeSize(summary.TotalSizeBytes);
 

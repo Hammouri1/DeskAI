@@ -76,6 +76,22 @@
             <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FFE7EBF0" />
             <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FF8C97A5" />
             <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF5F6B7A" />
+
+            <!--
+                Soft tints for the stat tiles on Home. Alpha over the surface so they sit on every
+                look, and never green: a count is not a permission, and the accent is reserved.
+            -->
+            <SolidColorBrush x:Key="DeskTintBlueBrush" Color="#2E5B8DEF" />
+            <SolidColorBrush x:Key="DeskTintVioletBrush" Color="#2EA07CF0" />
+            <SolidColorBrush x:Key="DeskTintAmberBrush" Color="#2EE8B84A" />
+            <SolidColorBrush x:Key="DeskTintRoseBrush" Color="#2EEF7C93" />
+
+            <!-- The side menu is painted with the surface, so it reads as one panel in every look. -->
+            <StaticResource x:Key="NavigationViewDefaultPaneBackground" ResourceKey="DeskSurfaceBrush" />
+            <StaticResource x:Key="NavigationViewExpandedPaneBackground" ResourceKey="DeskSurfaceBrush" />
+            <StaticResource x:Key="NavigationViewItemBackgroundSelected" ResourceKey="DeskSurfaceRaisedBrush" />
+            <StaticResource x:Key="NavigationViewItemBackgroundSelectedPointerOver" ResourceKey="DeskLineBrush" />
+            <StaticResource x:Key="NavigationViewItemBackgroundPointerOver" ResourceKey="DeskLineBrush" />
         </ResourceDictionary>
 
         <ResourceDictionary x:Key="Light">
@@ -125,6 +141,17 @@
             <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FF10161D" />
             <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FF5A6572" />
             <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF7C8794" />
+
+            <SolidColorBrush x:Key="DeskTintBlueBrush" Color="#3A5B8DEF" />
+            <SolidColorBrush x:Key="DeskTintVioletBrush" Color="#3AA07CF0" />
+            <SolidColorBrush x:Key="DeskTintAmberBrush" Color="#3AE8B84A" />
+            <SolidColorBrush x:Key="DeskTintRoseBrush" Color="#3AEF7C93" />
+
+            <StaticResource x:Key="NavigationViewDefaultPaneBackground" ResourceKey="DeskSurfaceBrush" />
+            <StaticResource x:Key="NavigationViewExpandedPaneBackground" ResourceKey="DeskSurfaceBrush" />
+            <StaticResource x:Key="NavigationViewItemBackgroundSelected" ResourceKey="DeskSurfaceRaisedBrush" />
+            <StaticResource x:Key="NavigationViewItemBackgroundSelectedPointerOver" ResourceKey="DeskLineBrush" />
+            <StaticResource x:Key="NavigationViewItemBackgroundPointerOver" ResourceKey="DeskLineBrush" />
         </ResourceDictionary>
 
         <!-- High contrast defers entirely to the user's Windows settings. -->
@@ -142,6 +169,10 @@
             <SolidColorBrush x:Key="DeskTextPrimaryBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
             <SolidColorBrush x:Key="DeskTextSecondaryBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
             <SolidColorBrush x:Key="DeskTextTertiaryBrush" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="DeskTintBlueBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="DeskTintVioletBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="DeskTintAmberBrush" Color="Transparent" />
+            <SolidColorBrush x:Key="DeskTintRoseBrush" Color="Transparent" />
         </ResourceDictionary>
 
     </ResourceDictionary.ThemeDictionaries>
@@ -160,7 +191,7 @@
         <Setter Property="Background" Value="{ThemeResource DeskSurfaceRaisedBrush}" />
         <Setter Property="BorderBrush" Value="{ThemeResource DeskAccentBrush}" />
         <Setter Property="BorderThickness" Value="3,0,0,0" />
-        <Setter Property="CornerRadius" Value="0,6,6,0" />
+        <Setter Property="CornerRadius" Value="0,14,14,0" />
         <Setter Property="Padding" Value="26,22" />
     </Style>
 
@@ -168,7 +199,7 @@
         <Setter Property="Background" Value="{ThemeResource DeskSurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="20" />
     </Style>
 
@@ -176,7 +207,7 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="CornerRadius" Value="12" />
         <Setter Property="Padding" Value="16" />
     </Style>
 
@@ -184,7 +215,7 @@
         <Setter Property="Background" Value="{ThemeResource DeskSurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="CornerRadius" Value="10" />
         <Setter Property="Padding" Value="16,14" />
         <Setter Property="Margin" Value="0,0,0,6" />
     </Style>
@@ -249,6 +280,71 @@
         <Setter Property="LineHeight" Value="17" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="Foreground" Value="{ThemeResource DeskTextTertiaryBrush}" />
+    </Style>
+
+    <!--
+        A stat tile: one icon, one big number, one caption, on a soft tint. The tint is never
+        the accent, because a count is not a permission. Text stays the ordinary text colour.
+    -->
+    <Style x:Key="TileStyle" TargetType="Border">
+        <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="18,16" />
+        <Setter Property="MinHeight" Value="118" />
+    </Style>
+
+    <Style x:Key="TileIconStyle" TargetType="FontIcon">
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="Foreground" Value="{ThemeResource DeskTextPrimaryBrush}" />
+        <Setter Property="HorizontalAlignment" Value="Left" />
+    </Style>
+
+    <!--
+        A pill: a small rounded chip with an icon and a word. Neutral by default. The accent
+        variant is only for a permission or a confirmed state; caution for "paused" or "needs
+        a look". Every pill carries an icon and a word, so colour never stands alone.
+    -->
+    <Style x:Key="PillStyle" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource DeskSurfaceRaisedBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource DeskLineStrongBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="AccentPillStyle" TargetType="Border" BasedOn="{StaticResource PillStyle}">
+        <Setter Property="Background" Value="{ThemeResource DeskAccentSoftBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource DeskAccentBrush}" />
+    </Style>
+
+    <Style x:Key="CautionPillStyle" TargetType="Border" BasedOn="{StaticResource PillStyle}">
+        <Setter Property="Background" Value="{ThemeResource DeskCautionSoftBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource DeskCautionBrush}" />
+    </Style>
+
+    <Style x:Key="PillTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{ThemeResource DeskTextPrimaryBrush}" />
+    </Style>
+
+    <!-- The small grey label above a group of menu items, and above a group of cards. -->
+    <Style x:Key="GroupLabelStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="CharacterSpacing" Value="60" />
+        <Setter Property="Foreground" Value="{ThemeResource DeskTextTertiaryBrush}" />
+    </Style>
+
+    <!-- A page's top bar: the page name and the tools that are the same on every page. -->
+    <Style x:Key="TopBarStyle" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource DeskSurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
+        <Setter Property="BorderThickness" Value="0,0,0,1" />
+        <Setter Property="Padding" Value="24,10" />
     </Style>
 
     <!--

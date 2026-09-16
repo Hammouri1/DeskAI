@@ -99,6 +99,23 @@ dotnet test --solution DeskAI.sln --no-build --no-restore --configuration Debug
 
 .NET 10 uses Microsoft Testing Platform as selected in `global.json`, which is why the solution form is `dotnet test --solution DeskAI.sln`. The app is an x64, unpackaged, self-contained Windows App SDK application. Open `DeskAI.sln` in Visual Studio for interactive launch; install the Windows application development workload and Windows 11 SDK 10.0.26100 or later if Visual Studio reports missing tooling. The command-line build obtains compile-time Windows App SDK assets from the pinned NuGet package.
 
+## Continuous Integration and Releases (V0.8)
+
+`.github/workflows/build.yml` runs on every push and pull request on a Windows runner: locked
+restore, Release build, all tests, `dotnet format --verify-no-changes`, and a
+known-vulnerable-dependency check. `.github/workflows/release.yml` runs on a `v*` tag: it builds
+with `-p:Version=<tag>`, publishes `src/DeskAI.App` self-contained for `win-x64`, zips it as
+`DeskAI-<version>-win-x64.zip`, makes a CycloneDX SBOM with the `CycloneDX` .NET tool (installed
+on the runner only), and attaches both to a GitHub Release. The version shown on Privacy and AI
+comes from `<Version>` in `Directory.Build.props` unless the tag overrides it. To release:
+
+```powershell
+git tag v0.8.0
+git push origin v0.8.0
+```
+
+There is no code signing yet (ADR 0030). `docs/INSTALL.md` is the user-facing install guide.
+
 ## Definition of a Good Handoff
 
 Include outcome, changed files, user-visible behavior, architecture/data flow, security analysis, build/test command results, warnings or environment limitations, remaining work, exact next task, and short explanations of new concepts. Screenshots help when UI changes, but they do not replace tests.

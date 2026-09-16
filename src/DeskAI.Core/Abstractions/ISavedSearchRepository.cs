@@ -12,8 +12,17 @@ namespace DeskAI.Core.Abstractions;
 /// </remarks>
 public interface ISavedSearchRepository
 {
-    /// <summary>Adds or replaces one saved search.</summary>
+    /// <summary>
+    /// Adds a saved search, or replaces the name and phrase of one that already exists.
+    /// </summary>
+    /// <remarks>
+    /// Replacing never changes whether a search is pinned; only <see cref="SetPinnedAsync"/>
+    /// does, so rewording a pinned search cannot quietly unpin it.
+    /// </remarks>
     Task SaveAsync(SavedSearch collection, CancellationToken cancellationToken = default);
+
+    /// <summary>Pins or unpins one saved search. Harmless when nothing matches.</summary>
+    Task SetPinnedAsync(Guid collectionId, bool isPinned, CancellationToken cancellationToken = default);
 
     /// <summary>Lists saved searches, newest first.</summary>
     Task<IReadOnlyList<SavedSearch>> ListAsync(CancellationToken cancellationToken = default);

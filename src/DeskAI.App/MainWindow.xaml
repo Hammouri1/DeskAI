@@ -15,7 +15,28 @@
         ItemInvoked="OnNavigationItemInvoked"
         OpenPaneLength="248"
         PaneDisplayMode="Auto">
+
+        <!-- The DeskAI mark and name at the top of the menu. Neutral: it is a name, not a state. -->
+        <NavigationView.PaneHeader>
+            <StackPanel Orientation="Horizontal" Spacing="10" Margin="8,4,0,8" VerticalAlignment="Center">
+                <Border Width="28" Height="28" CornerRadius="8"
+                        Background="{ThemeResource DeskSurfaceRaisedBrush}"
+                        BorderBrush="{ThemeResource DeskLineStrongBrush}" BorderThickness="1">
+                    <FontIcon FontSize="14" Glyph="&#xE8B7;" Foreground="{ThemeResource DeskTextPrimaryBrush}" />
+                </Border>
+                <TextBlock FontFamily="Segoe UI Variable Display" FontSize="16" FontWeight="SemiBold"
+                           VerticalAlignment="Center"
+                           Foreground="{ThemeResource DeskTextPrimaryBrush}" Text="DeskAI" />
+            </StackPanel>
+        </NavigationView.PaneHeader>
+
+        <!--
+            The menu, in three groups. The names are the owner's choice (2026-09-16): they stay
+            as they were. ShellViewModel.Pages holds the same six routes and names for the top
+            bar, and a test reads this file to keep the two lists the same.
+        -->
         <NavigationView.MenuItems>
+            <NavigationViewItemHeader Content="Your files" />
             <NavigationViewItem Content="Home" Tag="dashboard">
                 <NavigationViewItem.Icon><FontIcon Glyph="&#xE80F;" /></NavigationViewItem.Icon>
             </NavigationViewItem>
@@ -25,68 +46,121 @@
             <NavigationViewItem Content="Search" Tag="search">
                 <NavigationViewItem.Icon><FontIcon Glyph="&#xE721;" /></NavigationViewItem.Icon>
             </NavigationViewItem>
+            <NavigationViewItemHeader Content="DeskAI for you" />
             <NavigationViewItem Content="Automatic tasks" Tag="automation">
                 <NavigationViewItem.Icon><FontIcon Glyph="&#xE945;" /></NavigationViewItem.Icon>
             </NavigationViewItem>
+            <NavigationViewItem Content="My workspace" Tag="workspace">
+                <NavigationViewItem.Icon><FontIcon Glyph="&#xE840;" /></NavigationViewItem.Icon>
+            </NavigationViewItem>
+            <NavigationViewItemHeader Content="Settings" />
             <NavigationViewItem Content="Privacy and AI" Tag="settings">
                 <NavigationViewItem.Icon><FontIcon Glyph="&#xE72E;" /></NavigationViewItem.Icon>
             </NavigationViewItem>
         </NavigationView.MenuItems>
 
         <NavigationView.PaneFooter>
-            <!--
-                A permanent, quiet reminder of scope. It stays visible on every page because
-                "which files can this app touch" should never require navigating to find out.
-            -->
-            <Border Margin="12,0,12,12" Padding="12,10" CornerRadius="0,4,4,0"
-                    Background="{ThemeResource DeskSurfaceBrush}"
-                    BorderBrush="{ThemeResource DeskAccentBrush}"
-                    BorderThickness="3,0,0,0">
-                <StackPanel Spacing="6">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon FontSize="14" Glyph="&#xE72E;"
-                                  Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
-                        <TextBlock FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
-                                   Text="{Binding ScopeTitle}" />
-                        <controls:HelpButton Topic="shell.scope" />
+            <StackPanel Spacing="8" Margin="12,0,12,12">
+                <!--
+                    Dark mode, for DeskAI's own window only. It saves the same light/dark choice
+                    My workspace offers; Windows itself is never touched.
+                -->
+                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" Padding="8,4">
+                    <FontIcon FontSize="14" Glyph="&#xE708;" VerticalAlignment="Center"
+                              Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                    <TextBlock Grid.Column="1" FontSize="13" VerticalAlignment="Center"
+                               Foreground="{ThemeResource DeskTextPrimaryBrush}" Text="Dark mode" />
+                    <ToggleSwitch x:Name="DarkModeSwitch" Grid.Column="2" MinWidth="0" Margin="0,0,-12,0"
+                                  OnContent="" OffContent=""
+                                  AutomationProperties.Name="Dark mode for the DeskAI window"
+                                  IsOn="{Binding IsDark, Mode=OneWay}"
+                                  Toggled="OnDarkModeToggled" />
+                </Grid>
+
+                <!--
+                    A permanent, quiet reminder of scope. It stays visible on every page because
+                    "which files can this app touch" should never require navigating to find out.
+                -->
+                <Border Padding="12,10" CornerRadius="0,10,10,0"
+                        Background="{ThemeResource DeskSurfaceRaisedBrush}"
+                        BorderBrush="{ThemeResource DeskAccentBrush}"
+                        BorderThickness="3,0,0,0">
+                    <StackPanel Spacing="6">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon FontSize="14" Glyph="&#xE72E;"
+                                      Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
+                            <TextBlock FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                                       Text="{Binding ScopeTitle}" />
+                            <controls:HelpButton Topic="shell.scope" />
+                        </StackPanel>
+                        <TextBlock FontSize="11" TextWrapping="Wrap"
+                                   Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                                   Text="{Binding ScopeMessage}" />
                     </StackPanel>
-                    <TextBlock FontSize="11" TextWrapping="Wrap"
-                               Foreground="{ThemeResource TextFillColorSecondaryBrush}"
-                               Text="{Binding ScopeMessage}" />
-                </StackPanel>
-            </Border>
+                </Border>
+            </StackPanel>
         </NavigationView.PaneFooter>
 
-        <Grid>
-            <Frame x:Name="ContentFrame" />
-
+        <Grid RowDefinitions="Auto,*">
             <!--
-                The notice a finished check leaves behind. Top-right and over the page rather
-                than inside it, because a check can finish while someone is on any page, and
-                the whole point is that they notice it when they come back.
-
-                It reports a count and says nothing has moved, in the same sentence. It has
-                no action that changes anything: both buttons are navigation. "Review in
-                Organize" opens the folder with the most matches; tidying is still a press
-                of Tidy there.
+                The top bar: the page name, a search box that opens Search with the phrase, and
+                the AI pill. The pill states the saved AI choice and only opens Privacy and AI;
+                the search box grants nothing a person could not type on Search.
             -->
-            <InfoBar Margin="0,12,16,0"
-                     MaxWidth="360"
-                     HorizontalAlignment="Right"
-                     VerticalAlignment="Top"
-                     IsClosable="True"
-                     IsOpen="{Binding HasFinding, Mode=OneWay}"
-                     Severity="Informational"
-                     Title="Something to look at"
-                     Message="{Binding FindingMessage}"
-                     CloseButtonCommand="{Binding DismissFindingCommand}">
-                <InfoBar.ActionButton>
-                    <Button Content="Review in Organize" Click="OnReviewInOrganizeClicked"
-                            IsEnabled="{Binding CanReviewInOrganize, Mode=OneWay}" />
-                </InfoBar.ActionButton>
-                <HyperlinkButton Margin="0,0,0,8" Padding="0" Content="See it in Automatic tasks"
-                                 Click="OnSeeAutomaticTasksClicked" />
-            </InfoBar>
+            <Border Style="{StaticResource TopBarStyle}">
+                <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="14">
+                    <TextBlock Style="{StaticResource SectionTitleStyle}" VerticalAlignment="Center"
+                               Text="{Binding PageTitle}" />
+                    <AutoSuggestBox x:Name="FindBox" Grid.Column="1" MaxWidth="420" HorizontalAlignment="Right"
+                                    PlaceholderText="Find a file…" QueryIcon="Find"
+                                    AutomationProperties.Name="Find a file"
+                                    QuerySubmitted="OnFindSubmitted" />
+                    <Button Grid.Column="2" Padding="0" Background="Transparent" BorderThickness="0"
+                            AutomationProperties.Name="{Binding AiState}"
+                            ToolTipService.ToolTip="Open Privacy and AI"
+                            Click="OnAiPillClicked">
+                        <Border Style="{StaticResource PillStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="12" Glyph="&#xE945;"
+                                          Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                                <TextBlock Style="{StaticResource PillTextStyle}" Text="{Binding AiState}" />
+                            </StackPanel>
+                        </Border>
+                    </Button>
+                </Grid>
+            </Border>
+
+            <Grid Grid.Row="1">
+                <Frame x:Name="ContentFrame" />
+
+                <!--
+                    The notice a finished check leaves behind. Top-right and over the page rather
+                    than inside it, because a check can finish while someone is on any page, and
+                    the whole point is that they notice it when they come back.
+
+                    It reports a count and says nothing has moved, in the same sentence. It has
+                    no action that changes anything: both buttons are navigation. "Review in
+                    Organize" opens the folder with the most matches; tidying is still a press
+                    of Tidy there.
+                -->
+                <InfoBar Margin="0,12,16,0"
+                         MaxWidth="360"
+                         HorizontalAlignment="Right"
+                         VerticalAlignment="Top"
+                         IsClosable="True"
+                         IsOpen="{Binding HasFinding, Mode=OneWay}"
+                         Severity="Informational"
+                         Title="Something to look at"
+                         Message="{Binding FindingMessage}"
+                         CloseButtonCommand="{Binding DismissFindingCommand}">
+                    <InfoBar.ActionButton>
+                        <Button Content="Review in Organize" Click="OnReviewInOrganizeClicked"
+                                IsEnabled="{Binding CanReviewInOrganize, Mode=OneWay}" />
+                    </InfoBar.ActionButton>
+                    <HyperlinkButton Margin="0,0,0,8" Padding="0" Content="See it in Automatic tasks"
+                                     Click="OnSeeAutomaticTasksClicked" />
+                </InfoBar>
+            </Grid>
         </Grid>
     </NavigationView>
 </Window>

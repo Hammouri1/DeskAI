@@ -7,7 +7,7 @@
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
-        <StackPanel Margin="32,28,32,44" MaxWidth="920" HorizontalAlignment="Left" Spacing="24">
+        <StackPanel Margin="28,24,28,44" MaxWidth="920" HorizontalAlignment="Left" Spacing="22">
 
             <StackPanel Spacing="8" MaxWidth="640" HorizontalAlignment="Left">
                 <StackPanel Orientation="Horizontal" Spacing="10">
@@ -62,14 +62,14 @@
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
+                                <!-- A reading of the phrase, not a permission, so the chip is a plain pill. -->
                                 <DataTemplate x:DataType="x:String">
-                                    <Border CornerRadius="3" Padding="10,5"
-                                            Background="{ThemeResource DeskAccentSoftBrush}"
-                                            BorderBrush="{ThemeResource DeskAccentBrush}"
-                                            BorderThickness="1">
-                                        <TextBlock FontSize="12"
-                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                   Text="{x:Bind}" />
+                                    <Border Style="{StaticResource PillStyle}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon FontSize="11" Glyph="&#xE71C;"
+                                                      Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                                            <TextBlock Style="{StaticResource PillTextStyle}" Text="{x:Bind}" />
+                                        </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </ItemsControl.ItemTemplate>
@@ -249,9 +249,25 @@
                                                 The permission is written on the row, not left
                                                 implicit in a button label. A permission a
                                                 person cannot see is one they cannot reconsider.
+                                                The pill wears the accent only when reading inside
+                                                is allowed, because that is a permission.
                                             -->
-                                            <TextBlock Style="{StaticResource CaptionStyle}"
-                                                       Text="{x:Bind ContentState}" />
+                                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                                                <Border Style="{StaticResource AccentPillStyle}" Visibility="{x:Bind CanReadContent}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <FontIcon FontSize="11" Glyph="&#xE8A5;" Foreground="{ThemeResource DeskAccentBrush}" />
+                                                        <TextBlock Style="{StaticResource PillTextStyle}" Text="Can read inside" />
+                                                    </StackPanel>
+                                                </Border>
+                                                <Border Style="{StaticResource PillStyle}" Visibility="{x:Bind IsNamesOnly}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <FontIcon FontSize="11" Glyph="&#xE8A5;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                                                        <TextBlock Style="{StaticResource PillTextStyle}" Text="Names, sizes, dates" />
+                                                    </StackPanel>
+                                                </Border>
+                                                <TextBlock Style="{StaticResource CaptionStyle}" VerticalAlignment="Center"
+                                                           Text="{x:Bind ContentState}" />
+                                            </StackPanel>
                                         </StackPanel>
                                         <Button Grid.Column="1" VerticalAlignment="Center"
                                                 Content="{x:Bind ContentAction}"

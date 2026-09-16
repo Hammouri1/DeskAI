@@ -264,6 +264,85 @@ public sealed class FolderTidyExecutorTests
         Assert.Equal(facts.ModifiedAtUtc, recorded.BeforeModifiedAtUtc);
     }
 
+    /// <summary>
+    /// A run that only made folders (a folder template) and stopped part-way. Before the fix a
+    /// record with no file moves settled as Failed, so the folders it had made could never be
+    /// undone.
+    /// </summary>
+    [Fact]
+    public async Task An_interrupted_run_that_only_made_folders_settles_by_the_folders_it_made_and_can_be_undone()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var folder = sandbox.CreateDummyDirectory("Folder");
+        sandbox.CreateDummyDirectory(@"Folder\Assignments");
+        sandbox.CreateDummyDirectory(@"Folder\Slides");
+        var root = Allowed(folder);
+        var plans = new InMemoryPlanRepository();
+        var journal = new InMemoryOperationJournal(plans);
+        var creates = new[] { MakeFolder("Assignments"), MakeFolder("Slides"), MakeFolder("Notes") };
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, creates);
+        await plans.SaveAsync(plan, TestContext.Current.CancellationToken);
+        var record = new ExecutionJournalEntry(
+            Guid.NewGuid(), plan.Id, 1, Guid.NewGuid(), ExecutionTransactionKind.Execute, null,
+            ExecutionTransactionState.Executing, DateTimeOffset.UtcNow, null,
+            [
+                new OperationJournalEntry(0, creates[0].Id, PlanOperationKind.CreateDirectory, null, "Assignments", null, null, JournalOperationState.Completed, null),
+                new OperationJournalEntry(1, creates[1].Id, PlanOperationKind.CreateDirectory, null, "Slides", null, null, JournalOperationState.InProgress, null),
+                new OperationJournalEntry(2, creates[2].Id, PlanOperationKind.CreateDirectory, null, "Notes", null, null, JournalOperationState.Pending, null),
+            ]);
+        await journal.CreateAsync(record, TestContext.Current.CancellationToken);
+        var executor = new FolderTidyExecutor(
+            new DisconnectingRootRepository(root, int.MaxValue), new FixedFolderService(null),
+            new PlanValidator(new WindowsPathPolicy()), new WindowsPathPolicy(), new SystemClock(),
+            journal, plans, Database(sandbox));
+
+        var checkedRecord = Assert.Single(await executor.CheckInterruptedAsync(root.Id, TestContext.Current.CancellationToken));
+        var settled = await executor.CloseInterruptedAsync(root.Id, record.Id, TestContext.Current.CancellationToken);
+
+        // The folder under way exists, but nothing proves DeskAI made it, so it is "already there".
+        Assert.Equal(JournalOperationState.AlreadyPresent, checkedRecord.Operations[1].State);
+        Assert.Equal(JournalOperationState.Cancelled, checkedRecord.Operations[2].State);
+        Assert.Equal(ExecutionTransactionState.PartiallyCompleted, settled);
+
+        var undo = await executor.UndoAsync(record.Id, TestContext.Current.CancellationToken);
+
+        Assert.Equal(ExecutionOutcome.Completed, Assert.Single(undo.Operations).Outcome);
+        Assert.False(Directory.Exists(Path.Combine(folder, "Assignments")));
+        Assert.True(Directory.Exists(Path.Combine(folder, "Slides")));
+    }
+
+    /// <summary>A folder-only run that made nothing at all still settles as Failed, so there is nothing to undo.</summary>
+    [Fact]
+    public async Task An_interrupted_run_that_made_no_folder_settles_as_failed()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var folder = sandbox.CreateDummyDirectory("Folder");
+        var root = Allowed(folder);
+        var plans = new InMemoryPlanRepository();
+        var journal = new InMemoryOperationJournal(plans);
+        var create = MakeFolder("Notes");
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, [create]);
+        await plans.SaveAsync(plan, TestContext.Current.CancellationToken);
+        var record = new ExecutionJournalEntry(
+            Guid.NewGuid(), plan.Id, 1, Guid.NewGuid(), ExecutionTransactionKind.Execute, null,
+            ExecutionTransactionState.Executing, DateTimeOffset.UtcNow, null,
+            [new OperationJournalEntry(0, create.Id, PlanOperationKind.CreateDirectory, null, "Notes", null, null, JournalOperationState.InProgress, null)]);
+        await journal.CreateAsync(record, TestContext.Current.CancellationToken);
+        var executor = new FolderTidyExecutor(
+            new DisconnectingRootRepository(root, int.MaxValue), new FixedFolderService(null),
+            new PlanValidator(new WindowsPathPolicy()), new WindowsPathPolicy(), new SystemClock(),
+            journal, plans, Database(sandbox));
+
+        await executor.CheckInterruptedAsync(root.Id, TestContext.Current.CancellationToken);
+        var settled = await executor.CloseInterruptedAsync(root.Id, record.Id, TestContext.Current.CancellationToken);
+
+        Assert.Equal(ExecutionTransactionState.Failed, settled);
+        await Assert.ThrowsAsync<InvalidOperationException>(() => executor.UndoAsync(record.Id, TestContext.Current.CancellationToken));
+    }
+
+    private static CreateDirectoryOperation MakeFolder(string name) =>
+        new(Guid.NewGuid(), name, "Part of the folder template.", OperationProvenance.User);
+
     /// <summary>A tidy-permitted folder holding a.pdf and an empty Documents folder.</summary>
     private static (FolderTidyExecutor Executor, AuthorizedRoot Root, string File, string Folder) Folder(
         TemporaryDirectory sandbox,

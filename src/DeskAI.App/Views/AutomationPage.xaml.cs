@@ -12,6 +12,7 @@ public sealed partial class AutomationPage : Page
         ViewModel = viewModel;
         DataContext = viewModel;
         Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
     public AutomationViewModel ViewModel { get; }
@@ -20,5 +21,76 @@ public sealed partial class AutomationPage : Page
     {
         Loaded -= OnLoaded;
         await ViewModel.InitializeAsync();
+    }
+
+    /// <summary>
+    /// Leaving Automatic tasks stops this page's copy from listening to the icon's singleton
+    /// controller. Without this, a fresh, still-subscribed view model would pile up on every
+    /// visit to this page.
+    /// </summary>
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        Unloaded -= OnUnloaded;
+        ViewModel.Dispose();
+    }
+
+    /// <summary>
+    /// Turning this on asks before it does anything, because it changes what closing the
+    /// window means. Turning it off needs no dialog: stopping is always safe.
+    /// </summary>
+    private async void OnKeepRunningToggled(object sender, RoutedEventArgs args)
+    {
+        if (ViewModel is null || KeepRunningSwitch.IsOn == ViewModel.KeepsRunningWhenClosed)
+        {
+            // The switch is only reflecting a change the view model already made.
+            return;
+        }
+
+        if (!KeepRunningSwitch.IsOn)
+        {
+            await ViewModel.StopKeepingRunningAsync();
+            return;
+        }
+
+        var question = ViewModel.AskAboutKeepingRunning();
+        var notify = new CheckBox
+        {
+            Content = question.NotifyLabel,
+            IsChecked = question.NotifyWhenSomethingIsFound,
+        };
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = question.Title,
+            PrimaryButtonText = question.Confirm,
+            CloseButtonText = question.Decline,
+            DefaultButton = ContentDialogButton.Close,
+            Content = new StackPanel
+            {
+                Spacing = 12,
+                Children =
+                {
+                    new TextBlock { Text = question.Body, TextWrapping = TextWrapping.Wrap },
+                    new TextBlock { Text = question.LimitLine, TextWrapping = TextWrapping.Wrap },
+                    notify,
+                    new TextBlock
+                    {
+                        Text = question.NotifyCaption,
+                        TextWrapping = TextWrapping.Wrap,
+                        Style = (Style)Application.Current.Resources["CaptionStyle"],
+                    },
+                },
+            },
+        };
+
+        if (await dialog.ShowAsync() == ContentDialogResult.Primary)
+        {
+            await ViewModel.KeepRunningAsync(notify.IsChecked == true);
+        }
+        else
+        {
+            // Put the switch back where it was. Closing the dialog is a decision not to.
+            KeepRunningSwitch.IsOn = false;
+        }
     }
 }

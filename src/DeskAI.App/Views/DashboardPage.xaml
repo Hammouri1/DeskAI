@@ -7,304 +7,395 @@
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
-        <StackPanel Margin="32,28,32,44" MaxWidth="920" HorizontalAlignment="Left" Spacing="24">
+        <Grid Margin="28,24,28,44" MaxWidth="1240" HorizontalAlignment="Left"
+              RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="22">
 
             <!--
-                The status readout replaces the old welcome banner. It states the current
-                scope first, because "what can this app touch right now" is the single fact
-                a person most needs on opening a file organizer. The green rail carries that
-                meaning; it is the same signal used everywhere else for an approved state.
+                A layout that folds. Two columns of cards and a row of four tiles when the window
+                is wide; one column and two-by-two tiles when it is not. Only positions change.
             -->
-            <Border Style="{StaticResource HeroPanelStyle}">
-                <StackPanel Spacing="12" MaxWidth="620" HorizontalAlignment="Left">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <Ellipse Width="7" Height="7" VerticalAlignment="Center"
-                                 Fill="{ThemeResource DeskAccentBrush}" />
-                        <TextBlock FontSize="13" FontWeight="SemiBold"
-                                   Foreground="{ThemeResource DeskAccentBrush}"
-                                   Text="{x:Bind ViewModel.HeroState, Mode=OneWay}" />
-                    </StackPanel>
-                    <TextBlock Style="{StaticResource DeskDisplayStyle}"
-                               Text="{x:Bind ViewModel.HeroTitle, Mode=OneWay}" />
-                    <TextBlock Style="{StaticResource BodySecondaryStyle}"
-                               Text="{x:Bind ViewModel.HeroMessage, Mode=OneWay}" />
-                </StackPanel>
-            </Border>
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup>
+                    <VisualState x:Name="Wide">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="1100" />
+                        </VisualState.StateTriggers>
+                    </VisualState>
+                    <VisualState x:Name="Narrow">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="0" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="HeroArt.Visibility" Value="Collapsed" />
+                            <Setter Target="Tiles.ColumnDefinitions" Value="*,*" />
+                            <Setter Target="Tiles.RowDefinitions" Value="Auto,Auto" />
+                            <Setter Target="UnusedTile.(Grid.Column)" Value="0" />
+                            <Setter Target="UnusedTile.(Grid.Row)" Value="1" />
+                            <Setter Target="CopiesTile.(Grid.Column)" Value="1" />
+                            <Setter Target="CopiesTile.(Grid.Row)" Value="1" />
+                            <Setter Target="Columns.ColumnDefinitions" Value="*" />
+                            <Setter Target="Columns.RowDefinitions" Value="Auto,Auto" />
+                            <Setter Target="RightColumn.(Grid.Column)" Value="0" />
+                            <Setter Target="RightColumn.(Grid.Row)" Value="1" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
 
             <!--
-                One panel divided by hairlines rather than three separate cards. The numbers
-                belong to the same reading, so they share one surface.
+                The welcome. It states the current scope first, because "what can this app touch
+                right now" is the single fact a person most needs on opening a file organizer. The
+                green rail carries that meaning; it is the same signal used everywhere else for an
+                approved state. The circles on the right are decoration in neutral colours only.
             -->
-            <Border Style="{StaticResource CardStyle}" Padding="0">
-                <Grid ColumnDefinitions="*,Auto,*,Auto,*">
-                    <StackPanel Padding="20,18" Spacing="6">
-                        <TextBlock Style="{StaticResource CaptionStyle}" Text="Folders connected" />
-                        <TextBlock Style="{StaticResource MetricStyle}" Text="{x:Bind ViewModel.FoldersConnected, Mode=OneWay}" />
-                        <TextBlock Style="{StaticResource CaptionStyle}"
-                                   Text="DeskAI reads nothing until you pick one." />
+            <Border Style="{StaticResource HeroPanelStyle}" Padding="30,26">
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
+                    <StackPanel Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Ellipse Width="7" Height="7" VerticalAlignment="Center"
+                                     Fill="{ThemeResource DeskAccentBrush}" />
+                            <TextBlock FontSize="13" FontWeight="SemiBold"
+                                       Foreground="{ThemeResource DeskAccentBrush}"
+                                       Text="{x:Bind ViewModel.HeroState, Mode=OneWay}" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource DeskDisplayStyle}"
+                                   Text="{x:Bind ViewModel.Greeting, Mode=OneWay}" />
+                        <TextBlock Style="{StaticResource SectionTitleStyle}"
+                                   Text="{x:Bind ViewModel.HeroTitle, Mode=OneWay}" />
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                   Text="{x:Bind ViewModel.HeroMessage, Mode=OneWay}" />
+                        <!-- Two promises that are true on every screen, as pills with an icon and a word. -->
+                        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                            <Border Style="{StaticResource PillStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontSize="12" Glyph="&#xE72E;"
+                                              Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                                    <TextBlock Style="{StaticResource PillTextStyle}" Text="{x:Bind ViewModel.PromisePill, Mode=OneWay}" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PillStyle}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontSize="12" Glyph="&#xE73E;"
+                                              Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                                    <TextBlock Style="{StaticResource PillTextStyle}" Text="You approve every change" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                     </StackPanel>
 
-                    <Border Grid.Column="1" Width="1" Margin="0,16"
-                            Background="{ThemeResource DeskLineBrush}" />
-
-                    <StackPanel Grid.Column="2" Padding="20,18" Spacing="6">
-                        <TextBlock Style="{StaticResource CaptionStyle}" Text="Files remembered" />
-                        <TextBlock Style="{StaticResource MetricStyle}" Text="{x:Bind ViewModel.TotalFiles, Mode=OneWay}" />
-                        <TextBlock Style="{StaticResource CaptionStyle}"
-                                   Text="{x:Bind ViewModel.TotalSize, Mode=OneWay}" />
-                    </StackPanel>
-
-                    <Border Grid.Column="3" Width="1" Margin="0,16"
-                            Background="{ThemeResource DeskLineBrush}" />
-
-                    <StackPanel Grid.Column="4" Padding="20,18" Spacing="6">
-                        <TextBlock Style="{StaticResource CaptionStyle}" Text="Sitting unused" />
-                        <TextBlock Style="{StaticResource MetricStyle}"
-                                   Text="{x:Bind ViewModel.OldFilesHeadline, Mode=OneWay}" />
-                        <TextBlock Style="{StaticResource CaptionStyle}"
-                                   Text="{x:Bind ViewModel.OldFilesDetail, Mode=OneWay}" />
-                    </StackPanel>
+                    <Canvas x:Name="HeroArt" Grid.Column="1" Width="250" Height="170" VerticalAlignment="Center"
+                            IsHitTestVisible="False">
+                        <Border Canvas.Left="10" Canvas.Top="18" Width="64" Height="64" CornerRadius="32"
+                                Background="{ThemeResource DeskSurfaceBrush}"
+                                BorderBrush="{ThemeResource DeskLineStrongBrush}" BorderThickness="1">
+                            <FontIcon FontSize="22" Glyph="&#xE8B7;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                        </Border>
+                        <Border Canvas.Left="92" Canvas.Top="0" Width="52" Height="52" CornerRadius="26"
+                                Background="{ThemeResource DeskSurfaceBrush}"
+                                BorderBrush="{ThemeResource DeskLineStrongBrush}" BorderThickness="1">
+                            <FontIcon FontSize="18" Glyph="&#xE721;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                        </Border>
+                        <Border Canvas.Left="160" Canvas.Top="30" Width="74" Height="74" CornerRadius="37"
+                                Background="{ThemeResource DeskSurfaceBrush}"
+                                BorderBrush="{ThemeResource DeskLineStrongBrush}" BorderThickness="1">
+                            <FontIcon FontSize="26" Glyph="&#xE72E;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                        </Border>
+                        <Border Canvas.Left="60" Canvas.Top="96" Width="58" Height="58" CornerRadius="29"
+                                Background="{ThemeResource DeskSurfaceBrush}"
+                                BorderBrush="{ThemeResource DeskLineStrongBrush}" BorderThickness="1">
+                            <FontIcon FontSize="20" Glyph="&#xE7A7;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                        </Border>
+                        <Border Canvas.Left="140" Canvas.Top="116" Width="46" Height="46" CornerRadius="23"
+                                Background="{ThemeResource DeskSurfaceBrush}"
+                                BorderBrush="{ThemeResource DeskLineStrongBrush}" BorderThickness="1">
+                            <FontIcon FontSize="16" Glyph="&#xEB9F;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                        </Border>
+                    </Canvas>
                 </Grid>
             </Border>
 
             <!--
-                The health score. The number is never shown on its own: the three parts that
-                produced it, what each one measured, and how much each counted for are all on
-                the same card, so a person can add it up instead of trusting it. Like every
-                other reading here it describes and never proposes.
+                Quick look: four counts on soft tints. Each is a reading of remembered metadata,
+                never a live number, and no tint is the accent, because a count is not a permission.
             -->
-            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasHealth, Mode=OneWay}">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="How organized this looks" />
-                    <controls:HelpButton Topic="home.health" />
-                </StackPanel>
-
-                <Border Style="{StaticResource CardStyle}">
-                    <StackPanel Spacing="18">
-                        <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
-                            <StackPanel Spacing="2" VerticalAlignment="Top">
-                                <TextBlock Style="{StaticResource DeskDisplayStyle}"
-                                           Foreground="{ThemeResource DeskAccentBrush}"
-                                           Text="{x:Bind ViewModel.HealthScore, Mode=OneWay}" />
-                                <TextBlock Style="{StaticResource CaptionStyle}" Text="out of 100" />
-                            </StackPanel>
-                            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
-                                <TextBlock FontWeight="SemiBold" FontSize="15"
-                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                           Text="{x:Bind ViewModel.HealthBand, Mode=OneWay}" />
-                                <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="560"
-                                           HorizontalAlignment="Left"
-                                           Text="{x:Bind ViewModel.HealthMessage, Mode=OneWay}" />
-                                <!--
-                                    How much of the folder DeskAI could recognise, stated
-                                    beside the score rather than subtracted from it. Not
-                                    knowing a file type is this app's gap, and charging
-                                    someone points for it would blame them for our limits.
-                                -->
-                                <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="560"
-                                           HorizontalAlignment="Left" Margin="0,4,0,0"
-                                           Visibility="{x:Bind ViewModel.HasHealthCoverage, Mode=OneWay}"
-                                           Text="{x:Bind ViewModel.HealthCoverage, Mode=OneWay}" />
-                            </StackPanel>
-                        </Grid>
-
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.HealthComponents, Mode=OneWay}"
-                                      AutomationProperties.Name="What the score is made of">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="viewmodels:HealthComponentViewModel">
-                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Margin="0,0,0,14">
-                                        <StackPanel Spacing="4">
-                                            <TextBlock FontWeight="SemiBold"
-                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                       Text="{x:Bind Name}" />
-                                            <TextBlock Style="{StaticResource CaptionStyle}"
-                                                       Text="{x:Bind Explanation}" />
-                                            <TextBlock Style="{StaticResource CaptionStyle}"
-                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                       Text="{x:Bind Measurement}" />
-                                            <ProgressBar Margin="0,4,0,0" Height="6" MaxWidth="360"
-                                                         HorizontalAlignment="Left"
-                                                         Minimum="0" Maximum="1"
-                                                         Value="{x:Bind PartScore}" />
-                                        </StackPanel>
-                                        <StackPanel Grid.Column="1" Spacing="2" MinWidth="120"
-                                                    VerticalAlignment="Top">
-                                            <TextBlock TextAlignment="Right"
-                                                       Style="{StaticResource CaptionStyle}"
-                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                       Text="{x:Bind ScoreLabel}" />
-                                            <TextBlock TextAlignment="Right"
-                                                       Style="{StaticResource CaptionStyle}"
-                                                       Text="{x:Bind WeightLabel}" />
-                                        </StackPanel>
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </Border>
+            <StackPanel Grid.Row="1" Spacing="10">
+                <TextBlock Style="{StaticResource GroupLabelStyle}" Text="QUICK LOOK" />
+                <Grid x:Name="Tiles" ColumnDefinitions="*,*,*,*" ColumnSpacing="14" RowSpacing="14">
+                    <Border Style="{StaticResource TileStyle}" Background="{ThemeResource DeskTintBlueBrush}">
+                        <StackPanel Spacing="8">
+                            <FontIcon Style="{StaticResource TileIconStyle}" Glyph="&#xE8B7;" />
+                            <TextBlock Style="{StaticResource MetricStyle}" Text="{x:Bind ViewModel.FoldersConnected, Mode=OneWay}" />
+                            <TextBlock Style="{StaticResource CaptionStyle}" Foreground="{ThemeResource DeskTextSecondaryBrush}"
+                                       Text="Folders connected" />
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Style="{StaticResource TileStyle}" Background="{ThemeResource DeskTintVioletBrush}">
+                        <StackPanel Spacing="8">
+                            <FontIcon Style="{StaticResource TileIconStyle}" Glyph="&#xE8A5;" />
+                            <TextBlock Style="{StaticResource MetricStyle}" Text="{x:Bind ViewModel.TotalFiles, Mode=OneWay}" />
+                            <TextBlock Style="{StaticResource CaptionStyle}" Foreground="{ThemeResource DeskTextSecondaryBrush}"
+                                       Text="{x:Bind ViewModel.TotalSize, Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
+                    <Border x:Name="UnusedTile" Grid.Column="2" Style="{StaticResource TileStyle}" Background="{ThemeResource DeskTintAmberBrush}">
+                        <StackPanel Spacing="8">
+                            <FontIcon Style="{StaticResource TileIconStyle}" Glyph="&#xE823;" />
+                            <TextBlock Style="{StaticResource MetricStyle}" Text="{x:Bind ViewModel.OldFilesHeadline, Mode=OneWay}" />
+                            <TextBlock Style="{StaticResource CaptionStyle}" Foreground="{ThemeResource DeskTextSecondaryBrush}"
+                                       Text="Sitting unused for 6 months" />
+                        </StackPanel>
+                    </Border>
+                    <Border x:Name="CopiesTile" Grid.Column="3" Style="{StaticResource TileStyle}" Background="{ThemeResource DeskTintRoseBrush}">
+                        <StackPanel Spacing="8">
+                            <FontIcon Style="{StaticResource TileIconStyle}" Glyph="&#xE8C8;" />
+                            <TextBlock Style="{StaticResource MetricStyle}" Text="{x:Bind ViewModel.DuplicateHeadline, Mode=OneWay}" />
+                            <TextBlock Style="{StaticResource CaptionStyle}" Foreground="{ThemeResource DeskTextSecondaryBrush}"
+                                       Text="{x:Bind ViewModel.DuplicateTileCaption, Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
+                </Grid>
             </StackPanel>
 
-            <!--
-                Where the space went. This describes and never proposes: there is no cleanup
-                button here, because any cleanup still has to go through preview and approval.
-            -->
-            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasStorage, Mode=OneWay}">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Where your space is going" />
-                    <controls:HelpButton Topic="home.storage" />
-                </StackPanel>
+            <Grid x:Name="Columns" Grid.Row="2" ColumnDefinitions="*,*" ColumnSpacing="22" RowSpacing="22">
+                <StackPanel Spacing="22">
+                    <!--
+                        The health score. The number is never shown on its own: the parts that
+                        produced it, what each one measured, and how much each counted for are all on
+                        the same card, so a person can add it up instead of trusting it. Like every
+                        other reading here it describes and never proposes.
+                    -->
+                    <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasHealth, Mode=OneWay}">
+                        <StackPanel Spacing="16">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="How organized this looks" />
+                                <controls:HelpButton Topic="home.health" />
+                            </StackPanel>
+                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
+                                <StackPanel Spacing="2" VerticalAlignment="Top">
+                                    <TextBlock Style="{StaticResource DeskDisplayStyle}"
+                                               Foreground="{ThemeResource DeskAccentBrush}"
+                                               Text="{x:Bind ViewModel.HealthScore, Mode=OneWay}" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}" Text="out of 100" />
+                                </StackPanel>
+                                <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                    <TextBlock FontWeight="SemiBold" FontSize="15"
+                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                               Text="{x:Bind ViewModel.HealthBand, Mode=OneWay}" />
+                                    <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                               Text="{x:Bind ViewModel.HealthMessage, Mode=OneWay}" />
+                                    <!--
+                                        How much of the folder DeskAI could recognise, stated beside
+                                        the score rather than subtracted from it. Not knowing a file
+                                        type is this app's gap, and charging someone points for it
+                                        would blame them for our limits.
+                                    -->
+                                    <TextBlock Style="{StaticResource CaptionStyle}" Margin="0,4,0,0"
+                                               Visibility="{x:Bind ViewModel.HasHealthCoverage, Mode=OneWay}"
+                                               Text="{x:Bind ViewModel.HealthCoverage, Mode=OneWay}" />
+                                </StackPanel>
+                            </Grid>
 
-                <Border Style="{StaticResource CardStyle}">
-                    <StackPanel Spacing="12">
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
-                                      AutomationProperties.Name="Storage by kind of file">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="viewmodels:CategoryUsageViewModel">
-                                    <Grid ColumnDefinitions="150,*,Auto,90" ColumnSpacing="14" Margin="0,0,0,10">
-                                        <TextBlock VerticalAlignment="Center"
-                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                   Text="{x:Bind Category}" />
-                                        <ProgressBar Grid.Column="1" VerticalAlignment="Center" Height="6"
-                                                     Minimum="0" Maximum="1"
-                                                     Value="{x:Bind ShareOfTotal}" />
-                                        <TextBlock Grid.Column="2" VerticalAlignment="Center" MinWidth="70"
-                                                   TextAlignment="Right"
-                                                   Style="{StaticResource CaptionStyle}"
-                                                   Text="{x:Bind Files}" />
-                                        <TextBlock Grid.Column="3" VerticalAlignment="Center"
-                                                   TextAlignment="Right"
-                                                   Style="{StaticResource CaptionStyle}"
-                                                   Text="{x:Bind Size}" />
-                                    </Grid>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-
-                        <TextBlock Style="{StaticResource CaptionStyle}"
-                                   Visibility="{x:Bind ViewModel.HasLastChecked, Mode=OneWay}"
-                                   Text="{x:Bind ViewModel.LastChecked, Mode=OneWay}" />
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-
-            <!--
-                Possible duplicates, never confirmed ones. The wording stays hedged because
-                the evidence is a matching size, not a compared file. There is no remove
-                action here: any removal still goes through preview and approval.
-            -->
-            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasDuplicates, Mode=OneWay}">
-                <StackPanel Spacing="4">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Possible duplicates" />
-                        <controls:HelpButton Topic="home.duplicates" />
-                    </StackPanel>
-                    <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
-                               HorizontalAlignment="Left"
-                               Text="{x:Bind ViewModel.DuplicateDetail, Mode=OneWay}" />
-                </StackPanel>
-
-                <ItemsControl ItemsSource="{x:Bind ViewModel.DuplicateGroups, Mode=OneWay}"
-                              AutomationProperties.Name="Possible duplicate groups">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="viewmodels:DuplicateGroupViewModel">
-                            <Border Style="{StaticResource RowCardStyle}">
-                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                                    <StackPanel Spacing="3">
-                                        <TextBlock FontWeight="SemiBold"
-                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                   Text="{x:Bind Headline}" />
-                                        <TextBlock Style="{StaticResource CaptionStyle}"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Text="{x:Bind Locations}" />
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" MinWidth="110"
-                                               TextAlignment="Right"
-                                               Style="{StaticResource CaptionStyle}"
-                                               Foreground="{ThemeResource DeskCautionBrush}"
-                                               Text="{x:Bind Reclaimable}" />
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-
-                <!--
-                    Checking which are really copies. The button is plain: pressing it only opens
-                    a dialog saying exactly what would be read; Compare in that dialog is the yes.
-                    Results appear right here, and still offer no remove action.
-                -->
-                <StackPanel Spacing="10">
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <Button Content="Check if they're really copies"
-                                IsEnabled="{x:Bind ViewModel.CanCheckCopies, Mode=OneWay}"
-                                Click="OnCheckCopiesClick" />
-                        <ProgressRing Width="18" Height="18" IsActive="{x:Bind ViewModel.IsCheckingCopies, Mode=OneWay}" />
-                        <Button Content="Stop" Command="{x:Bind ViewModel.StopCopyCheckCommand}"
-                                Visibility="{x:Bind ViewModel.IsCheckingCopies, Mode=OneWay}" />
-                        <controls:HelpButton Topic="home.copyCheck" />
-                    </StackPanel>
-                    <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640" HorizontalAlignment="Left"
-                               TextWrapping="Wrap" Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                               Visibility="{x:Bind ViewModel.HasCopyCheckSummary, Mode=OneWay}"
-                               Text="{x:Bind ViewModel.CopyCheckSummary, Mode=OneWay}" />
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.CheckedCopyGroups}"
-                                  AutomationProperties.Name="What the copy check found">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="viewmodels:CheckedCopyGroupViewModel">
-                                <Border Style="{StaticResource RowCardStyle}">
-                                    <StackPanel Spacing="4">
-                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                                            <TextBlock FontWeight="SemiBold"
-                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                       Text="{x:Bind Headline}" />
-                                            <TextBlock Grid.Column="1" Style="{StaticResource CaptionStyle}"
-                                                       Text="{x:Bind Verdict}" />
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.HealthComponents, Mode=OneWay}"
+                                          AutomationProperties.Name="What the score is made of">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:HealthComponentViewModel">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16" Margin="0,0,0,14">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock FontWeight="SemiBold"
+                                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                           Text="{x:Bind Name}" />
+                                                <TextBlock Style="{StaticResource CaptionStyle}"
+                                                           Text="{x:Bind Explanation}" />
+                                                <TextBlock Style="{StaticResource CaptionStyle}"
+                                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                           Text="{x:Bind Measurement}" />
+                                                <ProgressBar Margin="0,4,0,0" Height="6" MaxWidth="360"
+                                                             HorizontalAlignment="Left"
+                                                             Minimum="0" Maximum="1"
+                                                             Value="{x:Bind PartScore}" />
+                                            </StackPanel>
+                                            <StackPanel Grid.Column="1" Spacing="2" MinWidth="110"
+                                                        VerticalAlignment="Top">
+                                                <TextBlock TextAlignment="Right"
+                                                           Style="{StaticResource CaptionStyle}"
+                                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                           Text="{x:Bind ScoreLabel}" />
+                                                <TextBlock TextAlignment="Right"
+                                                           Style="{StaticResource CaptionStyle}"
+                                                           Text="{x:Bind WeightLabel}" />
+                                            </StackPanel>
                                         </Grid>
-                                        <ItemsControl ItemsSource="{x:Bind Lines}">
-                                            <ItemsControl.ItemTemplate>
-                                                <DataTemplate x:DataType="x:String">
-                                                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
-                                                               Text="{x:Bind}" />
-                                                </DataTemplate>
-                                            </ItemsControl.ItemTemplate>
-                                        </ItemsControl>
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+
+                    <!--
+                        Where the space went. This describes and never proposes: there is no cleanup
+                        button here, because any cleanup still has to go through preview and approval.
+                    -->
+                    <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasStorage, Mode=OneWay}">
+                        <StackPanel Spacing="12">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Where your space is going" />
+                                <controls:HelpButton Topic="home.storage" />
+                            </StackPanel>
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.Categories, Mode=OneWay}"
+                                          AutomationProperties.Name="Storage by kind of file">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:CategoryUsageViewModel">
+                                        <Grid ColumnDefinitions="120,*,Auto,80" ColumnSpacing="12" Margin="0,0,0,10">
+                                            <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                       Text="{x:Bind Category}" />
+                                            <ProgressBar Grid.Column="1" VerticalAlignment="Center" Height="6"
+                                                         Minimum="0" Maximum="1"
+                                                         Value="{x:Bind ShareOfTotal}" />
+                                            <TextBlock Grid.Column="2" VerticalAlignment="Center" MinWidth="60"
+                                                       TextAlignment="Right"
+                                                       Style="{StaticResource CaptionStyle}"
+                                                       Text="{x:Bind Files}" />
+                                            <TextBlock Grid.Column="3" VerticalAlignment="Center"
+                                                       TextAlignment="Right"
+                                                       Style="{StaticResource CaptionStyle}"
+                                                       Text="{x:Bind Size}" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Style="{StaticResource CaptionStyle}"
+                                       Visibility="{x:Bind ViewModel.HasLastChecked, Mode=OneWay}"
+                                       Text="{x:Bind ViewModel.LastChecked, Mode=OneWay}" />
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
-            </StackPanel>
 
-            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.HasStorage, Mode=OneWay}">
-                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Largest files" />
-                <ItemsControl ItemsSource="{x:Bind ViewModel.LargestFiles, Mode=OneWay}"
-                              AutomationProperties.Name="Largest files">
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="viewmodels:LargestFileViewModel">
-                            <Border Style="{StaticResource RowCardStyle}">
-                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
-                                    <StackPanel Spacing="3">
-                                        <TextBlock FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
-                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                   Text="{x:Bind Name}" />
-                                        <TextBlock Style="{StaticResource CaptionStyle}"
-                                                   TextTrimming="CharacterEllipsis"
-                                                   Text="{x:Bind Location}" />
-                                    </StackPanel>
-                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" MinWidth="80"
-                                               TextAlignment="Right"
-                                               Style="{StaticResource CaptionStyle}"
-                                               Text="{x:Bind Size}" />
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </StackPanel>
+                <StackPanel x:Name="RightColumn" Grid.Column="1" Spacing="22">
+                    <!--
+                        Possible duplicates, never confirmed ones. The wording stays hedged because
+                        the evidence is a matching size, not a compared file. There is no remove
+                        action here: any removal still goes through preview and approval.
+                    -->
+                    <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasDuplicates, Mode=OneWay}">
+                        <StackPanel Spacing="12">
+                            <StackPanel Spacing="4">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Possible duplicates" />
+                                    <controls:HelpButton Topic="home.duplicates" />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                           Text="{x:Bind ViewModel.DuplicateDetail, Mode=OneWay}" />
+                            </StackPanel>
 
-            <StackPanel Spacing="12">
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.DuplicateGroups, Mode=OneWay}"
+                                          AutomationProperties.Name="Possible duplicate groups">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:DuplicateGroupViewModel">
+                                        <Border Style="{StaticResource RowCardStyle}">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock FontWeight="SemiBold"
+                                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                               Text="{x:Bind Headline}" />
+                                                    <TextBlock Style="{StaticResource CaptionStyle}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Text="{x:Bind Locations}" />
+                                                </StackPanel>
+                                                <Border Grid.Column="1" Style="{StaticResource CautionPillStyle}">
+                                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                                        <FontIcon FontSize="11" Glyph="&#xE8C8;"
+                                                                  Foreground="{ThemeResource DeskCautionBrush}" />
+                                                        <TextBlock Style="{StaticResource PillTextStyle}" Text="{x:Bind Reclaimable}" />
+                                                    </StackPanel>
+                                                </Border>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+
+                            <!--
+                                Checking which are really copies. The button is plain: pressing it only opens
+                                a dialog saying exactly what would be read; Compare in that dialog is the yes.
+                                Results appear right here, and still offer no remove action.
+                            -->
+                            <StackPanel Spacing="10">
+                                <StackPanel Orientation="Horizontal" Spacing="10">
+                                    <Button Content="Check if they're really copies"
+                                            IsEnabled="{x:Bind ViewModel.CanCheckCopies, Mode=OneWay}"
+                                            Click="OnCheckCopiesClick" />
+                                    <ProgressRing Width="18" Height="18" IsActive="{x:Bind ViewModel.IsCheckingCopies, Mode=OneWay}" />
+                                    <Button Content="Stop" Command="{x:Bind ViewModel.StopCopyCheckCommand}"
+                                            Visibility="{x:Bind ViewModel.IsCheckingCopies, Mode=OneWay}" />
+                                    <controls:HelpButton Topic="home.copyCheck" />
+                                </StackPanel>
+                                <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                           TextWrapping="Wrap" Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                           Visibility="{x:Bind ViewModel.HasCopyCheckSummary, Mode=OneWay}"
+                                           Text="{x:Bind ViewModel.CopyCheckSummary, Mode=OneWay}" />
+                                <ItemsControl ItemsSource="{x:Bind ViewModel.CheckedCopyGroups}"
+                                              AutomationProperties.Name="What the copy check found">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate x:DataType="viewmodels:CheckedCopyGroupViewModel">
+                                            <Border Style="{StaticResource RowCardStyle}">
+                                                <StackPanel Spacing="4">
+                                                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                                        <TextBlock FontWeight="SemiBold"
+                                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                                   Text="{x:Bind Headline}" />
+                                                        <TextBlock Grid.Column="1" Style="{StaticResource CaptionStyle}"
+                                                                   Text="{x:Bind Verdict}" />
+                                                    </Grid>
+                                                    <ItemsControl ItemsSource="{x:Bind Lines}">
+                                                        <ItemsControl.ItemTemplate>
+                                                            <DataTemplate x:DataType="x:String">
+                                                                <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                                                           Text="{x:Bind}" />
+                                                            </DataTemplate>
+                                                        </ItemsControl.ItemTemplate>
+                                                    </ItemsControl>
+                                                </StackPanel>
+                                            </Border>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </StackPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasStorage, Mode=OneWay}">
+                        <StackPanel Spacing="12">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Largest files" />
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.LargestFiles, Mode=OneWay}"
+                                          AutomationProperties.Name="Largest files">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:LargestFileViewModel">
+                                        <Border Style="{StaticResource RowCardStyle}">
+                                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="16">
+                                                <StackPanel Spacing="3">
+                                                    <TextBlock FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                               Text="{x:Bind Name}" />
+                                                    <TextBlock Style="{StaticResource CaptionStyle}"
+                                                               TextTrimming="CharacterEllipsis"
+                                                               Text="{x:Bind Location}" />
+                                                </StackPanel>
+                                                <TextBlock Grid.Column="1" VerticalAlignment="Center" MinWidth="70"
+                                                           TextAlignment="Right"
+                                                           Style="{StaticResource CaptionStyle}"
+                                                           Text="{x:Bind Size}" />
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <StackPanel Grid.Row="3" Spacing="12">
                 <TextBlock Style="{StaticResource SectionTitleStyle}" Text="What you can try now" />
 
                 <Border Style="{StaticResource CardStyle}">
@@ -361,7 +452,7 @@
                 The safety chain is spelled out because it genuinely is a sequence, which is
                 the only reason a stepped treatment is used anywhere in this design.
             -->
-            <Border Style="{StaticResource SoftCardStyle}">
+            <Border Grid.Row="4" Style="{StaticResource SoftCardStyle}">
                 <StackPanel Spacing="10">
                     <TextBlock FontWeight="SemiBold" FontSize="13"
                                Foreground="{ThemeResource DeskTextPrimaryBrush}"
@@ -372,6 +463,6 @@
                 </StackPanel>
             </Border>
 
-        </StackPanel>
+        </Grid>
     </ScrollViewer>
 </Page>

@@ -7,7 +7,7 @@
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
-        <StackPanel Margin="32,28,32,44" MaxWidth="880" HorizontalAlignment="Left" Spacing="22">
+        <StackPanel Margin="28,24,28,44" MaxWidth="920" HorizontalAlignment="Left" Spacing="22">
 
             <!-- One job, said once: what this page is for and the promise that goes with it. -->
             <StackPanel Spacing="6" MaxWidth="640" HorizontalAlignment="Left">
@@ -49,17 +49,35 @@
                 </StackPanel>
             </Expander>
 
-            <!-- Which folder. The list holds folders already connected; the button adds one. -->
+            <!--
+                Which folder. The list holds folders already connected; the button adds one. The
+                pill beside it states the folder's permission in a word, with the accent only when
+                tidying is allowed, because that is the one state that is a permission.
+            -->
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="12">
-                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
+                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
                         <ComboBox HorizontalAlignment="Stretch"
                                   PlaceholderText="Pick a folder"
                                   AutomationProperties.Name="Folder to tidy"
                                   Visibility="{x:Bind ViewModel.HasFolders, Mode=OneWay}"
                                   ItemsSource="{x:Bind ViewModel.Folders}"
                                   SelectedItem="{x:Bind ViewModel.SelectedFolder, Mode=TwoWay}" />
-                        <Button Grid.Column="1" Content="Choose another folder"
+                        <Border Grid.Column="1" Style="{StaticResource AccentPillStyle}"
+                                Visibility="{x:Bind ViewModel.CanStopTidying, Mode=OneWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
+                                <TextBlock Style="{StaticResource PillTextStyle}" Text="Allowed to tidy" />
+                            </StackPanel>
+                        </Border>
+                        <Border Grid.Column="1" Style="{StaticResource PillStyle}"
+                                Visibility="{x:Bind ViewModel.NeedsPermission, Mode=OneWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon FontSize="11" Glyph="&#xE8A5;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                                <TextBlock Style="{StaticResource PillTextStyle}" Text="Look only" />
+                            </StackPanel>
+                        </Border>
+                        <Button Grid.Column="2" Content="Choose another folder"
                                 Click="OnChooseFolderClick" />
                     </Grid>
                     <StackPanel Orientation="Horizontal" Spacing="12">
@@ -79,6 +97,60 @@
                                Foreground="{ThemeResource DeskTextPrimaryBrush}"
                                Visibility="{x:Bind ViewModel.HasReviewNote, Mode=OneWay}"
                                Text="{x:Bind ViewModel.ReviewNote, Mode=OneWay}" />
+
+                    <!--
+                        Tidy while I'm away (V0.9, ADR 0031): the standing yes for this folder. Turning it
+                        on opens a dialog naming the rules and the ceiling; off needs none. The line
+                        under it says the state, in the caution colour when DeskAI stopped it and why.
+                    -->
+                    <StackPanel Spacing="4" Margin="0,6,0,0" Visibility="{x:Bind ViewModel.HasAwaySwitch, Mode=OneWay}">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <ToggleSwitch x:Name="AwaySwitch"
+                                          Header="Tidy this folder while I'm away"
+                                          OnContent="On" OffContent="Off"
+                                          IsEnabled="{x:Bind ViewModel.CanUseAwaySwitch, Mode=OneWay}"
+                                          IsOn="{x:Bind ViewModel.IsAwayOn, Mode=OneWay}"
+                                          Toggled="OnAwayToggled"
+                                          AutomationProperties.Name="Tidy this folder while I'm away" />
+                            <controls:HelpButton VerticalAlignment="Top" Topic="organize.away" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                                   Visibility="{x:Bind ViewModel.AwayLineIsPlain, Mode=OneWay}"
+                                   Text="{x:Bind ViewModel.AwayLine, Mode=OneWay}" />
+                        <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap" MaxWidth="560" HorizontalAlignment="Left"
+                                   Foreground="{ThemeResource DeskCautionBrush}"
+                                   Visibility="{x:Bind ViewModel.AwayLineIsCaution, Mode=OneWay}"
+                                   Text="{x:Bind ViewModel.AwayLine, Mode=OneWay}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <!--
+                What DeskAI did while nobody was watching. First, above everything else, because
+                undo is the primary control for an unattended run: the Undo here is the same Undo
+                as any tidy, for the latest run. Lines carry counts and times, never a file name.
+            -->
+            <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasAwayRuns, Mode=OneWay}">
+                <StackPanel Spacing="10" MaxWidth="640" HorizontalAlignment="Left">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon FontSize="16" Glyph="&#xE823;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="While you were away" />
+                    </StackPanel>
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.AwayRuns}" AutomationProperties.Name="What DeskAI did while you were away">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap" Margin="0,0,0,6"
+                                           Foreground="{ThemeResource DeskTextPrimaryBrush}" Text="{x:Bind}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Undo the latest run" Click="OnUndoClick"
+                                Visibility="{x:Bind ViewModel.CanUndo, Mode=OneWay}" />
+                        <Button Content="Got it" Command="{x:Bind ViewModel.GotItCommand}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                               Text="Nothing was deleted. Undo puts back the files from the latest run if they have not changed since." />
                 </StackPanel>
             </Border>
 
@@ -204,9 +276,9 @@
                                         <TextBlock Grid.Column="2" VerticalAlignment="Center" FontSize="15" FontWeight="SemiBold"
                                                    Foreground="{ThemeResource DeskTextPrimaryBrush}"
                                                    Text="{x:Bind DisplayName}" />
-                                        <TextBlock Grid.Column="3" VerticalAlignment="Center"
-                                                   Style="{StaticResource CaptionStyle}"
-                                                   Text="{x:Bind CountText}" />
+                                        <Border Grid.Column="3" Style="{StaticResource PillStyle}">
+                                            <TextBlock Style="{StaticResource PillTextStyle}" Text="{x:Bind CountText}" />
+                                        </Border>
                                     </Grid>
                                     <!-- Only the "AI isn't sure" group has a note: its files wait to be ticked. -->
                                     <TextBlock Style="{StaticResource CaptionStyle}"

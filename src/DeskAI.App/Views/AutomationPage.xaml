@@ -7,7 +7,36 @@
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
-        <StackPanel Margin="32,24,32,40" MaxWidth="880" HorizontalAlignment="Left" Spacing="24">
+        <Grid Margin="28,24,28,40" MaxWidth="1240" HorizontalAlignment="Left" RowDefinitions="Auto,Auto" RowSpacing="22">
+
+            <!--
+                Two columns when the window is wide: the rules on the left, "Checking for you" on
+                the right where it is never scrolled past (ADR 0017). One column below 1100px, with
+                the checking card first for the same reason.
+            -->
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup>
+                    <VisualState x:Name="Wide">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="1100" />
+                        </VisualState.StateTriggers>
+                    </VisualState>
+                    <VisualState x:Name="Narrow">
+                        <VisualState.StateTriggers>
+                            <AdaptiveTrigger MinWindowWidth="0" />
+                        </VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="Columns.ColumnDefinitions" Value="*" />
+                            <Setter Target="Columns.RowDefinitions" Value="Auto,Auto" />
+                            <Setter Target="RightColumn.(Grid.Column)" Value="0" />
+                            <Setter Target="RightColumn.(Grid.Row)" Value="0" />
+                            <Setter Target="LeftColumn.(Grid.Row)" Value="1" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+
+            <StackPanel Spacing="16">
             <StackPanel Spacing="6">
                 <TextBlock Style="{StaticResource PageTitleStyle}" Text="Automatic tasks" />
                 <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
@@ -31,29 +60,46 @@
                                  Fill="{ThemeResource DeskAccentBrush}" />
                         <TextBlock FontWeight="SemiBold" FontSize="13"
                                    Foreground="{ThemeResource DeskAccentBrush}"
-                                   Text="DeskAI never moves a file on its own" />
+                                   Text="{x:Bind ViewModel.OwnPromise, Mode=OneWay}" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
                                HorizontalAlignment="Left"
-                               Text="DeskAI can look at your connected folders for you and tell you when your rules match something. Looking is all it does: it cannot move, rename, or delete anything from this page. Anything real still goes through the preview where you approve it first." />
+                               Text="{x:Bind ViewModel.OwnPromiseDetail, Mode=OneWay}" />
                 </StackPanel>
             </Border>
+            </StackPanel>
 
+            <Grid x:Name="Columns" Grid.Row="1" ColumnDefinitions="3*,2*" ColumnSpacing="22" RowSpacing="22">
+
+            <StackPanel x:Name="RightColumn" Grid.Column="1" Spacing="22">
             <!--
-                The automatic-check controls. Deliberately placed above the rules rather than
-                at the bottom: how often DeskAI looks at someone's folders is a bigger
+                The automatic-check controls. Deliberately in their own column beside the rules
+                rather than at the bottom: how often DeskAI looks at someone's folders is a bigger
                 decision than any individual rule, and it should not be something they scroll
-                past. See ADR 0017.
+                past. See ADR 0017. The pills say the state in a word: caution for paused.
             -->
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="14">
-                    <StackPanel Spacing="4">
+                    <StackPanel Spacing="8">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Checking for you" />
                             <controls:HelpButton Topic="automation.checking" />
                         </StackPanel>
-                        <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
-                                   HorizontalAlignment="Left"
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Border Style="{StaticResource CautionPillStyle}" Visibility="{x:Bind ViewModel.IsPaused, Mode=OneWay}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontSize="11" Glyph="&#xE769;" Foreground="{ThemeResource DeskCautionBrush}" />
+                                    <TextBlock Style="{StaticResource PillTextStyle}" Text="Paused" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource PillStyle}" Visibility="{x:Bind ViewModel.IsRunning, Mode=OneWay}">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontSize="11" Glyph="&#xE823;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                                    <TextBlock Style="{StaticResource PillTextStyle}" Text="{x:Bind ViewModel.SelectedFrequency.Label, Mode=OneWay}" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}"
                                    Text="{x:Bind ViewModel.AutomaticCheckSummary, Mode=OneWay}" />
                     </StackPanel>
 
@@ -96,11 +142,27 @@
                                    Text="Off unless you turn it on. With it off, DeskAI shows a quiet message inside the app instead." />
                     </StackPanel>
 
+                    <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.CanKeepRunning}">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <ToggleSwitch x:Name="KeepRunningSwitch"
+                                          Header="Keep checking after I close the window"
+                                          OnContent="On" OffContent="Off"
+                                          IsOn="{x:Bind ViewModel.KeepsRunningWhenClosed, Mode=OneWay}"
+                                          Toggled="OnKeepRunningToggled"
+                                          AutomationProperties.Name="Keep checking after I close the window" />
+                            <controls:HelpButton VerticalAlignment="Top" Topic="automation.keeprunning" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="560"
+                                   TextWrapping="Wrap"
+                                   HorizontalAlignment="Left"
+                                   Text="Off unless you turn it on. DeskAI will ask you first, and will never add itself to Windows startup." />
+                    </StackPanel>
+
                     <Expander Header="More details" HorizontalAlignment="Stretch">
                         <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="600"
                                    TextWrapping="Wrap"
                                    HorizontalAlignment="Left"
-                                   Text="Checking happens only while DeskAI is open. Closing it stops everything, and DeskAI does not add itself to Windows startup. A check re-reads the names, sizes, and dates of files in the folders you connected — it does not open them, and it does not move anything." />
+                                   Text="{x:Bind ViewModel.MoreDetails, Mode=OneWay}" />
                     </Expander>
 
                     <!--
@@ -150,7 +212,9 @@
                     </Expander>
                 </StackPanel>
             </Border>
+            </StackPanel>
 
+            <StackPanel x:Name="LeftColumn" Spacing="22">
             <StackPanel Spacing="12">
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
                     <StackPanel Spacing="4">
@@ -192,10 +256,19 @@
                                                    TextWrapping="Wrap"
                                                    Text="{x:Bind Sentence}" />
                                     </StackPanel>
-                                    <TextBlock Grid.Column="1" VerticalAlignment="Center" MinWidth="34"
-                                               TextAlignment="Right"
-                                               Style="{StaticResource CaptionStyle}"
-                                               Text="{x:Bind State}" />
+                                    <!-- On wears the accent because it is the person's confirmed choice; Off is plain. -->
+                                    <Border Grid.Column="1" Style="{StaticResource AccentPillStyle}" Visibility="{x:Bind IsEnabled}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
+                                            <TextBlock Style="{StaticResource PillTextStyle}" Text="{x:Bind State}" />
+                                        </StackPanel>
+                                    </Border>
+                                    <Border Grid.Column="1" Style="{StaticResource PillStyle}" Visibility="{x:Bind IsOff}">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <FontIcon FontSize="11" Glyph="&#xE711;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                                            <TextBlock Style="{StaticResource PillTextStyle}" Text="{x:Bind State}" />
+                                        </StackPanel>
+                                    </Border>
                                     <Button Grid.Column="2" VerticalAlignment="Center"
                                             Content="{x:Bind ToggleAction}"
                                             Command="{Binding ElementName=Root, Path=ViewModel.ToggleRuleCommand}"
@@ -324,7 +397,9 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
+            </StackPanel>
 
-        </StackPanel>
+            </Grid>
+        </Grid>
     </ScrollViewer>
 </Page>

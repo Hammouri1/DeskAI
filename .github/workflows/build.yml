@@ -1,0 +1,45 @@
+# Builds and tests DeskAI on every push and pull request. Nothing here touches a real folder:
+# every test generates its own files under the runner's temp directory.
+name: Build and test
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    env:
+      CI: "true"
+      DOTNET_NOLOGO: "true"
+      DOTNET_CLI_TELEMETRY_OPTOUT: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore (locked)
+        run: dotnet restore DeskAI.sln --configfile NuGet.Config --locked-mode
+
+      - name: Build Release
+        run: dotnet build DeskAI.sln -c Release --no-restore
+
+      - name: Test
+        run: dotnet test --solution DeskAI.sln -c Release --no-build --no-restore
+
+      - name: Format check
+        run: dotnet format DeskAI.sln --no-restore --verify-no-changes
+
+      # Fails the run if any package, including a transitive one, has a known vulnerability.
+      - name: Known-vulnerable dependencies
+        shell: pwsh
+        run: |
+          $report = dotnet list DeskAI.sln package --vulnerable --include-transitive
+          $report
+          if ($report -match 'has the following vulnerable packages') { exit 1 }

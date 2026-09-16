@@ -374,6 +374,45 @@ What is deliberately not built: removing copies, storing fingerprints, using con
 Next small task: the owner's manual checks for V0.6 and this feature, then decide on V0.5's checks after the window is closed or V0.7.
 ```
 
+## V0.7 My Workspace Learning Log — 2026-09-14
+
+```text
+Milestone / date: V0.7 first slice (pieces A + B), 2026-09-14.
+What became usable: A My workspace page. Starter packs (Student, Developer, Gaming, Productivity, Minimal) preview and then add saved searches and switched-off rules; saved searches can be pinned as tiles with honest counts and opened in Search.
+Main data flow: pack card → StarterPackService.PreviewAsync (reads searches and rules, marks skips, saves nothing) → dialog → Add → AddAsync (reads again, saves searches with pins, rules via StarterPackRule.ToRule switched off) → outcome line on the card. Tile: saved search (is_pinned) → PinnedSearchService.CountAsync → FileSearchService → PinnedCount → wording.
+Classes/interfaces I can explain: StarterPack, StarterPackCatalog, StarterPackRule.ToRule, StarterPackService, StarterPackPreview/Outcome, PinnedSearchService, PinnedCount, SearchRequest, WorkspaceViewModel, WorkspacePage.
+New concept and my own explanation: A preview is not a promise. The dialog can stay open while something changes, so Add rebuilds the plan from what is stored now; anything new since is skipped, never overwritten.
+New concept and my own explanation (2): Safe by default at the one choke point. Every pack rule becomes real in ToRule, which switches it off — so no caller can forget to, and a mutation test (switching it on) makes a page test fail.
+New concept and my own explanation (3): Additive schema migration. Adding a column with a default leaves old rows valid; checking pragma_table_info first makes the migration safe to run twice.
+Hardest thing to get right: Wording a number honestly. "0 files" looks like a measurement even when nothing was searched, so a count, "no folders", "not understood", and "stopped at the limit" are four different results rather than one integer.
+Security cases tested: preview saves nothing; clashes skipped whatever the capitals; re-read before add; limits of 50 searches and 8 pins; rules Off end to end (Tidy and check unchanged until turned on, no file moved); neither service can be given an executor, journal, planner, scanner, reader, credential vault, or AI provider.
+Build/test evidence: Release build with zero warnings; 1006 tests pass, none skipped; dotnet format clean.
+AI containment check: nothing in this slice touches DeskAI.AI or sends anything; the Workspace services take no AI or credential type, and a test fails if they do.
+Trade-off/ADR: ADR 0026 — one-time starter packs, not a remembered profile; fixed catalog in code; no Custom card.
+What is deliberately not built: folder templates, DeskAI themes, desktop and wallpaper changes, removing a pack as a unit, editing packs, pins on Home.
+Next small task: the owner's manual check of My workspace (MANUAL-TESTING.md), then choose the next V0.7 piece.
+```
+
+## Redesign, V0.8, V0.9, V1.0 Learning Log — 2026-09-16
+
+```text
+Milestone / date: The command-center redesign, V0.8 Distribution, V0.9 Tidy while I'm away, V1.0 Stable release, all on 2026-09-16.
+What became usable: A grouped menu with a top bar (Find a file, AI pill) and a dark switch; Home as a hero plus four count tiles; pills for every state. Back up and restore of rules and saved searches; Start fresh. GitHub Actions that build and test every push and release a zip per tag. A per-folder "Tidy while I'm away" switch under a 25-file ceiling with undo first. License, contribution guide, security policy, user guide, release notes.
+Main data flow (away tidy): AutomaticCheckTimer → AutomaticCheckCoordinator.RunAsync → check recorded → IAwayTidyRunner.RunAllAsync → per folder: AwayTidyApproval.Covers(rules) → TidySuggestionService.PreviewAsync (no AI, no keep-both) → rule-placed, no clash, take 25 → TidyRunService.TidyAsync (Approval over exact operations → FolderTidyExecutor → journal) → AwayTidyRun row → Tidied event → ShellViewModel notice → Organize's "While you were away" card → the same Undo as any tidy.
+Classes/interfaces I can explain: ShellViewModel.Pages/AiState/IsDark, SearchRequest.AskPhrase, BackupService (Parse/Preview/Restore), FreshStartService, IUserFileStore/UserFileStore, AwayTidyApproval, IAwayTidyRepository/SqliteAwayTidyRepository, AwayTidyService, IAwayTidyRunner, AwayTidyWords, BackgroundCheckingChoice.Ask(settings, awayFolders).
+New concept and my own explanation: A standing approval is an approval of an outcome class, not a list. You cannot approve files that do not exist yet, so you approve "what these rules, as worded now, place in this folder" and make everything else — a changed rule, a clash, a refused file — invalidate it.
+New concept (2): A promise that must never outlive its truth. Every "nothing moves by itself" sentence reads one number (folders with the mode on) from one place (AwayTidyWords), so turning the mode on cannot leave a page lying.
+New concept (3): Fail closed on stored data. A backup row or an away-tidy row that cannot be parsed is treated as no approval and no rule, never repaired into one.
+New concept (4): A one-implementation interface as a containment seam. The coordinator takes IAwayTidyRunner, so Core tests can hand it a no-op, and a test asserts AwayTidyService is the only implementation, so the seam cannot quietly grow a second path.
+Hardest thing to get right: Making the unattended run reuse the hand tidy unchanged. The executor, approval, journal, per-file re-checks, recovery, and undo all had to stay the same code; the new service only decides whether a run may be built and how big it may be.
+Security cases tested: type-placed, AI-placed, subfolder, and clashing files never move unattended; 25 per run; rule add/edit/toggle/remove, withdrawn permission, and a busy file each stop the mode with the reason; a hostile backup rule is skipped; a backup holds no folder, key, or path; Start fresh leaves every file; the check service holds no executor; the runner holds no AI, reader, fingerprinter, credential, or file store.
+Build/test evidence: Release build; 1192 tests pass, none skipped; dotnet format clean (the App's final copy step needs the owner's running DeskAI closed).
+AI containment check: nothing new touches DeskAI.AI. AwayTidyService, BackupService, and FreshStartService take no AI type (tests assert it); the away preview is built with an empty advice dictionary; the AI pill only reads saved settings and opens Privacy and AI.
+Trade-off/ADR: ADR 0030 (zip release, no self-update, no add-ons yet), ADR 0031 (a standing approval with a hard ceiling; stop on anything unexpected rather than continue).
+What is deliberately not built: add-ons, code signing, localization beyond English, keep-both unattended, a second unattended executor, shortcut/icon suggestions, image generation.
+Next small task: the owner walks the manual lists (redesign, V0.8, V0.9), then pushes v1.0.0.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

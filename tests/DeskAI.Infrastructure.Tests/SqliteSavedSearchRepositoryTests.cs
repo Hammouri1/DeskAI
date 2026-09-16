@@ -108,6 +108,61 @@ public sealed class SqliteSavedSearchRepositoryTests
         Assert.Empty(await fixture.Repository.ListAsync(TestContext.Current.CancellationToken));
     }
 
+    [Fact]
+    public async Task SaveAsync_StoresWhetherASearchIsPinned()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        await fixture.Repository.SaveAsync(
+            SavedSearch.Create(Guid.NewGuid(), "Pinned", "photos", Moment, isPinned: true),
+            TestContext.Current.CancellationToken);
+        await fixture.Repository.SaveAsync(
+            SavedSearch.Create(Guid.NewGuid(), "Plain", "videos", Moment),
+            TestContext.Current.CancellationToken);
+
+        var stored = await fixture.Repository.ListAsync(TestContext.Current.CancellationToken);
+
+        Assert.True(stored.Single(item => item.Name == "Pinned").IsPinned);
+        Assert.False(stored.Single(item => item.Name == "Plain").IsPinned);
+    }
+
+    [Fact]
+    public async Task SetPinnedAsync_PinsAndUnpins()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var id = Guid.NewGuid();
+        await fixture.Repository.SaveAsync(
+            SavedSearch.Create(id, "Photos", "photos", Moment),
+            TestContext.Current.CancellationToken);
+
+        await fixture.Repository.SetPinnedAsync(id, true, TestContext.Current.CancellationToken);
+        Assert.True(Assert.Single(await fixture.Repository.ListAsync(TestContext.Current.CancellationToken)).IsPinned);
+
+        await fixture.Repository.SetPinnedAsync(id, false, TestContext.Current.CancellationToken);
+        Assert.False(Assert.Single(await fixture.Repository.ListAsync(TestContext.Current.CancellationToken)).IsPinned);
+    }
+
+    /// <summary>
+    /// Renaming or rewording a pinned search must not quietly unpin it, and saving an unpinned
+    /// copy over a pinned one must not either: only <c>SetPinnedAsync</c> changes the pin.
+    /// </summary>
+    [Fact]
+    public async Task SaveAsync_UpdatingASearchKeepsItsPin()
+    {
+        await using var fixture = await Fixture.CreateAsync();
+        var id = Guid.NewGuid();
+        await fixture.Repository.SaveAsync(
+            SavedSearch.Create(id, "Photos", "photos", Moment, isPinned: true),
+            TestContext.Current.CancellationToken);
+
+        await fixture.Repository.SaveAsync(
+            SavedSearch.Create(id, "Pictures", "photos over 10 mb", Moment),
+            TestContext.Current.CancellationToken);
+
+        var stored = Assert.Single(await fixture.Repository.ListAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("Pictures", stored.Name);
+        Assert.True(stored.IsPinned);
+    }
+
     private sealed class Fixture : IAsyncDisposable
     {
         private readonly TemporaryDirectory _sandbox;

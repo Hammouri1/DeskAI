@@ -60,6 +60,10 @@ Initial executor commands are deliberately small:
 
 Later actions such as tagging or sending an item to the Recycle Bin require their own typed command and policy. There is no command for raw shell, PowerShell, CMD, registry, arbitrary process launch, installation, privilege elevation, downloading executables, permission modification, or permanent deletion.
 
+Since V0.7 piece E (ADR 0029, review `docs/security/2026-09-16-desktop-and-wallpaper-review.md`) DeskAI can change exactly one Windows setting: the desktop wallpaper picture, through `SystemParametersInfo`, only from the My workspace button after a dialog, only to a plain local picture file the person picked in the Windows file dialog (never one DeskAI found, made, or downloaded), with the previous wallpaper written down before the change so it can be put back. `IWallpaperSetter` has two calls and is held only by `WallpaperService`; reflection tests keep it out of anything that runs on its own, and page tests replace it so no test can touch the real wallpaper. No other Windows setting, no registry write of DeskAI's own, no shortcut or icon. "Tidy my Desktop" adds no new reach: it connects the Desktop folder through the known-folder API exactly as the picker would and hands it to the ordinary Tidy flow.
+
+Since V0.7 piece C (ADR 0027, review `docs/security/2026-09-14-folder-templates-review.md`) folder templates on My workspace use the first of these commands on their own: a plan of nothing but create-directory operations, one level inside a connected folder, previewed by name, approved as exactly those operations, and run by `FolderTidyExecutor` under the same tidy permission and the same per-operation re-checks as a tidy. Names come from a compiled catalog or from names the person typed; typed names are an untrusted input, checked first by `FolderNameCheck` (single plain name, no separator, drive, traversal, device name, or trailing dot; at most 8) and again by the path policy before a plan exists, and a third time by the executor. No AI takes part. Undo removes only recorded, still-empty folders. A journal record with no moves settles by the folders it made, so an interrupted template run is put to the person as folders and can be undone.
+
 ## Filesystem Rules
 
 ### Explicit roots
@@ -173,6 +177,42 @@ All mutation tests create a unique temporary sandbox and verify its canonical pa
 A focused review is required before introducing file mutation, Recycle Bin support, content extraction, cloud transmission, background watchers/schedulers, running after the window is closed, notification-area or other desktop-shell presence, plugins, update/install behavior, or desktop-shell customization. Each gate needs threat scenarios, negative tests, user-facing disclosures, and rollback/recovery behavior.
 
 DeskAI never registers itself to start with Windows: no Run key, no Startup folder, no scheduled task, and no `StartupTask`. It runs when someone opens it and no sooner. This holds in every mode, including running after the window is closed, and is asserted by a test rather than left to intent, because it is a promise the app makes to people in words. Any control that can be reached without a window on screen may stop DeskAI doing something; none may start it. A surface reachable with no window — a notification-area menu, a notification, a hotkey — carries at most a count and a state, never a file name, folder name, or path.
+
+## Tidying While Nobody Is Watching
+
+Since V0.9 (ADR 0031, review `docs/security/2026-09-16-tidy-while-away-review.md`) DeskAI can move
+a file on its own, and only under all of these at once: the folder is connected and may be
+tidied; the person turned on "Tidy this folder while I'm away" for it after a dialog naming the
+rules as worded and the ceiling; the file is a loose top-level file that one of those rules,
+unchanged since the yes, places; there is no same-name clash; and fewer than 25 files have moved
+in this run. A run happens only after an automatic check, through `TidyRunService` and the one
+executor with every per-file re-check, journaled and undoable. A rule change, a withdrawn
+permission, a clash, a refused file, or a folder that cannot be looked at turns the mode off
+with the reason shown on Organize. Never a type-placed or AI-placed file, never a subfolder's
+file, never a move out of the folder, never a numbered copy, never a delete. The check service
+holds no executor; `IAwayTidyRunner` is implemented by `AwayTidyService` alone, which holds no AI,
+reader, fingerprinter, credential, or file store. Every "nothing moves by itself" sentence in the
+app follows the mode.
+
+## Backup Files and Start Fresh
+
+Since V0.8 (ADR 0030, review `docs/security/2026-09-16-v0.8-privacy-review.md`) DeskAI can write
+one file a person asked for — a backup of rules and saved searches — at a path they picked in
+the Windows save dialog, and read one back from the open dialog. The file holds no folder, path,
+permission, AI setting, or key. Reading is bounded and strict; every rule in it is rebuilt through
+the same `RuleCodec` and factory checks a typed rule passes, a rule that fails is skipped with a
+reason, a name already in use is never replaced, and a restored rule always arrives switched off,
+so restoring cannot by itself move a file. Start fresh erases DeskAI's memory (folders, index,
+journal, rules, searches, AI choice, every `DeskAI/*` credential, history, settings) and touches
+no file on disk. Neither service holds a scanner, reader, executor, journal, or wallpaper setter.
+
+## Distribution
+
+DeskAI is published as an unsigned self-contained zip on GitHub Releases, built by GitHub
+Actions from a tag, with a CycloneDX bill of materials and a known-vulnerability check that
+fails the build. There is no installer, no registry write, no startup entry, and no self-update:
+DeskAI never contacts a DeskAI server or GitHub from inside the app. See ADR 0030 and
+`docs/INSTALL.md`.
 
 ## Reporting Vulnerabilities
 

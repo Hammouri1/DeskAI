@@ -140,6 +140,49 @@ internal sealed class RecordingAiTransport : IAiHttpTransport
     }
 }
 
+/// <summary>
+/// Stands in for Windows' wallpaper: remembers what it was set to. The real one is never in a
+/// test, so no test can change the developer's wallpaper.
+/// </summary>
+internal sealed class RecordingWallpaperSetter : IWallpaperSetter
+{
+    /// <summary>What Windows "shows": a path, an empty string for a plain colour, or null when it will not say.</summary>
+    public string? Current { get; set; } = string.Empty;
+
+    /// <summary>Every path it was asked to set, in order.</summary>
+    public List<string> Sets { get; } = [];
+
+    /// <summary>When set, the next Set refuses with this reason, as Windows would under a policy.</summary>
+    public string? RefuseWith { get; set; }
+
+    public string? ReadCurrent() => Current;
+
+    public void Set(string imagePath)
+    {
+        if (RefuseWith is { } reason)
+        {
+            throw new InvalidOperationException(reason);
+        }
+
+        Sets.Add(imagePath);
+        Current = imagePath;
+    }
+}
+
+/// <summary>The person's "Desktop", inside the test's own temp folder. Never the real one.</summary>
+internal sealed class SandboxKnownFolders(string desktop) : IKnownFolders
+{
+    public string? Desktop { get; set; } = desktop;
+}
+
+/// <summary>Stands in for the window painter: remembers every look it was asked to apply.</summary>
+internal sealed class RecordingAppearanceApplier : IAppearanceApplier
+{
+    public List<DeskAI.Core.Appearance.AppearanceSettings> Applied { get; } = [];
+
+    public void Apply(DeskAI.Core.Appearance.AppearanceSettings settings) => Applied.Add(settings);
+}
+
 internal sealed class RecordingNotifier : IFindingNotifier
 {
     public List<string> Messages { get; } = [];
@@ -147,4 +190,46 @@ internal sealed class RecordingNotifier : IFindingNotifier
     public bool IsAvailable => true;
 
     public void Notify(string title, string message) => Messages.Add(message);
+}
+
+/// <summary>The icon near the clock, as a test can see it.</summary>
+internal sealed class RecordingPresence : IBackgroundPresence
+{
+    /// <summary>Every tooltip it has been given, in order. The last is what it says now.</summary>
+    public List<string> Tooltips { get; } = [];
+
+    /// <summary>Whether its menu showed checking as paused, alongside each tooltip.</summary>
+    public List<bool> PausedStates { get; } = [];
+
+    public bool IsShowing { get; private set; }
+
+    public void Show(string tooltip, bool isPaused)
+    {
+        IsShowing = true;
+        Tooltips.Add(tooltip);
+        PausedStates.Add(isPaused);
+    }
+
+    public void Update(string tooltip, bool isPaused)
+    {
+        if (IsShowing)
+        {
+            Tooltips.Add(tooltip);
+            PausedStates.Add(isPaused);
+        }
+    }
+
+    public void Hide() => IsShowing = false;
+
+    public event EventHandler? OpenRequested;
+
+    public event EventHandler? PauseToggleRequested;
+
+    public event EventHandler? QuitRequested;
+
+    public void RaiseOpen() => OpenRequested?.Invoke(this, EventArgs.Empty);
+
+    public void RaisePauseToggle() => PauseToggleRequested?.Invoke(this, EventArgs.Empty);
+
+    public void RaiseQuit() => QuitRequested?.Invoke(this, EventArgs.Empty);
 }

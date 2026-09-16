@@ -50,6 +50,17 @@ internal sealed class TestApp : IAsyncDisposable
 
     public RecordingNotifier Notifier => (RecordingNotifier)_services.GetRequiredService<IFindingNotifier>();
 
+    public RecordingPresence Presence => (RecordingPresence)_services.GetRequiredService<IBackgroundPresence>();
+
+    public RecordingAppearanceApplier Painter => (RecordingAppearanceApplier)_services.GetRequiredService<IAppearanceApplier>();
+
+    public RecordingWallpaperSetter Wallpaper => (RecordingWallpaperSetter)_services.GetRequiredService<IWallpaperSetter>();
+
+    public SandboxKnownFolders KnownFolders => (SandboxKnownFolders)_services.GetRequiredService<IKnownFolders>();
+
+    /// <summary>The generated folder standing in for the person's Desktop. Created on first use.</summary>
+    public string DesktopPath => System.IO.Path.Combine(Sandbox, "Desktop");
+
     public T Get<T>() where T : notnull => _services.GetRequiredService<T>();
 
     public static Task<TestApp> StartAsync() => StartAsync(new TemporaryDirectory(), stoppable: false);
@@ -85,6 +96,19 @@ internal sealed class TestApp : IAsyncDisposable
         Replace<ICredentialVault>(services, new InMemoryCredentialVault());
         Replace<IAiHttpTransport>(services, new RecordingAiTransport());
         Replace<IFindingNotifier>(services, new RecordingNotifier());
+        Replace<IBackgroundPresence>(services, new RecordingPresence());
+        Replace<IAppearanceApplier>(services, new RecordingAppearanceApplier());
+
+        // The real wallpaper and the real Desktop must be unreachable from any test. Both
+        // are replaced, and the Desktop is asserted to be inside this test's own folder.
+        Replace<IWallpaperSetter>(services, new RecordingWallpaperSetter());
+        var desktop = System.IO.Path.Combine(directory.Path, "folders", "Desktop");
+        if (!desktop.StartsWith(directory.Path, StringComparison.OrdinalIgnoreCase))
+        {
+            throw new InvalidOperationException("A test Desktop must live inside the test's own folder.");
+        }
+
+        Replace<IKnownFolders>(services, new SandboxKnownFolders(desktop));
         if (stoppable)
         {
             Replace<IOperationJournal>(services, new StoppingJournal(

@@ -27,6 +27,35 @@ public sealed class HomeAndShellTests
     }
 
     [Fact]
+    public async Task Home_greets_by_the_time_of_day_and_the_four_tiles_read_the_remembered_numbers()
+    {
+        Assert.Equal("Good morning", DashboardViewModel.GreetingFor(new DateTimeOffset(2026, 9, 16, 7, 30, 0, TimeSpan.Zero)));
+        Assert.Equal("Good afternoon", DashboardViewModel.GreetingFor(new DateTimeOffset(2026, 9, 16, 12, 0, 0, TimeSpan.Zero)));
+        Assert.Equal("Good evening", DashboardViewModel.GreetingFor(new DateTimeOffset(2026, 9, 16, 18, 0, 0, TimeSpan.Zero)));
+
+        await using var app = await TestApp.StartAsync();
+        var home = app.Get<DashboardViewModel>();
+        await home.InitializeAsync();
+        Assert.Contains(home.Greeting, new[] { "Good morning", "Good afternoon", "Good evening" });
+        Assert.Equal("0", home.FoldersConnected);
+        Assert.Equal("0", home.TotalFiles);
+        Assert.Equal("0", home.OldFilesHeadline);
+        Assert.Equal("0", home.DuplicateHeadline);
+        Assert.Equal("Connect a folder to look", home.DuplicateTileCaption);
+
+        var folder = app.MakeFolder("Coursework", "notes.txt");
+        app.Directory.CreateDummyFile(Path.Combine("folders", "Coursework", "report.pdf"), new string('a', 6000));
+        app.Directory.CreateDummyFile(Path.Combine("folders", "Coursework", "report copy.pdf"), new string('b', 6000));
+        await ConnectAsync(app, folder);
+        await home.InitializeAsync();
+
+        Assert.Equal("1", home.FoldersConnected);
+        Assert.Equal("3", home.TotalFiles);
+        Assert.Equal("2", home.DuplicateHeadline);
+        Assert.Equal("Same size, not compared yet", home.DuplicateTileCaption);
+    }
+
+    [Fact]
     public async Task After_connecting_Home_shows_totals_categories_and_largest_files()
     {
         await using var app = await TestApp.StartAsync();

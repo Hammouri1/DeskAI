@@ -27,8 +27,8 @@ public sealed class SqliteSavedSearchRepository(IOptions<DatabaseOptions> option
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            INSERT INTO saved_searches(saved_search_id, name, phrase, created_at_utc)
-            VALUES ($id, $name, $phrase, $createdAtUtc)
+            INSERT INTO saved_searches(saved_search_id, name, phrase, created_at_utc, is_pinned)
+            VALUES ($id, $name, $phrase, $createdAtUtc, $isPinned)
             ON CONFLICT(saved_search_id) DO UPDATE SET
                 name = excluded.name,
                 phrase = excluded.phrase;
@@ -37,6 +37,7 @@ public sealed class SqliteSavedSearchRepository(IOptions<DatabaseOptions> option
         command.Parameters.AddWithValue("$name", collection.Name);
         command.Parameters.AddWithValue("$phrase", collection.Phrase);
         command.Parameters.AddWithValue("$createdAtUtc", collection.CreatedAtUtc.ToString("O"));
+        command.Parameters.AddWithValue("$isPinned", collection.IsPinned ? 1 : 0);
 
         try
         {
@@ -57,7 +58,7 @@ public sealed class SqliteSavedSearchRepository(IOptions<DatabaseOptions> option
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT saved_search_id, name, phrase, created_at_utc
+            SELECT saved_search_id, name, phrase, created_at_utc, is_pinned
             FROM saved_searches
             ORDER BY created_at_utc DESC;
             """;
@@ -73,10 +74,21 @@ public sealed class SqliteSavedSearchRepository(IOptions<DatabaseOptions> option
                 DateTimeOffset.Parse(
                     reader.GetString(3),
                     CultureInfo.InvariantCulture,
-                    DateTimeStyles.RoundtripKind)));
+                    DateTimeStyles.RoundtripKind),
+                reader.GetInt32(4) != 0));
         }
 
         return collections.AsReadOnly();
+    }
+
+    public async Task SetPinnedAsync(Guid collectionId, bool isPinned, CancellationToken cancellationToken = default)
+    {
+        await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "UPDATE saved_searches SET is_pinned = $isPinned WHERE saved_search_id = $id;";
+        command.Parameters.AddWithValue("$isPinned", isPinned ? 1 : 0);
+        command.Parameters.AddWithValue("$id", collectionId.ToString("D"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 
     public async Task RemoveAsync(Guid collectionId, CancellationToken cancellationToken = default)

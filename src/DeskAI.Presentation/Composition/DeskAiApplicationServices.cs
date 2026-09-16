@@ -1,11 +1,16 @@
 using DeskAI.AI;
 using DeskAI.AI.Transport;
+using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Ai;
+using DeskAI.Core.Backup;
+using DeskAI.Core.Desktop;
 using DeskAI.Core.Rules;
 using DeskAI.Core.Search;
+using DeskAI.Core.Templates;
 using DeskAI.Core.Tidy;
+using DeskAI.Core.Workspace;
 using DeskAI.Infrastructure.Content;
 using DeskAI.Infrastructure.DependencyInjection;
 using DeskAI.Infrastructure.Execution;
@@ -51,6 +56,10 @@ public static class DeskAiApplicationServices
         // change a file, and it sends only after the page has shown what would be sent.
         services.AddSingleton<TidyAiService>();
         services.AddSingleton<TidyRunService>();
+        // Tidy while I'm away (V0.9, ADR 0031): the one type reachable from an automatic check that
+        // can move a file, under a standing approval with a hard ceiling. A test names it as such.
+        services.AddSingleton<AwayTidyService>();
+        services.AddSingleton<IAwayTidyRunner>(provider => provider.GetRequiredService<AwayTidyService>());
         services.AddSingleton<FileSearchService>();
         services.AddSingleton<ConnectedFolderService>();
         // The only service that opens a file. It refuses any folder that was not
@@ -72,12 +81,36 @@ public static class DeskAiApplicationServices
         services.AddHostedService<AutomaticCheckTimer>();
         // Which folder Organize opens on after "Review in Organize". A folder ID, nothing more.
         services.AddSingleton<OrganizeRequest>();
+        // My workspace. Both create or read saved searches and rules only; neither can reach a
+        // file, and tests fail if either is given anything that can.
+        services.AddSingleton<StarterPackService>();
+        services.AddSingleton<PinnedSearchService>();
+        // Folder templates. The one My workspace service that can change a folder: it makes
+        // empty folders through the same executor Tidy uses, with the tidy permission, and
+        // nothing else. See ADR 0027.
+        services.AddSingleton<FolderTemplateService>();
+        // The wallpaper: DeskAI's one change to a Windows setting, only from the page's button.
+        // It holds the setter, the picture inspector, and the settings store, and nothing else.
+        services.AddSingleton<WallpaperService>();
+        // Which saved search Search runs after "Open in Search". A saved-search ID, nothing more.
+        services.AddSingleton<SearchRequest>();
+        // Back up and restore, and Start fresh (V0.8). Neither holds anything that can reach a
+        // file on disk beyond the one backup file the person chose; a test asserts it.
+        services.AddSingleton<BackupService>();
+        services.AddSingleton<FreshStartService>();
+        // A DeskAI with no notification area is a legitimate DeskAI: it simply never offers
+        // to keep running with no window. The Windows one is registered by the app.
+        services.AddSingleton<IBackgroundPresence, NoBackgroundPresence>();
+        // Paints DeskAI's own window in the chosen look. The Windows one is registered by the app.
+        services.AddSingleton<IAppearanceApplier, NoAppearanceApplier>();
+        services.AddSingleton<BackgroundPresenceController>();
         services.AddTransient<ShellViewModel>();
         services.AddTransient<TidyViewModel>();
         services.AddTransient<SettingsViewModel>();
         services.AddTransient<SearchViewModel>();
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<AutomationViewModel>();
+        services.AddTransient<WorkspaceViewModel>();
         return services;
     }
 }

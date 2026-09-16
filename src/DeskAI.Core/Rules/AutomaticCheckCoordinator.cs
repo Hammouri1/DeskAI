@@ -25,11 +25,19 @@ namespace DeskAI.Core.Rules;
 public sealed class AutomaticCheckCoordinator(
     AutomaticCheckService checks,
     IAutomaticCheckHistoryRepository history,
+    Tidy.IAwayTidyRunner away,
     IClock clock) : IDisposable
 {
     private readonly AutomaticCheckService _checks = checks;
     private readonly IAutomaticCheckHistoryRepository _history = history;
+    private readonly Tidy.IAwayTidyRunner _away = away;
     private readonly IClock _clock = clock;
+
+    /// <summary>
+    /// Raised after a check when tidying while away moved something, or stopped and needs a
+    /// person. Carries counts and one folder name for the notice; never a file name.
+    /// </summary>
+    public event EventHandler<Tidy.AwayTidySummary>? Tidied;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private CancellationTokenSource? _running;
     private bool _disposed;
@@ -89,6 +97,15 @@ public sealed class AutomaticCheckCoordinator(
                 Latest = result;
                 await RecordAsync(startedAt, AutomaticCheckOutcome.Completed, result).ConfigureAwait(false);
                 Checked?.Invoke(this, result);
+
+                // Tidying while away rides on the check that just refreshed the folders (ADR 0031).
+                // It runs only for folders with the standing yes, and only after the check itself
+                // has been recorded, so a problem here can never hide a check that happened.
+                var tidied = await _away.RunAllAsync(linked.Token).ConfigureAwait(false);
+                if (tidied.MovedAnything || tidied.FoldersStopped > 0)
+                {
+                    Tidied?.Invoke(this, tidied);
+                }
             }
 
             return result;
