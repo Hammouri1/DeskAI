@@ -237,12 +237,20 @@ public sealed class FolderTidyExecutor : IFolderTidyExecutor, IDisposable
 
     public void Dispose() => _oneAtATime.Dispose();
 
-    /// <summary>What a checked record did: nothing moved, some of it, or all of it.</summary>
+    /// <summary>What a checked record did: nothing, some of it, or all of it.</summary>
+    /// <remarks>
+    /// A tidy is measured by the files it moved: a folder made for a file that never arrived is
+    /// nothing worth undoing. A run that set out only to make folders (a folder template) has no
+    /// moves to measure, so it is measured by the folders it made instead. Without that, such a
+    /// record settled as Failed and the folders it had made could never be undone.
+    /// </remarks>
     private static ExecutionTransactionState Settle(ExecutionJournalEntry record)
     {
-        var moved = record.Operations.Count(operation =>
-            operation.Kind != PlanOperationKind.CreateDirectory && operation.State == JournalOperationState.Completed);
-        if (moved == 0)
+        var onlyFolders = record.Operations.All(operation => operation.Kind == PlanOperationKind.CreateDirectory);
+        var done = record.Operations.Count(operation =>
+            (onlyFolders || operation.Kind != PlanOperationKind.CreateDirectory) &&
+            operation.State == JournalOperationState.Completed);
+        if (done == 0)
         {
             return ExecutionTransactionState.Failed;
         }

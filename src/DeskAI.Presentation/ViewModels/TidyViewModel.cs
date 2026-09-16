@@ -244,6 +244,8 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     public string InterruptedTitle => _interrupted switch
     {
         null => string.Empty,
+        { IsFolders: true, IsUndo: true } undo => $"Your last undo was interrupted: {undo.MadeFolders.Count} of {FolderCount(undo.TotalFolders)} removed.",
+        { IsFolders: true } folders => $"DeskAI stopped while making folders: {folders.MadeFolders.Count} of {FolderCount(folders.TotalFolders)} made.",
         { IsUndo: true } undo => $"Your last undo was interrupted: {undo.Moved} of {Files(undo.Total)} went back.",
         { Moved: 0 } => "Your last tidy was interrupted before any file moved.",
         var tidy => $"Your last tidy was interrupted: {tidy.Moved} of {Files(tidy.Total)} moved.",
@@ -252,6 +254,9 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     public string InterruptedNote => _interrupted switch
     {
         null => string.Empty,
+        { IsFolders: true, IsUndo: true } => "DeskAI checked each folder. A folder that is still there was left in place.",
+        { IsFolders: true, CanUndo: false } => "DeskAI checked each folder. Nothing needs removing.",
+        { IsFolders: true } => "DeskAI checked each folder. You can remove the empty folders it made, or keep them.",
         { IsUndo: true } undo when undo.Moved == undo.Total => "DeskAI checked each file. Every one had gone back.",
         { IsUndo: true } => "DeskAI checked each file. The rest are still where the tidy put them.",
         { Moved: 0 } => "DeskAI checked each file. Nothing needs putting back.",
@@ -260,11 +265,18 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
 
     public bool CanUndoInterrupted => _interrupted?.CanUndo == true;
 
-    public string UndoInterruptedText => _interrupted?.Moved == 1 ? "Undo that file" : $"Undo those {_interrupted?.Moved}";
+    public string UndoInterruptedText => _interrupted switch
+    {
+        { IsFolders: true, MadeFolders.Count: 1 } => "Remove that folder",
+        { IsFolders: true } folders => $"Remove those {folders.MadeFolders.Count} folders",
+        { Moved: 1 } => "Undo that file",
+        var tidy => $"Undo those {tidy?.Moved}",
+    };
 
     public string KeepInterruptedText => _interrupted switch
     {
-        { CanUndo: true, Moved: 1 } => "Keep it",
+        { CanUndo: true, IsFolders: true, MadeFolders.Count: 1 } => "Keep it",
+        { CanUndo: true, IsFolders: false, Moved: 1 } => "Keep it",
         { CanUndo: true } => "Keep them",
         _ => "OK",
     };
