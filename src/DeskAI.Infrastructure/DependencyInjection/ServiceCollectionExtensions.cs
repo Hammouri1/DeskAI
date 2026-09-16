@@ -1,6 +1,7 @@
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Classification;
 using DeskAI.Core.Recipes;
+using DeskAI.Core.Roots;
 using DeskAI.Core.Plans;
 using DeskAI.Infrastructure.Desktop;
 using DeskAI.Infrastructure.Persistence;
@@ -53,6 +54,9 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IWallpaperSetter, WindowsWallpaperSetter>();
         services.AddSingleton<IPictureInspector, FilePictureInspector>();
         services.AddSingleton<IKnownFolders, WindowsKnownFolders>();
+        // The owner's rule that DeskAI connects only the person's own Desktop, Downloads,
+        // Documents, and Pictures, or folders inside them (ADR 0032).
+        services.AddSingleton<PersonalFolderPolicy>();
         services.AddSingleton<IAiUsageBudget, SqliteAiUsageBudget>();
         services.AddSingleton<IPlanRepository, SqlitePlanRepository>();
         services.AddSingleton<IOperationJournal, SqliteOperationJournal>();

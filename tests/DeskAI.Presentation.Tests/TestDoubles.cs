@@ -169,10 +169,19 @@ internal sealed class RecordingWallpaperSetter : IWallpaperSetter
     }
 }
 
-/// <summary>The person's "Desktop", inside the test's own temp folder. Never the real one.</summary>
-internal sealed class SandboxKnownFolders(string desktop) : IKnownFolders
+/// <summary>
+/// The person's four folders, all inside the test's own temp folder. Never the real ones.
+/// "Documents" is the sandbox's folders root, so every generated folder counts as inside it.
+/// </summary>
+internal sealed class SandboxKnownFolders(string desktop, string downloads, string documents, string pictures) : IKnownFolders
 {
     public string? Desktop { get; set; } = desktop;
+
+    public string? Downloads { get; set; } = downloads;
+
+    public string? Documents { get; set; } = documents;
+
+    public string? Pictures { get; set; } = pictures;
 }
 
 /// <summary>Stands in for the window painter: remembers every look it was asked to apply.</summary>

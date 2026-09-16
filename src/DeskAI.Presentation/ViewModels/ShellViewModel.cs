@@ -398,7 +398,7 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
         if (connected.Count == 0)
         {
             ScopeTitle = "Nothing connected yet";
-            ScopeMessage = "No folders connected. DeskAI cannot see any of your files.";
+            ScopeMessage = "No folders connected. DeskAI cannot see any of your files. Connect your Desktop, Downloads, Documents, or Pictures on Home.";
             return;
         }
 

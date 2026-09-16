@@ -1,5 +1,6 @@
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
+using DeskAI.Core.Roots;
 using DeskAI.Core.Templates;
 using DeskAI.Core.Workspace;
 using Microsoft.UI.Xaml;
@@ -73,30 +74,22 @@ public sealed partial class WorkspacePage : Page
     }
 
     /// <summary>
-    /// Asks before connecting the Desktop, then hands it to Organize, which asks again before
-    /// tidying. Connecting reads names, sizes, and dates and moves nothing.
+    /// Asks before connecting one of the person's own folders, then hands it to Organize, which
+    /// asks again before tidying. Connecting reads names, sizes, and dates and moves nothing.
     /// </summary>
-    private async void OnTidyDesktopClick(object sender, RoutedEventArgs e)
+    private async void OnFolderClick(object sender, RoutedEventArgs e)
     {
-        if (!ViewModel.IsDesktopConnected)
+        if (sender is not Button { Tag: PersonalFolderKind kind } || ViewModel.Folders.Find(kind) is not { } row)
         {
-            var confirm = new ContentDialog
-            {
-                XamlRoot = XamlRoot,
-                Title = "Connect your Desktop?",
-                Content = "DeskAI will remember the names, sizes, and dates of the files on your Desktop. It reads nothing inside them and moves nothing.\n\n"
-                    + "Organize then asks your permission and shows what it would move before anything moves. Shortcuts are left alone.",
-                PrimaryButtonText = "Connect my Desktop",
-                CloseButtonText = "Cancel",
-                DefaultButton = ContentDialogButton.Close,
-            };
-            if (await confirm.ShowAsync() != ContentDialogResult.Primary)
-            {
-                return;
-            }
+            return;
         }
 
-        if (await ViewModel.ConnectDesktopAsync() is not null)
+        if (!row.IsConnected && !await PersonalFolderDialogs.ConfirmConnectAsync(XamlRoot, row.Name))
+        {
+            return;
+        }
+
+        if (await ViewModel.ConnectFolderAsync(kind) is not null)
         {
             GoTo("organize", fresh: true);
         }

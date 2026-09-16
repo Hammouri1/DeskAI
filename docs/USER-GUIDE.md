@@ -31,10 +31,16 @@ of the menu always says which folders DeskAI can see.
 
 ## Connecting a folder
 
-Press **Connect a folder** on Search (or **Choose another folder** on Organize). The Windows
-picker opens; DeskAI reads only the names, sizes, and dates of what is inside. It cannot move,
-rename, delete, or open a file until you allow more, and you can disconnect at any time, which
-makes DeskAI forget everything about that folder.
+DeskAI works only inside four of your own folders: **Desktop, Downloads, Documents, and
+Pictures**. It cannot be given a drive, a program folder, or anything else on your computer,
+even by picking it in a dialog.
+
+On Home (and on My workspace) the **Your folders** card lists the four. Press **Connect** on
+one; DeskAI asks first, then reads only the names, sizes, and dates of what is inside and opens
+it in Organize. To connect a folder *inside* one of the four, press **Connect a folder** on
+Search (or **Choose another folder** on Organize) and pick it in the Windows dialog. Connecting
+cannot move, rename, delete, or open a file until you allow more, and you can disconnect at any
+time on Search, which makes DeskAI forget everything about that folder.
 
 ## Tidying a folder
 

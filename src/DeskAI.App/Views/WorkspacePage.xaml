@@ -264,24 +264,58 @@
                         </StackPanel>
                     </Border>
 
+                    <!--
+                        Your folders: the person's Desktop, Downloads, Documents, and Pictures, the only
+                        places DeskAI may connect (ADR 0032). One plain button per row — plain because
+                        connecting only remembers names; tidying is asked for on Organize.
+                    -->
                     <Border Style="{StaticResource RowCardStyle}">
-                        <StackPanel Spacing="8">
-                            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="12">
-                                <StackPanel Spacing="3">
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <TextBlock FontWeight="SemiBold"
-                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                   Text="Your Desktop" />
-                                        <controls:HelpButton Topic="workspace.desktop" />
-                                    </StackPanel>
-                                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
-                                               Text="{x:Bind ViewModel.DesktopStatus, Mode=OneWay}" />
-                                </StackPanel>
-                                <Button Grid.Column="1" VerticalAlignment="Center"
-                                        Content="Tidy my Desktop"
-                                        IsEnabled="{x:Bind ViewModel.HasDesktop, Mode=OneWay}"
-                                        Click="OnTidyDesktopClick" />
-                            </Grid>
+                        <StackPanel Spacing="10">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock FontWeight="SemiBold"
+                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                           Text="Your folders" />
+                                <controls:HelpButton Topic="workspace.folders" />
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                       Text="DeskAI works only inside these four folders. Connect one to see what it would tidy." />
+                            <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                       Visibility="{x:Bind ViewModel.Folders.HasNoRows, Mode=OneWay}"
+                                       Text="{x:Bind ViewModel.Folders.NoneKnownText}" />
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.Folders.Rows, Mode=OneWay}"
+                                          AutomationProperties.Name="Your folders">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:PersonalFolderRowViewModel">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12" Margin="0,4">
+                                            <FontIcon FontSize="16" VerticalAlignment="Center" Glyph="&#xE8B7;"
+                                                      Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
+                                                <TextBlock FontWeight="SemiBold"
+                                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                           Text="{x:Bind Name}" />
+                                                <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                                           Text="{x:Bind Status}" />
+                                            </StackPanel>
+                                            <Border Grid.Column="2" Style="{StaticResource AccentPillStyle}" VerticalAlignment="Center"
+                                                    Visibility="{x:Bind CanTidy}">
+                                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                                    <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
+                                                    <TextBlock Style="{StaticResource PillTextStyle}" Text="Allowed to tidy" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Button Grid.Column="3" MinWidth="92" VerticalAlignment="Center"
+                                                    Content="{x:Bind ButtonText}"
+                                                    AutomationProperties.Name="{x:Bind ButtonName}"
+                                                    Tag="{x:Bind Kind}"
+                                                    Click="OnFolderClick" />
+                                        </Grid>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                       Foreground="{ThemeResource DeskCautionBrush}"
+                                       Visibility="{x:Bind ViewModel.Folders.HasMessage, Mode=OneWay}"
+                                       Text="{x:Bind ViewModel.Folders.Message, Mode=OneWay}" />
                         </StackPanel>
                     </Border>
                 </StackPanel>

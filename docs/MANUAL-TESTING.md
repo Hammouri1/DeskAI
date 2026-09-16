@@ -662,18 +662,27 @@ remember the names of what is on your real Desktop (it moves nothing until you p
    PNG, and BMP pictures." on the card and nothing changes. Check Settings > Personalization:
    theme, accent, and lock screen are as they were.
 
-**Desktop**
+**Your folders** (replaced "Tidy my Desktop" on 2026-09-16, ADR 0032; the same card is on Home)
 
-9. Press **Tidy my Desktop**. Expected: "Connect your Desktop?" saying names, sizes, and dates,
-   nothing inside, nothing moved. Cancel. Expected: nothing connected (check Search's folder
-   list).
-10. Press it again and **Connect my Desktop**. Expected: Organize opens on Desktop, asking "Allow
-    DeskAI to tidy Desktop?"; nothing on your desktop has changed; the card now says the Desktop
-    is connected.
-11. Allow tidying. Expected: loose files grouped by where they would go; shortcuts listed under
-    left alone; nothing moved until you press Tidy. If you tidy, Undo puts it back.
-12. Press the "?" on both cards and check they read clearly. Tab through the section and the
-    dialogs with the keyboard, then with Narrator on.
+9. Look at the **Your folders** card. Expected: four rows — Desktop, Downloads, Documents,
+   Pictures — each "Not connected yet." with a plain **Connect** button; the line above says
+   DeskAI works only inside these four.
+10. Press **Connect** on Desktop. Expected: "Connect your Desktop?" saying names, sizes, and
+    dates, nothing inside, nothing moved. Cancel. Expected: nothing connected (check Search's
+    folder list).
+11. Press it again and **Connect my Desktop**. Expected: Organize opens on Desktop, asking "Allow
+    DeskAI to tidy Desktop?"; nothing on your desktop has changed; back on My workspace the row
+    says "Connected. Tidy it in Organize." and the button says **Tidy**. This must work even
+    though DeskAI itself is running from a folder on your Desktop (the 2026-09-16 bug).
+12. Allow tidying. Expected: loose files grouped by where they would go; shortcuts listed under
+    left alone; nothing moved until you press Tidy. If you tidy, Undo puts it back. The row now
+    says "Connected and allowed to tidy." with the green pill.
+13. On Search press **Connect a folder** and pick `C:\` or `C:\Program Files`. Expected: "DeskAI
+    only works inside your Desktop, Downloads, Documents, and Pictures." and nothing connected.
+    Pick a folder inside Documents. Expected: it connects.
+14. Press the "?" on both cards and check they read clearly. Tab through the section and the
+    dialogs with the keyboard, then with Narrator on: each button reads "Connect Downloads" or
+    "Tidy Downloads".
 
 ## DeskAI's look (V0.7 piece D, added 2026-09-16)
 

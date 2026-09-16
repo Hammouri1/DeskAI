@@ -316,7 +316,7 @@ Built one piece at a time, safest first (design:
   the old wallpaper is written down before the change and "Put the old wallpaper back" restores
   it, also after reopening. Only a plain local JPG/PNG/BMP under 50 MB; DeskAI never lists
   folders for pictures and never makes or downloads one. This is DeskAI's first change to a
-  Windows setting, and the only one. **Desktop:** "Tidy my Desktop" connects the Desktop folder
+  Windows setting, and the only one. **Desktop:** "Tidy my Desktop" (replaced by the Your folders card in V1.1, ADR 0032) connected the Desktop folder
   through the known-folder API (names, sizes, dates) and opens it in Organize, where the
   ordinary permission, preview, Tidy, and undo apply; shortcuts are left alone. Tests never touch
   the real wallpaper or Desktop: both are replaced in `TestApp` and asserted to be sandboxed.
@@ -457,6 +457,25 @@ reviewed. It does not depend on V0.7 or V0.8.
 Still the owner's to do by hand, recorded in `HANDOFF.md`: walk the manual lists for the
 redesign, V0.8, and V0.9 (and the older V0.6 and background-checking sign-offs), and push the
 first tag.
+
+## V1.1 — After the Owner's First Look (started 2026-09-16)
+
+The owner's first look at V1.0 raised four things: the Desktop would not connect, there was no
+way to connect Downloads or the other personal folders from Home, a tile clipped its words, and
+"there is no real use of the AI". Agreed order: the Desktop bug, the tile, the folders card, then
+three AI features (A: plain language for Search and rules, B: "Plan this folder", C: "Ask DeskAI").
+
+- ✅ 2026-09-16: **The Desktop connects even when DeskAI itself sits on it.** DeskAI's program
+  folder is protected; a folder that merely *contains* a protected place now connects with the
+  protected part skipped entry by entry, while a folder *inside* one stays refused. Page test
+  first (`YourFoldersPageTests`), every test Desktop now holds a protected "program folder".
+- ✅ 2026-09-16: **Pinned tiles keep words out of the number slot** ("No folders connect…" was
+  clipped): a number in the big style only when there is one, words on a wrapping caption
+  (`ShellLayoutTests` reads the XAML).
+- ✅ 2026-09-16: **Only the person's own four folders** (ADR 0032, the owner's decision):
+  DeskAI connects Desktop, Downloads, Documents, Pictures, or folders inside them, and nothing
+  else, checked at connection and again before tidying. A **Your folders** card on Home and My
+  workspace lists the four with one Connect / Tidy button each, replacing "Tidy my Desktop".
 
 ## Explicitly Deferred Beyond V1 Unless Reprioritized
 

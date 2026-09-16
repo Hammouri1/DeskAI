@@ -111,6 +111,9 @@ public static class DeskAiApplicationServices
         services.AddTransient<DashboardViewModel>();
         services.AddTransient<AutomationViewModel>();
         services.AddTransient<WorkspaceViewModel>();
+        // The "Your folders" card on Home and My workspace. It connects through the same service
+        // the folder picker uses and grants nothing beyond that.
+        services.AddTransient<PersonalFoldersViewModel>();
         return services;
     }
 }

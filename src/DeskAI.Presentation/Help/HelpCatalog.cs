@@ -30,6 +30,10 @@ public static class HelpCatalog
 
     public static IReadOnlyList<HelpTopic> All { get; } =
     [
+        new("home.folders", "Your folders",
+            "The four folders DeskAI can work in: your Desktop, Downloads, Documents, and Pictures.",
+            "Press Connect and DeskAI remembers the names, sizes, and dates of what is inside, then opens it in Organize, which asks your permission before anything moves. You can disconnect a folder on Search at any time.",
+            "It never touches anything outside these four folders, and nothing moves until you press Tidy."),
         new("home.health", "Organization score",
             "A score out of 100 for how settled your connected folders look.",
             "It adds up two things shown below it: space that might be taken by copies, and files nobody has changed in about six months. Each part shows how much it counted.",
@@ -146,10 +150,10 @@ public static class HelpCatalog
             "A way to make a picture you pick your Windows wallpaper, and to put the old one back.",
             "Choose a picture from your computer, see it, and press the button. DeskAI remembers the wallpaper you had, so one press puts it back, even after DeskAI was closed.",
             "It never looks through your folders for pictures, never makes or downloads a picture, and changes no other Windows setting."),
-        new("workspace.desktop", "Tidy my Desktop",
-            "A shortcut that connects your Desktop folder and opens it in Organize.",
-            "DeskAI remembers the names, sizes, and dates of what is on your Desktop. Organize then asks your permission and shows what it would move first. Shortcuts are left alone. A Desktop in OneDrive syncs moves to your other devices.",
-            "Nothing moves until you press Tidy. Icons shared by everyone on this computer are not included."),
+        new("workspace.folders", "Your folders",
+            "The four folders DeskAI can work in: your Desktop, Downloads, Documents, and Pictures.",
+            "Press Connect and DeskAI remembers the names, sizes, and dates of what is inside, then opens it in Organize, which asks your permission before anything moves. A folder inside one of the four can be chosen on Organize or Search.",
+            "It never touches anything outside these four folders, and nothing moves until you press Tidy."),
         new("workspace.templates", "Folder templates",
             "A set of empty folders, made inside a folder you chose, so it is ready to be tidied into.",
             "Pick a template or type your own names. You see the exact list first, and DeskAI needs your permission to tidy that folder. Undo removes only empty folders. In a synced folder, new folders reach your other devices too.",

@@ -110,6 +110,8 @@ Avoid an unconditional “files never leave your computer” claim when cloud pr
 
 System and security-sensitive paths are permanently protected regardless of user wording or model output.
 
+Since 2026-09-16 (ADR 0032) the only places DeskAI can be given at all are a person's own Desktop, Downloads, Documents, and Pictures, and folders inside them. The owner's reason: an ordinary person should never be able to hand DeskAI a drive, a program folder, or "the C: workspace", even by accident in a file dialog. Home and My workspace show the four as a card with one Connect button each.
+
 ## Non-Goals for Early Releases
 
 - General-purpose AI control of Windows.

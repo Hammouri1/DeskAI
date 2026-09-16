@@ -89,14 +89,50 @@ public sealed class FilePictureInspector : IPictureInspector
 }
 
 /// <summary>The person's own folders, asked from Windows rather than guessed from a user name.</summary>
+/// <remarks>
+/// Desktop, Documents, and Pictures come from <see cref="Environment.GetFolderPath(Environment.SpecialFolder)"/>.
+/// .NET has no special-folder value for Downloads, so that one is asked through the same
+/// Windows known-folder call the others use underneath, <c>SHGetKnownFolderPath</c>, by its
+/// documented ID. Nothing here reads the registry or builds a path from a user name.
+/// </remarks>
 public sealed class WindowsKnownFolders : IKnownFolders
 {
-    public string? Desktop
+    // FOLDERID_Downloads, from the Windows SDK's KnownFolders.h.
+    private static readonly Guid DownloadsFolderId = new("374DE290-123F-4565-9164-39C4925E467B");
+
+    public string? Desktop => Clean(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory));
+
+    public string? Downloads
     {
         get
         {
-            var path = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
-            return string.IsNullOrWhiteSpace(path) ? null : path;
+            if (!OperatingSystem.IsWindows())
+            {
+                return null;
+            }
+
+            var id = DownloadsFolderId;
+            var result = SHGetKnownFolderPath(ref id, 0, IntPtr.Zero, out var buffer);
+            try
+            {
+                return result == 0 && buffer != IntPtr.Zero ? Clean(Marshal.PtrToStringUni(buffer)) : null;
+            }
+            finally
+            {
+                if (buffer != IntPtr.Zero)
+                {
+                    Marshal.FreeCoTaskMem(buffer);
+                }
+            }
         }
     }
+
+    public string? Documents => Clean(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
+
+    public string? Pictures => Clean(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
+
+    private static string? Clean(string? path) => string.IsNullOrWhiteSpace(path) ? null : path;
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode, ExactSpelling = true)]
+    private static extern int SHGetKnownFolderPath(ref Guid rfid, uint dwFlags, IntPtr hToken, out IntPtr ppszPath);
 }

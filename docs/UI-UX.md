@@ -49,6 +49,8 @@ Home now shows real numbers from the index rather than placeholders: folders con
 
 **Home as the command center (2026-09-16).** Top to bottom: the hero — the connected-state line on the accent dot, "Good morning / afternoon / evening" from the clock, the existing title and promise sentence, two pills that are true on every screen ("Nothing moves by itself", "You approve every change"), and five neutral floating circles with Fluent glyphs on the right as decoration, hidden on a narrow window. Then **Quick look**: four soft-tinted tiles — Folders connected (blue), Files remembered (violet), Sitting unused for 6 months (amber), Possible duplicates (rose) — each an icon, one big number, and a caption; the duplicates caption reads "Same size, not compared yet", "Nothing looks duplicated", or "Connect a folder to look", never a confirmation. Then two columns at 1100px and wider (one below): the score and "Where your space is going" on the left, "Possible duplicates" with the copy check and "Largest files" on the right; the "up to … " saving on a duplicate row is a caution pill with the copy icon. "What you can try now" and the control promise sit under both columns. Nothing on the page gained an action: every card still describes.
 
+**Your folders (2026-09-16, ADR 0032).** Between the hero and Quick look, under the label YOUR FOLDERS, one card: "DeskAI works only inside these four folders", a line saying connecting remembers names, sizes, and dates and nothing moves until tidying is allowed on Organize, and a row per folder Windows reports — Desktop, Downloads, Documents, Pictures — each with the folder icon, its name, an "Allowed to tidy" accent pill when that permission exists, a status line ("Not connected yet.", "Connected. Tidy it in Organize.", "Connected and allowed to tidy."), and one plain button: **Connect**, which asks "Connect your Downloads?" (names, sizes, dates; nothing inside; nothing moved; Enter, Esc, and the X cancel) and then opens Organize on it, or **Tidy** once connected, which opens Organize straight away. A refusal is written under the rows in the caution colour. When Windows reports none of the four, the card says DeskAI could not find them. This is the one card on Home that does something, and what it does is what the folder picker did already; it exists because the owner's first look found no way to connect anything from Home.
+
 The score is now on the page, and it is never shown as a bare number. The two parts that produced it — possible copies, and files sitting unused — sit on the same card, each with what it measured, the part score it earned, and how much it counted for, so the total can be added up rather than trusted. Age counts for only a fifth of the score and says so on the row itself ("older files are perfectly normal"), because a settled archive is not a mess and the score must never imply otherwise. Files whose type DeskAI cannot name do **not** lower the score; instead a line beside it states how much of the folder the reading actually covered, so the limit is DeskAI's to own rather than the person's to be charged for. It is worded as an observation ("Looking tidy", "Mostly fine", "Worth a look") and says plainly that DeskAI is describing and not suggesting a change. There is no "improve my score" action, and there must not be one: an action attached to a score is a cleanup shortcut around preview and approval. When nothing is connected or nothing has been read yet the card says it has not been measured, instead of showing a flattering or alarming number from no evidence. The score must not imply that moving more files is always better. Values are local unless telemetry is separately enabled.
 
 ## Organize Flow
@@ -251,10 +253,12 @@ files." Top to bottom:
    and the accent button **Use as wallpaper**. The result is written on the card. When DeskAI
    has changed the wallpaper, the card shows "Your old wallpaper: holiday.jpg." (or "a plain
    colour") with **Put the old wallpaper back**, and a caution line when Windows now shows
-   something DeskAI did not set. **Your Desktop**: its state in one line and **Tidy my Desktop**,
-   which asks "Connect your Desktop?" (names, sizes, dates; nothing inside; nothing moved), then
-   opens Organize on it, where the usual permission and preview apply. Off when Windows has no
-   Desktop folder for the account.
+   something DeskAI did not set. **Your folders** (which replaced "Your Desktop" on 2026-09-16,
+   ADR 0032): the same card Home shows — Desktop, Downloads, Documents, and Pictures as rows,
+   each with its state and one **Connect** or **Tidy** button, "Connect your Desktop?" asked
+   first (names, sizes, dates; nothing inside; nothing moved), then Organize opened on it, where
+   the usual permission and preview apply. A folder connected here appears in the template
+   folder choice at once.
 6. **Your other saved searches.** Saved searches not pinned, each with **Pin**. Past eight, Pin is
    off and a line beside the list says to unpin one to make room.
 

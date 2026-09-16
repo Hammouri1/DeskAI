@@ -6,6 +6,7 @@ using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Appearance;
 using DeskAI.Core.Desktop;
+using DeskAI.Core.Roots;
 using DeskAI.Core.Search;
 using DeskAI.Core.Templates;
 using DeskAI.Core.Tidy;
@@ -173,14 +174,10 @@ public sealed class WorkspaceViewModel : ObservableObject
     private readonly IAppearanceSettingsRepository _appearance;
     private readonly IAppearanceApplier _applier;
     private readonly WallpaperService _wallpaper;
-    private readonly IKnownFolders _knownFolders;
-    private readonly OrganizeRequest _organize;
     private readonly SearchRequest _request;
     private readonly IClock _clock;
     private string _wallpaperMessage = string.Empty;
     private WallpaperRestore? _restore;
-    private string _desktopStatus = string.Empty;
-    private bool _isDesktopConnected;
     private AppearanceSettings _chosenAppearance = AppearanceSettings.Default;
     private string _lookMessage = string.Empty;
     private string _pinsCaption = string.Empty;
@@ -205,8 +202,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         IAppearanceSettingsRepository appearance,
         IAppearanceApplier applier,
         WallpaperService wallpaper,
-        IKnownFolders knownFolders,
-        OrganizeRequest organize,
+        PersonalFoldersViewModel personalFolders,
         SearchRequest request,
         IClock clock)
     {
@@ -219,8 +215,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         _appearance = appearance;
         _applier = applier;
         _wallpaper = wallpaper;
-        _knownFolders = knownFolders;
-        _organize = organize;
+        Folders = personalFolders;
         _request = request;
         _clock = clock;
         PutWallpaperBackCommand = new AsyncRelayCommand(PutWallpaperBackAsync, () => CanPutWallpaperBack && !IsBusy);
@@ -312,21 +307,8 @@ public sealed class WorkspaceViewModel : ObservableObject
 
     public bool HasPutBackNote => !string.IsNullOrEmpty(PutBackNote);
 
-    /// <summary>What the Desktop card says: not found, not connected yet, or connected.</summary>
-    public string DesktopStatus
-    {
-        get => _desktopStatus;
-        private set => SetProperty(ref _desktopStatus, value);
-    }
-
-    public bool IsDesktopConnected
-    {
-        get => _isDesktopConnected;
-        private set => SetProperty(ref _isDesktopConnected, value);
-    }
-
-    /// <summary>Whether Windows told DeskAI where the Desktop is at all.</summary>
-    public bool HasDesktop => _knownFolders.Desktop is not null;
+    /// <summary>The "Your folders" card: the person's Desktop, Downloads, Documents, and Pictures.</summary>
+    public PersonalFoldersViewModel Folders { get; }
 
     public bool HasTemplateFolders => TemplateFolders.Count > 0;
 
@@ -438,7 +420,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         await ReloadTemplateFoldersAsync().ConfigureAwait(true);
         await LoadAppearanceAsync().ConfigureAwait(true);
         await LoadWallpaperRestoreAsync().ConfigureAwait(true);
-        RefreshDesktopStatus();
+        await Folders.ReloadAsync().ConfigureAwait(true);
     }
 
     /// <summary>
@@ -488,54 +470,20 @@ public sealed class WorkspaceViewModel : ObservableObject
     }
 
     /// <summary>
-    /// Connects the person's Desktop folder, found through Windows, and leaves it for Organize
-    /// to open. Called only after the page's dialog.
+    /// Connects one of the person's own folders through the card and leaves it for Organize
+    /// to open. Called only after the page's dialog. The template folder list is reloaded
+    /// because a newly connected folder can be templated too.
     /// </summary>
     /// <returns>The connected folder's ID for the page to navigate with, or null with the reason on the card.</returns>
-    public async Task<Guid?> ConnectDesktopAsync()
+    public async Task<Guid?> ConnectFolderAsync(PersonalFolderKind kind)
     {
-        if (_knownFolders.Desktop is not { } desktop)
+        var id = await Folders.ConnectAsync(kind).ConfigureAwait(true);
+        if (id is not null)
         {
-            DesktopStatus = "DeskAI could not find your Desktop folder.";
-            return null;
+            await ReloadTemplateFoldersAsync().ConfigureAwait(true);
         }
 
-        IsBusy = true;
-        try
-        {
-            var already = (await _folders.ListAsync().ConfigureAwait(true))
-                .FirstOrDefault(folder => SamePath(folder.Path, desktop));
-            Guid id;
-            if (already is not null)
-            {
-                id = already.Id;
-            }
-            else
-            {
-                var result = await _folders.ConnectAsync(desktop).ConfigureAwait(true);
-                if (!result.IsAllowed || result.Folder is null)
-                {
-                    DesktopStatus = result.Explanation;
-                    return null;
-                }
-
-                id = result.Folder.Id;
-                await ReloadTemplateFoldersAsync().ConfigureAwait(true);
-            }
-
-            _organize.Ask(id);
-            RefreshDesktopStatus();
-            return id;
-        }
-        catch (Exception exception) when (IsExpectedFailure(exception))
-        {
-            DesktopStatus = $"DeskAI stopped safely: {exception.Message}";
-            return null;
-        }
-        finally
-        {
-            IsBusy = false;
-        }
+        return id;
     }
 
     private async Task PutWallpaperBackAsync()
@@ -576,23 +524,6 @@ public sealed class WorkspaceViewModel : ObservableObject
         PutWallpaperBackCommand.NotifyCanExecuteChanged();
     }
 
-    private void RefreshDesktopStatus()
-    {
-        var desktop = _knownFolders.Desktop;
-        IsDesktopConnected = desktop is not null && TemplateFolders.Any(folder => SamePath(folder.Path, desktop));
-        DesktopStatus = desktop is null
-            ? "DeskAI could not find your Desktop folder."
-            : IsDesktopConnected
-                ? "Your Desktop is connected. Tidy it in Organize."
-                : "Your Desktop is not connected yet.";
-        OnPropertyChanged(nameof(HasDesktop));
-    }
-
-    private static bool SamePath(string first, string second) =>
-        string.Equals(
-            System.IO.Path.TrimEndingDirectorySeparator(first),
-            System.IO.Path.TrimEndingDirectorySeparator(second),
-            StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Chooses a look: saves it, then repaints DeskAI's window. Changes nothing else.</summary>
     public async Task ChooseLookAsync(string? lookId)

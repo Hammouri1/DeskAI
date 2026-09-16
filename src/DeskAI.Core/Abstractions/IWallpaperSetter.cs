@@ -30,10 +30,3 @@ public interface IPictureInspector
     /// <returns>The facts, or null when nothing is at that path.</returns>
     PictureFacts? Inspect(string path);
 }
-
-/// <summary>Where Windows keeps the person's own folders, asked through the official API.</summary>
-public interface IKnownFolders
-{
-    /// <summary>The Desktop folder, or null when Windows has none for this account.</summary>
-    string? Desktop { get; }
-}

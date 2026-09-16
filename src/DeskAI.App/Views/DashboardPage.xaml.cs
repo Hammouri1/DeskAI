@@ -1,4 +1,5 @@
 using DeskAI.App.ViewModels;
+using DeskAI.Core.Roots;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -32,6 +33,29 @@ public sealed partial class DashboardPage : Page
     {
         Unloaded -= OnUnloaded;
         ViewModel.Dispose();
+    }
+
+    /// <summary>
+    /// Asks before connecting one of the person's own folders, then hands it to Organize, which
+    /// asks again before tidying. Connecting reads names, sizes, and dates and moves nothing.
+    /// </summary>
+    private async void OnFolderClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: PersonalFolderKind kind } || ViewModel.Folders.Find(kind) is not { } row)
+        {
+            return;
+        }
+
+        if (!row.IsConnected && !await PersonalFolderDialogs.ConfirmConnectAsync(XamlRoot, row.Name))
+        {
+            return;
+        }
+
+        if (await ViewModel.Folders.ConnectAsync(kind) is not null
+            && ((App)Application.Current).MainAppWindow is MainWindow window)
+        {
+            window.GoTo("organize", fresh: true);
+        }
     }
 
     /// <summary>

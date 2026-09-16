@@ -1,3 +1,4 @@
+using DeskAI.Core.Abstractions;
 using DeskAI.Core.Files;
 using DeskAI.Core.Roots;
 using DeskAI.Infrastructure.Scanning;
@@ -14,7 +15,7 @@ public sealed class ReadOnlyFolderServiceTests
         var lockedPath = sandbox.CreateDummyFile(@"Study\notes.txt", "private dummy content");
         await using var lockStream = new FileStream(lockedPath, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
         var repository = new InMemoryAuthorizedRootRepository();
-        var service = CreateService(repository, new WindowsPathPolicy());
+        var service = CreateService(repository, new WindowsPathPolicy(), sandbox);
 
         var result = await service.AuthorizeAndPreviewAsync(
             sandbox.Path,
@@ -40,7 +41,7 @@ public sealed class ReadOnlyFolderServiceTests
         File.WriteAllText(System.IO.Path.Combine(protectedChild, "token.txt"), "dummy");
         sandbox.CreateDummyFile("visible.txt");
         var repository = new InMemoryAuthorizedRootRepository();
-        var service = CreateService(repository, new WindowsPathPolicy([protectedChild]));
+        var service = CreateService(repository, new WindowsPathPolicy([protectedChild]), sandbox);
 
         var result = await service.AuthorizeAndPreviewAsync(
             sandbox.Path,
@@ -60,7 +61,7 @@ public sealed class ReadOnlyFolderServiceTests
         using var sandbox = new TemporaryDirectory();
         var inside = sandbox.CreateDummyDirectory("logs");
         var repository = new InMemoryAuthorizedRootRepository();
-        var service = CreateService(repository, new WindowsPathPolicy([sandbox.Path]));
+        var service = CreateService(repository, new WindowsPathPolicy([sandbox.Path]), sandbox);
 
         var result = await service.AuthorizeAndPreviewAsync(
             inside,
@@ -78,7 +79,7 @@ public sealed class ReadOnlyFolderServiceTests
         using var sandbox = new TemporaryDirectory();
         var path = sandbox.CreateDummyFile("keep-me.txt", "generated data");
         var repository = new InMemoryAuthorizedRootRepository();
-        var service = CreateService(repository, new WindowsPathPolicy());
+        var service = CreateService(repository, new WindowsPathPolicy(), sandbox);
         var result = await service.AuthorizeAndPreviewAsync(
             sandbox.Path,
             new MetadataScanOptions(3, 20),
@@ -98,7 +99,7 @@ public sealed class ReadOnlyFolderServiceTests
     public async Task CheckStillSafeAsync_AcceptsAnOrdinaryFolder()
     {
         using var sandbox = new TemporaryDirectory();
-        var service = CreateService(new InMemoryAuthorizedRootRepository(), new WindowsPathPolicy());
+        var service = CreateService(new InMemoryAuthorizedRootRepository(), new WindowsPathPolicy(), sandbox);
 
         Assert.Null(await service.CheckStillSafeAsync(Root(sandbox.CreateDummyDirectory("Downloads")), TestContext.Current.CancellationToken));
     }
@@ -178,8 +179,56 @@ public sealed class ReadOnlyFolderServiceTests
     private static AuthorizedRoot Root(string path) =>
         AuthorizedRoot.Create(Guid.NewGuid(), path, "Folder", RootAccessLevel.Allowed, RootAuthorizationScope.MetadataOnly);
 
+    /// <summary>The owner's rule (ADR 0032) is re-checked before tidying, not only when connecting.</summary>
+    [Fact]
+    public async Task CheckStillSafeAsync_RefusesAFolderOutsideThePersonsOwnFour()
+    {
+        using var sandbox = new TemporaryDirectory();
+        using var elsewhere = new TemporaryDirectory();
+        var service = CreateService(new InMemoryAuthorizedRootRepository(), new WindowsPathPolicy(), sandbox);
+
+        var problem = await service.CheckStillSafeAsync(Root(elsewhere.CreateDummyDirectory("Work")), TestContext.Current.CancellationToken);
+
+        Assert.Equal(PersonalFolderPolicy.OutsideReason, problem);
+    }
+
+    [Fact]
+    public async Task AuthorizeAndPreviewAsync_RefusesAFolderOutsideThePersonsOwnFour()
+    {
+        using var sandbox = new TemporaryDirectory();
+        using var elsewhere = new TemporaryDirectory();
+        var repository = new InMemoryAuthorizedRootRepository();
+        var service = CreateService(repository, new WindowsPathPolicy(), sandbox);
+
+        var result = await service.AuthorizeAndPreviewAsync(
+            elsewhere.CreateDummyDirectory("Work"),
+            new MetadataScanOptions(3, 20),
+            TestContext.Current.CancellationToken);
+
+        Assert.False(result.IsAllowed);
+        Assert.Equal(PersonalFolderPolicy.OutsideReason, result.Explanation);
+        Assert.Empty(await repository.ListAsync(TestContext.Current.CancellationToken));
+    }
+
+    /// <summary>
+    /// The sandbox stands in for the person's Documents, so folders inside it may be connected.
+    /// Without one, Windows "knows" no personal folder, which only the earlier refusals in the
+    /// tests above reach before.
+    /// </summary>
     private static ReadOnlyFolderService CreateService(
         InMemoryAuthorizedRootRepository repository,
-        WindowsPathPolicy policy) =>
-        new(new WindowsMetadataScanner(policy), repository, policy);
+        WindowsPathPolicy policy,
+        TemporaryDirectory? sandbox = null) =>
+        new(new WindowsMetadataScanner(policy), repository, policy, new PersonalFolderPolicy(new FixedKnownFolders(sandbox?.Path)));
+
+    private sealed class FixedKnownFolders(string? documents) : IKnownFolders
+    {
+        public string? Desktop => null;
+
+        public string? Downloads => null;
+
+        public string? Documents => documents;
+
+        public string? Pictures => null;
+    }
 }

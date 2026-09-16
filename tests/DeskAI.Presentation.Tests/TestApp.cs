@@ -116,7 +116,12 @@ internal sealed class TestApp : IAsyncDisposable
             throw new InvalidOperationException("A test Desktop must live inside the test's own folder.");
         }
 
-        Replace<IKnownFolders>(services, new SandboxKnownFolders(desktop));
+        var folders = System.IO.Path.Combine(directory.Path, "folders");
+        Replace<IKnownFolders>(services, new SandboxKnownFolders(
+            desktop,
+            System.IO.Path.Combine(folders, "Downloads"),
+            folders,
+            System.IO.Path.Combine(folders, "Pictures")));
         if (stoppable)
         {
             Replace<IOperationJournal>(services, new StoppingJournal(

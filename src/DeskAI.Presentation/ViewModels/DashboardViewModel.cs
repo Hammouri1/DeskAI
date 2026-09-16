@@ -67,9 +67,13 @@ public sealed class DashboardViewModel(
     DuplicateFinderService duplicates,
     DuplicateCheckService copyCheck,
     DeskAI.Core.Tidy.AwayTidyService away,
+    PersonalFoldersViewModel folders,
     IClock clock) : ObservableObject, IDisposable
 {
     private readonly StorageSummaryService _storage = storage;
+
+    /// <summary>The "Your folders" card: Desktop, Downloads, Documents, and Pictures, each with one button.</summary>
+    public PersonalFoldersViewModel Folders { get; } = folders;
     private readonly DuplicateFinderService _duplicates = duplicates;
     private readonly DuplicateCheckService _copyCheck = copyCheck;
     private readonly DeskAI.Core.Tidy.AwayTidyService _away = away;
@@ -440,6 +444,7 @@ public sealed class DashboardViewModel(
     public async Task InitializeAsync()
     {
         Greeting = GreetingFor(_clock.UtcNow.ToLocalTime());
+        await Folders.ReloadAsync().ConfigureAwait(true);
 
         StorageSummary summary;
         DuplicateReport duplicates;

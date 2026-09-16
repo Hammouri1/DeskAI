@@ -84,6 +84,8 @@ public sealed class HelpCatalogTests
     [InlineData("automation.rules")]
     [InlineData("automation.practice")]
     [InlineData("automation.sentence")]
+    [InlineData("home.folders")]
+    [InlineData("workspace.folders")]
     [InlineData("workspace.page")]
     [InlineData("workspace.pins")]
     [InlineData("workspace.packs")]

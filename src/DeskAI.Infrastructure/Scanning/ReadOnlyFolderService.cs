@@ -11,7 +11,8 @@ namespace DeskAI.Infrastructure.Scanning;
 public sealed class ReadOnlyFolderService(
     IFileScanner scanner,
     IAuthorizedRootRepository rootRepository,
-    IPathPolicy pathPolicy) : IReadOnlyFolderService
+    IPathPolicy pathPolicy,
+    PersonalFolderPolicy personalFolders) : IReadOnlyFolderService
 {
     public async Task<FolderPreviewResult> AuthorizeAndPreviewAsync(
         string selectedPath,
@@ -55,6 +56,13 @@ public sealed class ReadOnlyFolderService(
         if (policy.Status == ValidationStatus.Blocked)
         {
             return Refused("This location is protected and cannot be connected.");
+        }
+
+        // The owner's rule (ADR 0032): only the person's own four folders, or inside them. It
+        // comes after the protected check so a protected place is still named as such.
+        if (personalFolders.Refuse(canonicalPath) is { } outside)
+        {
+            return Refused(outside);
         }
 
         await rootRepository.SaveAsync(root, cancellationToken).ConfigureAwait(false);
@@ -102,7 +110,7 @@ public sealed class ReadOnlyFolderService(
             : !Directory.Exists(root.CanonicalPath) ? "That folder is no longer available."
             : ContainsReparsePoint(root.CanonicalPath) ? "This folder crosses a link or shortcut, so DeskAI will not tidy it."
             : pathPolicy.ValidateRoot(root).Status == ValidationStatus.Blocked ? "This location is protected and cannot be tidied."
-            : null;
+            : personalFolders.Refuse(root.CanonicalPath);
         return Task.FromResult(problem);
     }
 

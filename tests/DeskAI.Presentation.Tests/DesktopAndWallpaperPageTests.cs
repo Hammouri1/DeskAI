@@ -1,11 +1,10 @@
 using DeskAI.App.ViewModels;
-using DeskAI.Core.Abstractions;
 using DeskAI.Core.Tidy;
 
 namespace DeskAI.Presentation.Tests;
 
 /// <summary>
-/// Desktop and wallpaper on My workspace, used the way a person uses them. The wallpaper
+/// The wallpaper on My workspace, used the way a person uses it. The wallpaper
 /// "Windows" is a recording one and the "Desktop" is a generated folder inside the test's own
 /// temp folder, so nothing here can reach the real wallpaper or the real Desktop.
 /// </summary>
@@ -115,136 +114,5 @@ public sealed class DesktopAndWallpaperPageTests
 
         Assert.True(later.HasPutBackNote);
         Assert.Equal("Windows now shows a different wallpaper than the one DeskAI set. Put back restores the old one anyway.", later.PutBackNote);
-    }
-
-    [Fact]
-    public async Task Tidy_my_Desktop_connects_the_Desktop_for_names_only_and_hands_it_to_Organize_which_asks_permission()
-    {
-        await using var app = await TestApp.StartAsync();
-        app.MakeFolder("Desktop", "report.pdf", "holiday.jpg", "Notes.lnk");
-        var page = app.Get<WorkspaceViewModel>();
-        await page.InitializeAsync();
-        Assert.True(page.HasDesktop);
-        Assert.Equal("Your Desktop is not connected yet.", page.DesktopStatus);
-        Assert.False(page.IsDesktopConnected);
-
-        var id = await page.ConnectDesktopAsync();
-
-        Assert.NotNull(id);
-        Assert.True(page.IsDesktopConnected);
-        Assert.Equal("Your Desktop is connected. Tidy it in Organize.", page.DesktopStatus);
-        var connected = Assert.Single(await app.Get<DeskAI.Core.Search.ConnectedFolderService>().ListAsync(TestContext.Current.CancellationToken));
-        Assert.Equal(app.DesktopPath, connected.Path);
-        Assert.False(connected.CanReadContent);
-        Assert.False(connected.CanTidy);
-
-        // What Organize shows next: the Desktop, asking for permission before suggesting anything.
-        var organize = app.Get<TidyViewModel>();
-        await organize.InitializeAsync();
-        Assert.Equal("Desktop", organize.SelectedFolder!.Name);
-        Assert.True(organize.NeedsPermission);
-        Assert.False(organize.HasSuggestions);
-        Assert.Equal(3, Directory.EnumerateFiles(app.DesktopPath).Count());
-    }
-
-    /// <summary>
-    /// Found by the owner 2026-09-16: "Tidy my Desktop" said the Desktop was protected. DeskAI
-    /// was running from a folder on the Desktop, and its own program folder is protected, so
-    /// the Desktop "overlapped" a protected place. The Desktop connects; the program folder is
-    /// skipped and its files are never remembered.
-    /// </summary>
-    [Fact]
-    public async Task Tidy_my_Desktop_works_when_DeskAI_itself_lives_on_the_Desktop_and_skips_its_own_folder()
-    {
-        await using var app = await TestApp.StartAsync();
-        app.MakeFolder("Desktop", "report.pdf");
-        app.MakeFile(@"Desktop\DeskAI\app", "DeskAI.App.exe");
-        app.MakeFile(@"Desktop\DeskAI\app", "deskai.db");
-        var page = app.Get<WorkspaceViewModel>();
-        await page.InitializeAsync();
-
-        var id = await page.ConnectDesktopAsync();
-
-        Assert.NotNull(id);
-        Assert.True(page.IsDesktopConnected);
-        Assert.Equal("Your Desktop is connected. Tidy it in Organize.", page.DesktopStatus);
-        var remembered = await app.Get<IMetadataIndexService>().GetStatisticsAsync(id.Value, TestContext.Current.CancellationToken);
-        Assert.Equal(1, remembered.FileCount);
-    }
-
-    [Fact]
-    public async Task A_folder_inside_DeskAI_s_own_program_folder_still_cannot_be_connected()
-    {
-        await using var app = await TestApp.StartAsync();
-        app.MakeFile(@"Desktop\DeskAI\app\logs", "today.log");
-        var search = app.Get<SearchViewModel>();
-        await search.InitializeAsync();
-
-        await search.ConnectFolderAsync(Path.Combine(app.ProgramFolderPath, "logs"));
-
-        Assert.Equal("This location is protected and cannot be connected.", search.FolderMessage);
-        Assert.Empty(search.Folders);
-    }
-
-    [Fact]
-    public async Task Tidying_the_Desktop_leaves_shortcuts_alone_and_moves_nothing_until_Tidy()
-    {
-        await using var app = await TestApp.StartAsync();
-        app.MakeFolder("Desktop", "report.pdf", "Notes.lnk", "site.url");
-        var page = app.Get<WorkspaceViewModel>();
-        await page.InitializeAsync();
-        await page.ConnectDesktopAsync();
-        var organize = app.Get<TidyViewModel>();
-        await organize.InitializeAsync();
-
-        await organize.AllowTidyAsync();
-
-        Assert.Equal(["report.pdf"], organize.Groups.SelectMany(group => group.Items).Select(item => item.FileName));
-        var leftAlone = organize.LeftAlone.ToDictionary(item => item.FileName, item => item.Reason);
-        Assert.Contains("Notes.lnk", leftAlone.Keys);
-        Assert.Contains("site.url", leftAlone.Keys);
-        Assert.True(File.Exists(Path.Combine(app.DesktopPath, "report.pdf")));
-        Assert.True(File.Exists(Path.Combine(app.DesktopPath, "Notes.lnk")));
-    }
-
-    [Fact]
-    public async Task Pressing_Tidy_my_Desktop_again_reuses_the_connected_Desktop()
-    {
-        await using var app = await TestApp.StartAsync();
-        app.MakeFolder("Desktop", "report.pdf");
-        var page = app.Get<WorkspaceViewModel>();
-        await page.InitializeAsync();
-        var first = await page.ConnectDesktopAsync();
-
-        var second = await page.ConnectDesktopAsync();
-
-        Assert.Equal(first, second);
-        Assert.Single(await app.Get<DeskAI.Core.Search.ConnectedFolderService>().ListAsync(TestContext.Current.CancellationToken));
-    }
-
-    [Fact]
-    public async Task Without_a_Desktop_folder_the_card_says_so_and_the_button_is_off()
-    {
-        await using var app = await TestApp.StartAsync();
-        app.KnownFolders.Desktop = null;
-        var page = app.Get<WorkspaceViewModel>();
-        await page.InitializeAsync();
-
-        Assert.False(page.HasDesktop);
-        Assert.Equal("DeskAI could not find your Desktop folder.", page.DesktopStatus);
-        Assert.Null(await page.ConnectDesktopAsync());
-        Assert.Empty(await app.Get<DeskAI.Core.Search.ConnectedFolderService>().ListAsync(TestContext.Current.CancellationToken));
-    }
-
-    [Fact]
-    public async Task The_test_Desktop_is_never_the_real_one()
-    {
-        await using var app = await TestApp.StartAsync();
-
-        Assert.StartsWith(app.Directory.Path, app.KnownFolders.Desktop!, StringComparison.OrdinalIgnoreCase);
-        Assert.NotEqual(
-            Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
-            app.KnownFolders.Desktop,
-            StringComparer.OrdinalIgnoreCase);
     }
 }
