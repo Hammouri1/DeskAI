@@ -58,6 +58,9 @@ public static class DeskAiApplicationServices
         // Reads a typed sentence through AI (V1.1, ADR 0033). It holds the settings, the AI
         // connection, and the clock, and nothing that can see a file; a test asserts it.
         services.AddSingleton<SentenceAiService>();
+        // Ask DeskAI on Home (ADR 0035): sends a question through the sentence service and answers
+        // it from the local index. It holds nothing that can open or change a file; a test asserts it.
+        services.AddSingleton<AskDeskAiService>();
         services.AddSingleton<TidyRunService>();
         // Tidy while I'm away (V0.9, ADR 0031): the one type reachable from an automatic check that
         // can move a file, under a standing approval with a hard ceiling. A test names it as such.
@@ -117,6 +120,7 @@ public static class DeskAiApplicationServices
         // The "Your folders" card on Home and My workspace. It connects through the same service
         // the folder picker uses and grants nothing beyond that.
         services.AddTransient<PersonalFoldersViewModel>();
+        services.AddTransient<AskDeskAiViewModel>();
         return services;
     }
 }

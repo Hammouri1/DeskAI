@@ -8,6 +8,12 @@ public enum SentenceTask
 
     /// <summary>A rule in the person's own words, such as "put my bank statements somewhere tidy".</summary>
     RuleSentence,
+
+    /// <summary>
+    /// A question to "Ask DeskAI" on Home, such as "what's taking space in Downloads?" (V1.1,
+    /// ADR 0035). The answer names what kind of thing was asked; DeskAI does the asking itself.
+    /// </summary>
+    Question,
 }
 
 /// <summary>

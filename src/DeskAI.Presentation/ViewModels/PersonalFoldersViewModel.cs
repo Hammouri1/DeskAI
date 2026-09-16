@@ -60,7 +60,7 @@ public sealed class PersonalFoldersViewModel(
     /// <summary>Shown instead of the rows when Windows reports none of the four folders.</summary>
     public bool HasNoRows => Rows.Count == 0;
 
-    public string NoneKnownText => PersonalFolderPolicy.NoneKnownReason;
+    public static string NoneKnownText => PersonalFolderPolicy.NoneKnownReason;
 
     /// <summary>A refusal or a problem, in plain words. Empty when there is none.</summary>
     public string Message

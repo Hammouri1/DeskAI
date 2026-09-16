@@ -12,6 +12,10 @@ internal static class SentenceAiDialogs
 {
     public static async Task<bool> ConfirmSendAsync(XamlRoot xamlRoot, SentenceAiQuestion question)
     {
+        var whatHappensNext = question.Task == SentenceTask.Question
+            ? "The AI answers with what kind of question it is; DeskAI then looks in what it remembers and replies itself. "
+                + "It cannot search, move, or change anything on its own."
+            : "The AI answers with a reading DeskAI puts in the box for you to check. It cannot search, move, or change anything itself.";
         var content = new StackPanel { Spacing = 12, MaxWidth = 480 };
         content.Children.Add(new TextBlock
         {
@@ -28,8 +32,7 @@ internal static class SentenceAiDialogs
         content.Children.Add(new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,
-            Text = "Nothing about your files is sent: no names, folders, or locations. The AI answers with a reading DeskAI "
-                + "puts in the box for you to check. It cannot search, move, or change anything itself.",
+            Text = "Nothing about your files is sent: no names, folders, or locations. " + whatHappensNext,
         });
 
         var confirm = new ContentDialog

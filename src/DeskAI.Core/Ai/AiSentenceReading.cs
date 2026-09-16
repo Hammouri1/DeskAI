@@ -12,6 +12,35 @@ public sealed record AiSentenceReadingResult(string? Sentence, string? Problem)
     public bool IsValid => Sentence is not null;
 }
 
+/// <summary>What kind of thing a question to Ask DeskAI turned out to be.</summary>
+public enum AskIntentKind
+{
+    /// <summary>Find files; <see cref="AskIntent.SearchSentence"/> holds the search in DeskAI's words.</summary>
+    Search,
+
+    /// <summary>What is taking space, or how big things are.</summary>
+    Space,
+
+    /// <summary>Tidy or organize a folder.</summary>
+    Tidy,
+
+    /// <summary>The AI could not tell. DeskAI says so and suggests what can be asked.</summary>
+    Unsure,
+}
+
+/// <summary>
+/// A question read into a kind, an optional folder name as the person wrote it, and, for a
+/// search, the search in DeskAI's own words. Everything DeskAI then does with it is its own
+/// deterministic work on the local index; nothing here is an instruction.
+/// </summary>
+public sealed record AskIntent(AskIntentKind Kind, string? FolderName, string? SearchSentence);
+
+/// <summary>A read question, or the reason it was refused.</summary>
+public sealed record AskIntentReading(AskIntent? Intent, string? Problem)
+{
+    public bool IsValid => Intent is not null;
+}
+
 /// <summary>
 /// Turns the JSON an AI answered with into a sentence in DeskAI's own fixed vocabulary — the
 /// words <c>NaturalLanguageQueryTranslator</c> and <c>RuleDraftTranslator</c> already read.
@@ -91,9 +120,69 @@ public static class AiSentenceReading
         }
     }
 
-    private static AiSentenceReadingResult ReadSearch(string json)
+    /// <summary>
+    /// Reads a question's answer (ADR 0035). The kind must be one of four words; the folder is
+    /// reduced to harmless words like any free text; a search, when present, is read exactly as
+    /// a search answer is.
+    /// </summary>
+    public static AskIntentReading ReadQuestion(string json, int maximumBytes)
     {
-        var answer = JsonSerializer.Deserialize<SearchAnswer>(json, Options);
+        ArgumentNullException.ThrowIfNull(json);
+        if (maximumBytes < 1 || Encoding.UTF8.GetByteCount(json) > maximumBytes)
+        {
+            return new(null, "The AI answer was too large.");
+        }
+
+        QuestionAnswer? answer;
+        try
+        {
+            answer = JsonSerializer.Deserialize<QuestionAnswer>(json, Options);
+        }
+        catch (JsonException)
+        {
+            return new(null, "The AI answer was not in the shape DeskAI asked for.");
+        }
+
+        if (answer is null || answer.SchemaVersion != AiSentenceRequest.CurrentSchemaVersion)
+        {
+            return new(null, "The AI answer was not in the shape DeskAI asked for.");
+        }
+
+        var kind = answer.Kind switch
+        {
+            "search" => AskIntentKind.Search,
+            "space" => AskIntentKind.Space,
+            "tidy" => AskIntentKind.Tidy,
+            "unsure" => AskIntentKind.Unsure,
+            _ => (AskIntentKind?)null,
+        };
+        if (kind is null)
+        {
+            return new(null, "The AI named a kind of question DeskAI does not know.");
+        }
+
+        var folder = CleanText(answer.Folder);
+        if (kind != AskIntentKind.Search)
+        {
+            return new(new AskIntent(kind.Value, folder, null), null);
+        }
+
+        if (answer.Search is null)
+        {
+            return new(null, "The AI said this was a search but gave nothing to search for.");
+        }
+
+        var search = ReadSearch(answer.Search);
+        return search.IsValid
+            ? new(new AskIntent(AskIntentKind.Search, folder, search.Sentence), null)
+            : new(null, search.Problem);
+    }
+
+    private static AiSentenceReadingResult ReadSearch(string json) =>
+        ReadSearch(JsonSerializer.Deserialize<SearchAnswer>(json, Options));
+
+    private static AiSentenceReadingResult ReadSearch(SearchAnswer? answer)
+    {
         if (answer is null || answer.SchemaVersion != AiSentenceRequest.CurrentSchemaVersion)
         {
             return Refused("The AI answer was not in the shape DeskAI asked for.");
@@ -323,6 +412,12 @@ public static class AiSentenceReading
         [property: JsonPropertyName("smallerThanBytes")] long? SmallerThanBytes,
         [property: JsonPropertyName("changedInLastDays")] int? ChangedInLastDays,
         [property: JsonPropertyName("text")] string? Text);
+
+    private sealed record QuestionAnswer(
+        [property: JsonPropertyName("schemaVersion")] string? SchemaVersion,
+        [property: JsonPropertyName("kind")] string? Kind,
+        [property: JsonPropertyName("folder")] string? Folder,
+        [property: JsonPropertyName("search")] SearchAnswer? Search);
 
     private sealed record RuleAnswer(
         [property: JsonPropertyName("schemaVersion")] string? SchemaVersion,

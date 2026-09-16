@@ -58,6 +58,58 @@ public sealed partial class DashboardPage : Page
         }
     }
 
+    private void OnAskKeyDown(object sender, Microsoft.UI.Xaml.Input.KeyRoutedEventArgs e)
+    {
+        if (e.Key == Windows.System.VirtualKey.Enter && ViewModel.Ask.CanAsk)
+        {
+            e.Handled = true;
+            OnAskClick(sender, e);
+        }
+    }
+
+    /// <summary>
+    /// Shows exactly the words that would be sent and to whom, and sends only if the person
+    /// presses Send. DeskAI's reply appears on the card; cancelling sends nothing.
+    /// </summary>
+    private async void OnAskClick(object sender, RoutedEventArgs e)
+    {
+        var question = await ViewModel.Ask.PrepareAsync();
+        if (question is not null && await SentenceAiDialogs.ConfirmSendAsync(XamlRoot, question))
+        {
+            await ViewModel.Ask.SendAsync(question);
+        }
+    }
+
+    /// <summary>
+    /// The one button on a reply: opens Search or Organize the way those pages' own buttons do,
+    /// or connects a folder through the same dialog the Your folders card uses.
+    /// </summary>
+    private async void OnAskActionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: AskExchangeViewModel exchange }
+            || ((App)Application.Current).MainAppWindow is not MainWindow window)
+        {
+            return;
+        }
+
+        if (exchange.Action == Core.Ai.AskAction.ConnectFolder && exchange.ConnectKind is { } kind)
+        {
+            if (ViewModel.Folders.Find(kind) is { } row
+                && (row.IsConnected || await PersonalFolderDialogs.ConfirmConnectAsync(XamlRoot, row.Name))
+                && await ViewModel.Folders.ConnectAsync(kind) is not null)
+            {
+                window.GoTo("organize", fresh: true);
+            }
+
+            return;
+        }
+
+        if (ViewModel.Ask.Act(exchange) is { } route)
+        {
+            window.GoTo(route, fresh: true);
+        }
+    }
+
     /// <summary>
     /// Says exactly how many files, in how many folders, and how much would be read, and reads
     /// only if the person presses Compare. Cancel reads nothing.

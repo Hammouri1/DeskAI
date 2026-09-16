@@ -198,3 +198,27 @@ Store provider ID, endpoint (where allowed), model ID, capability cache, timeout
   by the AI's folders, ideas show "AI idea from <service>", unsure ones start unticked, rules
   still win, and Tidy and undo are the ordinary ones.
 - Review: `docs/security/2026-09-16-plan-folder-review.md`.
+
+## V1.1: Ask DeskAI (ADR 0035)
+
+- A card on Home: a question in the person's own words, such as "what's taking space in
+  Downloads?". Only the question is sent, through the same `SentenceAiService` two-step flow as
+  any sentence (`SentenceTask.Question`), with the same dialog, consent, catalog, key, timeout,
+  and daily cap. Nothing about any file goes with it, and nothing DeskAI finds is ever sent back;
+  each question stands alone and the card's list is not saved.
+- The AI answers with a kind — `search`, `space`, `tidy`, or `unsure` — the folder name the
+  person wrote (reduced to harmless words), and for a search the same search shape as on
+  Search. `AiSentenceReading.ReadQuestion` refuses anything else whole.
+- `AskDeskAiService` then does the work itself, deterministically: a search runs through
+  `FileSearchService` on the local index (narrowed to the named folder when it is connected)
+  and replies with up to five matching names and an "Open in Search" button; a space question
+  reads `StorageSummaryService` and replies with totals, the biggest kinds, and the largest
+  file, with a button to see big files in Search; a tidy question offers "Open in Organize" on
+  a connected folder, "Connect <folder>" for one of the four personal folders (through the Your
+  folders dialog), or says where DeskAI works; unsure says what can be asked. Every reply is
+  DeskAI's wording; the AI's text never reaches the screen.
+- The service holds the sentence service, the search, storage, and connected-folder services,
+  the personal-folder policy, and the clock — nothing that opens or changes a file; a reflection
+  test fixes that. Its buttons open pages through the same `SearchRequest` and `OrganizeRequest`
+  the pages' own buttons use.
+- Review: `docs/security/2026-09-16-ask-deskai-review.md`.

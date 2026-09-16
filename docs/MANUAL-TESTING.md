@@ -1012,3 +1012,30 @@ Use the same made-up test folder as "Ask AI on Tidy a folder", with `notes.pdf`,
    `invoice-march.pdf` stays under your rule's folder whatever the AI said.
 6. Press the "?" next to the button and check it reads clearly and truthfully. Tab to the
    button and through the dialog with the keyboard, then with Narrator on.
+
+## Ask DeskAI (V1.1, added 2026-09-16)
+
+Needs an AI key you already have and a connected test folder with made-up files. Each Send is
+one paid request; the list is about five.
+
+1. With AI off, open **Home**. Expected: under Your folders, an **Ask DeskAI** card with the
+   box and button switched off and "Turn on AI in Privacy and AI to ask questions here."
+2. Turn AI on and come back. Expected: the button reads **Ask <service>** and the line says only
+   your question is sent and nothing about your files.
+3. Type "what's taking space?" and press Enter. Expected: "Send this to <service>?" showing
+   exactly your words; the last line says the AI answers with what kind of question it is and
+   DeskAI replies itself. Cancel. Expected: nothing on the card; your words stay in the box.
+4. Press **Ask** again and **Send**. Expected: a reply card with your question in bold and a
+   DeskAI sentence such as "Your 1 connected folder holds 12.3 MB across 8 files. Biggest kinds:
+   …", with **Open in Search**. Press it. Expected: Search opens with "larger than 100 mb".
+5. Ask "find my photos in <your test folder's name>". Expected: "Found N files for "photos" in
+   <folder>: …" and **Open in Search** runs that search.
+6. Ask "tidy my <test folder>". Expected: "Open <folder> in Organize …" and the button opens
+   Organize on it, asking permission as usual. Ask "tidy my Desktop" while the Desktop is not
+   connected. Expected: "Desktop is not connected yet …" with **Connect Desktop**, which opens
+   the usual "Connect your Desktop?" dialog first.
+7. Ask "tidy C:\Program Files". Expected: a reply saying it is not one of your connected folders
+   and that DeskAI works only inside your Desktop, Downloads, Documents, and Pictures; no button.
+8. Ask "hello". Expected: "I'm not sure what you mean. You can ask things like …".
+9. Press the "?" and check it reads clearly. Tab through the box, the button, the dialog, and a
+   reply's button with the keyboard, then with Narrator on.

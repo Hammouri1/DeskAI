@@ -81,6 +81,12 @@ files it cannot place by type belong, or, with **Plan this folder with AI**, sug
 names for the whole folder and which file goes where. DeskAI checks every name, only ever makes
 folders inside the one you are tidying, and shows you the whole plan before anything moves.
 
+On **Home**, the **Ask DeskAI** box takes a question in your own words: "what's taking space in
+Downloads?", "find my slides from last month", "tidy my Desktop". Only the question is sent. The
+AI says what kind of question it is; DeskAI then looks in what it remembers and answers itself,
+with one button to open Search or Organize or to connect a folder. It never sends anything about
+your files and never moves anything.
+
 ## Backups, moving computers, and leaving
 
 **Privacy and AI** → **Save a backup file…** writes your rules and saved searches to a file (never

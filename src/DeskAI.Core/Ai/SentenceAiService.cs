@@ -88,8 +88,14 @@ public sealed class SentenceAiService(
             status.Explanation);
     }
 
-    /// <summary>Sends a prepared question, after checking the AI choice is still the one the person saw.</summary>
-    public async Task<SentenceAiAnswer> AskAsync(SentenceAiQuestion question, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Sends a prepared question, after checking the AI choice is still the one the person saw,
+    /// and hands back the raw answer for the caller to read strictly.
+    /// </summary>
+    /// <returns>Whether it was sent, the connection's response when it was, and the refusal in words when it was not.</returns>
+    public async Task<(bool WasSent, AiSentenceResponse? Response, string Message)> SendAsync(
+        SentenceAiQuestion question,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(question);
         var settings = await settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(false);
@@ -99,13 +105,26 @@ public sealed class SentenceAiService(
             !string.Equals(settings.ProviderId, question.ProviderId, StringComparison.Ordinal) ||
             !string.Equals(target.Destination, question.Destination, StringComparison.Ordinal))
         {
-            return new(false, false, null, "Your AI choices changed since you looked, so nothing was sent. Try again to see where it would go.");
+            return (false, null, "Your AI choices changed since you looked, so nothing was sent. Try again to see where it would go.");
         }
 
         var response = await ai.ReadSentenceAsync(question.Request, cancellationToken).ConfigureAwait(false);
-        if (!response.IsAvailable)
+        return (true, response, response.Message);
+    }
+
+    /// <summary>Sends a prepared search or rule sentence and reads the answer into DeskAI's own words.</summary>
+    public async Task<SentenceAiAnswer> AskAsync(SentenceAiQuestion question, CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(question);
+        var (wasSent, response, message) = await SendAsync(question, cancellationToken).ConfigureAwait(false);
+        if (!wasSent)
         {
-            return new(true, false, null, response.Message);
+            return new(false, false, null, message);
+        }
+
+        if (response is null || !response.IsAvailable)
+        {
+            return new(true, false, null, message);
         }
 
         var reading = AiSentenceReading.Read(question.Task, response.Json!, question.Request.Limits.MaximumResponseBytes);

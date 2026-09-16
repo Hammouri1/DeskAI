@@ -53,17 +53,28 @@ public static class AiPromptFactory
         ArgumentNullException.ThrowIfNull(request);
         var categories = string.Join(", ", AiSentenceReading.CategoryNames);
         var today = request.TodayUtc.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
+        var searchProperties = $$"""
+            "schemaVersion": "{{AiSentenceRequest.CurrentSchemaVersion}}"
+            "endings": an array of file endings the person named, such as ".pdf", or []
+            "categories": an array of kinds of file from exactly this list: {{categories}}; or []
+            "largerThanBytes": a whole number of bytes, or null
+            "smallerThanBytes": a whole number of bytes, or null
+            "changedInLastDays": a whole number of days from 1 to {{AiSentenceReading.MaxDays}} when the person meant a period ending today, or null
+            "text": words to look for in a file or folder name, or null
+            """;
         var shape = request.Task switch
         {
-            SentenceTask.SearchPhrase => $$"""
+            SentenceTask.SearchPhrase => $"""
                 The sentence was typed into a file search box. Return JSON only, with exactly these properties and no others:
+                {searchProperties}
+                """,
+            SentenceTask.Question => $$"""
+                The sentence is a question to a helper that organizes the person's own folders. Return JSON only, with exactly these properties and no others:
                 "schemaVersion": "{{AiSentenceRequest.CurrentSchemaVersion}}"
-                "endings": an array of file endings the person named, such as ".pdf", or []
-                "categories": an array of kinds of file from exactly this list: {{categories}}; or []
-                "largerThanBytes": a whole number of bytes, or null
-                "smallerThanBytes": a whole number of bytes, or null
-                "changedInLastDays": a whole number of days from 1 to {{AiSentenceReading.MaxDays}} when the person meant a period ending today, or null
-                "text": words to look for in a file or folder name, or null
+                "kind": exactly one of "search" (they want to find files), "space" (they ask what takes up space or how big things are), "tidy" (they want a folder tidied, sorted, cleaned up, or organized), "unsure" (none of these)
+                "folder": the folder name they mentioned, exactly as they wrote it, such as "Downloads", or null
+                "search": when kind is "search", an object with exactly these properties, otherwise null:
+                {{searchProperties}}
                 """,
             _ => $$"""
                 The sentence describes a rule for moving files inside one folder. Return JSON only, with exactly these properties and no others:

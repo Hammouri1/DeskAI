@@ -281,7 +281,7 @@
                                        Text="DeskAI works only inside these four folders. Connect one to see what it would tidy." />
                             <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
                                        Visibility="{x:Bind ViewModel.Folders.HasNoRows, Mode=OneWay}"
-                                       Text="{x:Bind ViewModel.Folders.NoneKnownText}" />
+                                       Text="{x:Bind viewmodels:PersonalFoldersViewModel.NoneKnownText}" />
                             <ItemsControl ItemsSource="{x:Bind ViewModel.Folders.Rows, Mode=OneWay}"
                                           AutomationProperties.Name="Your folders">
                                 <ItemsControl.ItemTemplate>

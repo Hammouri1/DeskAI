@@ -206,7 +206,7 @@ public sealed class YourFoldersPageTests
         await search.ConnectFolderAsync(elsewhere);
 
         Assert.True(home.Folders.HasNoRows);
-        Assert.Equal(PersonalFolderPolicy.NoneKnownReason, home.Folders.NoneKnownText);
+        Assert.Equal(PersonalFolderPolicy.NoneKnownReason, PersonalFoldersViewModel.NoneKnownText);
         Assert.Equal(PersonalFolderPolicy.NoneKnownReason, search.FolderMessage);
         Assert.Empty(search.Folders);
     }

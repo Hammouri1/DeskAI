@@ -176,7 +176,7 @@ public sealed class TidyAiPageTests
         app.Internet.Reply = PlanAnswer(name => name.Contains("invoice", StringComparison.OrdinalIgnoreCase) ? "Bank" : "Trip 2026");
         var page = await OpenWithPermissionAsync(app, "invoice-march.pdf", "beach.jpg", "mystery.zzz");
         Assert.True(page.CanPlanAi);
-        Assert.Equal("Plan this folder with AI", page.PlanAiText);
+        Assert.Equal("Plan this folder with AI", TidyViewModel.PlanAiText);
 
         var question = await page.PreparePlanQuestionAsync();
 

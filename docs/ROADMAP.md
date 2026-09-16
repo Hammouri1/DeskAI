@@ -486,6 +486,13 @@ three AI features (A: plain language for Search and rules, B: "Plan this folder"
   file rules do not place; the AI may also name at most 12 plain folders, each checked by the
   parser, the service, the path policy, and the executor; the plan is the ordinary preview,
   Tidy, and undo.
+- ✅ 2026-09-16: **AI feature C — Ask DeskAI** (ADR 0035, review
+  `docs/security/2026-09-16-ask-deskai-review.md`). A question box on Home: only the question is
+  sent; the AI answers with a kind of question; DeskAI searches its own index, reads its own
+  storage summary, or points at Organize, in its own words, with one button that opens a page.
+
+V1.1 is complete in code, tests, and documents as of 2026-09-16; the owner's manual look at all
+of it is the next thing (`HANDOFF.md`).
 
 ## Explicitly Deferred Beyond V1 Unless Reprioritized
 

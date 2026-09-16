@@ -518,9 +518,9 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     /// </summary>
     public bool CanPlanAi => CanUseAiForEveryFile && HasAiPanel && !IsAskingAi && !IsBusy;
 
-    public string PlanAiText => "Plan this folder with AI";
+    public static string PlanAiText => "Plan this folder with AI";
 
-    public string PlanAiPrompt =>
+    public static string PlanAiPrompt =>
         "Or let AI plan the whole folder: it names folders and says which file goes into which. "
         + "DeskAI checks every name, and you still see the whole plan before anything moves.";
 

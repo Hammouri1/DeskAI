@@ -138,7 +138,7 @@
                                    Text="Connect one and DeskAI remembers the names, sizes, and dates of what is inside. Nothing moves until you allow tidying on Organize and press Tidy." />
                         <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
                                    Visibility="{x:Bind ViewModel.Folders.HasNoRows, Mode=OneWay}"
-                                   Text="{x:Bind ViewModel.Folders.NoneKnownText}" />
+                                   Text="{x:Bind viewmodels:PersonalFoldersViewModel.NoneKnownText}" />
                         <ItemsControl ItemsSource="{x:Bind ViewModel.Folders.Rows, Mode=OneWay}"
                                       AutomationProperties.Name="Your folders">
                             <ItemsControl.ItemsPanel>
@@ -181,6 +181,63 @@
                                    Foreground="{ThemeResource DeskCautionBrush}"
                                    Visibility="{x:Bind ViewModel.Folders.HasMessage, Mode=OneWay}"
                                    Text="{x:Bind ViewModel.Folders.Message, Mode=OneWay}" />
+                    </StackPanel>
+                </Border>
+
+                <!--
+                    Ask DeskAI (ADR 0035): a question in the person's words. Only the question is sent,
+                    after the same dialog as every sentence; DeskAI answers from its own memory. Each
+                    reply may carry one plain button that opens a page, never one that changes a file.
+                -->
+                <TextBlock Style="{StaticResource GroupLabelStyle}" Text="ASK DESKAI" />
+                <Border Style="{StaticResource CardStyle}">
+                    <StackPanel Spacing="10">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon FontSize="16" Glyph="&#xE8BD;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                            <TextBlock FontWeight="SemiBold"
+                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                       Text="Ask about your folders in your own words" />
+                            <controls:HelpButton Topic="home.ask" />
+                        </StackPanel>
+                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                            <TextBox MaxLength="256"
+                                     PlaceholderText="What's taking space in Downloads?"
+                                     IsEnabled="{x:Bind ViewModel.Ask.HasAi, Mode=OneWay}"
+                                     Text="{x:Bind ViewModel.Ask.Question, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                     KeyDown="OnAskKeyDown"
+                                     AutomationProperties.Name="Ask DeskAI" />
+                            <Button Grid.Column="1"
+                                    Content="{x:Bind ViewModel.Ask.AskText, Mode=OneWay}"
+                                    IsEnabled="{x:Bind ViewModel.Ask.CanAsk, Mode=OneWay}"
+                                    Click="OnAskClick" />
+                        </Grid>
+                        <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                   Text="{x:Bind ViewModel.Ask.Note, Mode=OneWay}" />
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                   Foreground="{ThemeResource DeskCautionBrush}"
+                                   Visibility="{x:Bind ViewModel.Ask.HasMessage, Mode=OneWay}"
+                                   Text="{x:Bind ViewModel.Ask.Message, Mode=OneWay}" />
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.Ask.Exchanges, Mode=OneWay}"
+                                      Visibility="{x:Bind ViewModel.Ask.HasExchanges, Mode=OneWay}"
+                                      AutomationProperties.Name="Questions and answers">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="viewmodels:AskExchangeViewModel">
+                                    <Border Style="{StaticResource RowCardStyle}" Margin="0,0,0,8">
+                                        <StackPanel Spacing="6">
+                                            <TextBlock FontWeight="SemiBold" TextWrapping="Wrap"
+                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                       Text="{x:Bind Question}" />
+                                            <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                                       Text="{x:Bind Reply}" />
+                                            <Button Content="{x:Bind ActionText}"
+                                                    Visibility="{x:Bind HasAction}"
+                                                    Tag="{x:Bind}"
+                                                    Click="OnAskActionClick" />
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
                     </StackPanel>
                 </Border>
 
