@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using DeskAI.App.Services;
@@ -98,8 +99,18 @@ public sealed class LookCardViewModel(DeskLook look) : ObservableObject
     public string ChosenText => IsChosen ? "Chosen" : string.Empty;
 }
 
-/// <summary>One pinned search as a tile: its name and what its count may truthfully say.</summary>
-public sealed record PinnedSearchTileViewModel(Guid Id, string Name, string Count);
+/// <summary>
+/// One pinned search as a tile: its name, a number for the big slot when there is one, and
+/// the words beside or instead of it. Words never go in the number slot: they were clipped
+/// there (owner's screenshot, 2026-09-16).
+/// </summary>
+public sealed record PinnedSearchTileViewModel(Guid Id, string Name, string Number, string Words)
+{
+    public bool HasNumber => Number.Length > 0;
+
+    /// <summary>The whole count in one line, as a screen reader or a test reads it.</summary>
+    public string Count => HasNumber ? $"{Number} {Words}" : Words;
+}
 
 /// <summary>A saved search that is not pinned, offered with a Pin button.</summary>
 public sealed record UnpinnedSearchViewModel(Guid Id, string Name, string Phrase);
@@ -945,12 +956,12 @@ public sealed class WorkspaceViewModel : ObservableObject
         return string.Join(" ", parts);
     }
 
-    internal static string DescribeCount(PinnedCount count) => count.Kind switch
+    internal static (string Number, string Words) DescribeCount(PinnedCount count) => count.Kind switch
     {
-        PinnedCountKind.NoFolders => "No folders connected",
-        PinnedCountKind.NotUnderstood => "Search not understood",
-        PinnedCountKind.AtLimit => $"{count.Files}+ files",
-        _ => count.Files == 1 ? "1 file" : $"{count.Files} files",
+        PinnedCountKind.NoFolders => (string.Empty, "No folders connected"),
+        PinnedCountKind.NotUnderstood => (string.Empty, "Search not understood"),
+        PinnedCountKind.AtLimit => ($"{count.Files}+", "files"),
+        _ => (count.Files.ToString(CultureInfo.CurrentCulture), count.Files == 1 ? "file" : "files"),
     };
 
     private static string Count(int value, string one, string many) => value == 1 ? $"1 {one}" : $"{value} {many}";
@@ -1001,7 +1012,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         Pins.Clear();
         foreach (var saved in all.Where(item => item.IsPinned))
         {
-            string count;
+            (string Number, string Words) count;
             try
             {
                 count = DescribeCount(await _pins.CountAsync(saved).ConfigureAwait(true));
@@ -1009,10 +1020,10 @@ public sealed class WorkspaceViewModel : ObservableObject
             catch (Exception exception) when (IsExpectedFailure(exception))
             {
                 // One tile failing to count must not blank the others.
-                count = "Could not count";
+                count = (string.Empty, "Could not count");
             }
 
-            Pins.Add(new PinnedSearchTileViewModel(saved.Id, saved.Name, count));
+            Pins.Add(new PinnedSearchTileViewModel(saved.Id, saved.Name, count.Number, count.Words));
         }
 
         OtherSearches.Clear();

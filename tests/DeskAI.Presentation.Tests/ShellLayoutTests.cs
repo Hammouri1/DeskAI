@@ -79,6 +79,27 @@ public sealed partial class ShellLayoutTests
         }
     }
 
+    /// <summary>
+    /// Owner's screenshot 2026-09-16: a pinned tile drew "No folders connected" in the 30-point
+    /// number style and clipped it. The big style may only ever bind a number, and it hides
+    /// when there is none; the words go on a caption line that wraps.
+    /// </summary>
+    [Fact]
+    public void A_pinned_tile_shows_only_a_number_in_the_big_style_and_its_words_on_a_wrapping_caption()
+    {
+        var xaml = File.ReadAllText(AppFile(Path.Combine("Views", "WorkspacePage.xaml")));
+        var tile = Regex.Match(xaml, @"x:DataType=""viewmodels:PinnedSearchTileViewModel"">(.*?)</DataTemplate>", RegexOptions.Singleline).Groups[1].Value;
+        Assert.NotEmpty(tile);
+
+        var big = Regex.Match(tile, @"<TextBlock[^>]*Style=""\{StaticResource MetricStyle\}""[^>]*/>").Value;
+        Assert.Contains("Text=\"{x:Bind Number}\"", big, StringComparison.Ordinal);
+        Assert.Contains("Visibility=\"{x:Bind HasNumber}\"", big, StringComparison.Ordinal);
+        Assert.DoesNotContain("{x:Bind Count}", tile, StringComparison.Ordinal);
+
+        var words = Regex.Match(tile, @"<TextBlock[^>]*Text=""\{x:Bind Words\}""[^>]*/>").Value;
+        Assert.Contains("TextWrapping=\"Wrap\"", words, StringComparison.Ordinal);
+    }
+
     private static string AppFile(string relative) =>
         Path.Combine(RepositoryRoot(), "src", "DeskAI.App", relative);
 

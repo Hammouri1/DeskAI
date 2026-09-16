@@ -169,6 +169,36 @@ public sealed class WorkspacePageTests
         Assert.All(page.Pins, tile => Assert.Equal("No folders connected", tile.Count));
     }
 
+    /// <summary>
+    /// Owner's screenshot 2026-09-16: "No folders connected" was drawn in the big-number style
+    /// and cut off at "No folders connect". A tile has a number slot, shown only for a number,
+    /// and a words line that always fits.
+    /// </summary>
+    [Fact]
+    public async Task A_tile_keeps_words_out_of_its_number_slot()
+    {
+        await using var app = await TestApp.StartAsync();
+        var page = app.Get<WorkspaceViewModel>();
+        await page.InitializeAsync();
+        await page.AddPackAsync("minimal");
+        Assert.All(page.Pins, tile =>
+        {
+            Assert.False(tile.HasNumber);
+            Assert.Equal(string.Empty, tile.Number);
+            Assert.Equal("No folders connected", tile.Words);
+        });
+
+        var folder = app.MakeFolder("Coursework", "notes.txt", "holiday.jpg", "beach.png");
+        var id = await SaveSearchAsync(app, folder, "Photos", "photos");
+        await page.PinCommand.ExecuteAsync(id);
+
+        var counted = Assert.Single(page.Pins, tile => tile.Name == "Photos");
+        Assert.True(counted.HasNumber);
+        Assert.Equal("2", counted.Number);
+        Assert.Equal("files", counted.Words);
+        Assert.Equal("2 files", counted.Count);
+    }
+
     [Fact]
     public async Task A_search_whose_words_mean_nothing_says_so_instead_of_zero()
     {
