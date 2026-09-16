@@ -45,7 +45,12 @@ appending to them.
 - Verification at `6474767`, the owner's DeskAI closed: Release build of `DeskAI.sln`, **no
   errors and no warnings**; **1372 tests pass, none skipped** (was 1355; +12 `SettingsCheckPageTests`,
   +5 `AiConnectionCheckTests`); `dotnet format` clean.
-- **The owner's AI setup is currently empty on their machine.** Verified with `cmdkey /list`:
+- **The owner set their OpenRouter key up again and confirmed it works (2026-09-17).** This is
+  the first time any part of DeskAI has been verified against a live paid service rather than a
+  fake transport. Their words were "the key works fine"; they did not quote the check's own
+  sentence back, so treat the green path as confirmed and the failure wordings as still only
+  test-verified. The paragraph below describes the state before they re-entered it.
+- **The owner's AI setup was empty on their machine before that.** Verified with `cmdkey /list`:
   there is no `DeskAI/...` credential, and the page's dropdown reads "Don't use AI". The database
   still holds OpenRouter usage counters from 9, 10 and 16 September, so it did work once. They
   will have to enter the key again; the new check is what tells them whether it took.
@@ -56,29 +61,26 @@ appending to them.
 
 ## What is left
 
-1. **The owner tries "Check this now" with their real key.** Nothing in this session was tested
-   against a live service — every test used a fake internet. `docs/MANUAL-TESTING.md` has the walk
-   ("Check this now (Privacy and AI)"). This is the first thing to ask them about.
-2. **Push `main`.** `6474767` is local only. Push `main` alone.
-3. **Look at the GitHub Actions result.** Two pushes have happened and **nobody has checked
+1. **Push `main`.** `6474767` and `82ee85f` are local only. Push `main` alone.
+2. **Look at the GitHub Actions result.** Two pushes have happened and **nobody has checked
    whether the build workflow passed**. If it failed, the likeliest causes are the locked restore
    (`--locked-mode`) disagreeing with the committed `packages.lock.json` files, or the .NET SDK
    pin in `global.json` being unavailable on `windows-latest`.
-4. **The owner's look at V1.1, then V0.7–V1.0**, in `docs/MANUAL-TESTING.md`: "Your folders"
+3. **The owner's look at V1.1, then V0.7–V1.0**, in `docs/MANUAL-TESTING.md`: "Your folders"
    (inside "Desktop and wallpaper", steps 9–14), "Let AI read this", "Plan this folder with AI",
    "Ask DeskAI"; then "The command-center look", "Back up, restore, and Start fresh", "A release
    zip", "Tidy while I'm away", "My workspace", "Folder templates", "DeskAI's look", "V0.6
    sign-off", and "Checking after the window is closed" steps 2, 9, 19–24. Any bug found by hand
    gets a page test that fails before the fix.
-5. **Delete the four local refs holding the old email**, once the owner has browsed the
+4. **Delete the four local refs holding the old email**, once the owner has browsed the
    repository and is happy: `backup/before-email-rewrite`, and
    `refs/original/refs/heads/{main,v0.5-background-checking,v0.7-workspace-profiles}`.
    Until then, the push rule above stands.
-6. **Decide the version number, then tag.** `Directory.Build.props` still says 1.0.0 and
+5. **Decide the version number, then tag.** `Directory.Build.props` still says 1.0.0 and
    `RELEASE-NOTES.md` has a "1.1 — not tagged yet" section. Either tag `v1.0.0` at the V1.0
    commit and `v1.1.0` at the head, or bump to 1.1.0 and tag once. Tagging is what makes the
    release zip and the SBOM. Then unzip on a clean account and walk "A release zip".
-7. **Two gaps found in the 2026-09-17 audit, neither a hole in shipping code, both holes in what
+6. **Two gaps found in the 2026-09-17 audit, neither a hole in shipping code, both holes in what
    would catch a future mistake:**
    - `TidyAiServiceTests.Constructor_CannotReachAnythingThatReadsOrChangesAFile` is a
      **denylist** of eight forbidden types. A ninth dangerous interface added later would pass.
@@ -86,11 +88,11 @@ appending to them.
      the strongest containment guarantee in the product — is true today but nothing fails if
      someone adds `DeskAI.Infrastructure` to that `.csproj`. A test that reads the `.csproj`
      files would fix both.
-8. **Possible follow-ups the owner may ask for** (not started): size and date boxes on the rule
+7. **Possible follow-ups the owner may ask for** (not started): size and date boxes on the rule
    form; more question kinds for Ask DeskAI (duplicates, old files); a narrow-window layout for
    the Your folders rows on Home; the ask-once behaviour on "Let AI read this" (that one still
    asks every time on purpose).
-9. **Still deferred by decision, not to start unasked:** code signing when a certificate exists
+8. **Still deferred by decision, not to start unasked:** code signing when a certificate exists
    (ADR 0030), add-ons, localization, shortcut and icon suggestions, desktop layout previews,
    local image generation, and "keep both" unattended.
 
