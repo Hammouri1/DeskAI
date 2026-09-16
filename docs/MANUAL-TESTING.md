@@ -565,14 +565,18 @@ folder.
 
 ### Turning it on and off
 
-1. Open **Automatic tasks** and turn on **Keep checking after I close the window**. Expected:
+1. Open **Automatic tasks** and read the caption under **Keep checking after I close the
+   window** before touching it. Expected: it says turning it on is what puts DeskAI near the
+   clock, and tells you to click the arrow there to show hidden icons. Then turn it on. Expected:
    a dialog appears, states DeskAI will never add itself to Windows startup, and offers a
    notification checkbox.
 2. Turn it on again three separate times and dismiss the dialog a different way each time:
    press **Enter**, press **Esc**, and click the dialog's **X**. Expected: all three behave
    like pressing "No thanks" — the switch goes back to Off and no icon appears.
-3. Turn it on and press **Keep running**. Expected: the icon appears near the clock
-   **immediately, while the window is still open** — not only once you close it.
+3. Turn it on and press **Keep running**. Expected: the icon appears near the clock — most
+   likely behind the hidden-icons arrow, which is what the dialog now tells you — **immediately,
+   while the window is still open**, not only once you close it. Drag it out of the flyout and
+   confirm it stays beside the clock across a restart of DeskAI.
 4. Look at the dialog itself in both light and dark Windows themes. Expected: the checkbox
    and its caption are readable, match DeskAI's other dialogs, and nothing is cut off.
 5. Turn the switch off from the page. Expected: the icon disappears at once, with no need to

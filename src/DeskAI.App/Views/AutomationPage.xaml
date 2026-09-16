@@ -155,7 +155,7 @@
                         <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="560"
                                    TextWrapping="Wrap"
                                    HorizontalAlignment="Left"
-                                   Text="Off unless you turn it on. DeskAI will ask you first, and will never add itself to Windows startup." />
+                                   Text="{x:Bind ViewModel.KeepRunningCaption}" />
                     </StackPanel>
 
                     <Expander Header="More details" HorizontalAlignment="Stretch">

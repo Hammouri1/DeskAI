@@ -1,3 +1,4 @@
+using DeskAI.App.Help;
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.Core.Abstractions;
@@ -396,5 +397,61 @@ public sealed class BackgroundCheckingPageTests
 
         Assert.True(app.Presence.IsShowing);
         Assert.Equal("DeskAI — checks paused", app.Presence.Tooltips[^1]);
+    }
+
+    /// <summary>
+    /// The owner closed DeskAI's window, went looking near the clock, opened the hidden-icons
+    /// arrow, and found nothing — because the icon exists only once this switch is on, and no
+    /// words on the page said so. Found by hand on 2026-09-16.
+    /// </summary>
+    [Fact]
+    public async Task The_switch_says_it_is_what_puts_DeskAI_near_the_clock()
+    {
+        await using var app = await TestApp.StartAsync();
+        var page = app.Get<AutomationViewModel>();
+        await page.InitializeAsync();
+
+        Assert.Contains("near the clock", page.KeepRunningCaption, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// Windows 11 puts a new icon behind the hidden-icons arrow rather than beside the clock, so
+    /// every sentence that sends someone to the clock has to name the arrow too. Otherwise DeskAI
+    /// directs them to a place its icon is not, which is how the bug above was found.
+    /// </summary>
+    [Theory]
+    [InlineData("the dialog before it is turned on")]
+    [InlineData("the caption under the switch")]
+    [InlineData("the notice after the window is hidden")]
+    [InlineData("the help topic")]
+    public async Task Every_sentence_about_the_icon_says_to_look_behind_the_arrow(string place)
+    {
+        await using var app = await TestApp.StartAsync();
+        var page = app.Get<AutomationViewModel>();
+        await page.InitializeAsync();
+
+        var words = place switch
+        {
+            "the dialog before it is turned on" => page.AskAboutKeepingRunning().Body,
+            "the caption under the switch" => page.KeepRunningCaption,
+            "the notice after the window is hidden" => BackgroundCheckingChoice.WhereItWent.Body,
+            _ => HelpCatalog.Find("automation.keeprunning")!.WhatItDoes,
+        };
+
+        Assert.Contains("hidden icons", words, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
+    /// The notice is shown by the window, which no test can construct, so its words live in
+    /// <see cref="BackgroundCheckingChoice"/> where they can be asserted. This fixes them to the
+    /// two things a person needs: DeskAI did not close, and where it actually is.
+    /// </summary>
+    [Fact]
+    public void The_notice_after_the_window_is_hidden_says_DeskAI_is_still_running()
+    {
+        var notice = BackgroundCheckingChoice.WhereItWent;
+
+        Assert.Contains("still running", notice.Title, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("near the clock", notice.Body, StringComparison.OrdinalIgnoreCase);
     }
 }

@@ -1,6 +1,7 @@
 using DeskAI.App.Navigation;
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
+using DeskAI.Core.Rules;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -160,9 +161,7 @@ public sealed partial class MainWindow : Window
         }
 
         _toldThemWhereItWent = true;
-        _notifier.Notify(
-            "DeskAI is still running.",
-            "You'll find it near the clock. Right-click it to open DeskAI or quit.");
+        _notifier.Notify(BackgroundCheckingChoice.WhereItWent.Title, BackgroundCheckingChoice.WhereItWent.Body);
     }
 
     /// <summary>

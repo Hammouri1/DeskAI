@@ -92,3 +92,24 @@ P/Invoke and window procedure. It is therefore kept to the part that genuinely c
 window, icon, menu, and four events. Every decision it might have made stays in Core and
 Presentation behind `IBackgroundPresence`, which page tests fake exactly as they fake
 `IFindingNotifier`.
+
+## Amended 2026-09-16: the words say where the icon really is
+
+The owner closed DeskAI, looked near the clock, opened the hidden-icons arrow, and found
+nothing. Nothing was broken — the switch was off, so no icon had ever been registered — but two
+things about the wording made that indistinguishable from a fault, and both are now fixed.
+
+**Nothing on screen connected the switch to the icon.** The switch reads "Keep checking after I
+close the window"; its caption talked about startup and asking first, never about the icon. The
+icon therefore looked like something DeskAI should always have. The caption now leads with the
+fact that turning the switch on is what puts DeskAI near the clock.
+
+**"Near the clock" is not where Windows 11 puts a new icon.** It goes into the hidden-icons
+flyout behind the arrow until someone drags it out. Three places said "near the clock" and sent
+a person to a place the icon is not. One sentence, `BackgroundCheckingChoice.WhereToLook`, is
+now appended to every one of them — the dialog, the switch caption, the still-running notice,
+and the help topic — so a fourth place cannot be written without it.
+
+The still-running notice moved from a literal in `MainWindow` into
+`BackgroundCheckingChoice.WhereItWent`, for the reason the rest of this feature's words already
+live there: a window cannot be built in a test, so words typed into it cannot be asserted.

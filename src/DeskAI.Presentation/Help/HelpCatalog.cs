@@ -128,7 +128,7 @@ public static class HelpCatalog
             "It never shows file names, so nobody looking at your screen sees them."),
         new("automation.keeprunning", "Keep running after you close it",
             "DeskAI staying near the clock and carrying on checking after you close its window.",
-            "Right-click the icon to open DeskAI again, pause checking, or quit. It is off unless you turn it on.",
+            "Turning it on is what puts DeskAI near the clock; click the arrow there to show hidden icons if you cannot see it. Right-click the icon to open DeskAI, pause checking, or quit.",
             "It never adds itself to Windows startup, and it moves nothing on its own outside a folder where you turned on Tidy while I'm away."),
         new("organize.away", "Tidy while I'm away",
             "Your yes, for one folder, that DeskAI may move what your rules match while you are not watching.",

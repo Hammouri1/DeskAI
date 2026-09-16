@@ -15,6 +15,14 @@ public sealed record BackgroundCheckingQuestion(
     string Confirm,
     string Decline);
 
+/// <summary>What DeskAI says through Windows once its window is gone and it is still there.</summary>
+/// <remarks>
+/// A record for the same reason <see cref="BackgroundCheckingQuestion"/> is one: the window that
+/// shows it cannot be built in a test, so the words live where they can be asserted instead of
+/// being typed into a call nothing can reach.
+/// </remarks>
+public sealed record BackgroundNotice(string Title, string Body);
+
 /// <summary>
 /// The words DeskAI uses about running with no window, derived from what is stored.
 /// </summary>
@@ -32,6 +40,40 @@ public sealed record BackgroundCheckingQuestion(
 /// </remarks>
 public static class BackgroundCheckingChoice
 {
+    /// <summary>Where the icon really is, as opposed to where "near the clock" implies.</summary>
+    /// <remarks>
+    /// Windows 11 starts a newly registered icon in the hidden-icons flyout behind the arrow, not
+    /// beside the clock, until someone drags it out. "Near the clock" on its own therefore sends a
+    /// person to a place the icon is not — which is exactly what happened to the owner on
+    /// 2026-09-16. Written once and appended to every sentence that mentions the clock, because
+    /// three separate places said it and a fourth would eventually be written without it.
+    /// </remarks>
+    public const string WhereToLook =
+        "Click the arrow next to the clock to show hidden icons, then drag DeskAI out to keep it in view.";
+
+    /// <summary>
+    /// The caption under the switch on the Automatic tasks page.
+    /// </summary>
+    /// <remarks>
+    /// It leads with what the switch does to the icon. Nothing on the page used to connect the
+    /// two, so the icon looked like something DeskAI should always have and its absence looked
+    /// like a fault rather than the default.
+    /// </remarks>
+    public const string SwitchCaption =
+        "Off unless you turn it on, and DeskAI asks first. Turning it on is what puts DeskAI near "
+        + "the clock. " + WhereToLook + " DeskAI never adds itself to Windows startup.";
+
+    /// <summary>
+    /// What Windows says the first time the window is hidden in a run.
+    /// </summary>
+    /// <remarks>
+    /// A window that disappears while the program keeps running is alarming, so this says both
+    /// halves: DeskAI did not close, and where it actually went.
+    /// </remarks>
+    public static BackgroundNotice WhereItWent { get; } = new(
+        Title: "DeskAI is still running.",
+        Body: "It is near the clock. " + WhereToLook + " Right-click it to open DeskAI or quit.");
+
     /// <summary>The dialog shown before the mode is turned on. Asking, not announcing.</summary>
     public static BackgroundCheckingQuestion Ask(AutomaticCheckSettings settings) => Ask(settings, awayFolders: 0);
 
@@ -43,7 +85,8 @@ public static class BackgroundCheckingChoice
     public static BackgroundCheckingQuestion Ask(AutomaticCheckSettings settings, int awayFolders) => new(
         Title: "Keep DeskAI running after you close the window?",
         Body: "DeskAI will stay near the clock and keep looking at the folders you connected. "
-            + "It will not add itself to Windows startup — after you restart or sign out, it only "
+            + WhereToLook
+            + " It will not add itself to Windows startup — after you restart or sign out, it only "
             + "runs again when you open it.",
         LimitLine: awayFolders == 0
             ? "A check can tell you how many files your rules match. It cannot move, rename, "

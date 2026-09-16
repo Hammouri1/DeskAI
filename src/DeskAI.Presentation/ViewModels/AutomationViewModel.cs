@@ -254,6 +254,17 @@ public sealed class AutomationViewModel : ObservableObject, IDisposable
     public string MoreDetails => BackgroundCheckingChoice.MoreDetails(_mode, _awayFolders);
 
     /// <summary>
+    /// The caption under the keep-running switch, saying this is what puts DeskAI near the clock.
+    /// </summary>
+    /// <remarks>
+    /// Fixed rather than derived from the mode: it explains what the switch is for, which is the
+    /// same sentence whether the switch is on or off. It is a property on the page's view model
+    /// rather than text in the page so that a page test can read the words a person is shown, and
+    /// an instance one because that is what the page's compiled binding needs.
+    /// </remarks>
+    public string KeepRunningCaption { get; } = BackgroundCheckingChoice.SwitchCaption;
+
+    /// <summary>
     /// The first card's headline: "never moves a file on its own" only while that is true.
     /// </summary>
     /// <remarks>
