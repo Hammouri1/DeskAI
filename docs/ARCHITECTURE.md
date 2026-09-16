@@ -181,6 +181,21 @@ executor's undo, which removes only recorded, still-empty folders. `FindLastAsyn
 folder's newest records and offers the latest run made only of create-folder operations, if it
 has not been undone and nothing ran in the folder since.
 
+### DeskAI's look (V0.7 piece D, ADR 0028)
+
+`DeskAI.Core.Appearance` holds `ThemeMode` (follow Windows, light, dark), `LookPalette` (five
+neutral "#RRGGBB" colours), `DeskLook` (id, name, line, a dark and a light palette),
+`DeskLookCatalog` (Slate, Graphite, Sand, Ocean; Slate is the default), and `AppearanceSettings`
+(mode and look id, with `Look` falling back to Slate for an unknown id).
+`IAppearanceSettingsRepository` is implemented by `SqliteAppearanceSettingsRepository` on the
+`app_settings` key/value table that has existed since schema 1, so no schema change was needed;
+unrecognised stored values fall back to the default. Presentation defines `IAppearanceApplier`
+with a no-op, the way `IBackgroundPresence` is done, and `WorkspaceViewModel` saves the choice
+then calls the applier. The app replaces the no-op with `WindowsAppearanceApplier`, which
+recolours the brushes in `DeskAITheme.xaml`'s dark and light theme dictionaries in place and sets
+`RequestedTheme` on the window's root element; `App.OnLaunched` applies the stored choice before
+the window is activated. Page tests use a recording applier.
+
 The recovery fix that made this safe: `FolderTidyExecutor.Settle` measures a record with no move
 operations by the folders it made rather than the files it moved (before, such a record settled
 as `Failed` and could never be undone), `InterruptedTidy` carries `MadeFolders` and `TotalFolders`

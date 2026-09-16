@@ -303,8 +303,13 @@ Built one piece at a time, safest first (design:
   the one executor, journaled, and undoable (empty folders only) even after reopening. Nothing is
   moved. Typed names pass a plain-language check and then the path policy. A run that stopped
   part-way is asked about on Organize as folders. Adding a pack still changes nothing on disk.
-- D: DeskAI's own look (themes for the DeskAI window), keeping "green means safe or confirmed".
-  Not started.
+- ✅ D, 2026-09-16: **DeskAI's look** (ADR 0028). Four looks — Slate, Graphite, Sand, Ocean —
+  and a light / dark / follow-Windows choice, on My workspace. A look tints only the neutral
+  ground, surfaces, and lines; the accent, caution, and danger colours are not a look's to
+  change, so "green means safe or confirmed" holds in every look, and a test checks each look
+  keeps the shared text readable. Applied to the DeskAI window at once and at startup before it
+  shows; stored in the existing key/value settings table; unknown values fall back to Slate.
+  Changes nothing in Windows and no file.
 - E: Desktop layouts, icons, shortcuts, and wallpaper. Changes Windows, so it is a `SECURITY.md`
   review gate. Not started.
 

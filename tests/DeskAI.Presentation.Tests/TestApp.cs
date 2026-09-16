@@ -52,6 +52,8 @@ internal sealed class TestApp : IAsyncDisposable
 
     public RecordingPresence Presence => (RecordingPresence)_services.GetRequiredService<IBackgroundPresence>();
 
+    public RecordingAppearanceApplier Painter => (RecordingAppearanceApplier)_services.GetRequiredService<IAppearanceApplier>();
+
     public T Get<T>() where T : notnull => _services.GetRequiredService<T>();
 
     public static Task<TestApp> StartAsync() => StartAsync(new TemporaryDirectory(), stoppable: false);
@@ -88,6 +90,7 @@ internal sealed class TestApp : IAsyncDisposable
         Replace<IAiHttpTransport>(services, new RecordingAiTransport());
         Replace<IFindingNotifier>(services, new RecordingNotifier());
         Replace<IBackgroundPresence>(services, new RecordingPresence());
+        Replace<IAppearanceApplier>(services, new RecordingAppearanceApplier());
         if (stoppable)
         {
             Replace<IOperationJournal>(services, new StoppingJournal(

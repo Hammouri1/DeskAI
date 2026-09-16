@@ -231,7 +231,13 @@ files." Top to bottom:
    DeskAI's history so it is still there after reopening; a tidy in that folder afterwards takes
    it off the page. A typed name that cannot be a folder is refused on the card with a plain
    reason before anything is looked at.
-4. **Your other saved searches.** Saved searches not pinned, each with **Pin**. Past eight, Pin is
+4. **DeskAI's look** (piece D, 2026-09-16). "Colours for the DeskAI window only. Your Windows
+   theme and wallpaper are not touched." A **Light or dark** choice — Follow Windows, Light,
+   Dark — and four look cards, Slate, Graphite, Sand, Ocean, each with a two-part swatch (how it
+   reads in dark and in light), a line, and a plain **Use this look** button. The chosen card
+   says "Chosen" in the accent, because a chosen state is a confirmed state. Choosing repaints
+   the window at once and is remembered. See "Looks" under the visual system below.
+5. **Your other saved searches.** Saved searches not pinned, each with **Pin**. Past eight, Pin is
    off and a line beside the list says to unpin one to make room.
 
 The sentence under the page title is "Your shortcuts, starter packs, and folder templates.
@@ -263,6 +269,8 @@ Palette tokens are defined for both themes in `ResourceDictionary.ThemeDictionar
 | `DeskTextSecondaryBrush` | `#8C97A5` | `#5A6572` |
 
 The `HighContrast` dictionary maps every token back to `SystemColor*` brushes, so Windows high contrast overrides the palette entirely.
+
+**Looks (V0.7 piece D, 2026-09-16).** The table above is the **Slate** look, DeskAI's default. A person can choose Graphite, Sand, or Ocean instead on My workspace, and light, dark, or follow Windows. A look is a `LookPalette` of exactly five neutral tokens per theme — `DeskGroundBrush`, `DeskSurfaceBrush`, `DeskSurfaceRaisedBrush`, `DeskLineBrush`, `DeskLineStrongBrush` (and the WinUI card fills that mirror them) — applied by changing those brushes' colours in place in both theme dictionaries, so every page repaints and the next theme switch finds the look already there. High contrast is never touched. The accent, caution, danger, and text tokens are not part of a look, by construction: `LookPalette` has no such property, a test asserts it, and another test checks every look keeps the shared text at 7:1 (primary) and 4.5:1 (secondary) contrast on its ground and surfaces. That is how "green means safe or confirmed" survives a person choosing their own colours.
 
 Shared styles:
 

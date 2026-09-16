@@ -632,6 +632,34 @@ folder.
 24. Sign out and back in, or restart Windows. Expected: DeskAI does **not** start on its
     own — it only runs again once you open it yourself.
 
+## DeskAI's look (V0.7 piece D, added 2026-09-16)
+
+Nothing here touches a file, so no test folder is needed. Note your Windows theme and wallpaper
+before starting; they must be exactly the same at the end.
+
+1. Open **My workspace**. Expected: a **DeskAI's look** section with "Light or dark" (Follow
+   Windows chosen) and four cards — Slate, Graphite, Sand, Ocean — each with a two-part colour
+   strip and **Use this look**; Slate says "Chosen" in green.
+2. Press **Use this look** on **Ocean**. Expected: the whole window changes colour at once —
+   every page, the side menu, cards, and dialogs — with no restart; Ocean says "Chosen" and Slate
+   no longer does. The green accent (Allow tidying, Tidy, "Chosen") is the same green as before.
+   Orange caution lines are the same orange.
+3. Choose **Dark**, then **Light**, then **Follow Windows**. Expected: the window switches at
+   once each time and keeps the Ocean colours in both. With Follow Windows, change the Windows
+   app theme in Settings > Personalization > Colors. Expected: DeskAI follows it; Ocean stays.
+4. Try **Graphite** and **Sand** in both light and dark. Expected: all text readable everywhere,
+   including captions and the caution colour; nothing looks unchanged or half-painted. Open the
+   pack preview and the template preview dialogs. Expected: they take the look too.
+5. Close DeskAI and open it again. Expected: it opens straight into the chosen look and theme,
+   with no flash of the old colours.
+6. Turn on Windows high contrast. Expected: DeskAI uses the high-contrast colours entirely, the
+   look cards still say which is chosen, and choosing another look changes nothing visible until
+   high contrast is turned off again.
+7. Check Windows: theme, accent colour, and wallpaper are exactly as they were.
+8. Press the "?" next to DeskAI's look and check it reads clearly. Tab through the section with the
+   keyboard only, then with Narrator on. Expected: the theme choice and every button reachable
+   and named.
+
 ## Folder templates (V0.7 piece C, added 2026-09-16)
 
 Use a new folder under Windows Temp with made-up files only, for example `notes.txt` and a

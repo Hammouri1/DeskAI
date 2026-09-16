@@ -82,6 +82,18 @@ public sealed partial class WorkspacePage : Page
 
     private void OnGoToOrganizeClick(object sender, RoutedEventArgs e) => GoTo("organize", fresh: false);
 
+    /// <summary>A "#RRGGBB" swatch from a look card as a brush, for the card's colour strip.</summary>
+    public static Microsoft.UI.Xaml.Media.SolidColorBrush Swatch(string hex) =>
+        new(DeskAI.App.Services.WindowsAppearanceApplier.ToColor(hex));
+
+    private async void OnThemeModeChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is RadioButtons { SelectedIndex: >= 0 } choice)
+        {
+            await ViewModel.ChooseThemeModeAsync(choice.SelectedIndex);
+        }
+    }
+
     /// <summary>
     /// Shows exactly which folders a template would make, and makes them only if the
     /// confirming button is pressed.

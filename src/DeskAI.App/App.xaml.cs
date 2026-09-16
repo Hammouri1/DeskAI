@@ -91,6 +91,17 @@ public partial class App : Application
                 }
 
                 services.AddSingleton<IBackgroundPresence, TrayPresence>();
+
+                // Same rule for the look: the one that paints the window replaces the one that
+                // paints nothing.
+                foreach (var existing in services
+                    .Where(descriptor => descriptor.ServiceType == typeof(IAppearanceApplier))
+                    .ToArray())
+                {
+                    services.Remove(existing);
+                }
+
+                services.AddSingleton<IAppearanceApplier, WindowsAppearanceApplier>();
                 services.AddTransient<DashboardPage>();
                 services.AddTransient<OrganizePage>();
                 services.AddTransient<SearchPage>();
@@ -121,6 +132,10 @@ public partial class App : Application
             await _host.Services.GetRequiredService<IDatabaseInitializer>().InitializeAsync();
             var window = _host.Services.GetRequiredService<MainWindow>();
             _window = window;
+
+            // The chosen look is painted before the window shows, so it never flashes the default.
+            _host.Services.GetRequiredService<IAppearanceApplier>().Apply(
+                await _host.Services.GetRequiredService<IAppearanceSettingsRepository>().LoadAsync());
             window.Activate();
             await ConnectTheBackgroundPresenceAsync(window);
         }

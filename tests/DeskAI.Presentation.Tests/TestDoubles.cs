@@ -140,6 +140,14 @@ internal sealed class RecordingAiTransport : IAiHttpTransport
     }
 }
 
+/// <summary>Stands in for the window painter: remembers every look it was asked to apply.</summary>
+internal sealed class RecordingAppearanceApplier : IAppearanceApplier
+{
+    public List<DeskAI.Core.Appearance.AppearanceSettings> Applied { get; } = [];
+
+    public void Apply(DeskAI.Core.Appearance.AppearanceSettings settings) => Applied.Add(settings);
+}
+
 internal sealed class RecordingNotifier : IFindingNotifier
 {
     public List<string> Messages { get; } = [];

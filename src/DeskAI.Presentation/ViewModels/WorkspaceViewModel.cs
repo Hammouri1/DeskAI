@@ -1,7 +1,9 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
+using DeskAI.Core.Appearance;
 using DeskAI.Core.Search;
 using DeskAI.Core.Templates;
 using DeskAI.Core.Tidy;
@@ -58,6 +60,41 @@ public sealed class FolderTemplateCardViewModel(string id, string name, string f
 public sealed record TemplateFolderOption(Guid Id, string Name, string Path, bool CanTidy)
 {
     public override string ToString() => Name;
+}
+
+/// <summary>One look's card: its name, a line, two swatches, and whether it is the chosen one.</summary>
+public sealed class LookCardViewModel(DeskLook look) : ObservableObject
+{
+    private bool _isChosen;
+
+    public string Id { get; } = look.Id;
+
+    public string Name { get; } = look.Name;
+
+    public string Summary { get; } = look.Summary;
+
+    /// <summary>"#RRGGBB" swatches, so the card can show the look before it is chosen.</summary>
+    public string DarkGround { get; } = look.Dark.Ground;
+
+    public string DarkSurface { get; } = look.Dark.SurfaceRaised;
+
+    public string LightGround { get; } = look.Light.Ground;
+
+    public string LightSurface { get; } = look.Light.Line;
+
+    public bool IsChosen
+    {
+        get => _isChosen;
+        set
+        {
+            if (SetProperty(ref _isChosen, value))
+            {
+                OnPropertyChanged(nameof(ChosenText));
+            }
+        }
+    }
+
+    public string ChosenText => IsChosen ? "Chosen" : string.Empty;
 }
 
 /// <summary>One pinned search as a tile: its name and what its count may truthfully say.</summary>
@@ -121,8 +158,12 @@ public sealed class WorkspaceViewModel : ObservableObject
     private readonly ConnectedFolderService _folders;
     private readonly TidyPermissionService _permission;
     private readonly ISavedSearchRepository _searches;
+    private readonly IAppearanceSettingsRepository _appearance;
+    private readonly IAppearanceApplier _applier;
     private readonly SearchRequest _request;
     private readonly IClock _clock;
+    private AppearanceSettings _chosenAppearance = AppearanceSettings.Default;
+    private string _lookMessage = string.Empty;
     private string _pinsCaption = string.Empty;
     private string _pinMessage = string.Empty;
     private bool _canPinMore = true;
@@ -142,6 +183,8 @@ public sealed class WorkspaceViewModel : ObservableObject
         ConnectedFolderService folders,
         TidyPermissionService permission,
         ISavedSearchRepository searches,
+        IAppearanceSettingsRepository appearance,
+        IAppearanceApplier applier,
         SearchRequest request,
         IClock clock)
     {
@@ -151,8 +194,12 @@ public sealed class WorkspaceViewModel : ObservableObject
         _folders = folders;
         _permission = permission;
         _searches = searches;
+        _appearance = appearance;
+        _applier = applier;
         _request = request;
         _clock = clock;
+        Looks = DeskLookCatalog.All.Select(look => new LookCardViewModel(look)).ToArray();
+        ChooseLookCommand = new AsyncRelayCommand<string>(ChooseLookAsync, _ => !IsBusy);
         Packs = StarterPackCatalog.All
             .Select(pack => new StarterPackCardViewModel(pack.Id, pack.Name, pack.Summary))
             .ToArray();
@@ -182,6 +229,33 @@ public sealed class WorkspaceViewModel : ObservableObject
     public AsyncRelayCommand<Guid> UnpinCommand { get; }
 
     public AsyncRelayCommand UndoTemplateCommand { get; }
+
+    /// <summary>DeskAI's looks, in the catalog's order. Exactly one is chosen.</summary>
+    public IReadOnlyList<LookCardViewModel> Looks { get; }
+
+    public AsyncRelayCommand<string> ChooseLookCommand { get; }
+
+    /// <summary>The theme choice as the page's list shows it: Follow Windows, Light, Dark.</summary>
+    public static IReadOnlyList<string> ThemeModeNames { get; } = ["Follow Windows", "Light", "Dark"];
+
+    public int ThemeModeIndex => (int)_chosenAppearance.Mode;
+
+    public string ChosenLookName => _chosenAppearance.Look.Name;
+
+    /// <summary>Why a look could not be saved, when it could not. Empty otherwise.</summary>
+    public string LookMessage
+    {
+        get => _lookMessage;
+        private set
+        {
+            if (SetProperty(ref _lookMessage, value))
+            {
+                OnPropertyChanged(nameof(HasLookMessage));
+            }
+        }
+    }
+
+    public bool HasLookMessage => !string.IsNullOrEmpty(LookMessage);
 
     public bool HasTemplateFolders => TemplateFolders.Count > 0;
 
@@ -281,6 +355,7 @@ public sealed class WorkspaceViewModel : ObservableObject
                 PinCommand.NotifyCanExecuteChanged();
                 UnpinCommand.NotifyCanExecuteChanged();
                 UndoTemplateCommand.NotifyCanExecuteChanged();
+                ChooseLookCommand.NotifyCanExecuteChanged();
             }
         }
     }
@@ -289,6 +364,74 @@ public sealed class WorkspaceViewModel : ObservableObject
     {
         await ReloadAsync().ConfigureAwait(true);
         await ReloadTemplateFoldersAsync().ConfigureAwait(true);
+        await LoadAppearanceAsync().ConfigureAwait(true);
+    }
+
+    /// <summary>Chooses a look: saves it, then repaints DeskAI's window. Changes nothing else.</summary>
+    public async Task ChooseLookAsync(string? lookId)
+    {
+        if (lookId is null || DeskLookCatalog.Find(lookId) is null)
+        {
+            return;
+        }
+
+        await SaveAppearanceAsync(_chosenAppearance with { LookId = lookId }).ConfigureAwait(true);
+    }
+
+    /// <summary>Chooses light, dark, or follow Windows, by the index in <see cref="ThemeModeNames"/>.</summary>
+    public async Task ChooseThemeModeAsync(int index)
+    {
+        if (index < 0 || index >= ThemeModeNames.Count || index == ThemeModeIndex)
+        {
+            return;
+        }
+
+        await SaveAppearanceAsync(_chosenAppearance with { Mode = (ThemeMode)index }).ConfigureAwait(true);
+    }
+
+    private async Task SaveAppearanceAsync(AppearanceSettings settings)
+    {
+        IsBusy = true;
+        try
+        {
+            await _appearance.SaveAsync(settings).ConfigureAwait(true);
+            ShowAppearance(settings);
+            _applier.Apply(settings);
+            LookMessage = string.Empty;
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            LookMessage = $"DeskAI could not save that look: {exception.Message}";
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task LoadAppearanceAsync()
+    {
+        try
+        {
+            ShowAppearance(await _appearance.LoadAsync().ConfigureAwait(true));
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            ShowAppearance(AppearanceSettings.Default);
+            LookMessage = $"DeskAI could not read your look, so it is showing the usual one: {exception.Message}";
+        }
+    }
+
+    private void ShowAppearance(AppearanceSettings settings)
+    {
+        _chosenAppearance = settings;
+        foreach (var card in Looks)
+        {
+            card.IsChosen = card.Id == settings.Look.Id;
+        }
+
+        OnPropertyChanged(nameof(ThemeModeIndex));
+        OnPropertyChanged(nameof(ChosenLookName));
     }
 
     /// <summary>

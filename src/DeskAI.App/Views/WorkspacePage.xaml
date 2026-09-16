@@ -206,6 +206,71 @@
                     </StackPanel>
                 </StackPanel>
 
+                <!--
+                    DeskAI's look. Choosing a card repaints this window at once and is remembered.
+                    Only the neutral colours differ between looks; the accent stays green in all.
+                -->
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="DeskAI's look" />
+                            <controls:HelpButton Topic="workspace.look" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="620"
+                                   HorizontalAlignment="Left"
+                                   Text="Colours for the DeskAI window only. Your Windows theme and wallpaper are not touched." />
+                    </StackPanel>
+
+                    <RadioButtons x:Name="ThemeModeChoice"
+                                  Header="Light or dark"
+                                  MaxColumns="3"
+                                  ItemsSource="{x:Bind viewmodels:WorkspaceViewModel.ThemeModeNames}"
+                                  SelectedIndex="{x:Bind ViewModel.ThemeModeIndex, Mode=OneWay}"
+                                  SelectionChanged="OnThemeModeChanged" />
+
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Looks}"
+                                  AutomationProperties.Name="DeskAI's looks">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="216" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:LookCardViewModel">
+                                <Border Style="{StaticResource RowCardStyle}" Margin="0,0,10,10">
+                                    <StackPanel Spacing="8">
+                                        <!-- Two swatches: how the look reads in dark and in light. -->
+                                        <Grid ColumnDefinitions="*,*" ColumnSpacing="4" Height="36">
+                                            <Border CornerRadius="4,0,0,4" Background="{x:Bind views:WorkspacePage.Swatch(DarkGround)}"
+                                                    BorderBrush="{x:Bind views:WorkspacePage.Swatch(DarkSurface)}" BorderThickness="0,0,0,6" />
+                                            <Border Grid.Column="1" CornerRadius="0,4,4,0" Background="{x:Bind views:WorkspacePage.Swatch(LightGround)}"
+                                                    BorderBrush="{x:Bind views:WorkspacePage.Swatch(LightSurface)}" BorderThickness="0,0,0,6" />
+                                        </Grid>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                       Text="{x:Bind Name}" />
+                                            <!-- The accent says "chosen" because it is a confirmed state, not decoration. -->
+                                            <TextBlock Style="{StaticResource CaptionStyle}"
+                                                       Foreground="{ThemeResource DeskAccentBrush}"
+                                                       Text="{x:Bind ChosenText, Mode=OneWay}" />
+                                        </StackPanel>
+                                        <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                                   Text="{x:Bind Summary}" />
+                                        <Button Content="Use this look"
+                                                Command="{Binding ElementName=Root, Path=ViewModel.ChooseLookCommand}"
+                                                CommandParameter="{x:Bind Id}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                               Visibility="{x:Bind ViewModel.HasLookMessage, Mode=OneWay}"
+                               Text="{x:Bind ViewModel.LookMessage, Mode=OneWay}" />
+                </StackPanel>
+
                 <!-- Saved searches that are not pinned, so a person's own searches can be pinned too. -->
                 <Border Style="{StaticResource CardStyle}"
                         Visibility="{x:Bind ViewModel.HasOtherSearches, Mode=OneWay}">

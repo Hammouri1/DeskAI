@@ -88,6 +88,8 @@ public static class DeskAiApplicationServices
         // A DeskAI with no notification area is a legitimate DeskAI: it simply never offers
         // to keep running with no window. The Windows one is registered by the app.
         services.AddSingleton<IBackgroundPresence, NoBackgroundPresence>();
+        // Paints DeskAI's own window in the chosen look. The Windows one is registered by the app.
+        services.AddSingleton<IAppearanceApplier, NoAppearanceApplier>();
         services.AddSingleton<BackgroundPresenceController>();
         services.AddTransient<ShellViewModel>();
         services.AddTransient<TidyViewModel>();
