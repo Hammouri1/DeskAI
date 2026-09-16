@@ -491,6 +491,14 @@ three AI features (A: plain language for Search and rules, B: "Plan this folder"
   sent; the AI answers with a kind of question; DeskAI searches its own index, reads its own
   storage summary, or points at Organize, in its own words, with one button that opens a page.
 
+- ✅ 2026-09-16: **Ask DeskAI asks once per service, not before every question** (ADR 0035
+  amended, review addendum in `docs/security/2026-09-16-ask-deskai-review.md`), the owner's
+  choice from the offered follow-ups. The yes is remembered by service, nothing is sent without
+  it, the line under the box says which way it stands, and "Ask me each time" or Start fresh
+  takes it back.
+- ✅ 2026-09-16: every analyzer warning cleared, including two V1.1 introduced; a second
+  performance run recorded after V1.1.
+
 V1.1 is complete in code, tests, and documents as of 2026-09-16; the owner's manual look at all
 of it is the next thing (`HANDOFF.md`).
 

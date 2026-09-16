@@ -112,6 +112,7 @@ changes a feature.
 | Page | Feature | Page tests |
 |---|---|---|
 | Home | Totals, categories, largest files, last checked | `HomeAndShellTests` |
+| Home | Ask DeskAI, asked once (ADR 0035 amended): the first question asks and the yes survives reopening; later questions send with no dialog; a send without that yes sends nothing; a different AI service asks again; "Ask me each time" and Start fresh both take the yes back | `AskDeskAiPageTests` |
 | Home | Ask DeskAI (ADR 0035): off with AI off; the dialog's words and service; Send sends the question alone; a search question replies with matching names and Open in Search lands the phrase on Search; a space question is answered from the storage summary; a tidy question opens Organize on a connected folder, offers Connect for an unconnected personal folder, or says where DeskAI works; unsure says what can be asked; an off-shape answer is refused; cancel sends nothing | `AskDeskAiPageTests`, `AskDeskAiServiceTests` |
 | Home | Greeting by time of day; the four Quick look tiles (folders, files, sitting unused, possible duplicates) read the remembered numbers, and the duplicates caption stays hedged | `HomeAndShellTests`, `ShellLayoutTests` |
 | Home | Possible copies (same size, never "confirmed") | `HomeAndShellTests` |

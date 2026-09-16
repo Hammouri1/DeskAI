@@ -82,7 +82,10 @@ names for the whole folder and which file goes where. DeskAI checks every name, 
 folders inside the one you are tidying, and shows you the whole plan before anything moves.
 
 On **Home**, the **Ask DeskAI** box takes a question in your own words: "what's taking space in
-Downloads?", "find my slides from last month", "tidy my Desktop". Only the question is sent. The
+Downloads?", "find my slides from last month", "tidy my Desktop". DeskAI asks your permission
+before the first question and then remembers it, so it does not interrupt every time; the line
+under the box always says which way it stands, and **Ask me each time** brings the question
+back. Choosing a different AI service asks again. Only the question is sent. The
 AI says what kind of question it is; DeskAI then looks in what it remembers and answers itself,
 with one button to open Search or Organize or to connect a folder. It never sends anything about
 your files and never moves anything.

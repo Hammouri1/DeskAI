@@ -36,6 +36,22 @@ The card line says only the question is sent and nothing about the files; the di
 words, the service, its address, and that DeskAI replies itself; help topic `home.ask` says the
 same in three parts.
 
+## Amendment, same day: asked once per service
+
+The owner found a dialog before every question tiring and chose the first-use-only form (ADR
+0035, amended). What that changes, and what holds it:
+
+| # | Threat | Control | Test |
+|---|---|---|---|
+| A1 | A first question sent before the person ever agreed | `AskDeskAiService.AskAsync` refuses unless `NeedsPermissionAsync` is false or the caller passes the dialog's fresh yes; the page passes it only after the dialog returned Send | `AskDeskAiPageTests.Before_that_yes_nothing_is_sent_even_if_asked_to_send` |
+| A2 | A yes for one service carried to another | The stored value is the service's name and address; a different service does not match, so it asks again before the first question there | `AskDeskAiPageTests.Choosing_a_different_AI_service_makes_DeskAI_ask_again` |
+| A3 | A standing permission a person cannot see or undo | The line under the box states which way it stands and names the service; **Ask me each time** removes the yes with no dialog; Start fresh removes it with everything else | `AskDeskAiPageTests.Ask_me_each_time_brings_the_question_back`, `Start_fresh_forgets_the_agreement_too`, `DeskAI_asks_before_the_first_question_only…` (the Note wording) |
+| A4 | Agreeing to more than was understood | The first dialog says DeskAI asks this once for that service, that questions then go on Ask, and how to bring the question back | dialog text (checked by hand; `MANUAL-TESTING.md`, "Ask DeskAI" steps 3–5) |
+| A5 | The remembered yes leaking something | The value is a service name and a host, both already in the settings row; nothing about a file, and it is not in the backup file | `FreshStartPageTests`, `BackupPageTests` (backup holds rules and saved searches only) |
+
+What did not change: the words sent, the strict reading, the deterministic answers, and the
+buttons. The other three AI buttons still ask every time.
+
 ## Result
 
 Accepted. The AI's reach is unchanged: a few typed facts in, DeskAI's own deterministic work out.

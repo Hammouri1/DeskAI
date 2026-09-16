@@ -36,7 +36,7 @@ public static class HelpCatalog
             "It never touches anything outside these four folders, and nothing moves until you press Tidy."),
         new("home.ask", "Ask DeskAI",
             "A box where you ask about your connected folders in your own words, helped by the AI you set up.",
-            "Only your question is sent, after you see it and press Send. The AI says what kind of question it is; DeskAI looks in what it remembers and answers, with a button to open Search or Organize.",
+            "DeskAI asks once before the first question, then sends only your words. The AI says what kind of question it is; DeskAI looks in what it remembers and answers, with a button to open Search or Organize.",
             "It never sends file names, folder names, or anything about your files, and never moves or changes anything."),
         new("home.health", "Organization score",
             "A score out of 100 for how settled your connected folders look.",

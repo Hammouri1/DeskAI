@@ -57,10 +57,21 @@ public sealed class AskDeskAiService(
     StorageSummaryService storage,
     ConnectedFolderService folders,
     PersonalFolderPolicy personalFolders,
+    IAppSettingsStore settings,
     IClock clock)
 {
     /// <summary>How many matching file names a reply lists before saying "and N more".</summary>
     public const int NamesInReply = 5;
+
+    /// <summary>
+    /// Where the person's "yes, send my questions" is remembered, so DeskAI asks once rather
+    /// than before every question (the owner's request, 2026-09-16). Start fresh removes it.
+    /// </summary>
+    /// <remarks>
+    /// The stored value names the service and its address, so agreeing to send questions to one
+    /// service is not agreeing to send them to the next one. It holds nothing about any file.
+    /// </remarks>
+    public const string AgreedKey = "ask.questions.agreed";
 
     public const string UnsureReply =
         "I'm not sure what you mean. You can ask things like \"what's taking space?\", \"find my slides from last month\", or \"tidy my Downloads\".";
@@ -72,13 +83,54 @@ public sealed class AskDeskAiService(
     public Task<SentenceAiPreparation> PrepareAsync(string? question, CancellationToken cancellationToken = default) =>
         sentences.PrepareAsync(SentenceTask.Question, question, cancellationToken);
 
+    /// <summary>
+    /// Whether the person must be asked before this question goes out: nothing agreed yet, or
+    /// agreed for a different service than the one set up now.
+    /// </summary>
+    public async Task<bool> NeedsPermissionAsync(CancellationToken cancellationToken = default)
+    {
+        var agreed = await settings.ReadAsync(AgreedKey, cancellationToken).ConfigureAwait(false);
+        return !string.Equals(agreed, await AgreementAsync(cancellationToken).ConfigureAwait(false), StringComparison.Ordinal);
+    }
+
+    /// <summary>Remembers the yes for the service that is set up now.</summary>
+    public async Task RememberPermissionAsync(CancellationToken cancellationToken = default)
+    {
+        var agreement = await AgreementAsync(cancellationToken).ConfigureAwait(false);
+        if (agreement.Length > 0)
+        {
+            await settings.WriteAsync(AgreedKey, agreement, cancellationToken).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>Takes the yes back, so the next question asks again. Never confirmed: stopping is safe.</summary>
+    public Task ForgetPermissionAsync(CancellationToken cancellationToken = default) =>
+        settings.RemoveAsync(AgreedKey, cancellationToken);
+
     /// <summary>Sends the prepared question, reads the kind strictly, and answers from local memory.</summary>
-    public async Task<AskDeskAiAnswer> AskAsync(SentenceAiQuestion question, CancellationToken cancellationToken = default)
+    /// <param name="agreedNow">
+    /// True when the person has just pressed Send in the first-time dialog. Without it, and
+    /// without a remembered yes for this service, nothing is sent.
+    /// </param>
+    public async Task<AskDeskAiAnswer> AskAsync(
+        SentenceAiQuestion question,
+        bool agreedNow = false,
+        CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(question);
         if (question.Task != SentenceTask.Question)
         {
             return new(false, false, "That was not a question for Ask DeskAI.");
+        }
+
+        if (await NeedsPermissionAsync(cancellationToken).ConfigureAwait(false))
+        {
+            if (!agreedNow)
+            {
+                return new(false, false, $"Nothing was sent, because you have not agreed to send your questions to {question.ServiceName} yet.");
+            }
+
+            await RememberPermissionAsync(cancellationToken).ConfigureAwait(false);
         }
 
         var (wasSent, response, message) = await sentences.SendAsync(question, cancellationToken).ConfigureAwait(false);
@@ -213,6 +265,13 @@ public sealed class AskDeskAiService(
                 FolderId: connected[0].Id),
             _ => new(true, true, $"Which folder? You have: {string.Join(", ", connected.Select(folder => folder.Name))}."),
         };
+    }
+
+    /// <summary>The service and address a yes belongs to, or an empty string when AI is off.</summary>
+    private async Task<string> AgreementAsync(CancellationToken cancellationToken)
+    {
+        var status = await sentences.GetStatusAsync(cancellationToken).ConfigureAwait(false);
+        return status.IsSetUp ? $"{status.ServiceName}|{status.Destination}" : string.Empty;
     }
 
     private static string Files(int count) => count == 1 ? "1 file" : $"{count} files";

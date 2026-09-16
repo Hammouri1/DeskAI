@@ -25,9 +25,12 @@ appending to them.
   `f977673` Desktop bug, `4ec785c` tile clip, `275bad4` four-folder rule and Your folders card
   (ADR 0032), `39e6deb` AI reads a sentence (ADR 0033), `f3b8d27` Plan this folder (ADR 0034),
   `00692f9` Ask DeskAI (ADR 0035). `ROADMAP.md` has the V1.1 section; each AI feature has a
-  security review in `docs/security/2026-09-16-*.md`.
+  security review in `docs/security/2026-09-16-*.md`. Three more commits followed, after the
+  owner asked for the work left to be continued: `19d57a0` cleared every analyzer warning,
+  `f397496` recorded a second performance run, and the head made **Ask DeskAI ask once per
+  service instead of before every question** (their pick from four offered follow-ups).
 - Verification at the end, with the owner's DeskAI closed: a **clean** (`--no-incremental`)
-  Release build of `DeskAI.sln` with **no errors and no warnings**; **1344 tests pass, none
+  Release build of `DeskAI.sln` with **no errors and no warnings**; **1349 tests pass, none
   skipped**; `dotnet format` clean. A note for the next session: an incremental build hides
   analyzer warnings in projects it does not recompile. This session first reported "no warnings"
   from an incremental build and a clean one then showed five, two of them introduced by V1.1
@@ -60,11 +63,13 @@ appending to them.
    the build workflow, tag, and check the Release has the zip and the SBOM. Unzip on a clean
    account and walk "A release zip".
 3. **Possible follow-ups the owner may ask for after trying V1.1** (not started, each its own
-   decision): a first-use-only dialog for Ask DeskAI instead of one per question (ADR 0035
-   names this as the natural next step); size and date boxes on the rule form, so an AI-read
-   sentence like "older than 90 days" lands in a box instead of being noted as left out; more
-   question kinds for Ask DeskAI (duplicates, old files); a narrow-window layout for the Your
-   folders rows on Home.
+   decision, and they were offered these four and picked the first): ~~a first-use-only dialog
+   for Ask DeskAI~~ — **done 2026-09-16**, ADR 0035 amended; size and date boxes on the rule
+   form, so an AI-read sentence like "older than 90 days" lands in a box instead of being noted
+   as left out; more question kinds for Ask DeskAI (duplicates, old files); a narrow-window
+   layout for the Your folders rows on Home. If they ask for the ask-once behaviour on **Let AI
+   read this** too, it is the same shape: that one still asks every time on purpose, because it
+   is a one-off action on a page rather than a box someone types in repeatedly.
 4. **Small things, now done:** every analyzer warning is cleared (`19d57a0`).
    `IWallpaperSetter.Set` is now `Apply`, recorded in ADR 0029 because the contract is reviewed;
    the wallpaper P/Invoke reads into a character buffer; `FolderNameCheck` uses a cached
@@ -89,8 +94,12 @@ repeating because they shape what comes next:
   order A (sentences), B (plan), C (ask). The shared design rule across them: AI returns a few
   typed facts; DeskAI turns them into its own words and does the work deterministically. Keep
   that shape for any further AI feature; do not add a free-text reply path.
-- **A dialog before every AI request**, including every Ask DeskAI question, was kept as the
-  safe default without asking the owner; it is the first thing to expect feedback on.
+- **A dialog before every AI request** was kept as the safe default without asking the owner,
+  and it was indeed the first thing they changed: Ask DeskAI now asks once per service (ADR 0035
+  amended). The other three AI buttons still ask every time, on purpose.
+- **They chose not to push or tag until they have tried it.** Nothing has left this computer.
+  Asked plainly — "call it 1.1 and push it", "push but no tag", "not yet, I'll test first" —
+  they picked testing first. Do not push without asking again.
 - **The "Ask the owner in plain words" rule** from the previous handoff worked again: one
   message with four numbered questions, each with a recommended option, got one reply that
   settled everything.

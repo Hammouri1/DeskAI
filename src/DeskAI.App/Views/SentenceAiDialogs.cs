@@ -10,7 +10,11 @@ namespace DeskAI.App.Views;
 /// </summary>
 internal static class SentenceAiDialogs
 {
-    public static async Task<bool> ConfirmSendAsync(XamlRoot xamlRoot, SentenceAiQuestion question)
+    /// <param name="onceOnly">
+    /// True for the Ask DeskAI box, which asks before the first question to a service and then
+    /// remembers the yes. The dialog says so, so nobody agrees to more than they think.
+    /// </param>
+    public static async Task<bool> ConfirmSendAsync(XamlRoot xamlRoot, SentenceAiQuestion question, bool onceOnly = false)
     {
         var whatHappensNext = question.Task == SentenceTask.Question
             ? "The AI answers with what kind of question it is; DeskAI then looks in what it remembers and replies itself. "
@@ -34,6 +38,15 @@ internal static class SentenceAiDialogs
             TextWrapping = TextWrapping.Wrap,
             Text = "Nothing about your files is sent: no names, folders, or locations. " + whatHappensNext,
         });
+        if (onceOnly)
+        {
+            content.Children.Add(new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                Text = $"DeskAI asks this once for {question.ServiceName}. After that your questions go as soon as you press Ask, "
+                    + "and the line under the box says so. \"Ask me each time\" there brings this question back.",
+            });
+        }
 
         var confirm = new ContentDialog
         {

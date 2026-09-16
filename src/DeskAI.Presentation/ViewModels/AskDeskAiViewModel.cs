@@ -51,6 +51,7 @@ public sealed class AskDeskAiViewModel(
     private string _question = string.Empty;
     private string _message = string.Empty;
     private bool _isBusy;
+    private bool _needsPermission = true;
 
     public ObservableCollection<AskExchangeViewModel> Exchanges { get; } = [];
 
@@ -63,12 +64,37 @@ public sealed class AskDeskAiViewModel(
 
     public string AskText => HasAi ? $"Ask {_status!.ServiceName}" : "Ask";
 
-    /// <summary>The line under the box: who would get the question, or how to turn AI on.</summary>
+    /// <summary>
+    /// Whether the next question opens the dialog first. True until the person has agreed for
+    /// the service that is set up now.
+    /// </summary>
+    public bool NeedsPermission
+    {
+        get => _needsPermission;
+        private set
+        {
+            if (SetProperty(ref _needsPermission, value))
+            {
+                OnPropertyChanged(nameof(CanForgetPermission));
+                OnPropertyChanged(nameof(Note));
+            }
+        }
+    }
+
+    /// <summary>Whether to offer "Ask me each time": only once there is a yes to take back.</summary>
+    public bool CanForgetPermission => HasAi && !NeedsPermission;
+
+    /// <summary>
+    /// The line under the box. It always names the service and says nothing about the files is
+    /// sent, and it says plainly whether the next question will be sent straight away.
+    /// </summary>
     public string Note => _status is null
         ? string.Empty
-        : HasAi
-            ? $"Only your question is sent to {_status.ServiceName}. DeskAI answers from what it remembers and never sends anything about your files."
-            : "Turn on AI in Privacy and AI to ask questions here.";
+        : !HasAi
+            ? "Turn on AI in Privacy and AI to ask questions here."
+            : NeedsPermission
+                ? $"Only your question is sent to {_status.ServiceName}, and DeskAI asks you first. It never sends anything about your files."
+                : $"Questions go straight to {_status.ServiceName} when you press Ask. Only your words are sent, never anything about your files.";
 
     public string Question
     {
@@ -120,33 +146,58 @@ public sealed class AskDeskAiViewModel(
             _status = null;
         }
 
+        await RefreshPermissionAsync().ConfigureAwait(true);
         OnPropertyChanged(nameof(HasAi));
         OnPropertyChanged(nameof(CanAsk));
         OnPropertyChanged(nameof(AskText));
+        OnPropertyChanged(nameof(CanForgetPermission));
         OnPropertyChanged(nameof(Note));
     }
 
-    /// <summary>Says who would get the question and where. Sends nothing.</summary>
+    /// <summary>
+    /// Says who would get the question and where, and refreshes <see cref="NeedsPermission"/> so
+    /// the page knows whether to ask first. Sends nothing.
+    /// </summary>
     public async Task<SentenceAiQuestion?> PrepareAsync()
     {
         var prepared = await ask.PrepareAsync(Question).ConfigureAwait(true);
         if (prepared.Question is null)
         {
             Message = prepared.Explanation;
+            return null;
         }
 
+        await RefreshPermissionAsync().ConfigureAwait(true);
         return prepared.Question;
     }
 
+    /// <summary>Takes the yes back, so the next question opens the dialog again.</summary>
+    public async Task ForgetPermissionAsync()
+    {
+        try
+        {
+            await ask.ForgetPermissionAsync().ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            Message = $"DeskAI stopped safely: {exception.Message}";
+            return;
+        }
+
+        Message = string.Empty;
+        await RefreshPermissionAsync().ConfigureAwait(true);
+    }
+
     /// <summary>Sends the prepared question and adds DeskAI's reply to the card.</summary>
-    public async Task SendAsync(SentenceAiQuestion question)
+    /// <param name="agreed">True when the person has just pressed Send in the first-time dialog.</param>
+    public async Task SendAsync(SentenceAiQuestion question, bool agreed = false)
     {
         ArgumentNullException.ThrowIfNull(question);
         IsBusy = true;
         AskDeskAiAnswer answer;
         try
         {
-            answer = await ask.AskAsync(question).ConfigureAwait(true);
+            answer = await ask.AskAsync(question, agreed).ConfigureAwait(true);
         }
         catch (Exception exception) when (IsExpectedFailure(exception))
         {
@@ -156,6 +207,11 @@ public sealed class AskDeskAiViewModel(
         finally
         {
             IsBusy = false;
+        }
+
+        if (agreed)
+        {
+            await RefreshPermissionAsync().ConfigureAwait(true);
         }
 
         if (!answer.Succeeded)
@@ -188,6 +244,19 @@ public sealed class AskDeskAiViewModel(
                 return "organize";
             default:
                 return null;
+        }
+    }
+
+    private async Task RefreshPermissionAsync()
+    {
+        try
+        {
+            NeedsPermission = await ask.NeedsPermissionAsync().ConfigureAwait(true);
+        }
+        catch (Exception exception) when (IsExpectedFailure(exception))
+        {
+            // If the remembered yes cannot be read, ask again rather than assume it is there.
+            NeedsPermission = true;
         }
     }
 

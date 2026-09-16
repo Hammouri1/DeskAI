@@ -52,7 +52,7 @@ public sealed class AskDeskAiPageTests
         Assert.Equal(SentenceTask.Question, question.Task);
         Assert.Empty(app.Internet.Requests);
 
-        await home.Ask.SendAsync(question);
+        await home.Ask.SendAsync(question, agreed: true);
 
         var body = Assert.Single(app.Internet.Requests).Body;
         Assert.Contains("find my holiday photos in Pictures", body, StringComparison.Ordinal);
@@ -88,7 +88,7 @@ public sealed class AskDeskAiPageTests
         await home.InitializeAsync();
         home.Ask.Question = "what's taking space in Downloads?";
 
-        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!);
+        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!, agreed: true);
 
         var exchange = Assert.Single(home.Ask.Exchanges);
         Assert.StartsWith("Your 1 connected folder hold", exchange.Reply, StringComparison.Ordinal);
@@ -112,7 +112,7 @@ public sealed class AskDeskAiPageTests
         await home.InitializeAsync();
         home.Ask.Question = "tidy my downloads please";
 
-        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!);
+        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!, agreed: true);
 
         var exchange = Assert.Single(home.Ask.Exchanges);
         Assert.Equal("Open Downloads in Organize to see what DeskAI would move. Nothing moves until you press Tidy.", exchange.Reply);
@@ -136,7 +136,7 @@ public sealed class AskDeskAiPageTests
         await home.InitializeAsync();
         home.Ask.Question = "clean up my desktop";
 
-        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!);
+        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!, agreed: true);
 
         var exchange = Assert.Single(home.Ask.Exchanges);
         Assert.Equal("Desktop is not connected yet. Connect it and DeskAI will show what it would tidy.", exchange.Reply);
@@ -156,7 +156,7 @@ public sealed class AskDeskAiPageTests
         await home.InitializeAsync();
         home.Ask.Question = @"tidy C:\Program Files";
 
-        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!);
+        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!, agreed: true);
 
         var exchange = Assert.Single(home.Ask.Exchanges);
         Assert.Contains("is not one of your connected folders", exchange.Reply, StringComparison.Ordinal);
@@ -173,16 +173,139 @@ public sealed class AskDeskAiPageTests
         await home.InitializeAsync();
         app.Internet.Reply = _ => QuestionAnswer("unsure", null, null);
         home.Ask.Question = "hello?";
-        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!);
+        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!, agreed: true);
         Assert.Equal(AskDeskAiService.UnsureReply, Assert.Single(home.Ask.Exchanges).Reply);
 
         app.Internet.Reply = _ => Envelope("""{"schemaVersion":"1","kind":"delete","folder":"Desktop","search":null}""");
         home.Ask.Question = "delete everything";
-        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!);
+        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!, agreed: true);
 
         Assert.Single(home.Ask.Exchanges);
         Assert.Contains("did not pass DeskAI's checks", home.Ask.Message, StringComparison.Ordinal);
         Assert.Equal(2, app.Internet.Requests.Count);
+    }
+
+    /// <summary>
+    /// The owner asked for this on 2026-09-16: a dialog before every single question was
+    /// tiring. DeskAI asks once per service, remembers the yes, and the line under the box
+    /// always says where questions go.
+    /// </summary>
+    [Fact]
+    public async Task DeskAI_asks_before_the_first_question_only_and_remembers_it_after_reopening()
+    {
+        await using var app = await TestApp.StartAsync();
+        await TidyAiTests.TurnOnOpenRouterAsync(app);
+        app.Internet.Reply = _ => QuestionAnswer("unsure", null, null);
+        var home = app.Get<DashboardViewModel>();
+        await home.InitializeAsync();
+        Assert.True(home.Ask.NeedsPermission);
+        Assert.False(home.Ask.CanForgetPermission);
+        Assert.Contains("asks you first", home.Ask.Note, StringComparison.Ordinal);
+
+        home.Ask.Question = "what's taking space?";
+        var first = await home.Ask.PrepareAsync();
+        Assert.True(home.Ask.NeedsPermission);
+        await home.Ask.SendAsync(first!, agreed: true);
+
+        Assert.Single(app.Internet.Requests);
+        Assert.False(home.Ask.NeedsPermission);
+        Assert.True(home.Ask.CanForgetPermission);
+        Assert.Contains("go straight to OpenRouter", home.Ask.Note, StringComparison.Ordinal);
+
+        // The second question needs no dialog: the page reads NeedsPermission and sends.
+        home.Ask.Question = "tidy my downloads";
+        var second = await home.Ask.PrepareAsync();
+        Assert.False(home.Ask.NeedsPermission);
+        await home.Ask.SendAsync(second!);
+
+        Assert.Equal(2, app.Internet.Requests.Count);
+        Assert.Equal(2, home.Ask.Exchanges.Count);
+
+        await using var later = await app.ReopenAsync();
+        later.Internet.Reply = _ => QuestionAnswer("unsure", null, null);
+        var reopened = later.Get<DashboardViewModel>();
+        await reopened.InitializeAsync();
+
+        Assert.False(reopened.Ask.NeedsPermission);
+    }
+
+    [Fact]
+    public async Task Before_that_yes_nothing_is_sent_even_if_asked_to_send()
+    {
+        await using var app = await TestApp.StartAsync();
+        await TidyAiTests.TurnOnOpenRouterAsync(app);
+        var home = app.Get<DashboardViewModel>();
+        await home.InitializeAsync();
+        home.Ask.Question = "what's taking space?";
+
+        // What a send without that yes must do, whatever calls it.
+        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!);
+
+        Assert.Empty(app.Internet.Requests);
+        Assert.Empty(home.Ask.Exchanges);
+        Assert.Contains("have not agreed", home.Ask.Message, StringComparison.Ordinal);
+        Assert.True(home.Ask.NeedsPermission);
+    }
+
+    [Fact]
+    public async Task Choosing_a_different_AI_service_makes_DeskAI_ask_again()
+    {
+        await using var app = await TestApp.StartAsync();
+        await TidyAiTests.TurnOnOpenRouterAsync(app);
+        app.Internet.Reply = _ => QuestionAnswer("unsure", null, null);
+        var home = app.Get<DashboardViewModel>();
+        await home.InitializeAsync();
+        home.Ask.Question = "what's taking space?";
+        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!, agreed: true);
+        Assert.False(home.Ask.NeedsPermission);
+
+        var settings = app.Get<SettingsViewModel>();
+        await settings.InitializeAsync();
+        settings.SelectedCloudProviderIndex = 1;
+        settings.CloudModel = "test-model";
+        await settings.SaveProviderAsync("generated-test-key-not-real");
+        await home.Ask.InitializeAsync();
+
+        Assert.True(home.Ask.NeedsPermission);
+        home.Ask.Question = "what's taking space?";
+        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!);
+        Assert.Single(app.Internet.Requests);
+    }
+
+    [Fact]
+    public async Task Ask_me_each_time_brings_the_question_back()
+    {
+        await using var app = await TestApp.StartAsync();
+        await TidyAiTests.TurnOnOpenRouterAsync(app);
+        app.Internet.Reply = _ => QuestionAnswer("unsure", null, null);
+        var home = app.Get<DashboardViewModel>();
+        await home.InitializeAsync();
+        home.Ask.Question = "what's taking space?";
+        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!, agreed: true);
+
+        await home.Ask.ForgetPermissionAsync();
+
+        Assert.True(home.Ask.NeedsPermission);
+        Assert.False(home.Ask.CanForgetPermission);
+        Assert.Contains("asks you first", home.Ask.Note, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Start_fresh_forgets_the_agreement_too()
+    {
+        await using var app = await TestApp.StartAsync();
+        await TidyAiTests.TurnOnOpenRouterAsync(app);
+        app.Internet.Reply = _ => QuestionAnswer("unsure", null, null);
+        var home = app.Get<DashboardViewModel>();
+        await home.InitializeAsync();
+        home.Ask.Question = "what's taking space?";
+        await home.Ask.SendAsync((await home.Ask.PrepareAsync())!, agreed: true);
+        var store = app.Get<DeskAI.Core.Abstractions.IAppSettingsStore>();
+        Assert.NotNull(await store.ReadAsync(AskDeskAiService.AgreedKey, TestContext.Current.CancellationToken));
+
+        await app.Get<DeskAI.Core.Backup.FreshStartService>().StartFreshAsync(TestContext.Current.CancellationToken);
+
+        Assert.Null(await store.ReadAsync(AskDeskAiService.AgreedKey, TestContext.Current.CancellationToken));
     }
 
     [Fact]

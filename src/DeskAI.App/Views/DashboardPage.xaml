@@ -211,8 +211,14 @@
                                     IsEnabled="{x:Bind ViewModel.Ask.CanAsk, Mode=OneWay}"
                                     Click="OnAskClick" />
                         </Grid>
-                        <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
-                                   Text="{x:Bind ViewModel.Ask.Note, Mode=OneWay}" />
+                        <StackPanel Orientation="Horizontal" Spacing="10">
+                            <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                       Text="{x:Bind ViewModel.Ask.Note, Mode=OneWay}" />
+                            <!-- Only once there is a standing yes to take back. Taking it back needs no dialog. -->
+                            <HyperlinkButton Padding="0" Content="Ask me each time"
+                                             Visibility="{x:Bind ViewModel.Ask.CanForgetPermission, Mode=OneWay}"
+                                             Click="OnAskEachTimeClick" />
+                        </StackPanel>
                         <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
                                    Foreground="{ThemeResource DeskCautionBrush}"
                                    Visibility="{x:Bind ViewModel.Ask.HasMessage, Mode=OneWay}"

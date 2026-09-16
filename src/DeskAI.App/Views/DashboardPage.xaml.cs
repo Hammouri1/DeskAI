@@ -74,11 +74,25 @@ public sealed partial class DashboardPage : Page
     private async void OnAskClick(object sender, RoutedEventArgs e)
     {
         var question = await ViewModel.Ask.PrepareAsync();
-        if (question is not null && await SentenceAiDialogs.ConfirmSendAsync(XamlRoot, question))
+        if (question is null)
         {
-            await ViewModel.Ask.SendAsync(question);
+            return;
         }
+
+        // Asked once per service, then remembered (the owner's request, 2026-09-16). The line
+        // under the box always says which way it stands.
+        var mustAsk = ViewModel.Ask.NeedsPermission;
+        if (mustAsk && !await SentenceAiDialogs.ConfirmSendAsync(XamlRoot, question, onceOnly: true))
+        {
+            return;
+        }
+
+        await ViewModel.Ask.SendAsync(question, agreed: mustAsk);
     }
+
+    /// <summary>Takes back the standing yes. Not confirmed: asking more often is always safe.</summary>
+    private async void OnAskEachTimeClick(object sender, RoutedEventArgs e) =>
+        await ViewModel.Ask.ForgetPermissionAsync();
 
     /// <summary>
     /// The one button on a reply: opens Search or Organize the way those pages' own buttons do,

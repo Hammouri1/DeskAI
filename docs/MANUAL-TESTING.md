@@ -1023,13 +1023,21 @@ one paid request; the list is about five.
 2. Turn AI on and come back. Expected: the button reads **Ask <service>** and the line says only
    your question is sent and nothing about your files.
 3. Type "what's taking space?" and press Enter. Expected: "Send this to <service>?" showing
-   exactly your words; the last line says the AI answers with what kind of question it is and
-   DeskAI replies itself. Cancel. Expected: nothing on the card; your words stay in the box.
+   exactly your words; the last lines say the AI answers with what kind of question it is and
+   DeskAI replies itself, and that DeskAI asks this once for that service. Cancel. Expected:
+   nothing on the card; your words stay in the box; the line under the box still says DeskAI
+   asks you first.
 4. Press **Ask** again and **Send**. Expected: a reply card with your question in bold and a
    DeskAI sentence such as "Your 1 connected folder holds 12.3 MB across 8 files. Biggest kinds:
    …", with **Open in Search**. Press it. Expected: Search opens with "larger than 100 mb".
-5. Ask "find my photos in <your test folder's name>". Expected: "Found N files for "photos" in
-   <folder>: …" and **Open in Search** runs that search.
+5. Ask "find my photos in <your test folder's name>". Expected: **no dialog this time** — the
+   question goes straight out; the line under the box now reads "Questions go straight to
+   <service> when you press Ask" with an **Ask me each time** link. The reply is "Found N files
+   for "photos" in <folder>: …" and **Open in Search** runs that search.
+   Then press **Ask me each time** and ask anything. Expected: the dialog is back, and after you
+   agree once more it stops again. Close DeskAI and open it: still no dialog.
+   In Privacy and AI, switch to a different service and ask again. Expected: it asks once for
+   that service too.
 6. Ask "tidy my <test folder>". Expected: "Open <folder> in Organize …" and the button opens
    Organize on it, asking permission as usual. Ask "tidy my Desktop" while the Desktop is not
    connected. Expected: "Desktop is not connected yet …" with **Connect Desktop**, which opens

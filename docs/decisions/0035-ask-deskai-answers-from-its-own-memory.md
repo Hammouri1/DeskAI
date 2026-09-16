@@ -31,8 +31,17 @@ send file names and locations, and it would put untrusted AI text on the screen 
 
 ## Consequences
 
-- The dialog before every question is the same as before every sentence. It is the safe default
-  for a first version; if the owner finds it too much for a chat box, a first-use-only dialog
-  is the natural next step and a separate decision.
+- **Amended the same day, at the owner's choice: DeskAI asks once per service, not before every
+  question.** A dialog in front of every question was the safe default for the first version and
+  the owner found it tiring, which was the expected objection. The yes is remembered in app
+  settings (`AskDeskAiService.AgreedKey`) as the service's name and address, so choosing a
+  different service asks again. `AskAsync` refuses to send unless there is either that
+  remembered yes or a fresh one from the dialog, so no path sends a first question silently.
+  The line under the box always says which way it stands, **Ask me each time** takes the yes
+  back with no dialog of its own, and Start fresh removes it. The first dialog says it will not
+  ask again, so nobody agrees to more than they think.
+- **The other three AI buttons still ask every time.** Ask AI and Plan this folder send file
+  information, and Let AI read this is a one-off action on a page, not a box someone types in
+  repeatedly. Only the question box was tiring, so only the question box changed.
 - A folder name the AI echoes is matched to a connected folder by name, case-insensitively, on
   this computer; the AI never learns which folders exist.
