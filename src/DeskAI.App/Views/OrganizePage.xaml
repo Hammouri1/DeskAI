@@ -7,77 +7,48 @@
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
-        <StackPanel Margin="28,24,28,44" MaxWidth="920" HorizontalAlignment="Left" Spacing="22">
+        <StackPanel Style="{StaticResource PageContentStyle}">
 
             <!-- One job, said once: what this page is for and the promise that goes with it. -->
-            <StackPanel Spacing="6" MaxWidth="640" HorizontalAlignment="Left">
+            <Border Style="{StaticResource PageIntroStyle}"><StackPanel Spacing="6" MaxWidth="640" HorizontalAlignment="Left">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Style="{StaticResource PageTitleStyle}" Text="Tidy a folder" />
                     <controls:HelpButton Topic="organize.tidy" />
                 </StackPanel>
                 <TextBlock Style="{StaticResource BodySecondaryStyle}"
                            Text="Pick a folder. DeskAI suggests where things go. Nothing moves until you say so." />
-            </StackPanel>
-
-            <!--
-                How tidying works, in four steps. It replaced the practice page on 2026-09-11.
-                Open for someone who has not allowed tidying anywhere yet, closed otherwise.
-                Only the promise line wears the accent, because it is the safety promise.
-            -->
-            <Expander HorizontalAlignment="Stretch" Header="How tidying works"
-                      IsExpanded="{x:Bind ViewModel.HowItWorksOpen, Mode=TwoWay}">
-                <StackPanel Spacing="10" MaxWidth="640" HorizontalAlignment="Left">
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.HowItWorksSteps}" AutomationProperties.Name="How tidying works">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="x:String">
-                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,8">
-                                    <FontIcon FontSize="12" Glyph="&#xE76C;" VerticalAlignment="Top" Margin="0,3,0,0"
-                                              Foreground="{ThemeResource DeskTextSecondaryBrush}" />
-                                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
-                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                               Text="{x:Bind}" />
-                                </StackPanel>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                    <StackPanel Orientation="Horizontal" Spacing="10">
-                        <FontIcon FontSize="13" Glyph="&#xE72E;" VerticalAlignment="Top" Margin="0,3,0,0"
-                                  Foreground="{ThemeResource DeskAccentBrush}" />
-                        <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
-                                   Text="{x:Bind ViewModel.HowItWorksPromise}" />
-                    </StackPanel>
-                </StackPanel>
-            </Expander>
+            </StackPanel></Border>
 
             <!--
                 Which folder. The list holds folders already connected; the button adds one. The
                 pill beside it states the folder's permission in a word, with the accent only when
                 tidying is allowed, because that is the one state that is a permission.
             -->
-            <Border Style="{StaticResource CardStyle}">
+            <Border Style="{StaticResource CardStyle}"
+                    Visibility="{x:Bind ViewModel.HasFolders, Mode=OneWay}">
                 <StackPanel Spacing="12">
-                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="12">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="12" RowSpacing="12">
                         <ComboBox HorizontalAlignment="Stretch"
                                   PlaceholderText="Pick a folder"
                                   AutomationProperties.Name="Folder to tidy"
                                   Visibility="{x:Bind ViewModel.HasFolders, Mode=OneWay}"
                                   ItemsSource="{x:Bind ViewModel.Folders}"
                                   SelectedItem="{x:Bind ViewModel.SelectedFolder, Mode=TwoWay}" />
-                        <Border Grid.Column="1" Style="{StaticResource AccentPillStyle}"
+                        <Border Grid.Row="1" HorizontalAlignment="Left" Style="{StaticResource AccentPillStyle}"
                                 Visibility="{x:Bind ViewModel.CanStopTidying, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
                                 <TextBlock Style="{StaticResource PillTextStyle}" Text="Allowed to tidy" />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Column="1" Style="{StaticResource PillStyle}"
+                        <Border Grid.Row="1" HorizontalAlignment="Left" Style="{StaticResource PillStyle}"
                                 Visibility="{x:Bind ViewModel.NeedsPermission, Mode=OneWay}">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon FontSize="11" Glyph="&#xE8A5;" Foreground="{ThemeResource DeskTextSecondaryBrush}" />
                                 <TextBlock Style="{StaticResource PillTextStyle}" Text="Look only" />
                             </StackPanel>
                         </Border>
-                        <Button Grid.Column="2" Content="Choose another folder"
+                        <Button Grid.Column="1" Content="Choose another folder"
                                 Click="OnChooseFolderClick" />
                     </Grid>
                     <StackPanel Orientation="Horizontal" Spacing="12">
@@ -460,6 +431,34 @@
                 </StackPanel>
             </Border>
 
+            <!--
+                The optional four-step explanation follows the action. It opens for someone who
+                has not allowed tidying anywhere yet and closes once the workflow is familiar.
+            -->
+            <Expander HorizontalAlignment="Stretch" Header="How tidying works"
+                      IsExpanded="{x:Bind ViewModel.HowItWorksOpen, Mode=TwoWay}">
+                <StackPanel Spacing="10" MaxWidth="640" HorizontalAlignment="Left">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.HowItWorksSteps}" AutomationProperties.Name="How tidying works">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="x:String">
+                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,8">
+                                    <FontIcon FontSize="12" Glyph="&#xE76C;" VerticalAlignment="Top" Margin="0,3,0,0"
+                                              Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                               Text="{x:Bind}" />
+                                </StackPanel>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <FontIcon FontSize="13" Glyph="&#xE72E;" VerticalAlignment="Top" Margin="0,3,0,0"
+                                  Foreground="{ThemeResource DeskAccentBrush}" />
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                   Text="{x:Bind ViewModel.HowItWorksPromise}" />
+                    </StackPanel>
+                </StackPanel>
+            </Expander>
         </StackPanel>
     </ScrollViewer>
 </Page>

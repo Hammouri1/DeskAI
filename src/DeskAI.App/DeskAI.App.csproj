@@ -12,6 +12,14 @@
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
+  <!-- Explicit developer-only build. It never replaces the normal application output. -->
+  <PropertyGroup Condition="'$(DeskAiUiPreview)' == 'true'">
+    <DefineConstants>$(DefineConstants);DESKAI_UI_PREVIEW</DefineConstants>
+    <OutputPath>$(MSBuildThisFileDirectory)..\..\artifacts\ui-preview\</OutputPath>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(DeskAiUiPreview)' == 'true'">
+    <Compile Include="..\..\tools\UiPreview.cs" Link="Development\UiPreview.cs" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DeskAI.Core\DeskAI.Core.csproj" />
     <ProjectReference Include="..\DeskAI.Safety\DeskAI.Safety.csproj" />

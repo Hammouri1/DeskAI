@@ -266,7 +266,7 @@ pickers; `SettingsViewModel` drives the card and the page shows the preview dial
 
 `DeskAI.Core.Appearance` holds `ThemeMode` (follow Windows, light, dark), `LookPalette` (five
 neutral "#RRGGBB" colours), `DeskLook` (id, name, line, a dark and a light palette),
-`DeskLookCatalog` (Slate, Graphite, Sand, Ocean; Slate is the default), and `AppearanceSettings`
+`DeskLookCatalog` (Slate, Graphite, Sand, Ocean, Lavender, Rose; Slate is the default), and `AppearanceSettings`
 (mode and look id, with `Look` falling back to Slate for an unknown id).
 `IAppearanceSettingsRepository` is implemented by `SqliteAppearanceSettingsRepository` on the
 `app_settings` key/value table that has existed since schema 1, so no schema change was needed;

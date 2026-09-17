@@ -6,7 +6,7 @@
     xmlns:viewmodels="using:DeskAI.App.ViewModels"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
-        <StackPanel Margin="28,24,28,40" MaxWidth="920" HorizontalAlignment="Left" Spacing="22">
+        <StackPanel Style="{StaticResource PageContentStyle}">
 
             <!--
                 The hero states the facts a person most wants from a privacy page as five small
@@ -14,75 +14,48 @@
                 never a fixed reassurance; "Usage tracking" is the one fixed word, because DeskAI
                 has no telemetry at all.
             -->
-            <Border Style="{StaticResource HeroPanelStyle}">
+            <Border Style="{StaticResource PageIntroStyle}">
                 <StackPanel Spacing="16">
                     <StackPanel Spacing="8">
-                        <TextBlock Style="{StaticResource DeskDisplayStyle}"
-                                   Foreground="{ThemeResource TextOnAccentFillColorPrimaryBrush}"
+                        <TextBlock Style="{StaticResource PageTitleStyle}"
+                                   Foreground="{ThemeResource DeskTextPrimaryBrush}"
                                    Text="Privacy and AI" />
                         <TextBlock MaxWidth="560" TextWrapping="Wrap"
-                                   Foreground="{ThemeResource TextOnAccentFillColorSecondaryBrush}"
-                                   Text="You decide whether AI is used at all, which service it uses, and exactly what it is allowed to see." />
+                                   Foreground="{ThemeResource DeskTextSecondaryBrush}"
+                                   Text="AI is optional. Choose what you use and what you share." />
                     </StackPanel>
-                    <Grid ColumnDefinitions="*,*,*,*,*" ColumnSpacing="10" AutomationProperties.Name="At a glance">
-                        <Border Style="{StaticResource SoftCardStyle}" Padding="12,10">
+                    <ItemsControl AutomationProperties.Name="At a glance"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapGrid Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel><Border Style="{StaticResource SoftCardStyle}" Padding="12,10" Width="180" Margin="0,0,8,8">
                             <StackPanel Spacing="4">
                                 <TextBlock Style="{StaticResource CaptionStyle}" Text="Internet" />
                                 <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding InternetUse}" />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Column="1" Style="{StaticResource SoftCardStyle}" Padding="12,10">
+<Border Style="{StaticResource SoftCardStyle}" Padding="12,10" Width="180" Margin="0,0,8,8">
                             <StackPanel Spacing="4">
                                 <TextBlock Style="{StaticResource CaptionStyle}" Text="AI" />
                                 <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding AiProcessing}" />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Column="2" Style="{StaticResource SoftCardStyle}" Padding="12,10">
+<Border Style="{StaticResource SoftCardStyle}" Padding="12,10" Width="180" Margin="0,0,8,8">
                             <StackPanel Spacing="4">
                                 <TextBlock Style="{StaticResource CaptionStyle}" Text="Shared with online AI" />
                                 <TextBlock FontWeight="SemiBold" TextWrapping="Wrap" Text="{Binding CloudDataShared}" />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Column="3" Style="{StaticResource SoftCardStyle}" Padding="12,10">
+<Border Style="{StaticResource SoftCardStyle}" Padding="12,10" Width="180" Margin="0,0,8,8">
                             <StackPanel Spacing="4">
                                 <TextBlock Style="{StaticResource CaptionStyle}" Text="Folders you connected" />
                                 <TextBlock FontWeight="SemiBold" Text="{Binding AuthorizedFolderCount}" />
                             </StackPanel>
                         </Border>
-                        <Border Grid.Column="4" Style="{StaticResource SoftCardStyle}" Padding="12,10">
+<Border Style="{StaticResource SoftCardStyle}" Padding="12,10" Width="180" Margin="0,0,8,8">
                             <StackPanel Spacing="4">
                                 <TextBlock Style="{StaticResource CaptionStyle}" Text="Usage tracking" />
                                 <TextBlock FontWeight="SemiBold" Text="Off" />
                             </StackPanel>
-                        </Border>
-                    </Grid>
+                        </Border></ItemsControl>
                 </StackPanel>
-            </Border>
-
-            <Border Style="{StaticResource CardStyle}">
-                <StackPanel Spacing="14">
-                    <StackPanel Spacing="4">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="What online AI may see" />
-                            <controls:HelpButton Topic="settings.sharing" />
-                        </StackPanel>
-                        <TextBlock Style="{StaticResource BodySecondaryStyle}"
-                                   Text="Nothing is sent unless you turn on online AI. Private and protected files are always left out." />
-                    </StackPanel>
-                    <ToggleSwitch Header="File type (.pdf, .jpg, and similar)" OffContent="No" OnContent="Yes" IsOn="{Binding ShareExtension, Mode=TwoWay}" />
-                    <ToggleSwitch Header="File size and last changed date" OffContent="No" OnContent="Yes" IsOn="{Binding ShareMetadata, Mode=TwoWay}" />
-                    <ToggleSwitch Header="File name" OffContent="No" OnContent="Yes" IsOn="{Binding ShareFileName, Mode=TwoWay}" />
-                    <ToggleSwitch Header="Folder names" OffContent="No" OnContent="Yes" IsOn="{Binding ShareFolderNames, Mode=TwoWay}" />
-                    <ToggleSwitch Header="Full location on your computer (best left off)" OffContent="No" OnContent="Yes" IsOn="{Binding ShareFullPath, Mode=TwoWay}" />
-                    <ToggleSwitch Header="Text inside files — not available" IsEnabled="False" IsOn="False" />
-                    <ToggleSwitch Header="Images inside files — not available" IsEnabled="False" IsOn="False" />
-                    <Button HorizontalAlignment="Left" Click="OnSavePrivacyClick" Content="Save these choices"
-                            Style="{StaticResource AccentButtonStyle}" />
-                    <TextBlock Style="{StaticResource BodySecondaryStyle}" Text="{Binding SaveStatus}" />
-                </StackPanel>
-            </Border>
-
-            <Border Style="{StaticResource CardStyle}">
+            </Border><Pivot Style="{StaticResource SectionTabsStyle}" AutomationProperties.Name="Settings sections"><PivotItem Header="AI setup"><StackPanel Spacing="22" Margin="0,12,0,8"><Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="14">
                     <StackPanel Spacing="4">
                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -166,9 +139,7 @@
                     <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
                                Text="Checking says hello to your AI and shows you the answer. It sends no file names, sizes, or locations. With online AI it uses one request from your daily allowance." />
                 </StackPanel>
-            </Border>
-
-            <Border Style="{StaticResource SoftCardStyle}">
+            </Border><Border Style="{StaticResource SoftCardStyle}">
                 <Grid ColumnDefinitions="Auto,*" ColumnSpacing="14">
                     <FontIcon FontSize="18" VerticalAlignment="Top" Glyph="&#xE72E;"
                               Foreground="{ThemeResource SystemFillColorSuccessBrush}" />
@@ -181,13 +152,28 @@
                                    Text="Windows stores it, not DeskAI. Each service has its own separate entry, so a key you save for one company is never sent to another. DeskAI never shows a key again after you save it." />
                     </StackPanel>
                 </Grid>
-            </Border>
-
-            <!--
-                Back up and restore. The file holds rules and saved searches only; both buttons are
-                plain because choosing a file confirms nothing — Restore in the dialog is the yes.
-            -->
-            <Border Style="{StaticResource CardStyle}">
+            </Border></StackPanel></PivotItem><PivotItem Header="What you share"><StackPanel Spacing="22" Margin="0,12,0,8"><Border Style="{StaticResource CardStyle}">
+                <StackPanel Spacing="14">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="What online AI may see" />
+                            <controls:HelpButton Topic="settings.sharing" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                   Text="Nothing is sent unless you turn on online AI. Private and protected files are always left out." />
+                    </StackPanel>
+                    <ToggleSwitch Header="File type (.pdf, .jpg, and similar)" OffContent="No" OnContent="Yes" IsOn="{Binding ShareExtension, Mode=TwoWay}" />
+                    <ToggleSwitch Header="File size and last changed date" OffContent="No" OnContent="Yes" IsOn="{Binding ShareMetadata, Mode=TwoWay}" />
+                    <ToggleSwitch Header="File name" OffContent="No" OnContent="Yes" IsOn="{Binding ShareFileName, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Folder names" OffContent="No" OnContent="Yes" IsOn="{Binding ShareFolderNames, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Full location on your computer (best left off)" OffContent="No" OnContent="Yes" IsOn="{Binding ShareFullPath, Mode=TwoWay}" />
+                    <ToggleSwitch Header="Text inside files — not available" IsEnabled="False" IsOn="False" />
+                    <ToggleSwitch Header="Images inside files — not available" IsEnabled="False" IsOn="False" />
+                    <Button HorizontalAlignment="Left" Click="OnSavePrivacyClick" Content="Save these choices"
+                            Style="{StaticResource AccentButtonStyle}" />
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" Text="{Binding SaveStatus}" />
+                </StackPanel>
+            </Border></StackPanel></PivotItem><PivotItem Header="Your saved data"><StackPanel Spacing="22" Margin="0,12,0,8"><Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="14">
                     <StackPanel Spacing="4">
                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -206,13 +192,7 @@
                                Visibility="{Binding HasBackupStatus}"
                                Text="{Binding BackupStatus}" />
                 </StackPanel>
-            </Border>
-
-            <!--
-                Start fresh. It forgets DeskAI's memory and touches no file, and it asks first. Not
-                an accent button: forgetting is not a permission, and a caution word is the honest one.
-            -->
-            <Border Style="{StaticResource CardStyle}">
+            </Border><Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="14">
                     <StackPanel Spacing="4">
                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -228,17 +208,14 @@
                                Visibility="{Binding HasFreshStartStatus}"
                                Text="{Binding FreshStartStatus}" />
                 </StackPanel>
-            </Border>
-
-            <!-- About: the version and where updates are. DeskAI never checks online for a new one. -->
-            <Border Style="{StaticResource SoftCardStyle}">
+            </Border><Border Style="{StaticResource SoftCardStyle}">
                 <StackPanel Spacing="4">
                     <TextBlock FontWeight="SemiBold" Foreground="{ThemeResource DeskTextPrimaryBrush}"
                                Text="{x:Bind viewmodels:SettingsViewModel.Version}" />
                     <TextBlock Style="{StaticResource BodySecondaryStyle}"
                                Text="DeskAI never checks the internet for updates. New versions are published on its GitHub releases page, and your settings stay when you replace the folder." />
                 </StackPanel>
-            </Border>
+            </Border></StackPanel></PivotItem></Pivot>
         </StackPanel>
     </ScrollViewer>
 </Page>

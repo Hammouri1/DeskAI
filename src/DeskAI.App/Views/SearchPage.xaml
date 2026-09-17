@@ -7,20 +7,20 @@
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
-        <StackPanel Margin="28,24,28,44" MaxWidth="920" HorizontalAlignment="Left" Spacing="22">
+        <StackPanel Style="{StaticResource PageContentStyle}">
 
-            <StackPanel Spacing="8" MaxWidth="640" HorizontalAlignment="Left">
+            <Border Style="{StaticResource PageIntroStyle}"><StackPanel Spacing="8" MaxWidth="640" HorizontalAlignment="Left">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Style="{StaticResource PageTitleStyle}" Text="Search" />
                     <controls:HelpButton Topic="search.searching" />
                 </StackPanel>
                 <TextBlock Style="{StaticResource BodySecondaryStyle}"
                            Text="Find files by name, type, size, or date. Searching never moves, renames, or opens anything." />
-            </StackPanel>
+            </StackPanel></Border>
 
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="16">
-                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                    <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="12">
                         <TextBox x:Name="PhraseBox"
                                  MaxLength="256"
                                  PlaceholderText="photos from last month"
@@ -39,7 +39,7 @@
                             Only while AI is set up. It sends the typed words alone, after a dialog,
                             and the AI's reading lands in the box as a plain search to check.
                         -->
-                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6"
+                        <StackPanel Grid.Row="1" Grid.ColumnSpan="2" Orientation="Horizontal" Spacing="6"
                                     Visibility="{x:Bind ViewModel.HasAi, Mode=OneWay}">
                             <Button Content="{x:Bind ViewModel.AskAiText, Mode=OneWay}"
                                     IsEnabled="{x:Bind ViewModel.CanAskAi, Mode=OneWay}"
@@ -108,47 +108,7 @@
                 whatever is connected now; nothing about a saved search moves a file, and
                 none of them records a folder, so one cannot outlive an authorization.
             -->
-            <Border Style="{StaticResource CardStyle}"
-                    Visibility="{x:Bind ViewModel.HasSavedSearches, Mode=OneWay}">
-                <StackPanel Spacing="12">
-                    <StackPanel Spacing="4">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Saved searches" />
-                            <controls:HelpButton Topic="search.saved" />
-                        </StackPanel>
-                        <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="600"
-                                   HorizontalAlignment="Left"
-                                   Text="These are searches, not folders. Running one looks again in whatever folders are connected at the time. Nothing is moved or changed." />
-                    </StackPanel>
 
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.SavedSearches, Mode=OneWay}"
-                                  AutomationProperties.Name="Saved searches">
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="viewmodels:SavedSearchViewModel">
-                                <Border Style="{StaticResource RowCardStyle}">
-                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
-                                        <StackPanel Spacing="3">
-                                            <TextBlock FontWeight="SemiBold"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                       Text="{x:Bind Name}" />
-                                            <TextBlock Style="{StaticResource CaptionStyle}"
-                                                       TextTrimming="CharacterEllipsis"
-                                                       Text="{x:Bind Phrase}" />
-                                        </StackPanel>
-                                        <Button Grid.Column="1" VerticalAlignment="Center" Content="Run"
-                                                Command="{Binding ElementName=Root, Path=ViewModel.RunSavedSearchCommand}"
-                                                CommandParameter="{x:Bind Id}" />
-                                        <Button Grid.Column="2" VerticalAlignment="Center" Content="Remove"
-                                                Command="{Binding ElementName=Root, Path=ViewModel.DeleteSavedSearchCommand}"
-                                                CommandParameter="{x:Bind Id}" />
-                                    </Grid>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </StackPanel>
-            </Border>
 
             <ItemsControl ItemsSource="{x:Bind ViewModel.Results, Mode=OneWay}"
                           Visibility="{x:Bind ViewModel.HasResults, Mode=OneWay}"
@@ -217,7 +177,48 @@
                 </ItemsControl>
             </StackPanel>
 
-            <!--
+            <Border Style="{StaticResource CardStyle}"
+                    Visibility="{x:Bind ViewModel.HasSavedSearches, Mode=OneWay}">
+                <StackPanel Spacing="12">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Saved searches" />
+                            <controls:HelpButton Topic="search.saved" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="600"
+                                   HorizontalAlignment="Left"
+                                   Text="These are searches, not folders. Running one looks again in whatever folders are connected at the time. Nothing is moved or changed." />
+                    </StackPanel>
+
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.SavedSearches, Mode=OneWay}"
+                                  AutomationProperties.Name="Saved searches">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:SavedSearchViewModel">
+                                <Border Style="{StaticResource RowCardStyle}">
+                                    <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="10">
+                                        <StackPanel Grid.ColumnSpan="3" Spacing="3">
+                                            <TextBlock FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                       Text="{x:Bind Name}" />
+                                            <TextBlock Style="{StaticResource CaptionStyle}"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       Text="{x:Bind Phrase}" />
+                                        </StackPanel>
+                                        <Button Grid.Column="1" VerticalAlignment="Center" Content="Run"
+                                                Command="{Binding ElementName=Root, Path=ViewModel.RunSavedSearchCommand}"
+                                                CommandParameter="{x:Bind Id}" />
+                                        <Button Grid.Column="2" VerticalAlignment="Center" Content="Remove"
+                                                Command="{Binding ElementName=Root, Path=ViewModel.DeleteSavedSearchCommand}"
+                                                CommandParameter="{x:Bind Id}" />
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+            </Border>
+<!--
                 Folder management sits on this page because scope is part of searching:
                 what DeskAI can find is exactly what you connected, and nothing else.
             -->
@@ -250,7 +251,7 @@
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="viewmodels:ConnectedFolderViewModel">
                                 <Border Style="{StaticResource RowCardStyle}">
-                                    <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="10">
+                                    <Grid ColumnDefinitions="Auto,Auto,*" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="12">
                                         <StackPanel Spacing="3">
                                             <TextBlock FontWeight="SemiBold"
                                                        TextTrimming="CharacterEllipsis"
@@ -268,7 +269,7 @@
                                                 The pill wears the accent only when reading inside
                                                 is allowed, because that is a permission.
                                             -->
-                                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,0">
+                                            <StackPanel Spacing="8" Margin="0,4,0,0">
                                                 <Border Style="{StaticResource AccentPillStyle}" Visibility="{x:Bind CanReadContent}">
                                                     <StackPanel Orientation="Horizontal" Spacing="6">
                                                         <FontIcon FontSize="11" Glyph="&#xE8A5;" Foreground="{ThemeResource DeskAccentBrush}" />
@@ -285,14 +286,14 @@
                                                            Text="{x:Bind ContentState}" />
                                             </StackPanel>
                                         </StackPanel>
-                                        <Button Grid.Column="1" VerticalAlignment="Center"
+                                        <Button Grid.Row="1" VerticalAlignment="Center"
                                                 Content="{x:Bind ContentAction}"
                                                 Tag="{x:Bind Id}"
                                                 Click="OnContentPermissionClick" />
-                                        <Button Grid.Column="2" VerticalAlignment="Center" Content="Refresh"
+                                        <Button Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Content="Refresh"
                                                 Command="{Binding ElementName=Root, Path=ViewModel.RefreshFolderCommand}"
                                                 CommandParameter="{x:Bind Id}" />
-                                        <Button Grid.Column="3" VerticalAlignment="Center" Content="Disconnect"
+                                        <Button Grid.Row="1" Grid.Column="2" HorizontalAlignment="Left" VerticalAlignment="Center" Content="Disconnect"
                                                 Command="{Binding ElementName=Root, Path=ViewModel.DisconnectFolderCommand}"
                                                 CommandParameter="{x:Bind Id}" />
                                     </Grid>
@@ -303,7 +304,7 @@
                 </StackPanel>
             </Border>
 
-            <Border Style="{StaticResource SoftCardStyle}">
+            <Expander Header="How search protects your files" HorizontalAlignment="Stretch">
                 <StackPanel Spacing="10">
                     <StackPanel Orientation="Horizontal" Spacing="8">
                         <TextBlock FontWeight="SemiBold" FontSize="13" VerticalAlignment="Center"
@@ -315,7 +316,7 @@
                                HorizontalAlignment="Left"
                                Text="It looks only inside folders you connected. Normally it uses just the names, sizes, and dates it remembered. If you allow it for a folder, it can also read the beginning of plain text files there to find words written inside — never PDFs, photos, or programs, and nothing it reads is saved or sent anywhere. Disconnecting a folder immediately forgets everything remembered about it." />
                 </StackPanel>
-            </Border>
+            </Expander>
 
         </StackPanel>
     </ScrollViewer>

@@ -253,7 +253,8 @@ files." Top to bottom:
    reason before anything is looked at.
 4. **DeskAI's look** (piece D, 2026-09-16). "Colours for the DeskAI window only. Your Windows
    theme and wallpaper are not touched." A **Light or dark** choice — Follow Windows, Light,
-   Dark — and four look cards, Slate, Graphite, Sand, Ocean, each with a two-part swatch (how it
+   Dark — and six look cards, Slate, Graphite, Sand, Ocean, Lavender, and Rose, each with a
+   larger two-part swatch (how it
    reads in dark and in light), a line, and a plain **Use this look** button. The chosen card
    says "Chosen" in the accent, because a chosen state is a confirmed state. Choosing repaints
    the window at once and is remembered. See "Looks" under the visual system below.
@@ -282,7 +283,7 @@ a template does change a folder; the narrower promise is the one that is still t
 
 The shared vocabulary lives in `src/DeskAI.App/Themes/DeskAITheme.xaml`, merged from `App.xaml` after `XamlControlsResources` so DeskAI's palette wins. No page invents its own colours.
 
-The system is called **instrument panel**, and it has one governing rule:
+The system is called **calm workspace**, and it has one governing rule:
 
 > The accent colour means "safe or confirmed". It is never used as decoration.
 
@@ -304,12 +305,13 @@ Palette tokens are defined for both themes in `ResourceDictionary.ThemeDictionar
 
 The `HighContrast` dictionary maps every token back to `SystemColor*` brushes, so Windows high contrast overrides the palette entirely.
 
-**Looks (V0.7 piece D, 2026-09-16).** The table above is the **Slate** look, DeskAI's default. A person can choose Graphite, Sand, or Ocean instead on My workspace, and light, dark, or follow Windows. A look is a `LookPalette` of exactly five neutral tokens per theme — `DeskGroundBrush`, `DeskSurfaceBrush`, `DeskSurfaceRaisedBrush`, `DeskLineBrush`, `DeskLineStrongBrush` (and the WinUI card fills that mirror them) — applied by changing those brushes' colours in place in both theme dictionaries, so every page repaints and the next theme switch finds the look already there. High contrast is never touched. The accent, caution, danger, and text tokens are not part of a look, by construction: `LookPalette` has no such property, a test asserts it, and another test checks every look keeps the shared text at 7:1 (primary) and 4.5:1 (secondary) contrast on its ground and surfaces. That is how "green means safe or confirmed" survives a person choosing their own colours.
+**Looks (V0.7 piece D, 2026-09-16; expanded 2026-09-17).** The table above is the **Slate** look, DeskAI's default. A person can choose Graphite, Sand, Ocean, Lavender, or Rose instead on My workspace, and light, dark, or follow Windows. A look is a `LookPalette` of exactly five neutral tokens per theme — `DeskGroundBrush`, `DeskSurfaceBrush`, `DeskSurfaceRaisedBrush`, `DeskLineBrush`, `DeskLineStrongBrush` (and the WinUI card fills that mirror them) — applied by changing those brushes' colours in place in both theme dictionaries, so every page repaints and the next theme switch finds the look already there. High contrast is never touched. The accent, caution, danger, and text tokens are not part of a look, by construction: `LookPalette` has no such property, a test asserts it, and another test checks every look keeps the shared text at 7:1 (primary) and 4.5:1 (secondary) contrast on its ground and surfaces. That is how "green means safe or confirmed" survives a person choosing their own colours.
 
 Shared styles:
 
-- `HeroPanelStyle` — a status readout, not a banner. A 3px left rail in the accent carries the state; the corner is square on the rail edge (`CornerRadius="0,6,6,0"`) so the rail reads as an edge marker rather than a pill. Used once at the top of Home, Organize, and Privacy and AI.
-- `CardStyle`, `SoftCardStyle`, `RowCardStyle` — surfaces at 6px/6px/4px radius, differentiated by fill weight rather than all sharing one radius. `SoftCardStyle` is transparent with a hairline only.
+- `PageContentStyle` and `PageIntroStyle` — the common content width, spacing, and softly tinted introduction on every page. An introduction is orientation, not a permission, so it has no accent rail.
+- `HeroPanelStyle` — reserved for a safety promise or permission. A 3px left rail in the accent carries that meaning; it is no longer generic page decoration.
+- `CardStyle`, `SoftCardStyle`, `RowCardStyle` — surfaces at 16px/16px/10px radius, differentiated by fill weight. `SoftCardStyle` is transparent with a hairline only.
 - `DeskDisplayStyle`, `PageTitleStyle`, `SectionTitleStyle`, `MetricStyle`, `BodySecondaryStyle`, `CaptionStyle` — one type ramp on Segoe UI Variable Display for headings and Segoe UI Variable Text for body, with negative tracking on the display sizes. `MetricStyle` sets numbers large and light so the value reads before its label.
 - `StepBadgeStyle` — a quiet bordered chip. It is deliberately **not** accent-filled, because the accent is reserved for safety state.
 
@@ -329,7 +331,28 @@ The window uses a Mica backdrop, pages paint `DeskGroundBrush`, and the navigati
 - **Rounder surfaces**: 12px cards and soft cards, 10px row cards, the hero's free corners at 14px; the accent rail is unchanged. New shared styles: `TileStyle` (a soft-tinted stat tile), `PillStyle` / `AccentPillStyle` / `CautionPillStyle` with `PillTextStyle` (an icon and a word, never colour alone; accent only for a permission or a confirmed state, caution for paused or needs-a-look), `GroupLabelStyle`, and `TopBarStyle`.
 - **Four tile tints** — `DeskTintBlueBrush`, `DeskTintVioletBrush`, `DeskTintAmberBrush`, `DeskTintRoseBrush` — declared as alpha tints in the dark and light dictionaries so they sit on every look, and transparent in high contrast. They are for counts, and a test asserts none is the accent and no page paints a tile with anything else. They are not part of a `LookPalette`: a look still changes only the five neutral tokens.
 
-**The other pages (2026-09-16), same content and words, restyled.** Organize's folder bar carries a pill beside the folder — "Allowed to tidy" on the accent when tidying is allowed, "Look only" plain when it is not — and each suggestion group's count is a plain pill. Search's "DeskAI read this as" chips became plain pills (a reading is not a permission), and each folder row carries "Can read inside" on the accent or "Names, sizes, dates" plain, beside the sentence it already had. Automatic tasks is two columns at 1100px and wider — rules, the practice run, and "Write a rule" on the left; "Checking for you" on the right so it is never scrolled past (ADR 0017), first when the page folds to one column — and its card carries "Paused" as a caution pill or the frequency ("Every 15 minutes") as a plain pill; each rule row shows On on the accent (the person's confirmed choice) or Off plain. Privacy and AI's hero holds the five "At a glance" readouts as small cards inside it. My workspace's pinned searches are blue-tinted tiles with the search icon and the count set large, and the chosen look wears a small accent pill reading "Chosen". Every pill has an icon and a word; the accent variants are exactly the permission and confirmed states listed here and nothing else.
+**Calm-workspace revision (2026-09-17).** The six working pages keep the same commands and
+safety decisions, but the first screen now reads in a simpler order: a short introduction, the
+next useful action, then supporting information. Home uses four roomy folder cards instead of
+squeezing a badge and button onto one line. The beginner guide and Search's long protection
+explanation are collapsed until asked for. Search puts results before reusable saved searches.
+My workspace groups its many independent jobs under **Looks**, **Shortcuts**, **Folder sets**,
+and **Desktop**. Privacy and AI groups them under **AI setup**, **What you share**, and **Your
+saved data**. These are view-only tabs; switching one grants no permission and runs no work.
+Every page uses the same rounded intro surface and content spacing, the side menu collapses at
+smaller widths, and action rows wrap or move below their label rather than clipping it.
+
+Two more looks, **Lavender** and **Rose**, join Slate, Graphite, Sand, and Ocean. The preview for
+each look is large enough to show both its dark and light surfaces before choosing it. ADR 0028
+still applies unchanged: a look may tint only five neutral colours. Green remains the fixed
+safety/confirmed signal in all six looks, and high contrast still comes from Windows.
+
+Visual inspection uses an explicit `DeskAiUiPreview` build. That build creates a unique folder
+under Windows Temp with generated dummy files and replaces known folders, keys, network,
+wallpaper, pickers, notifications, tray presence, and hosted timers. It cannot load the owner's
+DeskAI database or personal folders and it is never part of a normal build.
+
+**The other pages (2026-09-16), same content and words, restyled.** Organize's folder bar carries a pill beside the folder — "Allowed to tidy" on the accent when tidying is allowed, "Look only" plain when it is not — and each suggestion group's count is a plain pill. Search's "DeskAI read this as" chips became plain pills (a reading is not a permission), and each folder row carries "Can read inside" on the accent or "Names, sizes, dates" plain, beside the sentence it already had. Automatic tasks is two columns at 1320px and wider — rules, the practice run, and "Write a rule" on the left; "Checking for you" on the right so it is never scrolled past (ADR 0017), first when the page folds to one column — and its card carries "Paused" as a caution pill or the frequency ("Every 15 minutes") as a plain pill; each rule row shows On on the accent (the person's confirmed choice) or Off plain. Privacy and AI's hero holds the five "At a glance" readouts as small cards inside it. My workspace's pinned searches are blue-tinted tiles with the search icon and the count set large, and the chosen look wears a small accent pill reading "Chosen". Every pill has an icon and a word; the accent variants are exactly the permission and confirmed states listed here and nothing else.
 
 Status is expressed through `PreviewStatusLevel` (`Ready`, `Attention`, `Blocked`) mapped by converters to a system semantic brush, a paired Segoe Fluent glyph, and a tinted badge background. Colour is never alone: every badge carries an icon **and** the status word, so a blocked row still reads as blocked in greyscale or high contrast. `PreviewStatusLevel` is presentation severity only — Safety decides what is blocked, and the enum merely chooses how that decision is drawn.
 

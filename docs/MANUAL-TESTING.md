@@ -694,8 +694,8 @@ Nothing here touches a file, so no test folder is needed. Note your Windows them
 before starting; they must be exactly the same at the end.
 
 1. Open **My workspace**. Expected: a **DeskAI's look** section with "Light or dark" (Follow
-   Windows chosen) and four cards — Slate, Graphite, Sand, Ocean — each with a two-part colour
-   strip and **Use this look**; Slate says "Chosen" in green.
+   Windows chosen) and six cards — Slate, Graphite, Sand, Ocean, Lavender, Rose — each with a
+   large dark/light preview and **Use this look**; Slate says "Chosen" in green.
 2. Press **Use this look** on **Ocean**. Expected: the whole window changes colour at once —
    every page, the side menu, cards, and dialogs — with no restart; Ocean says "Chosen" and Slate
    no longer does. The green accent (Allow tidying, Tidy, "Chosen") is the same green as before.
@@ -703,7 +703,7 @@ before starting; they must be exactly the same at the end.
 3. Choose **Dark**, then **Light**, then **Follow Windows**. Expected: the window switches at
    once each time and keeps the Ocean colours in both. With Follow Windows, change the Windows
    app theme in Settings > Personalization > Colors. Expected: DeskAI follows it; Ocean stays.
-4. Try **Graphite** and **Sand** in both light and dark. Expected: all text readable everywhere,
+4. Try **Graphite**, **Sand**, **Lavender**, and **Rose** in both light and dark. Expected: all text readable everywhere,
    including captions and the caution colour; nothing looks unchanged or half-painted. Open the
    pack preview and the template preview dialogs. Expected: they take the look too.
 5. Close DeskAI and open it again. Expected: it opens straight into the chosen look and theme,
@@ -767,6 +767,32 @@ folder called `slides`. Never use a personal folder.
 13. Tab through the section and both dialogs with the keyboard only, then with Narrator on.
     Expected: the folder choice, every button, and the text box are reachable and named.
 
+## The calm-workspace interface (added 2026-09-17)
+
+Use no personal folder. The first five steps need no folder at all; if you test a connected
+state, create a new folder under Windows Temp with made-up files only.
+
+1. Open every page. Expected: each begins with the same roomy introduction; its heading and one
+   short sentence explain the page without a wall of safety or technical wording.
+2. On **Home**, resize from wide to narrow. Expected: the four personal-folder choices remain
+   readable cards, buttons stay below their folder, the picture of circles disappears, and no
+   badge or sentence is cut off. **New here? A quick guide** is closed until pressed.
+3. On **Search**, run `photos from last month`. Expected: the answer/chips appear before saved
+   searches. **How search protects your files** is closed until pressed and still contains the
+   full truthful explanation.
+4. On **My workspace**, use **Looks**, **Shortcuts**, **Folder sets**, and **Desktop**. Expected:
+   each tab contains only that job and switching tabs changes no setting or file by itself.
+5. On **Privacy and AI**, use **AI setup**, **What you share**, and **Your saved data**. Expected:
+   the five facts at the top wrap cleanly, and switching tabs neither saves nor sends anything.
+6. In **Looks**, inspect Slate, Graphite, Sand, Ocean, Lavender, and Rose. Expected: every card
+   shows a recognisable dark/light preview. Try each in light and dark; semantic green, orange,
+   and red stay unchanged and all text remains readable.
+7. At a narrow window width, open Organize, Search, and Automatic tasks. Expected: folder and
+   rule actions move below labels where needed, the navigation pane can collapse, and nothing
+   overlaps or requires horizontal scrolling.
+8. Repeat the whole pass with keyboard only, then Narrator and Windows high contrast. Expected:
+   all task tabs and controls are named, focus is visible, and no meaning depends on colour.
+
 ## The command-center look: every page (added 2026-09-16)
 
 Nothing here touches a file. Design: `docs/superpowers/specs/2026-09-16-command-center-redesign-design.md`.
@@ -789,7 +815,7 @@ Nothing here touches a file. Design: `docs/superpowers/specs/2026-09-16-command-
 6. Choose **Follow Windows** on My workspace, then change the Windows app theme in Settings.
    Expected: DeskAI follows and the switch shows the theme actually on screen.
 7. Cards have rounder corners everywhere; the green rail on the hero and the scope reminder is
-   unchanged. Try all four looks in both light and dark: the menu panel, the top bar, and the
+   unchanged. Try all six looks in both light and dark: the menu panel, the top bar, and the
    cards take the look; green and orange are the same in every look.
 8. Turn on Windows high contrast. Expected: the top bar, the pills, the menu, and any tinted tile
    use the high-contrast colours, and every pill still has its icon and word.
@@ -815,7 +841,7 @@ Use a temporary folder of made-up files. Never connect a personal folder.
    compare button) and "Largest files" on the right.
 4. Make the window narrower than about 1100 pixels. Expected: the circles disappear, the tiles
    become two by two, and the right column moves under the left; nothing is cut off.
-5. Try all four looks in light and dark. Expected: the tiles keep their tints, the circles stay
+5. Try all six looks in light and dark. Expected: the tiles keep their tints, the circles stay
    neutral, and the text on every tile is readable.
 6. Turn on Windows high contrast. Expected: the tiles lose their tints and keep a border; every
    number and caption is still readable.

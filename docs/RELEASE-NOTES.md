@@ -33,6 +33,16 @@ Built the same day, after the owner's first look at 1.0. Version number in
 Every request still shows you exactly what would be sent first, counts against the daily limit,
 and never carries what is inside your files or where they are.
 
+**A calmer interface**
+
+- Every page now leads with one short explanation and its next useful action. Optional detail is
+  collapsed, Search puts answers before saved searches, and narrow action rows no longer squeeze
+  their labels.
+- My workspace is split into Looks, Shortcuts, Folder sets, and Desktop. Privacy and AI is split
+  into AI setup, What you share, and Your saved data.
+- Lavender and Rose join Slate, Graphite, Sand, and Ocean, each with a larger dark/light preview.
+  Looks still change neutral surfaces only; safety colours keep the same meaning.
+
 ## 1.0.0 — 2026-09-16
 
 The first stable release. Everything below was built and tested between 2026-09-07 and
@@ -52,7 +62,7 @@ or a Windows setting, a security review in `docs/security/`.
   move at most 25 matching files each check, stopping on anything unexpected, with undo first.
 - Home with an honest organization score, storage picture, and a real copy check that reads only
   what it lists and only when you press Compare.
-- My workspace: starter packs, folder templates, four looks with light/dark, and your wallpaper
+- My workspace: starter packs, folder templates, four original looks with light/dark, and your wallpaper
   (the one Windows setting DeskAI can change), with put-back.
 - Optional AI, local or with your own key for a vetted list of services, that only ever suggests
   a category after you have seen exactly what it would receive.

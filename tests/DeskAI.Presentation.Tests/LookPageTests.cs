@@ -11,14 +11,14 @@ namespace DeskAI.Presentation.Tests;
 public sealed class LookPageTests
 {
     [Fact]
-    public async Task The_page_offers_four_looks_with_Slate_chosen_and_following_Windows()
+    public async Task The_page_offers_six_looks_with_Slate_chosen_and_following_Windows()
     {
         await using var app = await TestApp.StartAsync();
         var page = app.Get<WorkspaceViewModel>();
 
         await page.InitializeAsync();
 
-        Assert.Equal(["Slate", "Graphite", "Sand", "Ocean"], page.Looks.Select(look => look.Name));
+        Assert.Equal(["Slate", "Graphite", "Sand", "Ocean", "Lavender", "Rose"], page.Looks.Select(look => look.Name));
         Assert.Equal("Slate", Assert.Single(page.Looks, look => look.IsChosen).Name);
         Assert.Equal("Chosen", page.Looks[0].ChosenText);
         Assert.Equal(string.Empty, page.Looks[1].ChosenText);

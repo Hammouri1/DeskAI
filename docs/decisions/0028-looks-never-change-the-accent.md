@@ -16,7 +16,8 @@ striking, so a bare light/dark switch was not enough.
 - **A look is a palette of five neutral colours per theme** — ground, surface, raised surface,
   line, strong line — and nothing else. `LookPalette` has no accent, caution, danger, or text
   property; a test asserts the property list, so adding one is a deliberate act that fails a test.
-- **Four looks in code:** Slate (the original, and the default), Graphite, Sand, Ocean. Each has
+- **Six looks in code:** Slate (the original, and the default), Graphite, Sand, Ocean, Lavender,
+  and Rose. Each has
   a dark and a light palette. A test checks every look keeps the shared text colours readable on
   its ground and surfaces (7:1 primary, 4.5:1 secondary).
 - **Light, dark, or follow Windows** is a separate choice, stored beside the look.
@@ -47,3 +48,10 @@ striking, so a bare light/dark switch was not enough.
 is done, so page tests run without a window and assert what was applied. `WorkspaceViewModel`
 now takes the appearance repository and applier. Re-review is not needed: no file, network,
 background, shell, or Windows-setting change.
+
+## 2026-09-17 Amendment
+
+Lavender and Rose were added during the calm-workspace redesign. They use the same five-neutral
+record, contrast tests, persistence path, and in-place painter as the original four, so this is
+an expansion of the catalog rather than a new security or architecture decision. The look cards
+now show a larger dark/light miniature before a person chooses one.

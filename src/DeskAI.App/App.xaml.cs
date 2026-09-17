@@ -18,7 +18,9 @@ public partial class App : Application
 {
     private readonly IHost _host;
     private Window? _window;
+#if !DESKAI_UI_PREVIEW
     private SingleInstance? _instance;
+#endif
 
     /// <summary>
     /// Set the first time "Quit DeskAI" is chosen, so a second click is ignored.
@@ -39,6 +41,9 @@ public partial class App : Application
         var appStateDirectory = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "DeskAI");
+#if DESKAI_UI_PREVIEW
+        appStateDirectory = UiPreview.StateDirectory;
+#endif
 
         _host = Host.CreateDefaultBuilder()
             .ConfigureLogging(logging =>
@@ -111,6 +116,9 @@ public partial class App : Application
                 services.AddTransient<WorkspacePage>();
                 services.AddTransient<SettingsPage>();
                 services.AddTransient<MainWindow>();
+#if DESKAI_UI_PREVIEW
+                UiPreview.Configure(services);
+#endif
             })
             .Build();
     }
@@ -119,6 +127,7 @@ public partial class App : Application
     {
         try
         {
+#if !DESKAI_UI_PREVIEW
             _instance = SingleInstance.Acquire();
             if (SingleInstanceDecision.Decide(_instance.AnotherIsAlreadyRunning) == LaunchAction.RevealTheRunningOneAndExit)
             {
@@ -129,17 +138,23 @@ public partial class App : Application
                 Exit();
                 return;
             }
+#endif
 
             await _host.StartAsync();
             await _host.Services.GetRequiredService<IDatabaseInitializer>().InitializeAsync();
             var window = _host.Services.GetRequiredService<MainWindow>();
             _window = window;
+#if DESKAI_UI_PREVIEW
+            window.Title = "DeskAI — UI preview (sample files only)";
+#endif
 
             // The chosen look is painted before the window shows, so it never flashes the default.
             _host.Services.GetRequiredService<IAppearanceApplier>().Apply(
                 await _host.Services.GetRequiredService<IAppearanceSettingsRepository>().LoadAsync());
             window.Activate();
+#if !DESKAI_UI_PREVIEW
             await ConnectTheBackgroundPresenceAsync(window);
+#endif
         }
         catch (Exception exception)
         {
@@ -240,7 +255,9 @@ public partial class App : Application
         }
         finally
         {
+#if !DESKAI_UI_PREVIEW
             _instance?.Dispose();
+#endif
 
             // Back onto the UI thread: the await above can resume anywhere, and Exit closes
             // windows, which only their own thread may do.

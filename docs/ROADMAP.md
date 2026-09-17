@@ -509,6 +509,15 @@ three AI features (A: plain language for Search and rules, B: "Plan this folder"
   people to an empty Releases page. Rewritten around what a person can do today, with an honest
   limits section and instructions that work while there is no release.
 
+- ✅ 2026-09-17: **the calm-workspace interface revision.** Every page now starts with the same
+  clear introduction and puts its next useful action first. Home's folder choices are roomy
+  cards; optional explanations collapse; Search places answers before saved searches; My
+  workspace and Privacy and AI use plain task tabs so their unrelated jobs no longer form one
+  long page. Lavender and Rose expand the neutral-only look catalog to six. A separate opt-in
+  UI-preview build replaces every computer-facing service and uses generated Windows Temp data,
+  so the redesign was visually checked without loading personal folders, keys, wallpaper, or
+  the owner's DeskAI database.
+
 V1.1 is complete in code, tests, and documents as of 2026-09-17, and the source is on GitHub
 privately at https://github.com/Hammouri1/DeskAI. The owner's manual look at all of it, and the
 first Actions run, are the next things (`HANDOFF.md`).

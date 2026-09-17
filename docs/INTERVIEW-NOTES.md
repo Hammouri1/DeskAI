@@ -413,6 +413,36 @@ What is deliberately not built: add-ons, code signing, localization beyond Engli
 Next small task: the owner walks the manual lists (redesign, V0.8, V0.9), then pushes v1.0.0.
 ```
 
+## Calm-Workspace Interface Learning Log — 2026-09-17
+
+```text
+What became usable: Six pages with one visual rhythm, task tabs on the two busiest pages, roomy
+folder choices, optional explanations that stay out of the way, and six neutral looks with large
+dark/light previews.
+Main data flow: view model state and commands are unchanged → XAML groups the same bindings by
+the person's task → shared theme resources paint every page → WindowsAppearanceApplier changes
+only five neutral brushes when a look is chosen.
+Classes/files I can explain: DeskLookCatalog, LookPalette, WindowsAppearanceApplier,
+DeskAITheme.xaml, MainWindow.xaml, PageContentStyle, PageIntroStyle, and UiPreview.
+New concept and my own explanation: information architecture is deciding what someone sees
+first and what can wait. Pivot tabs do not add new behavior; they stop unrelated choices from
+competing on one long screen.
+New concept (2): a composition root can create a safety boundary for visual testing. The
+explicit preview build uses the real views but replaces computer-facing interfaces and removes
+hosted timers, so looking at the UI cannot accidentally reach the owner's data.
+Hardest thing to get right: reducing visible words without deleting truthful safety information.
+Short promises stay visible; long explanations moved behind expanders or task tabs.
+Security cases tested: normal tests still use generated sandboxes; the preview source is tested
+to replace known folders, keys, network, wallpaper, pickers, notifications, tray, and timers;
+looks still cannot change semantic colours; every palette still passes contrast checks.
+Build/test evidence: record the final build, format, and test totals in the task hand-off.
+Trade-off: the task tabs make each screen calmer but only one category is visible at a time. The
+plain labels and screen-reader names make the hidden categories discoverable.
+What is deliberately not built: a new operation, a new permission, cloud UI assets, animations,
+or access to any new Windows setting.
+Next small task: the owner walks the calm-workspace manual list using generated files only.
+```
+
 ## Portfolio Evidence to Collect
 
 Keep a clean architecture diagram, safe preview screenshots using dummy data, a short undo demonstration, representative Safety tests, an ADR showing a real trade-off, performance measurements on synthetic folders, and release notes. In interviews, discuss constraints and verification rather than raw line count or “AI built it.”

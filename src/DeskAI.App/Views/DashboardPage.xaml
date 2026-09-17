@@ -7,7 +7,7 @@
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
-        <Grid Margin="28,24,28,44" MaxWidth="1240" HorizontalAlignment="Left"
+        <Grid Margin="32,28,32,40" MaxWidth="1240" HorizontalAlignment="Stretch"
               RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="22">
 
             <!--
@@ -48,7 +48,7 @@
                 green rail carries that meaning; it is the same signal used everywhere else for an
                 approved state. The circles on the right are decoration in neutral colours only.
             -->
-            <Border Style="{StaticResource HeroPanelStyle}" Padding="30,26">
+            <Border Style="{StaticResource PageIntroStyle}" Padding="28,24">
                 <Grid ColumnDefinitions="*,Auto" ColumnSpacing="24">
                     <StackPanel Spacing="12" MaxWidth="640" HorizontalAlignment="Left">
                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -77,7 +77,7 @@
                                 <StackPanel Orientation="Horizontal" Spacing="6">
                                     <FontIcon FontSize="12" Glyph="&#xE73E;"
                                               Foreground="{ThemeResource DeskTextSecondaryBrush}" />
-                                    <TextBlock Style="{StaticResource PillTextStyle}" Text="You approve every change" />
+                                    <TextBlock Style="{StaticResource PillTextStyle}" Text="Changes can be undone" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -124,18 +124,18 @@
                     button. It sits above the numbers because connecting is the first thing a person
                     does, and the card is the only place on Home that can do anything.
                 -->
-                <TextBlock Style="{StaticResource GroupLabelStyle}" Text="YOUR FOLDERS" />
+                <TextBlock Style="{StaticResource GroupLabelStyle}" Text="Start with a folder" />
                 <Border Style="{StaticResource CardStyle}">
                     <StackPanel Spacing="10">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock FontWeight="SemiBold"
                                        Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                       Text="DeskAI works only inside these four folders" />
+                                       Text="Your folders, your choice" />
                             <controls:HelpButton Topic="home.folders" />
                         </StackPanel>
                         <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
                                    HorizontalAlignment="Left"
-                                   Text="Connect one and DeskAI remembers the names, sizes, and dates of what is inside. Nothing moves until you allow tidying on Organize and press Tidy." />
+                                   Text="Choose where to start. Connecting reads names, sizes, and dates—not what is inside your files." />
                         <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
                                    Visibility="{x:Bind ViewModel.Folders.HasNoRows, Mode=OneWay}"
                                    Text="{x:Bind viewmodels:PersonalFoldersViewModel.NoneKnownText}" />
@@ -143,38 +143,33 @@
                                       AutomationProperties.Name="Your folders">
                             <ItemsControl.ItemsPanel>
                                 <ItemsPanelTemplate>
-                                    <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="300" />
+                                    <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="254" />
                                 </ItemsPanelTemplate>
                             </ItemsControl.ItemsPanel>
                             <ItemsControl.ItemTemplate>
                                 <DataTemplate x:DataType="viewmodels:PersonalFolderRowViewModel">
-                                    <Border Style="{StaticResource RowCardStyle}" Margin="0,0,10,10">
-                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-                                            <FontIcon FontSize="16" VerticalAlignment="Center" Glyph="&#xE8B7;"
-                                                      Foreground="{ThemeResource DeskTextSecondaryBrush}" />
-                                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                                    <TextBlock FontWeight="SemiBold"
-                                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                               Text="{x:Bind Name}" />
-                                                    <Border Style="{StaticResource AccentPillStyle}" Visibility="{x:Bind CanTidy}">
-                                                        <StackPanel Orientation="Horizontal" Spacing="6">
-                                                            <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
-                                                            <TextBlock Style="{StaticResource PillTextStyle}" Text="Allowed to tidy" />
-                                                        </StackPanel>
-                                                    </Border>
-                                                </StackPanel>
-                                                <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
-                                                           Text="{x:Bind Status}" />
-                                            </StackPanel>
-                                            <Button Grid.Column="2" MinWidth="92" VerticalAlignment="Center"
-                                                    Content="{x:Bind ButtonText}"
-                                                    AutomationProperties.Name="{x:Bind ButtonName}"
-                                                    Tag="{x:Bind Kind}"
-                                                    Click="OnFolderClick" />
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
+    <Border Style="{StaticResource RowCardStyle}" Margin="0,0,12,12">
+        <StackPanel Spacing="12">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{ThemeResource DeskTintBlueBrush}">
+                    <FontIcon FontSize="17" Glyph="&#xE8B7;" Foreground="{ThemeResource DeskTextPrimaryBrush}" />
+                </Border>
+                <TextBlock Grid.Column="1" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                           Foreground="{ThemeResource DeskTextPrimaryBrush}" Text="{x:Bind Name}" />
+            </Grid>
+            <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap" MinHeight="36" Text="{x:Bind Status}" />
+            <Border Style="{StaticResource AccentPillStyle}" HorizontalAlignment="Left" Visibility="{x:Bind CanTidy}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
+                    <TextBlock Style="{StaticResource PillTextStyle}" Text="Allowed to tidy" />
+                </StackPanel>
+            </Border>
+            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Content="{x:Bind ButtonText}" AutomationProperties.Name="{x:Bind ButtonName}"
+                    Tag="{x:Bind Kind}" Click="OnFolderClick" />
+        </StackPanel>
+    </Border>
+</DataTemplate>
                             </ItemsControl.ItemTemplate>
                         </ItemsControl>
                         <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
@@ -189,7 +184,7 @@
                     after the same dialog as every sentence; DeskAI answers from its own memory. Each
                     reply may carry one plain button that opens a page, never one that changes a file.
                 -->
-                <TextBlock Style="{StaticResource GroupLabelStyle}" Text="ASK DESKAI" />
+                <TextBlock Style="{StaticResource GroupLabelStyle}" Text="A little help, when you need it" />
                 <Border Style="{StaticResource CardStyle}">
                     <StackPanel Spacing="10">
                         <StackPanel Orientation="Horizontal" Spacing="8">
@@ -247,7 +242,7 @@
                     </StackPanel>
                 </Border>
 
-                <TextBlock Style="{StaticResource GroupLabelStyle}" Text="QUICK LOOK" />
+                <TextBlock Style="{StaticResource GroupLabelStyle}" Text="At a glance" />
                 <Grid x:Name="Tiles" ColumnDefinitions="*,*,*,*" ColumnSpacing="14" RowSpacing="14">
                     <Border Style="{StaticResource TileStyle}" Background="{ThemeResource DeskTintBlueBrush}">
                         <StackPanel Spacing="8">
@@ -301,7 +296,7 @@
                             <Grid ColumnDefinitions="Auto,*" ColumnSpacing="20">
                                 <StackPanel Spacing="2" VerticalAlignment="Top">
                                     <TextBlock Style="{StaticResource DeskDisplayStyle}"
-                                               Foreground="{ThemeResource DeskAccentBrush}"
+                                               Foreground="{ThemeResource DeskTextPrimaryBrush}"
                                                Text="{x:Bind ViewModel.HealthScore, Mode=OneWay}" />
                                     <TextBlock Style="{StaticResource CaptionStyle}" Text="out of 100" />
                                 </StackPanel>
@@ -523,7 +518,7 @@
                 </StackPanel>
             </Grid>
 
-            <StackPanel Grid.Row="3" Spacing="12">
+            <Expander Grid.Row="3" Header="New here? A quick guide" HorizontalAlignment="Stretch"><StackPanel Spacing="12">
                 <TextBlock Style="{StaticResource SectionTitleStyle}" Text="What you can try now" />
 
                 <Border Style="{StaticResource CardStyle}">
@@ -574,7 +569,7 @@
                         </Grid>
                     </StackPanel>
                 </Border>
-            </StackPanel>
+            </StackPanel></Expander>
 
             <!--
                 The safety chain is spelled out because it genuinely is a sequence, which is

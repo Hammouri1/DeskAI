@@ -13,18 +13,20 @@
         IsSettingsVisible="False"
         IsTitleBarAutoPaddingEnabled="True"
         ItemInvoked="OnNavigationItemInvoked"
-        OpenPaneLength="248"
+        OpenPaneLength="256"
+        CompactModeThresholdWidth="680"
+        ExpandedModeThresholdWidth="1180"
         PaneDisplayMode="Auto">
 
         <!-- The DeskAI mark and name at the top of the menu. Neutral: it is a name, not a state. -->
         <NavigationView.PaneHeader>
             <StackPanel Orientation="Horizontal" Spacing="10" Margin="8,4,0,8" VerticalAlignment="Center">
-                <Border Width="28" Height="28" CornerRadius="8"
+                <Border Width="34" Height="34" CornerRadius="11"
                         Background="{ThemeResource DeskSurfaceRaisedBrush}"
                         BorderBrush="{ThemeResource DeskLineStrongBrush}" BorderThickness="1">
                     <FontIcon FontSize="14" Glyph="&#xE8B7;" Foreground="{ThemeResource DeskTextPrimaryBrush}" />
                 </Border>
-                <TextBlock FontFamily="Segoe UI Variable Display" FontSize="16" FontWeight="SemiBold"
+                <TextBlock FontFamily="Segoe UI Variable Display" FontSize="20" FontWeight="SemiBold"
                            VerticalAlignment="Center"
                            Foreground="{ThemeResource DeskTextPrimaryBrush}" Text="DeskAI" />
             </StackPanel>
@@ -93,7 +95,7 @@
                                        Text="{Binding ScopeTitle}" />
                             <controls:HelpButton Topic="shell.scope" />
                         </StackPanel>
-                        <TextBlock FontSize="11" TextWrapping="Wrap"
+                        <TextBlock FontSize="12" TextWrapping="Wrap"
                                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
                                    Text="{Binding ScopeMessage}" />
                     </StackPanel>
@@ -102,6 +104,20 @@
         </NavigationView.PaneFooter>
 
         <Grid RowDefinitions="Auto,*">
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup>
+                    <VisualState x:Name="RoomyShell">
+                        <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="900" /></VisualState.StateTriggers>
+                    </VisualState>
+                    <VisualState x:Name="CompactShell">
+                        <VisualState.StateTriggers><AdaptiveTrigger MinWindowWidth="0" /></VisualState.StateTriggers>
+                        <VisualState.Setters>
+                            <Setter Target="TopBarTitle.Visibility" Value="Collapsed" />
+                            <Setter Target="FindBox.MaxWidth" Value="1000" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
             <!--
                 The top bar: the page name, a search box that opens Search with the phrase, and
                 the AI pill. The pill states the saved AI choice and only opens Privacy and AI;
@@ -109,9 +125,9 @@
             -->
             <Border Style="{StaticResource TopBarStyle}">
                 <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="14">
-                    <TextBlock Style="{StaticResource SectionTitleStyle}" VerticalAlignment="Center"
+                    <TextBlock x:Name="TopBarTitle" Style="{StaticResource SectionTitleStyle}" VerticalAlignment="Center"
                                Text="{Binding PageTitle}" />
-                    <AutoSuggestBox x:Name="FindBox" Grid.Column="1" MaxWidth="420" HorizontalAlignment="Right"
+                    <AutoSuggestBox x:Name="FindBox" Grid.Column="1" MaxWidth="420" HorizontalAlignment="Stretch"
                                     PlaceholderText="Find a file…" QueryIcon="Find"
                                     AutomationProperties.Name="Find a file"
                                     QuerySubmitted="OnFindSubmitted" />

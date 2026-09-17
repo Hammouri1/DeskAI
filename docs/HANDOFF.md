@@ -16,13 +16,17 @@ appending to them.
 
 ## Where things stand
 
-- Updated: 2026-09-17, at commit `6474767` on `main`, tree clean. **`main` is pushed to GitHub**
-  up to `8fb83d9`; `6474767` is newer and **not pushed yet**.
+- Updated: 2026-09-17, through the local **"Redesign the app as a calm workspace"** commit on
+  `main`; use `git log -1` for its hash. **`main` is pushed to GitHub only up to `8fb83d9`**;
+  the newer local commits are not pushed yet.
 - **DeskAI is on GitHub, privately: https://github.com/Hammouri1/DeskAI.** Only `main` was
   pushed. No tag exists, so the release workflow has still never run and there is no zip on the
   Releases page. **Push only `main`. Never `git push --all` or `--mirror`** — four local refs
   still carry the owner's real email (see "What is left").
-- V1.1 remains complete. This session added one fix on top of it, from the owner's third
+- V1.1 remains complete. The latest session redesigned all six pages as one calm workspace:
+  task tabs for My workspace and Privacy and AI, simpler first screens, responsive action rows,
+  Lavender and Rose looks, and an isolated UI-preview build that cannot reach personal data.
+  The session before it added one fix on top of V1.1, from the owner's third
   hand-found bug: `6474767` **"DeskAI can say whether your AI answers, and why a save was
   refused"**.
 - **What that bug was, because it is the pattern worth remembering.** The owner entered their
@@ -42,9 +46,9 @@ appending to them.
   error text. The check carries **no file information at all**, whatever the sharing choices
   allow, and reserves one request from the daily cap before sending. See `docs/AI-PROVIDERS.md`
   ("Checking the connection") and `docs/UI-UX.md`.
-- Verification at `6474767`, the owner's DeskAI closed: Release build of `DeskAI.sln`, **no
-  errors and no warnings**; **1372 tests pass, none skipped** (was 1355; +12 `SettingsCheckPageTests`,
-  +5 `AiConnectionCheckTests`); `dotnet format` clean.
+- Latest verification, with the owner's normal DeskAI never launched: clean Release rebuild of
+  `DeskAI.sln`, **no errors and no warnings**; **1375 tests pass, none skipped**; `dotnet format`
+  clean. The UI was inspected only through the explicit temp-data preview composition.
 - **The owner set their OpenRouter key up again and confirmed it works (2026-09-17).** This is
   the first time any part of DeskAI has been verified against a live paid service rather than a
   fake transport. Their words were "the key works fine"; they did not quote the check's own
@@ -61,12 +65,14 @@ appending to them.
 
 ## What is left
 
-1. **Push `main`.** `6474767` and `82ee85f` are local only. Push `main` alone.
+1. **Push `main`.** The calm-workspace commit, `6474767`, and `82ee85f` are local only. Push
+   `main` alone.
 2. **Look at the GitHub Actions result.** Two pushes have happened and **nobody has checked
    whether the build workflow passed**. If it failed, the likeliest causes are the locked restore
    (`--locked-mode`) disagreeing with the committed `packages.lock.json` files, or the .NET SDK
    pin in `global.json` being unavailable on `windows-latest`.
-3. **The owner's look at V1.1, then V0.7–V1.0**, in `docs/MANUAL-TESTING.md`: "Your folders"
+3. **The owner's look at the calm-workspace interface, then V1.1 and V0.7–V1.0**, in
+   `docs/MANUAL-TESTING.md`: start with "The calm-workspace interface", then "Your folders"
    (inside "Desktop and wallpaper", steps 9–14), "Let AI read this", "Plan this folder with AI",
    "Ask DeskAI"; then "The command-center look", "Back up, restore, and Start fresh", "A release
    zip", "Tidy while I'm away", "My workspace", "Folder templates", "DeskAI's look", "V0.6

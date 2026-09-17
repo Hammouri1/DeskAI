@@ -7,7 +7,7 @@
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
     <ScrollViewer>
-        <Grid Margin="28,24,28,40" MaxWidth="1240" HorizontalAlignment="Left" RowDefinitions="Auto,Auto" RowSpacing="22">
+        <Grid Margin="32,28,32,40" MaxWidth="1240" HorizontalAlignment="Stretch" RowDefinitions="Auto,Auto" RowSpacing="22">
 
             <!--
                 Two columns when the window is wide: the rules on the left, "Checking for you" on
@@ -18,7 +18,7 @@
                 <VisualStateGroup>
                     <VisualState x:Name="Wide">
                         <VisualState.StateTriggers>
-                            <AdaptiveTrigger MinWindowWidth="1100" />
+                            <AdaptiveTrigger MinWindowWidth="1320" />
                         </VisualState.StateTriggers>
                     </VisualState>
                     <VisualState x:Name="Narrow">
@@ -36,7 +36,7 @@
                 </VisualStateGroup>
             </VisualStateManager.VisualStateGroups>
 
-            <StackPanel Spacing="16">
+            <Border Style="{StaticResource PageIntroStyle}"><StackPanel Spacing="16">
             <StackPanel Spacing="6">
                 <TextBlock Style="{StaticResource PageTitleStyle}" Text="Automatic tasks" />
                 <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
@@ -67,7 +67,7 @@
                                Text="{x:Bind ViewModel.OwnPromiseDetail, Mode=OneWay}" />
                 </StackPanel>
             </Border>
-            </StackPanel>
+            </StackPanel></Border>
 
             <Grid x:Name="Columns" Grid.Row="1" ColumnDefinitions="3*,2*" ColumnSpacing="22" RowSpacing="22">
 

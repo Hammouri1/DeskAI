@@ -100,6 +100,56 @@ public sealed partial class ShellLayoutTests
         Assert.Contains("TextWrapping=\"Wrap\"", words, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Busy_pages_group_choices_into_plain_task_tabs()
+    {
+        var workspace = File.ReadAllText(AppFile(Path.Combine("Views", "WorkspacePage.xaml")));
+        Assert.Contains("AutomationProperties.Name=\"Workspace sections\"", workspace, StringComparison.Ordinal);
+        Assert.Contains("Header=\"Looks\"", workspace, StringComparison.Ordinal);
+        Assert.Contains("Header=\"Shortcuts\"", workspace, StringComparison.Ordinal);
+        Assert.Contains("Header=\"Folder sets\"", workspace, StringComparison.Ordinal);
+        Assert.Contains("Header=\"Desktop\"", workspace, StringComparison.Ordinal);
+
+        var settings = File.ReadAllText(AppFile(Path.Combine("Views", "SettingsPage.xaml")));
+        Assert.Contains("AutomationProperties.Name=\"Settings sections\"", settings, StringComparison.Ordinal);
+        Assert.Contains("Header=\"AI setup\"", settings, StringComparison.Ordinal);
+        Assert.Contains("Header=\"What you share\"", settings, StringComparison.Ordinal);
+        Assert.Contains("Header=\"Your saved data\"", settings, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Every_page_starts_with_the_same_calm_intro_surface()
+    {
+        foreach (var file in PageFiles())
+        {
+            var xaml = File.ReadAllText(file);
+            Assert.Contains("Style=\"{StaticResource PageIntroStyle}\"", xaml, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void The_visual_preview_is_opt_in_and_replaces_every_computer_facing_service()
+    {
+        var project = File.ReadAllText(AppFile("DeskAI.App.csproj"));
+        Assert.Contains("Condition=\"'$(DeskAiUiPreview)' == 'true'\"", project, StringComparison.Ordinal);
+        Assert.Contains("DESKAI_UI_PREVIEW", project, StringComparison.Ordinal);
+
+        var preview = File.ReadAllText(Path.Combine(RepositoryRoot(), "tools", "UiPreview.cs"));
+        Assert.Contains("Directory.CreateTempSubdirectory", preview, StringComparison.Ordinal);
+        Assert.DoesNotContain("Environment.GetFolderPath", preview, StringComparison.Ordinal);
+        foreach (var service in new[]
+        {
+            "IKnownFolders", "IFolderPickerService", "IPicturePickerService", "IBackupFilePickerService",
+            "ICredentialVault", "IAiHttpTransport", "IWallpaperSetter", "IFindingNotifier",
+        })
+        {
+            Assert.Contains($"Replace<{service}>", preview, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("RemoveAll<IHostedService>", preview, StringComparison.Ordinal);
+        Assert.Contains("NoBackgroundPresence", preview, StringComparison.Ordinal);
+    }
+
     private static string AppFile(string relative) =>
         Path.Combine(RepositoryRoot(), "src", "DeskAI.App", relative);
 

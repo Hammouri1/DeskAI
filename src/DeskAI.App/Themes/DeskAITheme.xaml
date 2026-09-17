@@ -3,7 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
     <!--
-        DeskAI visual system: "instrument panel".
+        DeskAI visual system: "calm workspace".
 
         The single rule that keeps this system honest is that the accent colour means
         "safe or confirmed" and is never used as decoration. A person should be able to
@@ -33,7 +33,7 @@
 
             <SolidColorBrush x:Key="DeskTextPrimaryBrush" Color="#FFE7EBF0" />
             <SolidColorBrush x:Key="DeskTextSecondaryBrush" Color="#FF8C97A5" />
-            <SolidColorBrush x:Key="DeskTextTertiaryBrush" Color="#FF5F6B7A" />
+            <SolidColorBrush x:Key="DeskTextTertiaryBrush" Color="#FF9DA8B7" />
 
             <!--
                 Hero panels are no longer filled with the accent, so text that used to sit
@@ -64,7 +64,7 @@
             <SolidColorBrush x:Key="AccentButtonForeground" Color="#FF08130E" />
             <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="#FF08130E" />
             <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="#DD08130E" />
-            <SolidColorBrush x:Key="AccentButtonForegroundDisabled" Color="#FF5F6B7A" />
+            <SolidColorBrush x:Key="AccentButtonForegroundDisabled" Color="#FF9DA8B7" />
 
             <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="#FF4DD8A8" />
             <SolidColorBrush x:Key="SystemFillColorCautionBrush" Color="#FFE8955A" />
@@ -75,7 +75,7 @@
             <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="#FF272E38" />
             <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FFE7EBF0" />
             <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FF8C97A5" />
-            <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF5F6B7A" />
+            <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF9DA8B7" />
 
             <!--
                 Soft tints for the stat tiles on Home. Alpha over the surface so they sit on every
@@ -109,7 +109,7 @@
 
             <SolidColorBrush x:Key="DeskTextPrimaryBrush" Color="#FF10161D" />
             <SolidColorBrush x:Key="DeskTextSecondaryBrush" Color="#FF5A6572" />
-            <SolidColorBrush x:Key="DeskTextTertiaryBrush" Color="#FF7C8794" />
+            <SolidColorBrush x:Key="DeskTextTertiaryBrush" Color="#FF596675" />
 
             <SolidColorBrush x:Key="TextOnAccentFillColorPrimaryBrush" Color="#FF10161D" />
             <SolidColorBrush x:Key="TextOnAccentFillColorSecondaryBrush" Color="#FF5A6572" />
@@ -129,7 +129,7 @@
             <SolidColorBrush x:Key="AccentButtonForeground" Color="#FFFFFFFF" />
             <SolidColorBrush x:Key="AccentButtonForegroundPointerOver" Color="#FFFFFFFF" />
             <SolidColorBrush x:Key="AccentButtonForegroundPressed" Color="#DDFFFFFF" />
-            <SolidColorBrush x:Key="AccentButtonForegroundDisabled" Color="#FF7C8794" />
+            <SolidColorBrush x:Key="AccentButtonForegroundDisabled" Color="#FF596675" />
 
             <SolidColorBrush x:Key="SystemFillColorSuccessBrush" Color="#FF0E8C64" />
             <SolidColorBrush x:Key="SystemFillColorCautionBrush" Color="#FFA8541B" />
@@ -140,7 +140,7 @@
             <SolidColorBrush x:Key="CardStrokeColorDefaultBrush" Color="#FFE1E5EA" />
             <SolidColorBrush x:Key="TextFillColorPrimaryBrush" Color="#FF10161D" />
             <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#FF5A6572" />
-            <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF7C8794" />
+            <SolidColorBrush x:Key="TextFillColorTertiaryBrush" Color="#FF596675" />
 
             <SolidColorBrush x:Key="DeskTintBlueBrush" Color="#3A5B8DEF" />
             <SolidColorBrush x:Key="DeskTintVioletBrush" Color="#3AA07CF0" />
@@ -199,15 +199,15 @@
         <Setter Property="Background" Value="{ThemeResource DeskSurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="12" />
-        <Setter Property="Padding" Value="20" />
+        <Setter Property="CornerRadius" Value="16" />
+        <Setter Property="Padding" Value="24" />
     </Style>
 
     <Style x:Key="SoftCardStyle" TargetType="Border">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="16" />
         <Setter Property="Padding" Value="16" />
     </Style>
 
@@ -233,7 +233,7 @@
 
     <Style x:Key="DeskDisplayStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe UI Variable Display" />
-        <Setter Property="FontSize" Value="34" />
+        <Setter Property="FontSize" Value="36" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="CharacterSpacing" Value="-25" />
         <Setter Property="LineHeight" Value="40" />
@@ -243,7 +243,7 @@
 
     <Style x:Key="PageTitleStyle" TargetType="TextBlock">
         <Setter Property="FontFamily" Value="Segoe UI Variable Display" />
-        <Setter Property="FontSize" Value="24" />
+        <Setter Property="FontSize" Value="30" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="CharacterSpacing" Value="-15" />
         <Setter Property="TextWrapping" Value="Wrap" />
@@ -289,7 +289,7 @@
     <Style x:Key="TileStyle" TargetType="Border">
         <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="16" />
         <Setter Property="Padding" Value="18,16" />
         <Setter Property="MinHeight" Value="118" />
     </Style>
@@ -309,7 +309,7 @@
         <Setter Property="Background" Value="{ThemeResource DeskSurfaceRaisedBrush}" />
         <Setter Property="BorderBrush" Value="{ThemeResource DeskLineStrongBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="16" />
         <Setter Property="Padding" Value="10,4" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
@@ -333,9 +333,9 @@
 
     <!-- The small grey label above a group of menu items, and above a group of cards. -->
     <Style x:Key="GroupLabelStyle" TargetType="TextBlock">
-        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="CharacterSpacing" Value="60" />
+        <Setter Property="CharacterSpacing" Value="0" />
         <Setter Property="Foreground" Value="{ThemeResource DeskTextTertiaryBrush}" />
     </Style>
 
@@ -344,7 +344,35 @@
         <Setter Property="Background" Value="{ThemeResource DeskSurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
         <Setter Property="BorderThickness" Value="0,0,0,1" />
-        <Setter Property="Padding" Value="24,10" />
+        <Setter Property="Padding" Value="28,14" />
+    </Style>
+
+
+    <!-- Shared spacing and native controls; templates/focus/high-contrast behavior stay WinUI's. -->
+    <Style x:Key="PageContentStyle" TargetType="StackPanel">
+        <Setter Property="Margin" Value="32,28,32,40" />
+        <Setter Property="MaxWidth" Value="1120" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="Spacing" Value="24" />
+    </Style>
+    <Style x:Key="PageIntroStyle" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource DeskTintBlueBrush}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource DeskLineBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="20" />
+        <Setter Property="Padding" Value="28,24" />
+    </Style>
+    <Style x:Key="SectionTabsStyle" TargetType="Pivot">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="Margin" Value="-12,0,-12,0" />
+    </Style>
+    <Style TargetType="Button" BasedOn="{StaticResource DefaultButtonStyle}">
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="MinHeight" Value="36" />
+    </Style>
+    <Style TargetType="TextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="MinHeight" Value="38" />
     </Style>
 
     <!--
@@ -358,7 +386,7 @@
         <Setter Property="MinWidth" Value="0" />
         <Setter Property="MinHeight" Value="0" />
         <Setter Property="Padding" Value="0" />
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="16" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderBrush" Value="{ThemeResource DeskLineStrongBrush}" />

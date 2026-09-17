@@ -51,6 +51,12 @@ public static class DeskLookCatalog
         new("ocean", "Ocean", "Deep blue, calm and dark.",
             new LookPalette("#0B1620", "#10202D", "#16293A", "#1F3648", "#2C4A61"),
             new LookPalette("#EEF5F9", "#FFFFFF", "#FFFFFF", "#D6E4EE", "#B8CEDD")),
+        new("lavender", "Lavender", "A little purple. Soft and relaxed.",
+            new LookPalette("#14111C", "#1C1826", "#262031", "#362D45", "#514261"),
+            new LookPalette("#F5F0FA", "#FFFCFF", "#FFFCFF", "#E4DAEF", "#CCBDDC")),
+        new("rose", "Rose", "A warm blush, without the brightness.",
+            new LookPalette("#191215", "#221A1E", "#2D2227", "#403039", "#59444E"),
+            new LookPalette("#FCF1F3", "#FFFCFC", "#FFFCFC", "#EDDBE0", "#D8BDC5")),
     ];
 
     public static DeskLook Default => All[0];

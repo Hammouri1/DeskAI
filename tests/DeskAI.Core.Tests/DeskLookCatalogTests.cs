@@ -17,9 +17,9 @@ public sealed class DeskLookCatalogTests
     private const string LightTextSecondary = "#5A6572";
 
     [Fact]
-    public void There_are_four_looks_and_Slate_is_the_default()
+    public void There_are_six_looks_and_Slate_is_the_default()
     {
-        Assert.Equal(["slate", "graphite", "sand", "ocean"], DeskLookCatalog.All.Select(look => look.Id));
+        Assert.Equal(["slate", "graphite", "sand", "ocean", "lavender", "rose"], DeskLookCatalog.All.Select(look => look.Id));
         Assert.Equal("Slate", DeskLookCatalog.Default.Name);
         Assert.Equal(DeskLookCatalog.DefaultId, AppearanceSettings.Default.LookId);
         Assert.Equal(ThemeMode.FollowWindows, AppearanceSettings.Default.Mode);

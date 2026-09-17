@@ -9,22 +9,80 @@
     Background="{ThemeResource DeskGroundBrush}">
     <Grid>
         <ScrollViewer>
-            <StackPanel Margin="28,24,28,44" MaxWidth="920" HorizontalAlignment="Left" Spacing="22">
+            <StackPanel Style="{StaticResource PageContentStyle}">
 
-                <StackPanel Spacing="8" MaxWidth="640" HorizontalAlignment="Left">
+                <Border Style="{StaticResource PageIntroStyle}"><StackPanel Spacing="8" MaxWidth="640" HorizontalAlignment="Left">
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock Style="{StaticResource PageTitleStyle}" Text="My workspace" />
                         <controls:HelpButton Topic="workspace.page" />
                     </StackPanel>
                     <TextBlock Style="{StaticResource BodySecondaryStyle}"
-                               Text="Your shortcuts, starter packs, and folder templates. Nothing here moves a file." />
-                </StackPanel>
+                               Text="Make DeskAI feel like yours. Choose a look, save shortcuts, or set up folders." />
+                </StackPanel></Border><Pivot Style="{StaticResource SectionTabsStyle}" AutomationProperties.Name="Workspace sections"><PivotItem Header="Looks"><StackPanel Spacing="22" Margin="0,12,0,8"><StackPanel Spacing="12">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="DeskAI's look" />
+                            <controls:HelpButton Topic="workspace.look" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="620"
+                                   HorizontalAlignment="Left"
+                                   Text="Colours for the DeskAI window only. Your Windows theme and wallpaper are not touched." />
+                    </StackPanel>
 
-                <!--
-                    Pinned searches. A tile shows a name and a count, never a file name, and the
-                    caption says when the counts were made so no tile passes for a live reading.
-                -->
-                <Border Style="{StaticResource CardStyle}">
+                    <RadioButtons x:Name="ThemeModeChoice"
+                                  Header="Light or dark"
+                                  MaxColumns="3"
+                                  ItemsSource="{x:Bind viewmodels:WorkspaceViewModel.ThemeModeNames}"
+                                  SelectedIndex="{x:Bind ViewModel.ThemeModeIndex, Mode=OneWay}"
+                                  SelectionChanged="OnThemeModeChanged" />
+
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.Looks}"
+                                  AutomationProperties.Name="DeskAI's looks">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="320" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:LookCardViewModel">
+                                <Border Style="{StaticResource RowCardStyle}" Margin="0,0,10,10">
+                                    <StackPanel Spacing="8">
+                                        <!-- Two swatches: how the look reads in dark and in light. -->
+                                        <Grid ColumnDefinitions="*,*" ColumnSpacing="4" Height="96">
+                                            <Border CornerRadius="10,0,0,10" Background="{x:Bind views:WorkspacePage.Swatch(DarkGround)}"
+                                                    BorderBrush="{x:Bind views:WorkspacePage.Swatch(DarkSurface)}" BorderThickness="12,0,0,0"><StackPanel Margin="12" Spacing="8"><Border Height="8" Width="50" HorizontalAlignment="Left" Background="{x:Bind views:WorkspacePage.Swatch(LightGround)}" CornerRadius="4" /><Border Height="34" Background="{x:Bind views:WorkspacePage.Swatch(DarkSurface)}" CornerRadius="6" /></StackPanel></Border>
+                                            <Border Grid.Column="1" CornerRadius="0,10,10,0" Background="{x:Bind views:WorkspacePage.Swatch(LightGround)}"
+                                                    BorderBrush="{x:Bind views:WorkspacePage.Swatch(LightSurface)}" BorderThickness="0,0,0,6" />
+                                        </Grid>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBlock FontWeight="SemiBold"
+                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                       Text="{x:Bind Name}" />
+                                            <!-- The accent says "chosen" because it is a confirmed state, not decoration. -->
+                                            <Border Style="{StaticResource AccentPillStyle}" Padding="8,2"
+                                                    Visibility="{x:Bind IsChosen, Mode=OneWay}">
+                                                <StackPanel Orientation="Horizontal" Spacing="5">
+                                                    <FontIcon FontSize="10" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
+                                                    <TextBlock Style="{StaticResource PillTextStyle}" FontSize="11"
+                                                               Text="{x:Bind ChosenText, Mode=OneWay}" />
+                                                </StackPanel>
+                                            </Border>
+                                        </StackPanel>
+                                        <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                                   Text="{x:Bind Summary}" />
+                                        <Button Content="Use this look"
+                                                Command="{Binding ElementName=Root, Path=ViewModel.ChooseLookCommand}"
+                                                CommandParameter="{x:Bind Id}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                               Visibility="{x:Bind ViewModel.HasLookMessage, Mode=OneWay}"
+                               Text="{x:Bind ViewModel.LookMessage, Mode=OneWay}" />
+                </StackPanel></StackPanel></PivotItem><PivotItem Header="Shortcuts"><StackPanel Spacing="22" Margin="0,12,0,8"><Border Style="{StaticResource CardStyle}">
                     <StackPanel Spacing="14">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Pinned searches" />
@@ -84,13 +142,7 @@
                                    Visibility="{x:Bind ViewModel.HasPins, Mode=OneWay}"
                                    Text="{x:Bind ViewModel.PinsCaption, Mode=OneWay}" />
                     </StackPanel>
-                </Border>
-
-                <!--
-                    Starter packs. Each card opens a preview; only Add in that dialog adds, and
-                    what happened is written on the card that was pressed.
-                -->
-                <StackPanel Spacing="12">
+                </Border><StackPanel Spacing="12">
                     <StackPanel Spacing="4">
                         <StackPanel Orientation="Horizontal" Spacing="8">
                             <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Starter packs" />
@@ -133,17 +185,42 @@
 
                     <TextBlock Style="{StaticResource CaptionStyle}"
                                Text="Or make your own in Search and Automatic tasks." />
-                </StackPanel>
-
-                <!--
-                    Folder templates. The one thing on this page that changes a folder: it makes
-                    empty folders, after a preview and a yes, with the same permission Tidy uses.
-                    The folder is chosen once for the whole section; each card opens the preview.
-                -->
-                <StackPanel Spacing="12">
+                </StackPanel><Border Style="{StaticResource CardStyle}"
+                        Visibility="{x:Bind ViewModel.HasOtherSearches, Mode=OneWay}">
+                    <StackPanel Spacing="12">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Your other saved searches" />
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}"
+                                   Visibility="{x:Bind ViewModel.HasPinMessage, Mode=OneWay}"
+                                   Text="{x:Bind ViewModel.PinMessage, Mode=OneWay}" />
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.OtherSearches, Mode=OneWay}"
+                                      AutomationProperties.Name="Saved searches that are not pinned">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="viewmodels:UnpinnedSearchViewModel">
+                                    <Border Style="{StaticResource RowCardStyle}">
+                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                                            <StackPanel Spacing="3">
+                                                <TextBlock FontWeight="SemiBold"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                                           Text="{x:Bind Name}" />
+                                                <TextBlock Style="{StaticResource CaptionStyle}"
+                                                           TextTrimming="CharacterEllipsis"
+                                                           Text="{x:Bind Phrase}" />
+                                            </StackPanel>
+                                            <Button Grid.Column="1" VerticalAlignment="Center" Content="Pin"
+                                                    IsEnabled="{Binding ElementName=Root, Path=ViewModel.CanPinMore}"
+                                                    Command="{Binding ElementName=Root, Path=ViewModel.PinCommand}"
+                                                    CommandParameter="{x:Bind Id}" />
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border></StackPanel></PivotItem><PivotItem Header="Folder sets"><StackPanel Spacing="22" Margin="0,12,0,8"><StackPanel Spacing="12">
                     <StackPanel Spacing="4">
                         <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Folder templates" />
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Ready-made folder sets" />
                             <controls:HelpButton Topic="workspace.templates" />
                         </StackPanel>
                         <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="620"
@@ -190,7 +267,7 @@
                                                 </StackPanel>
                                                 <!-- Plain, not accent: seeing the list confirms nothing. -->
                                                 <Button Grid.Column="1" VerticalAlignment="Center"
-                                                        Content="See what it makes"
+                                                        Content="Preview folders"
                                                         Tag="{x:Bind Id}"
                                                         Click="OnTemplateClick" />
                                             </Grid>
@@ -215,14 +292,7 @@
                                    Visibility="{x:Bind ViewModel.HasTemplateMessage, Mode=OneWay}"
                                    Text="{x:Bind ViewModel.TemplateMessage, Mode=OneWay}" />
                     </StackPanel>
-                </StackPanel>
-
-                <!--
-                    Desktop and wallpaper. The wallpaper is the one Windows setting DeskAI can
-                    change, only from its button after a dialog, and it can be put back. The
-                    Desktop card only connects the folder and hands it to Organize.
-                -->
-                <StackPanel Spacing="12">
+                </StackPanel></StackPanel></PivotItem><PivotItem Header="Desktop"><StackPanel Spacing="22" Margin="0,12,0,8"><StackPanel Spacing="12">
                     <StackPanel Spacing="4">
                         <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Desktop and wallpaper" />
                         <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="620"
@@ -286,30 +356,28 @@
                                           AutomationProperties.Name="Your folders">
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate x:DataType="viewmodels:PersonalFolderRowViewModel">
-                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12" Margin="0,4">
-                                            <FontIcon FontSize="16" VerticalAlignment="Center" Glyph="&#xE8B7;"
-                                                      Foreground="{ThemeResource DeskTextSecondaryBrush}" />
-                                            <StackPanel Grid.Column="1" Spacing="2" VerticalAlignment="Center">
-                                                <TextBlock FontWeight="SemiBold"
-                                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                           Text="{x:Bind Name}" />
-                                                <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
-                                                           Text="{x:Bind Status}" />
-                                            </StackPanel>
-                                            <Border Grid.Column="2" Style="{StaticResource AccentPillStyle}" VerticalAlignment="Center"
-                                                    Visibility="{x:Bind CanTidy}">
-                                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                                    <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
-                                                    <TextBlock Style="{StaticResource PillTextStyle}" Text="Allowed to tidy" />
-                                                </StackPanel>
-                                            </Border>
-                                            <Button Grid.Column="3" MinWidth="92" VerticalAlignment="Center"
-                                                    Content="{x:Bind ButtonText}"
-                                                    AutomationProperties.Name="{x:Bind ButtonName}"
-                                                    Tag="{x:Bind Kind}"
-                                                    Click="OnFolderClick" />
-                                        </Grid>
-                                    </DataTemplate>
+    <Border Style="{StaticResource RowCardStyle}" Margin="0,0,12,12">
+        <StackPanel Spacing="12">
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
+                <Border Width="36" Height="36" CornerRadius="10" Background="{ThemeResource DeskTintBlueBrush}">
+                    <FontIcon FontSize="17" Glyph="&#xE8B7;" Foreground="{ThemeResource DeskTextPrimaryBrush}" />
+                </Border>
+                <TextBlock Grid.Column="1" FontSize="16" FontWeight="SemiBold" VerticalAlignment="Center"
+                           Foreground="{ThemeResource DeskTextPrimaryBrush}" Text="{x:Bind Name}" />
+            </Grid>
+            <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap" MinHeight="36" Text="{x:Bind Status}" />
+            <Border Style="{StaticResource AccentPillStyle}" HorizontalAlignment="Left" Visibility="{x:Bind CanTidy}">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon FontSize="11" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
+                    <TextBlock Style="{StaticResource PillTextStyle}" Text="Allowed to tidy" />
+                </StackPanel>
+            </Border>
+            <Button HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                    Content="{x:Bind ButtonText}" AutomationProperties.Name="{x:Bind ButtonName}"
+                    Tag="{x:Bind Kind}" Click="OnFolderClick" />
+        </StackPanel>
+    </Border>
+</DataTemplate>
                                 </ItemsControl.ItemTemplate>
                             </ItemsControl>
                             <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
@@ -318,112 +386,7 @@
                                        Text="{x:Bind ViewModel.Folders.Message, Mode=OneWay}" />
                         </StackPanel>
                     </Border>
-                </StackPanel>
-
-                <!--
-                    DeskAI's look. Choosing a card repaints this window at once and is remembered.
-                    Only the neutral colours differ between looks; the accent stays green in all.
-                -->
-                <StackPanel Spacing="12">
-                    <StackPanel Spacing="4">
-                        <StackPanel Orientation="Horizontal" Spacing="8">
-                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="DeskAI's look" />
-                            <controls:HelpButton Topic="workspace.look" />
-                        </StackPanel>
-                        <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="620"
-                                   HorizontalAlignment="Left"
-                                   Text="Colours for the DeskAI window only. Your Windows theme and wallpaper are not touched." />
-                    </StackPanel>
-
-                    <RadioButtons x:Name="ThemeModeChoice"
-                                  Header="Light or dark"
-                                  MaxColumns="3"
-                                  ItemsSource="{x:Bind viewmodels:WorkspaceViewModel.ThemeModeNames}"
-                                  SelectedIndex="{x:Bind ViewModel.ThemeModeIndex, Mode=OneWay}"
-                                  SelectionChanged="OnThemeModeChanged" />
-
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.Looks}"
-                                  AutomationProperties.Name="DeskAI's looks">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="268" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="viewmodels:LookCardViewModel">
-                                <Border Style="{StaticResource RowCardStyle}" Margin="0,0,10,10">
-                                    <StackPanel Spacing="8">
-                                        <!-- Two swatches: how the look reads in dark and in light. -->
-                                        <Grid ColumnDefinitions="*,*" ColumnSpacing="4" Height="36">
-                                            <Border CornerRadius="4,0,0,4" Background="{x:Bind views:WorkspacePage.Swatch(DarkGround)}"
-                                                    BorderBrush="{x:Bind views:WorkspacePage.Swatch(DarkSurface)}" BorderThickness="0,0,0,6" />
-                                            <Border Grid.Column="1" CornerRadius="0,4,4,0" Background="{x:Bind views:WorkspacePage.Swatch(LightGround)}"
-                                                    BorderBrush="{x:Bind views:WorkspacePage.Swatch(LightSurface)}" BorderThickness="0,0,0,6" />
-                                        </Grid>
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBlock FontWeight="SemiBold"
-                                                       Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                       Text="{x:Bind Name}" />
-                                            <!-- The accent says "chosen" because it is a confirmed state, not decoration. -->
-                                            <Border Style="{StaticResource AccentPillStyle}" Padding="8,2"
-                                                    Visibility="{x:Bind IsChosen, Mode=OneWay}">
-                                                <StackPanel Orientation="Horizontal" Spacing="5">
-                                                    <FontIcon FontSize="10" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
-                                                    <TextBlock Style="{StaticResource PillTextStyle}" FontSize="11"
-                                                               Text="{x:Bind ChosenText, Mode=OneWay}" />
-                                                </StackPanel>
-                                            </Border>
-                                        </StackPanel>
-                                        <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
-                                                   Text="{x:Bind Summary}" />
-                                        <Button Content="Use this look"
-                                                Command="{Binding ElementName=Root, Path=ViewModel.ChooseLookCommand}"
-                                                CommandParameter="{x:Bind Id}" />
-                                    </StackPanel>
-                                </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
-
-                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
-                               Visibility="{x:Bind ViewModel.HasLookMessage, Mode=OneWay}"
-                               Text="{x:Bind ViewModel.LookMessage, Mode=OneWay}" />
-                </StackPanel>
-
-                <!-- Saved searches that are not pinned, so a person's own searches can be pinned too. -->
-                <Border Style="{StaticResource CardStyle}"
-                        Visibility="{x:Bind ViewModel.HasOtherSearches, Mode=OneWay}">
-                    <StackPanel Spacing="12">
-                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Your other saved searches" />
-                        <TextBlock Style="{StaticResource BodySecondaryStyle}"
-                                   Visibility="{x:Bind ViewModel.HasPinMessage, Mode=OneWay}"
-                                   Text="{x:Bind ViewModel.PinMessage, Mode=OneWay}" />
-                        <ItemsControl ItemsSource="{x:Bind ViewModel.OtherSearches, Mode=OneWay}"
-                                      AutomationProperties.Name="Saved searches that are not pinned">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="viewmodels:UnpinnedSearchViewModel">
-                                    <Border Style="{StaticResource RowCardStyle}">
-                                        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
-                                            <StackPanel Spacing="3">
-                                                <TextBlock FontWeight="SemiBold"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
-                                                           Text="{x:Bind Name}" />
-                                                <TextBlock Style="{StaticResource CaptionStyle}"
-                                                           TextTrimming="CharacterEllipsis"
-                                                           Text="{x:Bind Phrase}" />
-                                            </StackPanel>
-                                            <Button Grid.Column="1" VerticalAlignment="Center" Content="Pin"
-                                                    IsEnabled="{Binding ElementName=Root, Path=ViewModel.CanPinMore}"
-                                                    Command="{Binding ElementName=Root, Path=ViewModel.PinCommand}"
-                                                    CommandParameter="{x:Bind Id}" />
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </Border>
+                </StackPanel></StackPanel></PivotItem></Pivot>
 
             </StackPanel>
         </ScrollViewer>
