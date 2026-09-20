@@ -528,8 +528,8 @@ first Actions run, are the next things (`HANDOFF.md`).
   page layout; understand document-format words and match the remaining term inside local
   content; add separately approved, bounded `.docx`/`.xlsx` reading without expanding any
   older plain-text grant (ADR 0036 and its security review).
-- **Next, not yet implemented:** PDF text. Review a crash-resistant Windows PDF/OCR adapter
-  or isolated parser, malformed-document behavior, and the same scope/limit disclosures.
+- ✅ PDF text: separate opt-in after document reading; a bounded, local parser helper with
+  crash and timeout containment. Scanned pages are outside this slice (ADR 0037).
 - **After that, not yet implemented:** finding visual subjects such as a flower in a photo.
   Choose a local vision model or add a separate per-search, per-image cloud disclosure and
   explicit Send action for a verified vision-capable model. Do not upload images merely

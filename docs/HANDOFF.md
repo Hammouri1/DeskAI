@@ -5,6 +5,21 @@ Updated 2026-09-20. This is the short state for a new coding chat, not a substit
 security wins. The owner prefers one coherent milestone at a time, friendly non-technical
 UI, an explanation and safe manual test after each task, and a commit for each completed task.
 
+## PDF milestone update (2026-09-20)
+
+The PDF text slice below was the task for this coding session and is now implemented in code
+(ADR 0037 and `docs/security/2026-09-20-pdf-text-search-review.md`). It requires a separate
+PDF yes after Office reading, uses a local bounded helper process, and never sends extracted
+text to AI. Scanned pages and image subjects are still outside scope. The older "Search today"
+and "Agreed next milestone" sections below describe the starting point for that task; do not
+reuse them as the next prompt. The owner's manual PDF check is in `docs/MANUAL-TESTING.md`.
+Release build: zero warnings/errors; all 1,398 tests pass with none skipped; `dotnet format`
+reports no changes. The UI preview build and a self-contained publish both succeeded; the
+publish includes `PdfWorker/DeskAI.PdfWorker.exe`. The preview window itself was not visually
+inspected in this automated session. No personal folder or API key was used. Next, the owner
+can perform the generated-data manual PDF check, then decide separately whether to pursue
+image-subject search or broader language understanding.
+
 ## Current state
 
 - Repository: `C:\Users\Hammouri\Desktop\DeskAI`, branch `main`, clean immediately after

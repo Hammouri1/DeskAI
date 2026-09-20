@@ -1129,3 +1129,20 @@ this check. Make generated `.txt`, `.docx`, and `.xlsx` files with harmless dumm
 
 Automated coverage uses unique generated Temp folders and fake AI transport; this manual
 check is for wording, layout, keyboard access, and visual clarity only.
+# PDF text search check (ADR 0037)
+
+Use only generated, disposable files in the explicit UI preview's temporary Downloads.
+Do not connect personal folders or use an API key. The preview generates `Lesson handout.pdf`
+with selectable text and `Broken sample.pdf`; optionally make a blank/image-only PDF there.
+Connect only the generated Downloads.
+
+1. Search for `nebula` with names-only reading, then after **Read inside files** / Word and
+   Excel permission. Neither search should find PDF text.
+2. Press **Read PDF text too**. Cancel once and confirm the row still says PDFs need permission.
+   Open it again, read the folder and limits, and choose **Allow PDF reading**.
+3. Search `nebula` again. The text PDF should appear with a short snippet. The damaged PDF
+   (and any blank PDF you made) should produce no text hit; Search should report a skipped file.
+4. Press **Stop PDF reading**, search again, and confirm no PDF text hit. Word/Excel reading
+   should remain allowed. Disconnect and confirm the folder and results disappear.
+
+This check is for text-based PDFs only. Scanned pages and photographs remain outside scope.

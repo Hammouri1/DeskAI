@@ -305,6 +305,16 @@
                                                     Visibility="{x:Bind CanUpgradeDocuments}"
                                                     Tag="{x:Bind Id}"
                                                     Click="OnDocumentsPermissionClick" />
+                                            <Button VerticalAlignment="Center"
+                                                    Content="Read PDF text too"
+                                                    Visibility="{x:Bind CanUpgradePdf}"
+                                                    Tag="{x:Bind Id}"
+                                                    Click="OnPdfPermissionClick" />
+                                            <Button VerticalAlignment="Center"
+                                                    Content="Stop PDF reading"
+                                                    Visibility="{x:Bind CanReadPdf}"
+                                                    Tag="{x:Bind Id}"
+                                                    Click="OnPdfPermissionClick" />
                                         </StackPanel>
                                         <Button Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Content="Refresh"
                                                 Command="{Binding ElementName=Root, Path=ViewModel.RefreshFolderCommand}"
@@ -330,7 +340,7 @@
                     </StackPanel>
                     <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
                                HorizontalAlignment="Left"
-                               Text="It looks only in folders you connected. Normally it uses names, sizes, and dates. You can separately allow reading inside notes and modern Word and Excel files. PDFs, photos, and programs stay closed. Words read from a file are not saved or sent to AI. Disconnecting forgets the folder." />
+                               Text="It looks only in folders you connected. Normally it uses names, sizes, and dates. You can separately allow notes, Word and Excel, then PDF text. Scanned pages, photos, and programs stay closed. Words read from a file are not saved or sent to AI. Disconnecting forgets the folder." />
                 </StackPanel>
             </Expander>
 

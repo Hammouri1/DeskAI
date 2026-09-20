@@ -102,6 +102,9 @@ public enum RootAuthorizationScope
 
     /// <summary>Separately approved reading of plain text and bounded modern Office documents.</summary>
     MetadataAndDocuments = 4,
+
+    /// <summary>Separately approved local PDF text reading in addition to notes and Office files.</summary>
+    MetadataDocumentsAndPdf = 5,
 }
 
 public enum RootAccessLevel

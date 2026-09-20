@@ -5,10 +5,16 @@
     <IsTestProject>true</IsTestProject>
   </PropertyGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\DeskAI.PdfWorker\DeskAI.PdfWorker.csproj" ReferenceOutputAssembly="false" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
+    <PackageReference Include="PdfPig" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\DeskAI.Infrastructure\DeskAI.Infrastructure.csproj" />
   </ItemGroup>
+  <Target Name="CopyPdfWorker" AfterTargets="Build">
+    <ItemGroup><PdfWorkerFile Include="..\..\src\DeskAI.PdfWorker\bin\$(Configuration)\net10.0\*.*" /></ItemGroup>
+    <Copy SourceFiles="@(PdfWorkerFile)" DestinationFolder="$(OutDir)PdfWorker\" SkipUnchangedFiles="true" />
+  </Target>
 </Project>

@@ -26,10 +26,20 @@
     <ProjectReference Include="..\DeskAI.Infrastructure\DeskAI.Infrastructure.csproj" />
     <ProjectReference Include="..\DeskAI.AI\DeskAI.AI.csproj" />
     <ProjectReference Include="..\DeskAI.Presentation\DeskAI.Presentation.csproj" />
+    <ProjectReference Include="..\DeskAI.PdfWorker\DeskAI.PdfWorker.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="CommunityToolkit.Mvvm" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.WindowsAppSDK" />
   </ItemGroup>
+  <Target Name="CopyPdfWorker" AfterTargets="Build">
+    <ItemGroup>
+      <PdfWorkerFile Include="..\DeskAI.PdfWorker\bin\$(Configuration)\net10.0\*.*" />
+    </ItemGroup>
+    <Copy SourceFiles="@(PdfWorkerFile)" DestinationFolder="$(OutDir)PdfWorker\" SkipUnchangedFiles="true" />
+  </Target>
+  <Target Name="PublishPdfWorker" AfterTargets="Publish">
+    <Exec Command="dotnet publish &quot;$(MSBuildThisFileDirectory)..\DeskAI.PdfWorker\DeskAI.PdfWorker.csproj&quot; -c $(Configuration) -r win-x64 --self-contained --no-restore -p:PublishSingleFile=true -o &quot;$(PublishDir)PdfWorker&quot;" />
+  </Target>
 </Project>

@@ -1,5 +1,9 @@
 using System.IO.Compression;
 using DeskAI.App.ViewModels;
+using UglyToad.PdfPig.Core;
+using UglyToad.PdfPig.Content;
+using UglyToad.PdfPig.Fonts.Standard14Fonts;
+using UglyToad.PdfPig.Writer;
 
 namespace DeskAI.Presentation.Tests;
 
@@ -202,6 +206,61 @@ public sealed class SearchPageTests
         Assert.Equal("1 file found", search.StatusTitle);
         Assert.False(search.ShowsNothingFound);
         Assert.Contains("1 file", search.InsideMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Pdf_text_needs_a_separate_yes_and_stops_after_revocation()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Study");
+        var builder = new PdfDocumentBuilder();
+        var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+        builder.AddPage(PageSize.A4).AddText("generated nebula lesson", 12, new PdfPoint(25, 700), font);
+        File.WriteAllBytes(Path.Combine(folder, "lesson.pdf"), builder.Build());
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        var rootId = Assert.Single(search.Folders).Id;
+        search.Phrase = "nebula";
+
+        await search.SearchCommand.ExecuteAsync(null);
+        Assert.Empty(search.InsideResults);
+        await search.SetContentPermissionAsync(rootId, allow: true);
+        await search.SearchCommand.ExecuteAsync(null);
+        Assert.Empty(search.InsideResults);
+
+        await search.SetPdfPermissionAsync(rootId, allow: true);
+        Assert.True(Assert.Single(search.Folders).CanReadPdf);
+        await search.SearchCommand.ExecuteAsync(null);
+        Assert.Equal("lesson.pdf", Assert.Single(search.InsideResults).Name);
+        Assert.Contains("nebula", search.InsideResults[0].Snippet, StringComparison.OrdinalIgnoreCase);
+
+        await search.SetPdfPermissionAsync(rootId, allow: false);
+        await search.SearchCommand.ExecuteAsync(null);
+        Assert.Empty(search.InsideResults);
+        Assert.True(Assert.Single(search.Folders).CanReadDocuments);
+    }
+
+    [Fact]
+    public async Task Image_only_pdf_has_no_text_result_and_search_reports_the_skip()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Study");
+        var builder = new PdfDocumentBuilder();
+        builder.AddPage(PageSize.A4);
+        File.WriteAllBytes(Path.Combine(folder, "blank.pdf"), builder.Build());
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        var rootId = Assert.Single(search.Folders).Id;
+        await search.SetContentPermissionAsync(rootId, allow: true);
+        await search.SetPdfPermissionAsync(rootId, allow: true);
+
+        search.Phrase = "nebula";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Empty(search.InsideResults);
+        Assert.Contains("could not be read", search.InsideMessage, StringComparison.Ordinal);
     }
 
     [Fact]

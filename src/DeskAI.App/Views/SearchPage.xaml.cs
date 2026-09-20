@@ -203,6 +203,43 @@ public sealed partial class SearchPage : Page
         }
     }
 
+    private async void OnPdfPermissionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: Guid rootId }
+            || ViewModel.Folders.FirstOrDefault(item => item.Id == rootId) is not { } folder)
+        {
+            return;
+        }
+
+        if (folder.CanReadPdf)
+        {
+            await ViewModel.SetPdfPermissionAsync(rootId, allow: false);
+            return;
+        }
+
+        if (!folder.CanUpgradePdf)
+        {
+            return;
+        }
+
+        var confirmation = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Search text inside PDFs here?",
+            Content = $"{folder.Path}\n\nDeskAI will read PDF text on this computer when you search. "
+                + "It checks up to 50 files per search, 8 MB and the first 20 pages per PDF. "
+                + "Scanned pages and photos are not read. Some PDFs may be skipped or only partly read.\n\n"
+                + "The words are not saved or sent to AI. You can stop PDF reading at any time.",
+            PrimaryButtonText = "Allow PDF reading",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await confirmation.ShowAsync() == ContentDialogResult.Primary)
+        {
+            await ViewModel.SetPdfPermissionAsync(rootId, allow: true);
+        }
+    }
+
     private static Task RefreshScopeReminderAsync() =>
         ((App)Application.Current).MainAppWindow is MainWindow window
             ? window.RefreshScopeAsync()

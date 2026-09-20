@@ -18,17 +18,20 @@ namespace DeskAI.Infrastructure.Content;
 /// alone a file handle.
 /// </para>
 /// <para>
-/// DOCX and XLSX use only a bounded, local ZIP/XML reader. PDF, older Office formats, images,
-/// and any other extension are refused before opening. The content is never sent to AI.
+/// DOCX and XLSX use a bounded, local ZIP/XML reader. PDF text uses a bounded local helper
+/// after its own grant. Older Office formats and images are refused before opening.
 /// </para>
 /// <para>
 /// Nothing is written, created, or kept. The file is opened read-only, a bounded prefix is
 /// decoded, and the text is returned to the caller and stored nowhere.
 /// </para>
 /// </remarks>
-public sealed class PlainTextExtractor(IPathPolicy pathPolicy) : IContentTextExtractor
+public sealed class PlainTextExtractor(IPathPolicy pathPolicy, PdfProcessReader pdfReader) : IContentTextExtractor
 {
     private readonly IPathPolicy _pathPolicy = pathPolicy;
+    private readonly PdfProcessReader _pdfReader = pdfReader;
+
+    public PlainTextExtractor(IPathPolicy pathPolicy) : this(pathPolicy, new PdfProcessReader()) { }
 
     public async Task<TextExtraction> ExtractAsync(
         AuthorizedRoot root,
@@ -58,6 +61,13 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy) : IContentTextExt
         {
             return TextExtraction.Refused(relativePath, TextExtractionStatus.NotAuthorized,
                 "This folder has not been allowed to read Word and Excel documents.");
+        }
+
+        if (relativePath.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase)
+            && !RootCapabilities.CanReadPdf(root))
+        {
+            return TextExtraction.Refused(relativePath, TextExtractionStatus.NotAuthorized,
+                "This folder has not been allowed to read PDF text.");
         }
 
         if (_pathPolicy.ValidateRoot(root).Status == ValidationStatus.Blocked
@@ -118,7 +128,7 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy) : IContentTextExt
         }
     }
 
-    private static async Task<TextExtraction> ReadAsync(
+    private async Task<TextExtraction> ReadAsync(
         string fullPath,
         string relativePath,
         TextExtractionOptions options,
@@ -156,6 +166,34 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy) : IContentTextExt
             }
 
             var extension = Path.GetExtension(relativePath);
+            if (extension.Equals(".pdf", StringComparison.OrdinalIgnoreCase))
+            {
+                if (stream.Length > PdfProcessReader.MaxPdfBytes)
+                {
+                    return TextExtraction.Refused(relativePath, TextExtractionStatus.Unavailable,
+                        "This PDF is too large for a quick search, so DeskAI skipped it.");
+                }
+
+                var result = await _pdfReader.ReadAsync(stream, cancellationToken).ConfigureAwait(false);
+                if (result is not { } pdf || string.IsNullOrWhiteSpace(pdf.Text))
+                {
+                    return TextExtraction.Refused(relativePath, TextExtractionStatus.Unavailable,
+                        "This PDF could not be read here. It may be encrypted, damaged, or unsupported.");
+                }
+
+                var pdfBytes = Encoding.UTF8.GetBytes(pdf.Text);
+                var limit = Math.Min(options.MaxBytes, 64 * 1024);
+                var length = Math.Min(pdfBytes.Length, limit);
+                while (length < pdfBytes.Length && length > 0 && (pdfBytes[length] & 0xC0) == 0x80)
+                {
+                    length--;
+                }
+
+                var pdfTruncated = pdf.Truncated || length < pdfBytes.Length;
+                return new TextExtraction(relativePath, TextExtractionStatus.Extracted,
+                    Encoding.UTF8.GetString(pdfBytes, 0, length), pdfTruncated,
+                    pdfTruncated ? "Part of this PDF was read. There may be more." : "PDF text was read locally.");
+            }
             if (extension.Equals(".docx", StringComparison.OrdinalIgnoreCase)
                 || extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
             {

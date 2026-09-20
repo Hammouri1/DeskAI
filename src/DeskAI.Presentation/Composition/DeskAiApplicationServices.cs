@@ -73,6 +73,7 @@ public static class DeskAiApplicationServices
         services.AddSingleton<ConnectedFolderService>();
         // The only service that opens a file. It refuses any folder that was not
         // connected for reading inside, so registering it grants nothing on its own.
+        services.AddSingleton<PdfProcessReader>();
         services.AddSingleton<IContentTextExtractor, PlainTextExtractor>();
         services.AddSingleton<ContentSearchService>();
         services.AddSingleton<StorageSummaryService>();

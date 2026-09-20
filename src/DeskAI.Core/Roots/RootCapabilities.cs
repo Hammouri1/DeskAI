@@ -32,6 +32,7 @@ public static class RootCapabilities
             RootAuthorizationScope.MetadataOnly => true,
             RootAuthorizationScope.MetadataAndContent => true,
             RootAuthorizationScope.MetadataAndDocuments => true,
+            RootAuthorizationScope.MetadataDocumentsAndPdf => true,
             _ => false,
         };
     }
@@ -52,6 +53,7 @@ public static class RootCapabilities
         {
             RootAuthorizationScope.MetadataAndContent => true,
             RootAuthorizationScope.MetadataAndDocuments => true,
+            RootAuthorizationScope.MetadataDocumentsAndPdf => true,
             _ => false,
         };
     }
@@ -60,7 +62,15 @@ public static class RootCapabilities
     public static bool CanReadDocuments(AuthorizedRoot root)
     {
         ArgumentNullException.ThrowIfNull(root);
-        return IsUsable(root) && root.AuthorizationScope == RootAuthorizationScope.MetadataAndDocuments;
+        return IsUsable(root) && root.AuthorizationScope is
+            RootAuthorizationScope.MetadataAndDocuments or RootAuthorizationScope.MetadataDocumentsAndPdf;
+    }
+
+    /// <summary>May DeskAI locally extract text from PDFs in this folder?</summary>
+    public static bool CanReadPdf(AuthorizedRoot root)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        return IsUsable(root) && root.AuthorizationScope == RootAuthorizationScope.MetadataDocumentsAndPdf;
     }
 
     /// <summary>
@@ -99,6 +109,7 @@ public static class RootCapabilities
             RootAuthorizationScope.MetadataOnly => true,
             RootAuthorizationScope.MetadataAndContent => true,
             RootAuthorizationScope.MetadataAndDocuments => true,
+            RootAuthorizationScope.MetadataDocumentsAndPdf => true,
             _ => false,
         };
     }

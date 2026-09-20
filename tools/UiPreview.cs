@@ -4,6 +4,7 @@ using DeskAI.Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using System.Text;
 
 namespace DeskAI.App;
 
@@ -31,10 +32,44 @@ internal sealed class UiPreview : IKnownFolders, IFolderPickerService, IPictureP
         File.WriteAllText(Path.Combine(Downloads, "Holiday plans.txt"), "Generated UI test file. No personal content.");
         File.WriteAllText(Path.Combine(Downloads, "Shopping list.csv"), "item,count\nnotebook,2");
         File.WriteAllText(Path.Combine(Downloads, "Project notes.md"), "# Sample notes\nGenerated for UI testing.");
+        File.WriteAllBytes(Path.Combine(Downloads, "Lesson handout.pdf"), SamplePdf());
+        File.WriteAllText(Path.Combine(Downloads, "Broken sample.pdf"), "%PDF-1.4 generated broken sample");
         foreach (var file in Directory.EnumerateFiles(Downloads))
         {
             File.SetLastWriteTimeUtc(file, DateTime.UtcNow.AddDays(-2));
         }
+    }
+
+    /// <summary>A tiny, generated PDF for the manual preview; no document parser runs here.</summary>
+    private static byte[] SamplePdf()
+    {
+        var parts = new[]
+        {
+            "<< /Type /Catalog /Pages 2 0 R >>",
+            "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
+            "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
+            "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
+            "<< /Length 55 >>\nstream\nBT /F1 18 Tf 50 700 Td (generated nebula lesson) Tj ET\nendstream",
+        };
+        var pdf = new StringBuilder("%PDF-1.4\n");
+        var offsets = new List<int> { 0 };
+        for (var index = 0; index < parts.Length; index++)
+        {
+            offsets.Add(pdf.Length);
+            pdf.Append(index + 1).Append(" 0 obj\n").Append(parts[index]).Append("\nendobj\n");
+        }
+
+        var xref = pdf.Length;
+        pdf.Append("xref\n0 6\n0000000000 65535 f \n");
+        foreach (var offset in offsets.Skip(1))
+        {
+            pdf.Append(offset.ToString("D10", System.Globalization.CultureInfo.InvariantCulture))
+                .Append(" 00000 n \n");
+        }
+
+        pdf.Append("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n")
+            .Append(xref).Append("\n%%EOF\n");
+        return Encoding.ASCII.GetBytes(pdf.ToString());
     }
 
     // Keep the protected application database apart from generated sample folders.

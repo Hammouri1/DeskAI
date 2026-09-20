@@ -25,7 +25,8 @@ public sealed record ContentSearchOutcome(
     int FoldersIncluded,
     int FilesRead,
     bool ReachedLimit,
-    int FilesTruncated = 0)
+    int FilesTruncated = 0,
+    int FilesSkipped = 0)
 {
     public static ContentSearchOutcome NotAllowed { get; } = new([], 0, 0, false);
 
@@ -78,6 +79,7 @@ public sealed class ContentSearchService(
 
     /// <summary>How much of the surrounding line to show on either side of a match.</summary>
     private const int SnippetPadding = 60;
+    private static readonly TimeSpan MaxSearchTime = TimeSpan.FromSeconds(20);
 
     private readonly IAuthorizedRootRepository _roots = roots;
     private readonly IFileIndex _index = index;
@@ -120,7 +122,9 @@ public sealed class ContentSearchService(
         var hits = new List<ContentHit>();
         var filesRead = 0;
         var filesTruncated = 0;
+        var filesSkipped = 0;
         var reachedLimit = false;
+        var started = System.Diagnostics.Stopwatch.StartNew();
 
         var filter = translation.Query;
         // The free words are matched inside a file, not required in its name. All other
@@ -172,7 +176,18 @@ public sealed class ContentSearchService(
                     continue;
                 }
 
+                if (file.Extension == ".pdf" && !RootCapabilities.CanReadPdf(root))
+                {
+                    continue;
+                }
+
                 if (filesRead >= MaxFilesRead)
+                {
+                    reachedLimit = true;
+                    break;
+                }
+
+                if (started.Elapsed >= MaxSearchTime)
                 {
                     reachedLimit = true;
                     break;
@@ -187,6 +202,7 @@ public sealed class ContentSearchService(
                 // be text after all; either way there is nothing to match and nothing to say.
                 if (!extraction.Succeeded)
                 {
+                    filesSkipped++;
                     continue;
                 }
 
@@ -212,7 +228,8 @@ public sealed class ContentSearchService(
             }
         }
 
-        return new ContentSearchOutcome(hits.AsReadOnly(), allowed.Length, filesRead, reachedLimit, filesTruncated);
+        return new ContentSearchOutcome(hits.AsReadOnly(), allowed.Length, filesRead, reachedLimit,
+            filesTruncated, filesSkipped);
     }
 
     /// <summary>

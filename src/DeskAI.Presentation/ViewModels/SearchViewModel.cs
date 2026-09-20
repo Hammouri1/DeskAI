@@ -70,15 +70,19 @@ public sealed record ConnectedFolderViewModel(
     string Path,
     string Remembered,
     bool CanReadContent,
-    bool CanReadDocuments = false)
+    bool CanReadDocuments = false,
+    bool CanReadPdf = false)
 {
     public string ContentState => CanReadContent
-        ? CanReadDocuments
-            ? "DeskAI can read notes, Word, and Excel files here."
+        ? CanReadPdf
+            ? "DeskAI can read notes, Word, Excel, and PDF text here."
+            : CanReadDocuments
+            ? "DeskAI can read notes, Word, and Excel here. PDFs need your permission."
             : "DeskAI can read plain-text files here. Word and Excel still need your permission."
         : "Names, sizes, and dates only.";
 
     public bool CanUpgradeDocuments => CanReadContent && !CanReadDocuments;
+    public bool CanUpgradePdf => CanReadDocuments && !CanReadPdf;
 
     public string ContentAction => CanReadContent ? "Stop reading inside" : "Read inside files";
 
@@ -101,7 +105,8 @@ public sealed record ConnectedFolderViewModel(
             folder.Path,
             remembered,
             folder.CanReadContent,
-            folder.CanReadDocuments);
+            folder.CanReadDocuments,
+            folder.CanReadPdf);
     }
 }
 
@@ -587,6 +592,28 @@ public sealed class SearchViewModel : ObservableObject
         }
     }
 
+    /// <summary>The page asks separately before granting PDF reading.</summary>
+    public async Task SetPdfPermissionAsync(Guid rootId, bool allow)
+    {
+        IsFolderBusy = true;
+        try
+        {
+            var result = allow
+                ? await _folders.AllowPdfAsync(rootId).ConfigureAwait(true)
+                : await _folders.StopPdfAsync(rootId).ConfigureAwait(true);
+            await ReloadFoldersAsync().ConfigureAwait(true);
+            FolderMessage = result.Explanation;
+        }
+        catch (Exception exception) when (IsExpectedFolderFailure(exception))
+        {
+            FolderMessage = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            IsFolderBusy = false;
+        }
+    }
+
     private async Task DisconnectFolderAsync(Guid rootId)
     {
         IsFolderBusy = true;
@@ -765,7 +792,7 @@ public sealed class SearchViewModel : ObservableObject
         InsideMessage = outcome.Hits.Count switch
         {
             0 when outcome.FilesRead == 0 =>
-                "No readable files were opened for this search. DeskAI can read notes, modern Word and Excel files; not PDFs or photos yet.",
+                "No readable files were opened for this search. DeskAI can read notes, modern Word and Excel files, and PDF text after each permission. Photos stay closed.",
             0 when outcome.ReachedLimit =>
                 $"Nothing found in the first {read} DeskAI checked. Narrow the search to look at different files.",
             0 => $"Nothing found inside the {read} DeskAI checked.",
@@ -778,6 +805,13 @@ public sealed class SearchViewModel : ObservableObject
             InsideMessage += outcome.FilesTruncated == 1
                 ? " One file was only partly read."
                 : $" {outcome.FilesTruncated} files were only partly read.";
+        }
+
+        if (outcome.FilesSkipped > 0)
+        {
+            InsideMessage += outcome.FilesSkipped == 1
+                ? " One file could not be read."
+                : $" {outcome.FilesSkipped} files could not be read.";
         }
 
         if (outcome.Hits.Count > 0 && Results.Count == 0)

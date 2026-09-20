@@ -11,7 +11,8 @@ namespace DeskAI.Core.Content;
 /// </para>
 /// <para>
 /// Plain-text files are decoded directly. DOCX and XLSX are ZIP containers with a narrow,
-/// bounded XML reader; legacy Office, PDF, images, and executable formats stay closed.
+/// bounded XML reader; PDF requires its own grant and a helper process. Legacy Office,
+/// images, and executable formats stay closed.
 /// Widening this list is a security decision, not a convenience one.
 /// </para>
 /// </remarks>
@@ -21,7 +22,7 @@ public static class TextFileFormats
     [
         ".txt", ".md", ".log", ".csv", ".tsv", ".json", ".jsonl", ".ndjson",
         ".xml", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf",
-        ".docx", ".xlsx",
+        ".docx", ".xlsx", ".pdf",
     ];
 
     /// <summary>The endings, for wording a disclosure that must match the behaviour.</summary>
