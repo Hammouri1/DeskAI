@@ -8,9 +8,9 @@ generated-data tests, a beginner-friendly explanation, and a commit for each com
 ## Checkout and release state
 
 - Repository: `C:\Users\Hammouri\Desktop\DeskAI`, branch `main`. The latest code commit is
-  `66a8e3b` (`Explain per-file PDF search outcomes`). After this handoff documentation commit,
-  the working tree is expected to be clean and `main` **9 commits ahead of `origin/main`**.
-  Verify Git state again before work.
+  `66a8e3b` (`Explain per-file PDF search outcomes`). A later preview-only commit adds a
+  generated PDF one subfolder down for safe manual checking. Verify Git state before work;
+  these commits remain local until the owner chooses to push.
 - The PDF implementation is `dce859a` (`Add consent-gated local PDF text search`), built on
   the requested starting commit `e7436f3`. The follow-up is `66a8e3b`.
 - Neither PDF commit was pushed. No version tag or GitHub release was created for this work.
@@ -91,8 +91,9 @@ generated-data tests, a beginner-friendly explanation, and a commit for each com
 ## Next safe action
 
 The owner should manually check the updated Search page using only the UI preview's generated
-temporary Downloads. `tools/UiPreview.cs` generates `Lesson handout.pdf` with text and
-`Broken sample.pdf`; the detailed steps are in `docs/MANUAL-TESTING.md` under **PDF text
+temporary Downloads. `tools/UiPreview.cs` generates `Lesson handout.pdf`,
+`Presentations/Nested handout.pdf`, and `Broken sample.pdf`; the detailed steps are in
+`docs/MANUAL-TESTING.md` under **PDF text
 search check**. Check PDF consent, search `pdf` alone, search `pdf nebula`, and expand
 **Files checked**. To diagnose their own other PDF without the agent accessing it, the owner
 can report what that list says for the file after Refresh. A PDF with no text match is

@@ -32,24 +32,28 @@ internal sealed class UiPreview : IKnownFolders, IFolderPickerService, IPictureP
         File.WriteAllText(Path.Combine(Downloads, "Holiday plans.txt"), "Generated UI test file. No personal content.");
         File.WriteAllText(Path.Combine(Downloads, "Shopping list.csv"), "item,count\nnotebook,2");
         File.WriteAllText(Path.Combine(Downloads, "Project notes.md"), "# Sample notes\nGenerated for UI testing.");
-        File.WriteAllBytes(Path.Combine(Downloads, "Lesson handout.pdf"), SamplePdf());
+        File.WriteAllBytes(Path.Combine(Downloads, "Lesson handout.pdf"), SamplePdf("generated nebula lesson"));
         File.WriteAllText(Path.Combine(Downloads, "Broken sample.pdf"), "%PDF-1.4 generated broken sample");
-        foreach (var file in Directory.EnumerateFiles(Downloads))
+        var nested = Directory.CreateDirectory(Path.Combine(Downloads, "Presentations"));
+        File.WriteAllBytes(Path.Combine(nested.FullName, "Nested handout.pdf"),
+            SamplePdf("generated aurora presentation"));
+        foreach (var file in Directory.EnumerateFiles(Downloads, "*", SearchOption.AllDirectories))
         {
             File.SetLastWriteTimeUtc(file, DateTime.UtcNow.AddDays(-2));
         }
     }
 
     /// <summary>A tiny, generated PDF for the manual preview; no document parser runs here.</summary>
-    private static byte[] SamplePdf()
+    private static byte[] SamplePdf(string text)
     {
+        var stream = $"BT /F1 18 Tf 50 700 Td ({text}) Tj ET";
         var parts = new[]
         {
             "<< /Type /Catalog /Pages 2 0 R >>",
             "<< /Type /Pages /Kids [3 0 R] /Count 1 >>",
             "<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>",
             "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>",
-            "<< /Length 55 >>\nstream\nBT /F1 18 Tf 50 700 Td (generated nebula lesson) Tj ET\nendstream",
+            $"<< /Length {Encoding.ASCII.GetByteCount(stream)} >>\nstream\n{stream}\nendstream",
         };
         var pdf = new StringBuilder("%PDF-1.4\n");
         var offsets = new List<int> { 0 };

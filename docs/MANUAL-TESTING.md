@@ -1133,7 +1133,8 @@ check is for wording, layout, keyboard access, and visual clarity only.
 
 Use only generated, disposable files in the explicit UI preview's temporary Downloads.
 Do not connect personal folders or use an API key. The preview generates `Lesson handout.pdf`
-with selectable text and `Broken sample.pdf`; optionally make a blank/image-only PDF there.
+with selectable `nebula` text, `Presentations/Nested handout.pdf` with selectable `aurora`
+text, and `Broken sample.pdf`; optionally make a blank/image-only PDF there.
 Connect only the generated Downloads.
 
 1. Search for `nebula` with names-only reading, then after **Read inside files** / Word and
@@ -1142,13 +1143,13 @@ Connect only the generated Downloads.
    Open it again, read the folder and limits, and choose **Allow PDF reading**.
 3. Search `nebula` again. The text PDF should appear with a short snippet. The damaged PDF
    (and any blank PDF you made) should produce no text hit; Search should report a skipped file.
-4. Press **Stop PDF reading**, search again, and confirm no PDF text hit. Word/Excel reading
+4. Search `pdf` alone to confirm both generated handouts are remembered, including the one in
+   `Presentations`. Search `pdf aurora`, then open **Files checked**: `Nested handout.pdf`
+   should say it matched, `Lesson handout.pdf` should say it was read without a match, and
+   `Broken sample.pdf` should say it could not be read. If you add another PDF under the
+   generated Downloads, press the connected folder row's **Refresh** before searching for it.
+   This list is local to the current result; no extracted text is saved.
+5. Press **Stop PDF reading**, search again, and confirm no PDF text hit. Word/Excel reading
    should remain allowed. Disconnect and confirm the folder and results disappear.
-
-If a PDF lives one folder below the connected folder, press that folder row's **Refresh** after
-adding it. Search `pdf` alone to confirm its name was remembered. Then search for a word that
-is inside one PDF and absent from another. Open **Files checked**: the first should say it
-matched, the second should say it was read without a match. A damaged PDF should say it could
-not be read. This list is local to the current result; no extracted text is saved.
 
 This check is for text-based PDFs only. Scanned pages and photographs remain outside scope.
