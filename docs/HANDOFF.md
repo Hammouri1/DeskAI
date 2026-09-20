@@ -1,140 +1,136 @@
-# DeskAI — New-Chat Handoff
+# DeskAI — Coding Handoff
 
-Updated 2026-09-20. This is the short state for a new coding chat, not a substitute for
-`AGENTS.md` or `docs/SECURITY.md`. Read those before changing code. If documents conflict,
-security wins. The owner prefers one coherent milestone at a time, friendly non-technical
-UI, an explanation and safe manual test after each task, and a commit for each completed task.
+Updated 2026-09-20 after the PDF search follow-up. This is a map, not a replacement for
+`AGENTS.md` or `docs/SECURITY.md`. Read those before changing code; security rules win if
+documents conflict. The owner wants one coherent milestone at a time, plain UI wording,
+generated-data tests, a beginner-friendly explanation, and a commit for each completed task.
 
-## PDF milestone update (2026-09-20)
+## Checkout and release state
 
-The PDF text slice below was the task for this coding session and is now implemented in code
-(ADR 0037 and `docs/security/2026-09-20-pdf-text-search-review.md`). It requires a separate
-PDF yes after Office reading, uses a local bounded helper process, and never sends extracted
-text to AI. Scanned pages and image subjects are still outside scope. The older "Search today"
-and "Agreed next milestone" sections below describe the starting point for that task; do not
-reuse them as the next prompt. The owner's manual PDF check is in `docs/MANUAL-TESTING.md`.
-The subsequent owner report found that the result did not say which PDF had no matching word
-and which PDF could not be read. Search now has a **Files checked** list for each attempted
-file, and a generated subfolder PDF page test. Search `pdf` alone to check which PDF names
-are remembered after a folder refresh.
-The follow-up Release build has zero warnings/errors; all 1,400 tests pass with none skipped;
-format and the safe UI preview build pass. The follow-up did not access the owner's PDFs.
-Release build: zero warnings/errors; all 1,398 tests pass with none skipped; `dotnet format`
-reports no changes. The UI preview build and a self-contained publish both succeeded; the
-publish includes `PdfWorker/DeskAI.PdfWorker.exe`. The preview window itself was not visually
-inspected in this automated session. No personal folder or API key was used. Next, the owner
-can perform the generated-data manual PDF check, then decide separately whether to pursue
-image-subject search or broader language understanding.
+- Repository: `C:\Users\Hammouri\Desktop\DeskAI`, branch `main`. The latest code commit is
+  `66a8e3b` (`Explain per-file PDF search outcomes`). After this handoff documentation commit,
+  the working tree is expected to be clean and `main` **9 commits ahead of `origin/main`**.
+  Verify Git state again before work.
+- The PDF implementation is `dce859a` (`Add consent-gated local PDF text search`), built on
+  the requested starting commit `e7436f3`. The follow-up is `66a8e3b`.
+- Neither PDF commit was pushed. No version tag or GitHub release was created for this work.
+  A **local** self-contained publish was checked after `dce859a`; it included
+  `PdfWorker/DeskAI.PdfWorker.exe`. That local publish is not a release and predates the
+  follow-up UI change. Ask the owner before any push, tag, or release. If asked to push, push
+  `main` only, never `--all` or `--mirror`; older local refs have included the owner's email.
+- Last follow-up verification: `dotnet build DeskAI.sln -c Release --no-restore -v quiet`
+  passed with 0 warnings/errors; `dotnet test --solution DeskAI.sln -c Release --no-build
+  --no-restore -v quiet` passed **1,400/1,400**, none skipped; `dotnet format DeskAI.sln
+  --no-restore --verify-no-changes` passed. The explicit generated-data UI-preview build
+  passed, but its window was **not visually inspected** in this session. No owner file or
+  real API key was opened, scanned, or used by the agent.
 
-## Current state
+## What Search does now
 
-- Repository: `C:\Users\Hammouri\Desktop\DeskAI`, branch `main`, clean immediately after
-  commit `9c941bd` (`Add consent-gated local document search and improve search UI`). Check
-  `git status` again; do not assume it is still clean.
-- `main` was **five commits ahead of `origin/main`** on 2026-09-20. The private remote is
-  `https://github.com/Hammouri1/DeskAI`. Do not push, tag, publish, or delete old refs as a
-  side effect of the search task. No release tag existed at this update. If the owner later
-  asks to push, push `main` only, never `--all` or `--mirror`; older local refs have included
-  their personal email.
-- V1.1 and the calm-workspace redesign are complete in code. Earlier manual sign-offs and
-  release/push decisions remain the owner's; see `docs/ROADMAP.md` and the manual checklists.
-- Last search-slice verification: `dotnet build DeskAI.sln --no-restore -v quiet` succeeded
-  with 0 warnings/errors; `dotnet test --solution DeskAI.sln --no-build --no-restore -v quiet`
-  passed **1,392/1,392**. Search, Organize, and Automatic tasks were visually checked in the
-  explicit temp-data UI preview. A sample-only search for `generated` found two files by
-  their contents. The owner's real folders and API key were not used. Re-run the full Release
-  build/tests/format checks for the next code milestone; these numbers describe the prior one.
+- A person selects all connected folders or one folder under **Look in**. Search first uses
+  remembered names, sizes, dates, and other metadata. A newly added file needs **Refresh**
+  on its connected folder before it appears in that index. The scanner enters subfolders
+  within its depth and entry limits (currently depth 4, 2,000 entries).
+- Separate grants permit bounded local plain-text reading, modern `.docx`/`.xlsx` reading,
+  then PDF text reading. Old grants were not broadened. The PDF grant has its own confirmation
+  and **Stop PDF reading** action. Search never moves or changes a file.
+- `pdf` alone lists remembered PDF **names**. `pdf hammouri` means `.pdf` files whose
+  **searchable text** contains `hammouri`; it does not promise every PDF will appear.
+  Search reads at most 50 eligible files per request. Each PDF is limited to 8 MB, the first
+  20 pages, 64 KB of extracted text, and a 5-second worker deadline; the search checks a
+  20-second overall deadline between files. A match may be missed beyond those limits.
+- **Found inside your files** shows short snippets. The follow-up added a collapsed
+  **Files checked** list naming each attempted file and distinguishing matched text, read
+  without a match, partly read, and could not be read. Its data lives only in the current
+  result. The no-eligible-files message now points to Refresh, PDF permission, and the
+  name-only `pdf` search.
+- PDF parsing runs in a fixed local `DeskAI.PdfWorker` process. The trusted extractor checks
+  the connected root, canonical containment, protected paths, and links, opens read-only,
+  and sends bounded bytes to the worker over standard input. The worker receives no path.
+  A crash, timeout, encrypted/damaged PDF, or no extractable text becomes a skipped file.
+  The process contains ordinary parser faults but is **not an OS security sandbox**: it runs
+  as the signed-in user. See ADR 0037 and its security review.
+- The optional AI button interprets **only the sentence the person typed**, after its own
+  disclosure. It never receives file contents, search results, paths, images, an index,
+  shell access, or direct filesystem access. File search is deterministic local code, not
+  full semantic or multilingual search. Scanned-PDF OCR and photo-subject search are absent.
 
-## Search today — do not overclaim
+## Owner report that prompted the follow-up
 
-- A person can choose **Look in**: all connected folders or one connected folder. The app
-  fixes the old contradiction that said no folders were connected while showing one.
-- Search uses remembered names/details. After a separate folder permission, it can read
-  bounded plain text and modern `.docx`/`.xlsx` text locally. The earlier plain-text-only
-  grant remains plain-text-only; it was **not** silently broadened. The UI offers an explicit
-  Word/Excel upgrade, reports partial reads and the number of files checked, and shows a
-  snippet. Text is not persisted or sent to AI. The Office reader uses bounded ZIP/XML
-  processing and does not extract entries, run macros, or resolve external entities.
-- The existing optional AI action interprets **only the sentence the person typed**, after
-  its own disclosure. It never receives file contents, images, paths, an index, shell, or
-  direct filesystem access. The file search itself is deterministic; this is not full
-  semantic or multilingual search.
-- PDF contents, scanned-PDF OCR, and identifying visual subjects in photos are **not
-  implemented**. A PDF/photo may match by filename or metadata, not by its contents.
-- Key locations: `src/DeskAI.Core/Search/ContentSearchService.cs`,
-  `src/DeskAI.Infrastructure/Content/PlainTextExtractor.cs`,
-  `src/DeskAI.Infrastructure/Content/OfficeOpenXmlReader.cs`,
-  `src/DeskAI.Presentation/ViewModels/SearchViewModel.cs`,
-  `src/DeskAI.App/Views/SearchPage.xaml` and its code-behind. The permission decision is
-  `docs/decisions/0036-separate-consent-for-local-office-search.md`; review is
-  `docs/security/2026-09-20-local-document-search-review.md`.
+- The owner put a PDF in a subfolder of a connected folder. Before allowing PDF reading, a
+  search showed no eligible files opened. After the separate grant, `pdf hammouri` showed
+  one content match among five attempted files, one partial read, and two unreadable files.
+  The old UI did not identify which PDF had no matching word versus which could not be read.
+- A generated-data page test proved a newly added text PDF one subfolder down is found after
+  **Refresh** and PDF consent. Another page test, failing before the follow-up, proved the
+  need for per-file outcomes. The new **Files checked** list addresses that ambiguity. It
+  does not establish what happened to the owner's other PDF: the agent did not open it, and
+  the owner has not yet reported its entry from the new list.
+- The owner interrupted a prior chat turn. That did not modify their files. Switching PDF
+  reading permission only grants or withdraws a read capability; it does not edit PDFs.
+- The owner may still be running an older local build. `66a8e3b` is committed locally but
+  not released or pushed, so **Files checked** requires launching an updated build.
 
-## Agreed next milestone: PDF text search
+## Key code and decisions
 
-The owner asked what comes next and accepted a handoff for a fresh chat. The recommended
-next task is one **safe, local PDF-text-search slice**, not image search or all remaining
-roadmap work at once:
+- Permission and search: `src/DeskAI.Core/Roots/RootCapabilities.cs`,
+  `src/DeskAI.Core/Search/ConnectedFolderService.cs`,
+  `src/DeskAI.Core/Search/ContentSearchService.cs`.
+- Path-gated extraction and helper protocol: `src/DeskAI.Infrastructure/Content/PlainTextExtractor.cs`,
+  `src/DeskAI.Infrastructure/Content/PdfProcessReader.cs`,
+  `src/DeskAI.PdfWorker/Program.cs`.
+- UI: `src/DeskAI.Presentation/ViewModels/SearchViewModel.cs`,
+  `src/DeskAI.App/Views/SearchPage.xaml` and its code-behind.
+- Generated tests: `tests/DeskAI.Presentation.Tests/SearchPageTests.cs`,
+  `tests/DeskAI.Infrastructure.Tests/PlainTextExtractorTests.cs`, and
+  `tests/DeskAI.Core.Tests/RootCapabilitiesTests.cs`. The feature map is in `docs/TESTING.md`.
+- Design records: `docs/decisions/0036-separate-consent-for-local-office-search.md`,
+  `docs/decisions/0037-separate-consent-for-local-pdf-text.md`, and
+  `docs/security/2026-09-20-pdf-text-search-review.md`.
 
-1. Inspect current code, docs, Git state, and tests. Define a PDF-specific threat review
-   before choosing a parser. Malformed PDFs are untrusted input; an in-process package plus
-   a file-size check is not automatically safe. Consider Windows' PDF APIs or isolation,
-   and document dependency, crash, cancellation, page/time/size, and rollback tradeoffs.
-2. Existing reading consent says PDFs stay closed. Add **separate, explicit consent** before
-   opening any PDF; do not reinterpret the old text or Office grant. Keep authorization,
-   canonical path checks, protected-path and reparse-point refusal, and live rechecks in
-   deterministic code. PDF extraction must never give AI direct file access.
-3. Search only selected connected roots; bound files/pages/bytes/time, skip encrypted,
-   damaged, or unsupported PDFs honestly, and say when results are partial. Nothing read
-   should be stored or sent to a provider unless a later, independently approved design
-   says so. Scanned/image-only PDF OCR is a later slice unless separately reviewed.
-4. Use generated dummy PDFs in verified temporary test folders only, including malformed,
-   huge, path/link, old-grant, revocation, and no-result cases. Add a page test for the
-   person-visible flow and update the `docs/TESTING.md` Feature Coverage Map. Build/test the
-   whole solution, inspect the safe UI preview, update docs, and commit the completed task.
+## Next safe action
 
-**After PDF text:** image-subject search (for example, a flower photo) needs its own decision.
-Choose local vision or an explicit per-request image-pixel disclosure and Send action for a
-verified vision-capable provider. An OpenRouter key or connected folder never implies image
-upload permission. Broader language understanding is also unfinished. Ask the owner before
-making a material cloud/local privacy choice.
+The owner should manually check the updated Search page using only the UI preview's generated
+temporary Downloads. `tools/UiPreview.cs` generates `Lesson handout.pdf` with text and
+`Broken sample.pdf`; the detailed steps are in `docs/MANUAL-TESTING.md` under **PDF text
+search check**. Check PDF consent, search `pdf` alone, search `pdf nebula`, and expand
+**Files checked**. To diagnose their own other PDF without the agent accessing it, the owner
+can report what that list says for the file after Refresh. A PDF with no text match is
+different from one skipped as unreadable or one absent from the remembered-name list.
 
-## Safety and testing reminders
+Do not inspect the owner's real Desktop, Downloads, Documents, Pictures, cloud-sync folders,
+screenshots on disk, PDFs, or API key as part of development or automated tests. Screenshots
+the owner attached in chat were viewed only as attachments. `TestApp` and the explicit
+`-p:DeskAiUiPreview=true` build replace known folders, network, key vault, wallpaper, tray,
+and notifications with generated/fake equivalents. The preview leaves unique Temp data for
+inspection; do not recursively delete a path unless its resolved target was verified.
 
-- `docs/SECURITY.md` is binding. AI recommends; deterministic application code controls
-  every allowed action. File mutation has its separate plan → preview → approval → executor
-  → journal path. Search does not change files. Never give a model filesystem, shell,
-  PowerShell, registry, process-launch, permission-changing, or credential access.
-- Never test against the owner's real Desktop, Downloads, Documents, Pictures, cloud-sync,
-  or other personal folders. Never ask for, reveal, or use their real OpenRouter key.
-- `TestApp` and the UI-preview build replace known folders, network, key vault, wallpaper,
-  tray, and notifications with generated/fake equivalents. For a safe visual test, build
-  `src/DeskAI.App/DeskAI.App.csproj` with `-p:DeskAiUiPreview=true`, launch the executable
-  under `artifacts/ui-preview/.../win-x64/`, and connect only its generated Downloads.
-  The preview creates unique Temp data and leaves it for inspection; do not recursively
-  delete an unverified path.
-- Anything visible or clickable needs a page test in `DeskAI.Presentation.Tests` and a row
-  in `docs/TESTING.md`. A bug found by the owner gets a failing page test before the fix.
-  Run full Release build/tests, then `dotnet format DeskAI.sln --no-restore
-  --verify-no-changes` for a code milestone. Do not run overlapping builds/tests into a
-  shared output directory.
-- Keep visible UI words calm and simple; put technical details behind an optional section.
-  Tell the owner precisely what to try in generated data after each milestone.
+After that manual sign-off, ask which milestone the owner wants. Image-subject search needs
+its own privacy decision: local vision or an explicit per-request image-pixel disclosure and
+Send action for a verified vision-capable provider. An OpenRouter key and connected folder
+never imply image-upload permission. Broader language understanding is also unfinished.
+Earlier V0.7–V1.1 manual sign-offs and release decisions remain the owner's. Architecture
+guard tests are separate hardening work; do not add unrelated features to the PDF follow-up.
 
-## Other open work (do not start as part of PDF search)
+## Working rules for the next coding session
 
-- Owner's manual sign-off of earlier V0.7–V1.1/release flows remains outstanding; see
-  `docs/MANUAL-TESTING.md`.
-- Pushing local `main`, inspecting GitHub Actions, deciding version/tag/release, and removing
-  old email-bearing local refs require their own explicit request and checks.
-- Architecture guard tests for project-reference boundaries and dangerous dependencies
-  remain a worthwhile separate hardening task.
+- Read `AGENTS.md`, `docs/SECURITY.md`, and the relevant product, architecture, testing,
+  roadmap, provider, development, and UI documents before changing code.
+- Keep AI away from filesystem, shell, process launch, registry, permission, credential, and
+  file-mutation powers. For any file change, preserve proposal → plan → validation → preview
+  → approval → deterministic executor → journal. Search itself is read-only.
+- A person-visible behavior needs a page test and a Feature Coverage Map row. A bug found
+  by the owner gets a page test that fails before its fix. Use generated files in verified
+  Temp folders only. Build the full Release solution, run all tests, verify formatting,
+  update docs, and commit a finished change. Do not push or release as a side effect.
 
-## Starter prompt for the next chat
+## Copy-paste starter prompt
 
-> Continue DeskAI in `C:\Users\Hammouri\Desktop\DeskAI`. First read `docs/HANDOFF.md`,
-> `AGENTS.md`, and the relevant documentation, especially `docs/SECURITY.md`, then inspect
-> Git status and the current search code. Implement the next **PDF text search** milestone
-> only, with separate user consent, a reviewed parser boundary, strict local/authorized-root
-> limits, generated temporary-file tests and a Search page test. Do not access my personal
-> folders or use my OpenRouter key. Do not implement image upload or OCR silently. Build the
-> full solution, run all tests, update docs, commit the task, and tell me what to test myself.
+> Continue DeskAI at `C:\Users\Hammouri\Desktop\DeskAI`. Read `AGENTS.md`,
+> `docs/HANDOFF.md`, and especially `docs/SECURITY.md`; confirm `66a8e3b` is in the
+> checkout and inspect Git status. PDF text search and its per-file **Files checked**
+> follow-up are implemented locally but not pushed or released. First help me verify the
+> updated Search page using only generated UI-preview files, or use the per-file outcome I
+> report to diagnose my other PDF. Do not open or scan my personal folders or use my API
+> key. Keep work to one agreed milestone, test with generated files, update docs, and
+> commit any code change. Ask before pushing, tagging, or releasing.
