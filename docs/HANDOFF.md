@@ -114,10 +114,17 @@ the owner attached in chat were viewed only as attachments. `TestApp` and the ex
 and notifications with generated/fake equivalents. The preview leaves unique Temp data for
 inspection; do not recursively delete a path unless its resolved target was verified.
 
-After that manual sign-off, ask which milestone the owner wants. Image-subject search needs
-its own privacy decision: local vision or an explicit per-request image-pixel disclosure and
-Send action for a verified vision-capable provider. An OpenRouter key and connected folder
-never imply image-upload permission. Broader language understanding is also unfinished.
+After that manual sign-off, the next milestone toward the owner's Search goal needs to be
+scoped. The owner chose on-device-only image analysis for Search; a connected folder or
+OpenRouter key never permits image upload. Broader language understanding is unfinished.
+On 2026-09-21 the owner clarified the intended destination: ordinary-English search across
+nested subfolders of connected roots, including slide text such as “PowerPoint with Hammouri
+on a slide” and visual subjects such as “PDF with a picture of a dog smelling a flower.”
+`docs/PRODUCT.md` and `docs/ROADMAP.md` now record this as planned work, with page/slide
+evidence and honest limits. The existing AI sentence translator and PDF text search do not
+meet that goal. Image pixels, image-derived OCR text, captions, and embeddings must stay
+local (ADR 0038). The local model, hardware requirements, indexing policy, and permission need a
+separate reviewed design; this choice does not implement visual search.
 Earlier V0.7–V1.1 manual sign-offs and release decisions remain the owner's. Architecture
 guard tests are separate hardening work; do not add unrelated features to the PDF follow-up.
 

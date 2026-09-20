@@ -531,9 +531,21 @@ first Actions run, are the next things (`HANDOFF.md`).
 - ✅ PDF text: separate opt-in after document reading; a bounded, local parser helper with
   crash and timeout containment. Scanned pages are outside this slice (ADR 0037).
 - **After that, not yet implemented:** finding visual subjects such as a flower in a photo.
-  Choose a local vision model or add a separate per-search, per-image cloud disclosure and
-  explicit Send action for a verified vision-capable model. Do not upload images merely
-  because OpenRouter is configured or a folder is connected.
+  The owner chose on-device image analysis for Search on 2026-09-21 (ADR 0038). A connected folder or
+  configured OpenRouter key never permits image upload or sharing derived visual descriptions.
+
+**Owner's full Search goal, clarified 2026-09-21:** a person describes a forgotten file in
+ordinary English and finds it across the subfolders of connected roots. “PowerPoint with
+Hammouri on a slide” needs separately approved `.pptx` slide-text extraction. If the word is
+only pixels, it also needs OCR. “PDF with a picture of a dog smelling a flower” needs visual
+understanding of images embedded in PDFs, not just the PDF text reader; standalone photos
+need the same visual capability. Results should identify the file and, where possible, the
+page or slide and reason for the match. Work toward this in reviewable slices: bounded local
+slide text; OCR; image understanding and its privacy choice; then ranking across connected
+roots with honest completeness limits. Keep folder access explicit and recursive within
+documented bounds. Image analysis and image-derived data stay on the computer, by the
+owner's choice; the local model, hardware requirements, indexing policy, and new permission
+are design work for that later slice.
 
 The first slice is intentionally not labeled full AI search: the existing AI button can
 interpret only the person's typed sentence; actual file reading is deterministic local code.

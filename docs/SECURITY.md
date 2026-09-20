@@ -154,6 +154,14 @@ Since 2026-09-20 (ADR 0036, review `docs/security/2026-09-20-local-document-sear
 
 PDF text search (ADR 0037, `docs/security/2026-09-20-pdf-text-search-review.md`) requires an additional affirmative folder grant, stored as scope 5. Old text and Office grants still cannot open PDFs. The extractor checks the root and relative path, refuses links, opens read-only, and passes at most 8 MB through standard input to a fixed local parser helper; the helper receives no path. A crashed or timed-out helper produces a skipped file. At most 20 pages and 64 KB of resulting text per PDF are considered; a search attempts at most 50 files and stops after 20 seconds between files. Encrypted, damaged, unsupported, and image-only PDFs have no searchable text. No OCR, persistent text, AI disclosure, or file mutation is granted.
 
+For future visual Search, the owner chose **on-device-only image analysis** on 2026-09-21
+(ADR 0038).
+Neither image pixels nor image-derived OCR text, captions, or embeddings may be sent to a
+cloud provider by Search. A configured provider and the current PDF/text grants do not
+authorize opening or analyzing images. Any implementation needs its own explicit permission,
+bounded local processing and storage design, protected-path checks, and security review.
+This decision adds no visual-reading capability to the current application.
+
 The index remembers file metadata so search and storage summaries do not require a fresh
 scan. It is subject to the same rules as any other cached state:
 
