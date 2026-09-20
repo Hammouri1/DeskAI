@@ -154,13 +154,24 @@ Since 2026-09-20 (ADR 0036, review `docs/security/2026-09-20-local-document-sear
 
 PDF text search (ADR 0037, `docs/security/2026-09-20-pdf-text-search-review.md`) requires an additional affirmative folder grant, stored as scope 5. Old text and Office grants still cannot open PDFs. The extractor checks the root and relative path, refuses links, opens read-only, and passes at most 8 MB through standard input to a fixed local parser helper; the helper receives no path. A crashed or timed-out helper produces a skipped file. At most 20 pages and 64 KB of resulting text per PDF are considered; a search attempts at most 50 files and stops after 20 seconds between files. Encrypted, damaged, unsupported, and image-only PDFs have no searchable text. No OCR, persistent text, AI disclosure, or file mutation is granted.
 
-For future visual Search, the owner chose **on-device-only image analysis** on 2026-09-21
-(ADR 0038).
-Neither image pixels nor image-derived OCR text, captions, or embeddings may be sent to a
-cloud provider by Search. A configured provider and the current PDF/text grants do not
-authorize opening or analyzing images. Any implementation needs its own explicit permission,
-bounded local processing and storage design, protected-path checks, and security review.
-This decision adds no visual-reading capability to the current application.
+PowerPoint slide-text search (ADR 0039, `docs/security/2026-09-21-slide-text-search-review.md`)
+appends scopes 6 and 7 for slides alone or slides with PDF after the existing document grant.
+Neither earlier grant opens `.pptx`. The separate confirmation names modern PowerPoint text,
+the folder, and the limits; withdrawing slides keeps any independent PDF grant. The reader
+uses only bounded `ppt/slides/slideN.xml` parts, never media or relationships: 8 MB ZIP,
+1,000 entries, 40 slides, 256 KB XML per slide, 64 KB returned UTF-8 text, no DTD or external
+entities. It reports partial reads and identifies the matching slide. No text is persisted
+or sent to a provider, and this grant does not authorize OCR or images.
+
+For future visual Search, the owner chose a **connected local AI when available**, and
+otherwise a fresh choice to send selected images to the chosen cloud AI for that search
+(ADR 0038, amended 2026-09-21). A configured provider and the current PDF/text grants do
+not authorize opening, analyzing, or uploading images. Before cloud transport the app must
+show the exact selected images, provider, count, size, and cost implications, then require
+Send for that search; an earlier Send is not reusable consent. Declining sends nothing.
+Any implementation needs its own visual-reading permission, bounded processing and storage
+design, protected-path checks, model capability checks, and security review. This decision
+adds no visual-reading capability to the current application.
 
 The index remembers file metadata so search and storage summaries do not require a fresh
 scan. It is subject to the same rules as any other cached state:

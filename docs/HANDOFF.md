@@ -14,13 +14,16 @@ generated-data tests, a beginner-friendly explanation, and a commit for each com
   to push.
 - The PDF implementation is `dce859a` (`Add consent-gated local PDF text search`), built on
   the requested starting commit `e7436f3`. The follow-up is `66a8e3b`.
+- The next Search slice adds separately approved `.pptx` slide-text reading (ADR 0039).
+  A generated page test finds `Hammouri` on slide 2 of a presentation two folders down.
+  It does not inspect pictures or perform OCR; the owner's image-search goal remains open.
 - Neither PDF commit was pushed. No version tag or GitHub release was created for this work.
   A **local** self-contained publish was checked after `dce859a`; it included
   `PdfWorker/DeskAI.PdfWorker.exe`. That local publish is not a release and predates the
   follow-up UI change. Ask the owner before any push, tag, or release. If asked to push, push
   `main` only, never `--all` or `--mirror`; older local refs have included the owner's email.
 - Last follow-up verification: the full solution built with `-p:DeskAiUiPreview=true` and
-  0 warnings/errors; all **1,401/1,401** tests passed with no skips; `dotnet format
+  0 warnings/errors; all **1,412/1,412** tests passed with no skips; `dotnet format
   DeskAI.sln --no-restore --verify-no-changes` passed. A normal Release build could not copy
   over the app's DLLs while the owner had that build running; the separate preview output
   avoided the file lock. The generated-data preview window was **not visually inspected**
@@ -33,8 +36,9 @@ generated-data tests, a beginner-friendly explanation, and a commit for each com
   on its connected folder before it appears in that index. The scanner enters subfolders
   within its depth and entry limits (currently depth 4, 2,000 entries).
 - Separate grants permit bounded local plain-text reading, modern `.docx`/`.xlsx` reading,
-  then PDF text reading. Old grants were not broadened. The PDF grant has its own confirmation
-  and **Stop PDF reading** action. Search never moves or changes a file.
+  PDF text reading, and modern `.pptx` slide-text reading. Old grants were not broadened.
+  PDF and slide grants have their own confirmations and Stop actions. Search never moves or
+  changes a file. Slide pictures still need the separate visual-search design.
 - `pdf` alone lists remembered PDF **names**. `pdf hammouri` means `.pdf` files whose
   **searchable text** contains `hammouri`; it does not promise every PDF will appear.
   Search reads at most 50 eligible files per request. Each PDF is limited to 8 MB, the first
@@ -115,16 +119,18 @@ and notifications with generated/fake equivalents. The preview leaves unique Tem
 inspection; do not recursively delete a path unless its resolved target was verified.
 
 After that manual sign-off, the next milestone toward the owner's Search goal needs to be
-scoped. The owner chose on-device-only image analysis for Search; a connected folder or
-OpenRouter key never permits image upload. Broader language understanding is unfinished.
+scoped. The owner chose a connected local AI when available, otherwise a fresh per-search
+cloud Send choice for selected images. A connected folder or OpenRouter key alone never
+permits image upload. Broader language understanding is unfinished.
 On 2026-09-21 the owner clarified the intended destination: ordinary-English search across
 nested subfolders of connected roots, including slide text such as “PowerPoint with Hammouri
 on a slide” and visual subjects such as “PDF with a picture of a dog smelling a flower.”
 `docs/PRODUCT.md` and `docs/ROADMAP.md` now record this as planned work, with page/slide
 evidence and honest limits. The existing AI sentence translator and PDF text search do not
-meet that goal. Image pixels, image-derived OCR text, captions, and embeddings must stay
-local (ADR 0038). The local model, hardware requirements, indexing policy, and permission need a
-separate reviewed design; this choice does not implement visual search.
+meet that goal. The owner does not want DeskAI to download a vision model: use a connected
+local AI if compatible, or ask separately before sending selected images to cloud AI
+(ADR 0038). The local-model and cloud-capability checks, indexing policy, and permission
+need a separate reviewed design; this choice does not implement visual search.
 Earlier V0.7–V1.1 manual sign-offs and release decisions remain the owner's. Architecture
 guard tests are separate hardening work; do not add unrelated features to the PDF follow-up.
 

@@ -1155,3 +1155,14 @@ Connect only the generated Downloads.
 This check is for text-based PDFs only. Scanned pages and photographs remain outside scope.
 For a PDF longer than 20 pages or with more than 64 KB of extractable text, **Files checked**
 should say it was partly read; a missing word may be beyond the part DeskAI read.
+
+# PowerPoint slide text check (ADR 0039)
+
+The UI preview generates `Presentations/Talks/Generated talk.pptx` under its temporary
+Downloads, with `Hammouri` on slide 2. Do not use a personal presentation.
+Connect only the generated Downloads. Search
+`PowerPoint with Hammouri` before and after **Read PowerPoint text too**. Before the separate
+grant there must be no slide-text hit; after the dialog and Allow, the result should name
+the presentation, nested folder, and Slide 2. Cancel first to verify it does not grant
+reading. Press **Stop PowerPoint reading** and confirm the text hit disappears while any
+separately allowed PDF text remains searchable. Search never changes the presentation.

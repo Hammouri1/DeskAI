@@ -10,7 +10,10 @@ namespace DeskAI.Core.Search;
 /// rather than taking the match on trust. It is untrusted text: it is displayed and nothing
 /// more, exactly like a file name.
 /// </remarks>
-public sealed record ContentHit(string RootName, string RelativePath, string Name, string Snippet);
+public sealed record ContentHit(string RootName, string RelativePath, string Name, string Snippet)
+{
+    public string? Section { get; init; }
+}
 
 /// <summary>One attempted file and what the bounded local read established.</summary>
 public enum ContentCheckStatus { Matched, NoMatch, CouldNotRead }
@@ -196,6 +199,11 @@ public sealed class ContentSearchService(
                     continue;
                 }
 
+                if (file.Extension == ".pptx" && !RootCapabilities.CanReadSlides(root))
+                {
+                    continue;
+                }
+
                 if (filesRead >= MaxFilesRead)
                 {
                     reachedLimit = true;
@@ -238,7 +246,11 @@ public sealed class ContentSearchService(
                         root.DisplayName,
                         file.RelativePath,
                         file.Name,
-                        Snippet(extraction.Text, position, needle.Length)));
+                        Snippet(extraction.Text, position, needle.Length))
+                    {
+                        Section = extraction.Sections.FirstOrDefault(section =>
+                            position >= section.Start && position < section.End)?.Label,
+                    });
                 }
             }
 

@@ -105,6 +105,12 @@ public enum RootAuthorizationScope
 
     /// <summary>Separately approved local PDF text reading in addition to notes and Office files.</summary>
     MetadataDocumentsAndPdf = 5,
+
+    /// <summary>Separately approved slide text reading without PDF permission.</summary>
+    MetadataDocumentsAndSlides = 6,
+
+    /// <summary>Separate PDF and slide grants are both active.</summary>
+    MetadataDocumentsPdfAndSlides = 7,
 }
 
 public enum RootAccessLevel

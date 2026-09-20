@@ -33,6 +33,8 @@ public static class RootCapabilities
             RootAuthorizationScope.MetadataAndContent => true,
             RootAuthorizationScope.MetadataAndDocuments => true,
             RootAuthorizationScope.MetadataDocumentsAndPdf => true,
+            RootAuthorizationScope.MetadataDocumentsAndSlides => true,
+            RootAuthorizationScope.MetadataDocumentsPdfAndSlides => true,
             _ => false,
         };
     }
@@ -54,6 +56,8 @@ public static class RootCapabilities
             RootAuthorizationScope.MetadataAndContent => true,
             RootAuthorizationScope.MetadataAndDocuments => true,
             RootAuthorizationScope.MetadataDocumentsAndPdf => true,
+            RootAuthorizationScope.MetadataDocumentsAndSlides => true,
+            RootAuthorizationScope.MetadataDocumentsPdfAndSlides => true,
             _ => false,
         };
     }
@@ -63,14 +67,25 @@ public static class RootCapabilities
     {
         ArgumentNullException.ThrowIfNull(root);
         return IsUsable(root) && root.AuthorizationScope is
-            RootAuthorizationScope.MetadataAndDocuments or RootAuthorizationScope.MetadataDocumentsAndPdf;
+            RootAuthorizationScope.MetadataAndDocuments or RootAuthorizationScope.MetadataDocumentsAndPdf
+                or RootAuthorizationScope.MetadataDocumentsAndSlides
+                or RootAuthorizationScope.MetadataDocumentsPdfAndSlides;
     }
 
     /// <summary>May DeskAI locally extract text from PDFs in this folder?</summary>
     public static bool CanReadPdf(AuthorizedRoot root)
     {
         ArgumentNullException.ThrowIfNull(root);
-        return IsUsable(root) && root.AuthorizationScope == RootAuthorizationScope.MetadataDocumentsAndPdf;
+        return IsUsable(root) && root.AuthorizationScope is
+            RootAuthorizationScope.MetadataDocumentsAndPdf or RootAuthorizationScope.MetadataDocumentsPdfAndSlides;
+    }
+
+    /// <summary>May DeskAI locally extract text from modern PowerPoint slides here?</summary>
+    public static bool CanReadSlides(AuthorizedRoot root)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        return IsUsable(root) && root.AuthorizationScope is
+            RootAuthorizationScope.MetadataDocumentsAndSlides or RootAuthorizationScope.MetadataDocumentsPdfAndSlides;
     }
 
     /// <summary>
@@ -110,6 +125,8 @@ public static class RootCapabilities
             RootAuthorizationScope.MetadataAndContent => true,
             RootAuthorizationScope.MetadataAndDocuments => true,
             RootAuthorizationScope.MetadataDocumentsAndPdf => true,
+            RootAuthorizationScope.MetadataDocumentsAndSlides => true,
+            RootAuthorizationScope.MetadataDocumentsPdfAndSlides => true,
             _ => false,
         };
     }

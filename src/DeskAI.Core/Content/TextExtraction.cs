@@ -76,6 +76,9 @@ public sealed record TextExtraction(
     bool WasTruncated,
     string Explanation)
 {
+    /// <summary>Optional local page or slide ranges; never persisted or sent to AI.</summary>
+    public IReadOnlyList<ExtractedTextSection> Sections { get; init; } = [];
+
     public bool Succeeded => Status == TextExtractionStatus.Extracted;
 
     public static TextExtraction Refused(
@@ -83,3 +86,6 @@ public sealed record TextExtraction(
         TextExtractionStatus status,
         string explanation) => new(relativePath, status, string.Empty, false, explanation);
 }
+
+/// <summary>Where a span of extracted text came from in a document.</summary>
+public sealed record ExtractedTextSection(string Label, int Start, int End);

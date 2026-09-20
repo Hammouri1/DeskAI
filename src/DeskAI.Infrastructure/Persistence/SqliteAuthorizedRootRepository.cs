@@ -95,7 +95,7 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
         // before the records they join, since a link to an original record forbids removing it.
         const string removable = """
             SELECT id FROM authorized_roots
-            WHERE id = $id AND authorization_scope IN ($metadataScope, $contentScope, $documentScope, $pdfScope)
+            WHERE id = $id AND authorization_scope IN ($metadataScope, $contentScope, $documentScope, $pdfScope, $slideScope, $pdfSlideScope)
             """;
         const string records = $"""
             SELECT t.id FROM execution_transactions t
@@ -114,6 +114,8 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
         command.Parameters.AddWithValue("$contentScope", (int)RootAuthorizationScope.MetadataAndContent);
         command.Parameters.AddWithValue("$documentScope", (int)RootAuthorizationScope.MetadataAndDocuments);
         command.Parameters.AddWithValue("$pdfScope", (int)RootAuthorizationScope.MetadataDocumentsAndPdf);
+        command.Parameters.AddWithValue("$slideScope", (int)RootAuthorizationScope.MetadataDocumentsAndSlides);
+        command.Parameters.AddWithValue("$pdfSlideScope", (int)RootAuthorizationScope.MetadataDocumentsPdfAndSlides);
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
     }
@@ -127,7 +129,7 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
         command.CommandText = """
             INSERT OR IGNORE INTO tidy_permissions(root_id, granted_at_utc)
             SELECT id, $granted FROM authorized_roots
-            WHERE id = $id AND authorization_scope IN ($metadataScope, $contentScope, $documentScope, $pdfScope);
+            WHERE id = $id AND authorization_scope IN ($metadataScope, $contentScope, $documentScope, $pdfScope, $slideScope, $pdfSlideScope);
             """;
         command.Parameters.AddWithValue("$id", rootId.ToString("D"));
         command.Parameters.AddWithValue("$granted", grantedAtUtc.ToString("O"));
@@ -135,6 +137,8 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
         command.Parameters.AddWithValue("$contentScope", (int)RootAuthorizationScope.MetadataAndContent);
         command.Parameters.AddWithValue("$documentScope", (int)RootAuthorizationScope.MetadataAndDocuments);
         command.Parameters.AddWithValue("$pdfScope", (int)RootAuthorizationScope.MetadataDocumentsAndPdf);
+        command.Parameters.AddWithValue("$slideScope", (int)RootAuthorizationScope.MetadataDocumentsAndSlides);
+        command.Parameters.AddWithValue("$pdfSlideScope", (int)RootAuthorizationScope.MetadataDocumentsPdfAndSlides);
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }
 

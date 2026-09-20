@@ -240,6 +240,43 @@ public sealed partial class SearchPage : Page
         }
     }
 
+    private async void OnSlidesPermissionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: Guid rootId }
+            || ViewModel.Folders.FirstOrDefault(item => item.Id == rootId) is not { } folder)
+        {
+            return;
+        }
+
+        if (folder.CanReadSlides)
+        {
+            await ViewModel.SetSlidesPermissionAsync(rootId, allow: false);
+            return;
+        }
+
+        if (!folder.CanUpgradeSlides)
+        {
+            return;
+        }
+
+        var confirmation = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Search text on PowerPoint slides here?",
+            Content = $"{folder.Path}\n\nDeskAI will read text on modern PowerPoint (.pptx) slides on this computer when you search. "
+                + "It checks up to 50 files per search, 8 MB and the first 40 slides per presentation. "
+                + "Pictures, embedded objects, and older PowerPoint files stay closed. Some presentations may be skipped or partly read.\n\n"
+                + "The words are not saved or sent to AI. You can stop PowerPoint reading at any time.",
+            PrimaryButtonText = "Allow PowerPoint reading",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await confirmation.ShowAsync() == ContentDialogResult.Primary)
+        {
+            await ViewModel.SetSlidesPermissionAsync(rootId, allow: true);
+        }
+    }
+
     private static Task RefreshScopeReminderAsync() =>
         ((App)Application.Current).MainAppWindow is MainWindow window
             ? window.RefreshScopeAsync()
@@ -253,7 +290,7 @@ public sealed partial class SearchPage : Page
             Title = "Search inside this folder's documents?",
             Content = $"{folder.Path}\n\n"
                 + "DeskAI will read the beginning of up to 50 files per search: plain-text notes, modern Word (.docx), and Excel (.xlsx). "
-                + "It will not open PDFs, photos, older Office files, or programs.\n\n"
+                + "It will not open PDFs, PowerPoint slides, photos, older Office files, or programs.\n\n"
                 + "Reading happens on this computer. The words are not saved or sent to an AI service. "
                 + "This does not let DeskAI move, rename, or delete files. You can turn it off whenever you like.",
             PrimaryButtonText = "Allow reading",

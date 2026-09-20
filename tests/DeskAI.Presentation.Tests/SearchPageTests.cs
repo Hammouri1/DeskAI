@@ -209,6 +209,58 @@ public sealed class SearchPageTests
     }
 
     [Fact]
+    public async Task PowerPoint_words_on_a_nested_slide_need_their_own_permission_and_show_the_slide()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Presentations");
+        var nested = Directory.CreateDirectory(Path.Combine(folder, "University", "Talks"));
+        using (var file = File.Create(Path.Combine(nested.FullName, "career.pptx")))
+        using (var zip = new ZipArchive(file, ZipArchiveMode.Create))
+        {
+            using (var first = new StreamWriter(zip.CreateEntry("ppt/slides/slide1.xml").Open()))
+            {
+                first.Write("<p:sld xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><a:t>generated introduction</a:t></p:sld>");
+            }
+
+            using (var second = new StreamWriter(zip.CreateEntry("ppt/slides/slide2.xml").Open()))
+            {
+                second.Write("<p:sld xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><a:t>Hammouri</a:t><a:t> project</a:t></p:sld>");
+            }
+        }
+
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        var rootId = Assert.Single(search.Folders).Id;
+        await search.SetContentPermissionAsync(rootId, allow: true);
+        await search.SetPdfPermissionAsync(rootId, allow: true);
+        search.Phrase = "PowerPoint with Hammouri";
+
+        await search.SearchCommand.ExecuteAsync(null);
+        Assert.Empty(search.InsideResults);
+
+        await search.SetSlidesPermissionAsync(rootId, allow: true);
+        await search.SearchCommand.ExecuteAsync(null);
+        var result = Assert.Single(search.InsideResults);
+        Assert.Equal("career.pptx", result.Name);
+        Assert.Contains("University", result.Location, StringComparison.Ordinal);
+        Assert.Contains("Slide 2", result.Location, StringComparison.Ordinal);
+        Assert.Contains("Hammouri", result.Snippet, StringComparison.OrdinalIgnoreCase);
+
+        await search.SetSlidesPermissionAsync(rootId, allow: false);
+        Assert.True(Assert.Single(search.Folders).CanReadPdf);
+        Assert.False(Assert.Single(search.Folders).CanReadSlides);
+        await search.SearchCommand.ExecuteAsync(null);
+        Assert.Empty(search.InsideResults);
+
+        await search.SetPdfPermissionAsync(rootId, allow: false);
+        await search.SetSlidesPermissionAsync(rootId, allow: true);
+        Assert.False(Assert.Single(search.Folders).CanReadPdf);
+        await search.SearchCommand.ExecuteAsync(null);
+        Assert.Equal("Slide 2", Assert.Single(search.InsideResults).Location.Split(" / ").Last());
+    }
+
+    [Fact]
     public async Task Pdf_text_needs_a_separate_yes_and_stops_after_revocation()
     {
         await using var app = await TestApp.StartAsync();

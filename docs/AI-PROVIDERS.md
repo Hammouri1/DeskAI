@@ -68,10 +68,12 @@ The 2026-09-20 local-document search extension (ADR 0036) changes none of these 
 categories. `Let AI read this` still sends only the person's typed words. Text extracted from
 `.docx` or `.xlsx` is searched locally and never reaches a provider; configuring OpenRouter
 does not permit image upload or provider access to a directory.
-For the planned Search image-understanding feature, the owner chose on-device analysis
-(2026-09-21). Search must not send image pixels, OCR text from images, or derived visual
-descriptions to a cloud provider. The existing optional sentence interpreter may still
-receive only the words the person typed under its existing disclosure flow.
+For the planned Search image-understanding feature, the owner chose a compatible connected
+local AI first. With no local AI, Search may offer a cloud request for selected images only
+after showing the provider, exact image selection, count, size, and cost implications and
+receiving a fresh Send approval for that search (ADR 0038, amended 2026-09-21). A key or
+earlier approval is never reusable image-upload consent. The existing optional sentence
+interpreter still receives only the person's typed words under its own disclosure flow.
 
 The request builder applies policy before provider code sees data. A provider adapter cannot expand disclosure. Display a concise request summary and make “Local” versus named cloud provider obvious. Protected items never enter requests.
 

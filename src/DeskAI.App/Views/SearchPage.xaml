@@ -317,26 +317,41 @@
                                                            Text="{x:Bind ContentState}" />
                                             </StackPanel>
                                         </StackPanel>
-                                        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
-                                            <Button VerticalAlignment="Center"
-                                                    Content="{x:Bind ContentAction}"
-                                                    Tag="{x:Bind Id}"
-                                                    Click="OnContentPermissionClick" />
-                                            <Button VerticalAlignment="Center"
-                                                    Content="Read Word and Excel too"
-                                                    Visibility="{x:Bind CanUpgradeDocuments}"
-                                                    Tag="{x:Bind Id}"
-                                                    Click="OnDocumentsPermissionClick" />
-                                            <Button VerticalAlignment="Center"
-                                                    Content="Read PDF text too"
-                                                    Visibility="{x:Bind CanUpgradePdf}"
-                                                    Tag="{x:Bind Id}"
-                                                    Click="OnPdfPermissionClick" />
-                                            <Button VerticalAlignment="Center"
-                                                    Content="Stop PDF reading"
-                                                    Visibility="{x:Bind CanReadPdf}"
-                                                    Tag="{x:Bind Id}"
-                                                    Click="OnPdfPermissionClick" />
+                                        <StackPanel Grid.Row="1" Spacing="8">
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Button VerticalAlignment="Center"
+                                                        Content="{x:Bind ContentAction}"
+                                                        Tag="{x:Bind Id}"
+                                                        Click="OnContentPermissionClick" />
+                                                <Button VerticalAlignment="Center"
+                                                        Content="Read Word and Excel too"
+                                                        Visibility="{x:Bind CanUpgradeDocuments}"
+                                                        Tag="{x:Bind Id}"
+                                                        Click="OnDocumentsPermissionClick" />
+                                            </StackPanel>
+                                            <StackPanel Orientation="Horizontal" Spacing="8"
+                                                        Visibility="{x:Bind CanReadDocuments}">
+                                                <Button VerticalAlignment="Center"
+                                                        Content="Read PDF text too"
+                                                        Visibility="{x:Bind CanUpgradePdf}"
+                                                        Tag="{x:Bind Id}"
+                                                        Click="OnPdfPermissionClick" />
+                                                <Button VerticalAlignment="Center"
+                                                        Content="Stop PDF reading"
+                                                        Visibility="{x:Bind CanReadPdf}"
+                                                        Tag="{x:Bind Id}"
+                                                        Click="OnPdfPermissionClick" />
+                                                <Button VerticalAlignment="Center"
+                                                        Content="Read PowerPoint text too"
+                                                        Visibility="{x:Bind CanUpgradeSlides}"
+                                                        Tag="{x:Bind Id}"
+                                                        Click="OnSlidesPermissionClick" />
+                                                <Button VerticalAlignment="Center"
+                                                        Content="Stop PowerPoint reading"
+                                                        Visibility="{x:Bind CanReadSlides}"
+                                                        Tag="{x:Bind Id}"
+                                                        Click="OnSlidesPermissionClick" />
+                                            </StackPanel>
                                         </StackPanel>
                                         <Button Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Content="Refresh"
                                                 Command="{Binding ElementName=Root, Path=ViewModel.RefreshFolderCommand}"
@@ -362,7 +377,7 @@
                     </StackPanel>
                     <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
                                HorizontalAlignment="Left"
-                               Text="It looks only in folders you connected. Normally it uses names, sizes, and dates. You can separately allow notes, Word and Excel, then PDF text. Scanned pages, photos, and programs stay closed. Words read from a file are not saved or sent to AI. Disconnecting forgets the folder." />
+                               Text="It looks only in folders you connected. Normally it uses names, sizes, and dates. You can separately allow notes, Word and Excel, PDF text, and PowerPoint slide text. Pictures in pages or slides and programs stay closed. Words read from a file are not saved or sent to AI. Disconnecting forgets the folder." />
                 </StackPanel>
             </Expander>
 

@@ -211,6 +211,12 @@ Reading inside files is a separate, visible permission. Connecting a folder neve
 
 **PDF text (ADR 0037).** An Office-approved row offers **Read PDF text too**, with its own local-reading dialog. The row then shows that PDF text is allowed and offers **Stop PDF reading**. Empty, encrypted, damaged, or unsupported PDFs are counted as skipped, and a partial read is stated. Scanned pages and photo subjects remain unsupported.
 
+**PowerPoint slide text (ADR 0039).** After the Word/Excel grant, the folder row independently
+offers **Read PowerPoint text too** and **Stop PowerPoint reading**. The dialog names `.pptx`,
+the connected folder, bounds, and that slide pictures remain closed. A content match shows
+the slide number after the relative folder location. Withdrawing this grant retains PDF
+reading if it was separately allowed.
+
 After a person found one PDF match while two other files could not be read, Search gained a collapsed **Files checked** list. It names each attempted file and says whether its text matched, had no match, was only partly read, or could not be read. The summary points there and explains that searching `pdf` alone lists remembered PDFs by name. This keeps a missed match distinct from a PDF the reader could not open.
 If a PDF is only partly read, its row names the first-20-pages or 64-KB text limit and says a word may be later. The folder location remains visible even when no content word matches, so a PDF in a subfolder is not mistaken for a file the scanner missed.
 

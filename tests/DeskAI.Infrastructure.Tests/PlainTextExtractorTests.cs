@@ -122,7 +122,6 @@ public sealed class PlainTextExtractorTests
     /// never touched at all. The name alone decides.
     /// </summary>
     [Theory]
-    [InlineData("slides.pptx")]
     [InlineData("photo.jpg")]
     [InlineData("installer.exe")]
     public async Task ExtractAsync_RefusesFormatsItDoesNotRead(string name)
@@ -134,6 +133,92 @@ public sealed class PlainTextExtractorTests
 
         Assert.Equal(TextExtractionStatus.UnsupportedFormat, result.Status);
         Assert.Empty(result.Text);
+    }
+
+    [Fact]
+    public async Task ExtractAsync_SlidesNeedTheirOwnGrant_AndOnlySlideTextIsRead()
+    {
+        using var sandbox = new TemporaryDirectory();
+        using (var file = File.Create(Path.Combine(sandbox.Path, "talk.pptx")))
+        using (var zip = new ZipArchive(file, ZipArchiveMode.Create))
+        {
+            using (var writer = new StreamWriter(zip.CreateEntry("ppt/slides/slide2.xml").Open()))
+            {
+                writer.Write("<p:sld xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><a:t>Hammouri topic</a:t></p:sld>");
+            }
+
+            using (var writer = new StreamWriter(zip.CreateEntry("ppt/media/image1.png").Open()))
+            {
+                writer.Write("private picture bytes are not slide text");
+            }
+        }
+
+        var oldDocumentGrant = await ExtractAsync(sandbox, "talk.pptx",
+            scope: RootAuthorizationScope.MetadataAndDocuments);
+        var oldPdfGrant = await ExtractAsync(sandbox, "talk.pptx",
+            scope: RootAuthorizationScope.MetadataDocumentsAndPdf);
+        var slideGrant = await ExtractAsync(sandbox, "talk.pptx",
+            scope: RootAuthorizationScope.MetadataDocumentsAndSlides);
+
+        Assert.Equal(TextExtractionStatus.NotAuthorized, oldDocumentGrant.Status);
+        Assert.Equal(TextExtractionStatus.NotAuthorized, oldPdfGrant.Status);
+        Assert.Equal(TextExtractionStatus.Extracted, slideGrant.Status);
+        Assert.Contains("Hammouri topic", slideGrant.Text, StringComparison.Ordinal);
+        Assert.DoesNotContain("private picture", slideGrant.Text, StringComparison.Ordinal);
+        Assert.Equal("Slide 2", Assert.Single(slideGrant.Sections).Label);
+    }
+
+    [Fact]
+    public async Task ExtractAsync_SlideXmlWithExternalEntitiesIsRefused()
+    {
+        using var sandbox = new TemporaryDirectory();
+        using (var file = File.Create(Path.Combine(sandbox.Path, "unsafe.pptx")))
+        using (var zip = new ZipArchive(file, ZipArchiveMode.Create))
+        using (var writer = new StreamWriter(zip.CreateEntry("ppt/slides/slide1.xml").Open()))
+        {
+            writer.Write("<!DOCTYPE x [<!ENTITY steal SYSTEM 'file:///private'>]><x><t>&steal;</t></x>");
+        }
+
+        var result = await ExtractAsync(sandbox, "unsafe.pptx",
+            scope: RootAuthorizationScope.MetadataDocumentsAndSlides);
+
+        Assert.False(result.Succeeded);
+        Assert.Empty(result.Text);
+    }
+
+    [Fact]
+    public async Task ExtractAsync_OversizedPresentationIsSkipped()
+    {
+        using var sandbox = new TemporaryDirectory();
+        using (var file = File.Create(Path.Combine(sandbox.Path, "large.pptx")))
+        {
+            file.SetLength(8L * 1024 * 1024 + 1);
+        }
+
+        var result = await ExtractAsync(sandbox, "large.pptx",
+            scope: RootAuthorizationScope.MetadataDocumentsAndSlides);
+
+        Assert.False(result.Succeeded);
+        Assert.Empty(result.Text);
+    }
+
+    [Fact]
+    public async Task ExtractAsync_SlideTextStopsAtUtf8ByteLimitWithoutSplittingACharacter()
+    {
+        using var sandbox = new TemporaryDirectory();
+        using (var file = File.Create(Path.Combine(sandbox.Path, "unicode.pptx")))
+        using (var zip = new ZipArchive(file, ZipArchiveMode.Create))
+        using (var writer = new StreamWriter(zip.CreateEntry("ppt/slides/slide1.xml").Open()))
+        {
+            writer.Write("<p:sld xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><a:t>花花花</a:t></p:sld>");
+        }
+
+        var result = await ExtractAsync(sandbox, "unicode.pptx", new TextExtractionOptions(7),
+            RootAuthorizationScope.MetadataDocumentsAndSlides);
+
+        Assert.Equal("花花", result.Text.Trim());
+        Assert.True(result.WasTruncated);
+        Assert.True(Encoding.UTF8.GetByteCount(result.Text) <= 7);
     }
 
     [Fact]

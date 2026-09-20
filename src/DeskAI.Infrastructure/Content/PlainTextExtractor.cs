@@ -18,8 +18,8 @@ namespace DeskAI.Infrastructure.Content;
 /// alone a file handle.
 /// </para>
 /// <para>
-/// DOCX and XLSX use a bounded, local ZIP/XML reader. PDF text uses a bounded local helper
-/// after its own grant. Older Office formats and images are refused before opening.
+/// DOCX, XLSX, and PPTX use bounded, local ZIP/XML readers. PDF text uses a bounded local
+/// helper after its own grant. Older Office formats and images are refused before opening.
 /// </para>
 /// <para>
 /// Nothing is written, created, or kept. The file is opened read-only, a bounded prefix is
@@ -68,6 +68,13 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy, PdfProcessReader 
         {
             return TextExtraction.Refused(relativePath, TextExtractionStatus.NotAuthorized,
                 "This folder has not been allowed to read PDF text.");
+        }
+
+        if (relativePath.EndsWith(".pptx", StringComparison.OrdinalIgnoreCase)
+            && !RootCapabilities.CanReadSlides(root))
+        {
+            return TextExtraction.Refused(relativePath, TextExtractionStatus.NotAuthorized,
+                "This folder has not been allowed to read PowerPoint slide text.");
         }
 
         if (_pathPolicy.ValidateRoot(root).Status == ValidationStatus.Blocked
@@ -210,6 +217,25 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy, PdfProcessReader 
                     wasTruncated, wasTruncated
                         ? "Part of this document was read. There may be more."
                         : "This document was read locally.");
+            }
+
+            if (extension.Equals(".pptx", StringComparison.OrdinalIgnoreCase))
+            {
+                if (stream.Length > SlideOpenXmlReader.MaxContainerBytes)
+                {
+                    return TextExtraction.Refused(relativePath, TextExtractionStatus.Unavailable,
+                        "This presentation is too large for a quick search, so DeskAI skipped it.");
+                }
+
+                var (words, wasTruncated, sections) = await SlideOpenXmlReader
+                    .ReadAsync(stream, options.MaxBytes, cancellationToken).ConfigureAwait(false);
+                return new TextExtraction(relativePath, TextExtractionStatus.Extracted, words,
+                    wasTruncated, wasTruncated
+                        ? "Part of this presentation was read. There may be more slides."
+                        : "Slide text was read locally.")
+                {
+                    Sections = sections,
+                };
             }
 
             var buffer = new byte[options.MaxBytes];

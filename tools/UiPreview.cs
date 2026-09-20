@@ -4,6 +4,7 @@ using DeskAI.Core.Abstractions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Hosting;
+using System.IO.Compression;
 using System.Text;
 
 namespace DeskAI.App;
@@ -37,6 +38,13 @@ internal sealed class UiPreview : IKnownFolders, IFolderPickerService, IPictureP
         var nested = Directory.CreateDirectory(Path.Combine(Downloads, "Presentations"));
         File.WriteAllBytes(Path.Combine(nested.FullName, "Nested handout.pdf"),
             SamplePdf("generated aurora presentation"));
+        var talks = Directory.CreateDirectory(Path.Combine(nested.FullName, "Talks"));
+        using (var file = File.Create(Path.Combine(talks.FullName, "Generated talk.pptx")))
+        using (var archive = new ZipArchive(file, ZipArchiveMode.Create))
+        {
+            WriteSlide(archive, 1, "generated introduction");
+            WriteSlide(archive, 2, "generated Hammouri topic");
+        }
         foreach (var file in Directory.EnumerateFiles(Downloads, "*", SearchOption.AllDirectories))
         {
             File.SetLastWriteTimeUtc(file, DateTime.UtcNow.AddDays(-2));
@@ -74,6 +82,15 @@ internal sealed class UiPreview : IKnownFolders, IFolderPickerService, IPictureP
         pdf.Append("trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n")
             .Append(xref).Append("\n%%EOF\n");
         return Encoding.ASCII.GetBytes(pdf.ToString());
+    }
+
+    private static void WriteSlide(ZipArchive archive, int number, string words)
+    {
+        using var writer = new StreamWriter(archive.CreateEntry($"ppt/slides/slide{number}.xml").Open());
+        writer.Write("<p:sld xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" "
+            + "xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><a:t>");
+        writer.Write(words);
+        writer.Write("</a:t></p:sld>");
     }
 
     // Keep the protected application database apart from generated sample folders.

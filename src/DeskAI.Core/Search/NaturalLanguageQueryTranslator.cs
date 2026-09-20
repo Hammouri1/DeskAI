@@ -145,6 +145,7 @@ public sealed partial class NaturalLanguageQueryTranslator
             (@"\bpdfs?\b", ".pdf"),
             (@"\b(?:word documents?|docx)\b", ".docx"),
             (@"\b(?:excel (?:files?|sheets?|spreadsheets?)|xlsx)\b", ".xlsx"),
+            (@"\b(?:power\s?point(?:\s+(?:files?|presentations?))?|pptx)\b", ".pptx"),
         })
         {
             if (TryTake(ref remaining, pattern) && !endings.Contains(ending, StringComparer.Ordinal))

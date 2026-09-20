@@ -97,18 +97,24 @@ public sealed record ConnectedFolderViewModel(
     string Remembered,
     bool CanReadContent,
     bool CanReadDocuments = false,
-    bool CanReadPdf = false)
+    bool CanReadPdf = false,
+    bool CanReadSlides = false)
 {
     public string ContentState => CanReadContent
         ? CanReadPdf
-            ? "DeskAI can read notes, Word, Excel, and PDF text here."
+            ? CanReadSlides
+                ? "DeskAI can read notes, Word, Excel, PDF text, and PowerPoint slide text here."
+                : "DeskAI can read notes, Word, Excel, and PDF text here."
+            : CanReadSlides
+            ? "DeskAI can read notes, Word, Excel, and PowerPoint slide text here. PDFs need your permission."
             : CanReadDocuments
-            ? "DeskAI can read notes, Word, and Excel here. PDFs need your permission."
+            ? "DeskAI can read notes, Word, and Excel here. PDFs and PowerPoint need your permission."
             : "DeskAI can read plain-text files here. Word and Excel still need your permission."
         : "Names, sizes, and dates only.";
 
     public bool CanUpgradeDocuments => CanReadContent && !CanReadDocuments;
     public bool CanUpgradePdf => CanReadDocuments && !CanReadPdf;
+    public bool CanUpgradeSlides => CanReadDocuments && !CanReadSlides;
 
     public string ContentAction => CanReadContent ? "Stop reading inside" : "Read inside files";
 
@@ -132,7 +138,8 @@ public sealed record ConnectedFolderViewModel(
             remembered,
             folder.CanReadContent,
             folder.CanReadDocuments,
-            folder.CanReadPdf);
+            folder.CanReadPdf,
+            folder.CanReadSlides);
     }
 }
 
@@ -644,6 +651,28 @@ public sealed class SearchViewModel : ObservableObject
         }
     }
 
+    /// <summary>The page asks separately before granting slide-text reading.</summary>
+    public async Task SetSlidesPermissionAsync(Guid rootId, bool allow)
+    {
+        IsFolderBusy = true;
+        try
+        {
+            var result = allow
+                ? await _folders.AllowSlidesAsync(rootId).ConfigureAwait(true)
+                : await _folders.StopSlidesAsync(rootId).ConfigureAwait(true);
+            await ReloadFoldersAsync().ConfigureAwait(true);
+            FolderMessage = result.Explanation;
+        }
+        catch (Exception exception) when (IsExpectedFolderFailure(exception))
+        {
+            FolderMessage = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            IsFolderBusy = false;
+        }
+    }
+
     private async Task DisconnectFolderAsync(Guid rootId)
     {
         IsFolderBusy = true;
@@ -821,7 +850,8 @@ public sealed class SearchViewModel : ObservableObject
             var folder = Path.GetDirectoryName(hit.RelativePath);
             InsideResults.Add(new ContentHitViewModel(
                 hit.Name,
-                string.IsNullOrEmpty(folder) ? hit.RootName : $"{hit.RootName} / {folder}",
+                string.Join(" / ", new[] { hit.RootName, folder, hit.Section }
+                    .Where(part => !string.IsNullOrEmpty(part))),
                 hit.Snippet));
         }
 

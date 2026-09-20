@@ -19,7 +19,8 @@ public sealed record ConnectedFolder(
     bool CanReadContent,
     bool CanTidy = false,
     bool CanReadDocuments = false,
-    bool CanReadPdf = false);
+    bool CanReadPdf = false,
+    bool CanReadSlides = false);
 
 /// <summary>
 /// The outcome of connecting or refreshing a folder, including a refusal reason.
@@ -139,7 +140,8 @@ public sealed class ConnectedFolderService(
                 RootCapabilities.CanReadContent(root),
                 RootCapabilities.CanTidy(root),
                 RootCapabilities.CanReadDocuments(root),
-                RootCapabilities.CanReadPdf(root)));
+                RootCapabilities.CanReadPdf(root),
+                RootCapabilities.CanReadSlides(root)));
         }
 
         return described.AsReadOnly();
@@ -202,7 +204,10 @@ public sealed class ConnectedFolderService(
             return new ConnectFolderResult(false, "Allow document reading first.", null);
         }
 
-        return await ChangeContentPermissionAsync(rootId, RootAuthorizationScope.MetadataDocumentsAndPdf,
+        var scope = RootCapabilities.CanReadSlides(root)
+            ? RootAuthorizationScope.MetadataDocumentsPdfAndSlides
+            : RootAuthorizationScope.MetadataDocumentsAndPdf;
+        return await ChangeContentPermissionAsync(rootId, scope,
             "DeskAI can now search text in PDFs here, on this computer. Scanned pages remain unreadable.",
             cancellationToken).ConfigureAwait(false);
     }
@@ -216,8 +221,45 @@ public sealed class ConnectedFolderService(
             return new ConnectFolderResult(false, "PDF reading is not allowed in this folder.", null);
         }
 
-        return await ChangeContentPermissionAsync(rootId, RootAuthorizationScope.MetadataAndDocuments,
-            "DeskAI will no longer read PDFs here. Notes, Word, and Excel remain allowed.",
+        var scope = RootCapabilities.CanReadSlides(root)
+            ? RootAuthorizationScope.MetadataDocumentsAndSlides
+            : RootAuthorizationScope.MetadataAndDocuments;
+        return await ChangeContentPermissionAsync(rootId, scope,
+            "DeskAI will no longer read PDFs here. Other allowed text reading remains available.",
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Slides have their own grant; older document and PDF grants remain unchanged.</summary>
+    public async Task<ConnectFolderResult> AllowSlidesAsync(Guid rootId, CancellationToken cancellationToken = default)
+    {
+        var root = await _roots.FindAsync(rootId, cancellationToken).ConfigureAwait(false);
+        if (root is null || !RootCapabilities.CanReadDocuments(root))
+        {
+            return new ConnectFolderResult(false, "Allow document reading first.", null);
+        }
+
+        var scope = RootCapabilities.CanReadPdf(root)
+            ? RootAuthorizationScope.MetadataDocumentsPdfAndSlides
+            : RootAuthorizationScope.MetadataDocumentsAndSlides;
+        return await ChangeContentPermissionAsync(rootId, scope,
+            "DeskAI can now search text on modern PowerPoint slides here, on this computer. Slide pictures stay closed.",
+            cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>Withdraws slide reading while keeping any independent PDF grant.</summary>
+    public async Task<ConnectFolderResult> StopSlidesAsync(Guid rootId, CancellationToken cancellationToken = default)
+    {
+        var root = await _roots.FindAsync(rootId, cancellationToken).ConfigureAwait(false);
+        if (root is null || !RootCapabilities.CanReadSlides(root))
+        {
+            return new ConnectFolderResult(false, "PowerPoint reading is not allowed in this folder.", null);
+        }
+
+        var scope = RootCapabilities.CanReadPdf(root)
+            ? RootAuthorizationScope.MetadataDocumentsAndPdf
+            : RootAuthorizationScope.MetadataAndDocuments;
+        return await ChangeContentPermissionAsync(rootId, scope,
+            "DeskAI will no longer read PowerPoint slides here. Other allowed text reading remains available.",
             cancellationToken).ConfigureAwait(false);
     }
 
@@ -254,7 +296,9 @@ public sealed class ConnectedFolderService(
         if (root.AuthorizationScope is not (RootAuthorizationScope.MetadataOnly
             or RootAuthorizationScope.MetadataAndContent
             or RootAuthorizationScope.MetadataAndDocuments
-            or RootAuthorizationScope.MetadataDocumentsAndPdf))
+            or RootAuthorizationScope.MetadataDocumentsAndPdf
+            or RootAuthorizationScope.MetadataDocumentsAndSlides
+            or RootAuthorizationScope.MetadataDocumentsPdfAndSlides))
         {
             return new ConnectFolderResult(false, "That folder was not connected for reading.", null);
         }
@@ -287,6 +331,7 @@ public sealed class ConnectedFolderService(
             RootCapabilities.CanReadContent(root),
             RootCapabilities.CanTidy(root),
             RootCapabilities.CanReadDocuments(root),
-            RootCapabilities.CanReadPdf(root));
+            RootCapabilities.CanReadPdf(root),
+            RootCapabilities.CanReadSlides(root));
     }
 }
