@@ -58,10 +58,15 @@ public sealed record ContentCheckViewModel(string Name, string Location, string 
         var location = string.IsNullOrEmpty(folder)
             ? check.RootName
             : $"{check.RootName} / {folder}";
+        var isPdf = string.Equals(Path.GetExtension(check.Name), ".pdf", StringComparison.OrdinalIgnoreCase);
         var result = check.Status switch
         {
+            ContentCheckStatus.Matched when check.WasTruncated && isPdf =>
+                "Matched in the part read (up to the first 20 pages or 64 KB of text); there may be more.",
             ContentCheckStatus.Matched when check.WasTruncated => "Matched in the part read; there may be more.",
             ContentCheckStatus.Matched => "Matched the words inside.",
+            ContentCheckStatus.NoMatch when check.WasTruncated && isPdf =>
+                "No match in the part read (up to the first 20 pages or 64 KB of text); the words may be later.",
             ContentCheckStatus.NoMatch when check.WasTruncated => "No match in the part read; there may be more.",
             ContentCheckStatus.NoMatch => "Read, but the words did not match.",
             _ => $"Could not read: {check.Explanation}",

@@ -1153,3 +1153,5 @@ Connect only the generated Downloads.
    should remain allowed. Disconnect and confirm the folder and results disappear.
 
 This check is for text-based PDFs only. Scanned pages and photographs remain outside scope.
+For a PDF longer than 20 pages or with more than 64 KB of extractable text, **Files checked**
+should say it was partly read; a missing word may be beyond the part DeskAI read.

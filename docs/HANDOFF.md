@@ -7,10 +7,11 @@ generated-data tests, a beginner-friendly explanation, and a commit for each com
 
 ## Checkout and release state
 
-- Repository: `C:\Users\Hammouri\Desktop\DeskAI`, branch `main`. The latest code commit is
-  `66a8e3b` (`Explain per-file PDF search outcomes`). A later preview-only commit adds a
-  generated PDF one subfolder down for safe manual checking. Verify Git state before work;
-  these commits remain local until the owner chooses to push.
+- Repository: `C:\Users\Hammouri\Desktop\DeskAI`, branch `main`. The PDF search follow-up
+  began with `66a8e3b` (`Explain per-file PDF search outcomes`). Later local commits added a
+  generated PDF one subfolder down for safe manual checking and clarified partly-read PDF
+  wording. Verify Git state before work; these commits remain local until the owner chooses
+  to push.
 - The PDF implementation is `dce859a` (`Add consent-gated local PDF text search`), built on
   the requested starting commit `e7436f3`. The follow-up is `66a8e3b`.
 - Neither PDF commit was pushed. No version tag or GitHub release was created for this work.
@@ -18,12 +19,12 @@ generated-data tests, a beginner-friendly explanation, and a commit for each com
   `PdfWorker/DeskAI.PdfWorker.exe`. That local publish is not a release and predates the
   follow-up UI change. Ask the owner before any push, tag, or release. If asked to push, push
   `main` only, never `--all` or `--mirror`; older local refs have included the owner's email.
-- Last follow-up verification: `dotnet build DeskAI.sln -c Release --no-restore -v quiet`
-  passed with 0 warnings/errors; `dotnet test --solution DeskAI.sln -c Release --no-build
-  --no-restore -v quiet` passed **1,400/1,400**, none skipped; `dotnet format DeskAI.sln
-  --no-restore --verify-no-changes` passed. The explicit generated-data UI-preview build
-  passed, but its window was **not visually inspected** in this session. No owner file or
-  real API key was opened, scanned, or used by the agent.
+- Last follow-up verification: the full solution built with `-p:DeskAiUiPreview=true` and
+  0 warnings/errors; all **1,401/1,401** tests passed with no skips; `dotnet format
+  DeskAI.sln --no-restore --verify-no-changes` passed. A normal Release build could not copy
+  over the app's DLLs while the owner had that build running; the separate preview output
+  avoided the file lock. The generated-data preview window was **not visually inspected**
+  in this session. No owner file or real API key was opened, scanned, or used by the agent.
 
 ## What Search does now
 
@@ -70,6 +71,13 @@ generated-data tests, a beginner-friendly explanation, and a commit for each com
   reading permission only grants or withdraws a read capability; it does not edit PDFs.
 - The owner may still be running an older local build. `66a8e3b` is committed locally but
   not released or pushed, so **Files checked** requires launching an updated build.
+- On 2026-09-21 the owner showed **Files checked** with `Fintech Rally Presentation
+  Template_EN.pdf` in `shefaa presntation / test pptx`: it was found in the nested folder,
+  partly read, and had no `hammouri` match in the part read. `full images.pdf` and
+  `shared image.pdf` were listed as unreadable. The exact reason for the partial read is
+  unknown without opening the owner's PDF, which the agent did not do. A generated 21-page
+  page test reproduced the ambiguity and Search now names the 20-page or 64-KB PDF text
+  limit on partly read rows. This wording change is local, not released.
 
 ## Key code and decisions
 

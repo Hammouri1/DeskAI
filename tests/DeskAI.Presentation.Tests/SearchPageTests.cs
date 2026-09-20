@@ -312,6 +312,39 @@ public sealed class SearchPageTests
     }
 
     [Fact]
+    public async Task Search_explains_when_a_Pdf_match_may_be_beyond_the_reading_limit()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Presentations");
+        var nested = Directory.CreateDirectory(Path.Combine(folder, "Slides"));
+        var builder = new PdfDocumentBuilder();
+        var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+        for (var page = 1; page <= 21; page++)
+        {
+            builder.AddPage(PageSize.A4).AddText(
+                page == 21 ? "generated hammouri topic" : "generated other topic",
+                12, new PdfPoint(25, 700), font);
+        }
+
+        File.WriteAllBytes(Path.Combine(nested.FullName, "long presentation.pdf"), builder.Build());
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        var rootId = Assert.Single(search.Folders).Id;
+        await search.SetContentPermissionAsync(rootId, allow: true);
+        await search.SetPdfPermissionAsync(rootId, allow: true);
+        search.Phrase = "pdf hammouri";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Empty(search.InsideResults);
+        var checkedFile = Assert.Single(search.CheckedFiles);
+        Assert.Equal("long presentation.pdf", checkedFile.Name);
+        Assert.Contains("Slides", checkedFile.Location, StringComparison.Ordinal);
+        Assert.Contains("first 20 pages or 64 KB of text", checkedFile.Result, StringComparison.Ordinal);
+        Assert.Contains("may be later", checkedFile.Result, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Image_only_pdf_has_no_text_result_and_search_reports_the_skip()
     {
         await using var app = await TestApp.StartAsync();
