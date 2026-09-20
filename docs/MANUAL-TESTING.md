@@ -1105,3 +1105,27 @@ needs a key you already have, and each check is one real request on your own acc
    app on this computer is running…". Start it and check again for the green tick.
 10. Set **Most online AI requests allowed each day** to 1, check twice. Expected: the second says
     you have reached today's limit and that a check costs one request. Nothing was sent.
+
+# 2026-09-20 Search Expansion: Safe Local Check
+
+Use only a new folder under a **controlled test location** that the test build's known-folder
+policy accepts. In the isolated `DeskAiUiPreview=true` build, use its generated Downloads
+folder; never use an existing personal Desktop, Downloads, Documents, or Pictures folder for
+this check. Make generated `.txt`, `.docx`, and `.xlsx` files with harmless dummy words.
+
+1. Reopen Search after connecting the test folder. The folder row and the line above it must
+   agree; it must not say "No folders connected yet" while the row is visible.
+2. Search for a word that appears only inside a Word file. Before a separate reading grant,
+   there is no content hit. The consent dialog must name Word and Excel, say the read is local,
+   and say PDF/photos stay closed. Cancel once and verify nothing was granted.
+3. Allow reading and search again. The Word file appears under **Found inside your files** with
+   a snippet and count; searching changes no dummy file. Try "Word document containing galaxy"
+   with `galaxy` inside the document but not in its name.
+4. If this test database previously had a plain-text-only grant, confirm it offers **Read Word
+   and Excel too** rather than reading Office files automatically. Withdraw reading and verify
+   content matches disappear. Disconnect and verify DeskAI forgets the folder.
+5. Try a dummy PDF and photo. Their names can still match metadata search, but their contents
+   must not be opened or claimed as searched. Do not use a real OpenRouter key or real files.
+
+Automated coverage uses unique generated Temp folders and fake AI transport; this manual
+check is for wording, layout, keyboard access, and visual clarity only.

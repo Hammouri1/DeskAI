@@ -176,7 +176,7 @@ public sealed partial class MainWindow : Window
     /// <see cref="BackgroundPresenceController.KeepsRunningWhenClosed"/>, which <see cref="OnClosing"/>
     /// reads directly instead.
     /// </remarks>
-    private async Task RefreshScopeAsync()
+    internal async Task RefreshScopeAsync()
     {
         if (_shell is not null)
         {

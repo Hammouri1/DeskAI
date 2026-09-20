@@ -30,6 +30,34 @@ public sealed class ContentSearchServiceTests
         Assert.Contains("bakery", hit.Snippet, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public async Task SearchAsync_FindsAWordInAModernWordFileWhoseNameDoesNotContainIt()
+    {
+        var world = new World();
+        var study = world.AddRoot("Study", RootAuthorizationScope.MetadataAndDocuments);
+        world.AddFile(study, "notes.docx", "A galaxy is very far away.");
+        world.AddFile(study, "other.xlsx", "A galaxy is very far away.");
+
+        var outcome = await world.Service.SearchAsync(
+            "Word document containing galaxy", Now, TestContext.Current.CancellationToken);
+
+        Assert.Equal("notes.docx", Assert.Single(outcome.Hits).Name);
+        Assert.Equal(1, world.Extractor.Opened);
+    }
+
+    [Fact]
+    public async Task SearchAsync_OldPlainTextGrantDoesNotTryModernOfficeFiles()
+    {
+        var world = new World();
+        var study = world.AddRoot("Study", RootAuthorizationScope.MetadataAndContent);
+        world.AddFile(study, "notes.docx", "galaxy");
+
+        var outcome = await world.Service.SearchAsync("galaxy", Now, TestContext.Current.CancellationToken);
+
+        Assert.Empty(outcome.Hits);
+        Assert.Equal(0, world.Extractor.Opened);
+    }
+
     /// <summary>
     /// The whole point of the permission. A folder connected only for names, sizes, and
     /// dates must never have a file opened, however useful the match would have been.

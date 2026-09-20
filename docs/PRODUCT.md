@@ -69,7 +69,7 @@ Scan user-selected roots; classify common formats; identify screenshots, documen
 
 ### Search and Smart Collections
 
-Index allowed metadata locally. Support structured filters first, then natural-language translation into local queries. Smart Collections are saved virtual queries such as University, Coding Projects, PDFs, Screenshots, and Recently Used. A Smart Collection does not move files.
+Index allowed metadata locally. Support structured filters first, then natural-language translation into local queries. With separate permission, a bounded local pass also searches words inside notes, modern Word, and Excel files; PDF text and visual subjects in photos remain planned, not claimed as working. Smart Collections are saved virtual queries such as University, Coding Projects, PDFs, Screenshots, and Recently Used. A Smart Collection does not move files.
 
 ### Storage Intelligence
 

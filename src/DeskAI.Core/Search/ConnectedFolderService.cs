@@ -17,7 +17,8 @@ public sealed record ConnectedFolder(
     int FileCount,
     DateTimeOffset? LastCheckedUtc,
     bool CanReadContent,
-    bool CanTidy = false);
+    bool CanTidy = false,
+    bool CanReadDocuments = false);
 
 /// <summary>
 /// The outcome of connecting or refreshing a folder, including a refusal reason.
@@ -135,7 +136,8 @@ public sealed class ConnectedFolderService(
                 statistics.FileCount,
                 statistics.LastIndexedAtUtc,
                 RootCapabilities.CanReadContent(root),
-                RootCapabilities.CanTidy(root)));
+                RootCapabilities.CanTidy(root),
+                RootCapabilities.CanReadDocuments(root)));
         }
 
         return described.AsReadOnly();
@@ -179,6 +181,16 @@ public sealed class ConnectedFolderService(
             "DeskAI can now read the words inside text files here. It still cannot move, rename, or delete anything.",
             cancellationToken);
 
+    /// <summary>Expands a plain-text grant only after a new dialog names Word and Excel.</summary>
+    public Task<ConnectFolderResult> AllowDocumentsAsync(
+        Guid rootId,
+        CancellationToken cancellationToken = default) =>
+        ChangeContentPermissionAsync(
+            rootId,
+            RootAuthorizationScope.MetadataAndDocuments,
+            "DeskAI can now read notes and modern Word and Excel files here. Nothing read is saved or sent.",
+            cancellationToken);
+
     /// <summary>
     /// Takes back permission to read inside the files of a folder.
     /// </summary>
@@ -210,7 +222,8 @@ public sealed class ConnectedFolderService(
         // Only the two reading scopes may be swapped between. A folder that can be changed
         // is not a folder whose reading permission this method is entitled to touch.
         if (root.AuthorizationScope is not (RootAuthorizationScope.MetadataOnly
-            or RootAuthorizationScope.MetadataAndContent))
+            or RootAuthorizationScope.MetadataAndContent
+            or RootAuthorizationScope.MetadataAndDocuments))
         {
             return new ConnectFolderResult(false, "That folder was not connected for reading.", null);
         }
@@ -241,6 +254,7 @@ public sealed class ConnectedFolderService(
             statistics.FileCount,
             statistics.LastIndexedAtUtc,
             RootCapabilities.CanReadContent(root),
-            RootCapabilities.CanTidy(root));
+            RootCapabilities.CanTidy(root),
+            RootCapabilities.CanReadDocuments(root));
     }
 }

@@ -47,6 +47,19 @@ public sealed class NaturalLanguageQueryTranslatorTests
         Assert.Null(translation.Query.PathContains);
     }
 
+    [Theory]
+    [InlineData("PDF that has the word space", ".pdf", "space")]
+    [InlineData("Word document containing galaxy", ".docx", "galaxy")]
+    [InlineData("Excel spreadsheet with orbit", ".xlsx", "orbit")]
+    public void EverydayDocumentQuestionsKeepTheFormatAndTheWantedWord(
+        string phrase, string ending, string wantedWord)
+    {
+        var translation = NaturalLanguageQueryTranslator.Translate(phrase, Now);
+
+        Assert.Contains(ending, translation.Query.Extensions);
+        Assert.Equal(wantedWord, translation.Query.PathContains);
+    }
+
     [Fact]
     public void EveryUnderstoodPartProducesOneReadableChip()
     {

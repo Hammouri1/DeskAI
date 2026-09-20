@@ -22,6 +22,7 @@ internal sealed class UiPreview : IKnownFolders, IFolderPickerService, IPictureP
     private UiPreview()
     {
         _stateDirectory = Directory.CreateTempSubdirectory("DeskAI-UI-").FullName;
+        Directory.CreateDirectory(Path.Combine(_stateDirectory, "state"));
         var folders = Path.Combine(_stateDirectory, "samples");
         Desktop = Directory.CreateDirectory(Path.Combine(folders, "Desktop")).FullName;
         Downloads = Directory.CreateDirectory(Path.Combine(folders, "Downloads")).FullName;
@@ -36,7 +37,9 @@ internal sealed class UiPreview : IKnownFolders, IFolderPickerService, IPictureP
         }
     }
 
-    public static string StateDirectory => Instance._stateDirectory;
+    // Keep the protected application database apart from generated sample folders.
+    // A parent-level protected path would correctly refuse the samples as children.
+    public static string StateDirectory => Path.Combine(Instance._stateDirectory, "state");
 
     public string Desktop { get; }
 

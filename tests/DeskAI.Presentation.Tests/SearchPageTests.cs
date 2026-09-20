@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using DeskAI.App.ViewModels;
 
 namespace DeskAI.Presentation.Tests;
@@ -23,6 +24,22 @@ public sealed class SearchPageTests
         Assert.Equal("3 files remembered", row.Remembered);
         Assert.False(row.CanReadContent);
         Assert.Contains("Remembered 3 file(s)", search.FolderMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Reopening_search_does_not_say_no_folders_when_one_is_connected()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Coursework", "notes.txt");
+        var firstVisit = app.Get<SearchViewModel>();
+        await firstVisit.InitializeAsync();
+        await firstVisit.ConnectFolderAsync(folder);
+
+        var reopened = app.Get<SearchViewModel>();
+        await reopened.InitializeAsync();
+
+        Assert.Single(reopened.Folders);
+        Assert.DoesNotContain("No folders connected", reopened.FolderMessage, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
@@ -152,7 +169,64 @@ public sealed class SearchPageTests
         var hit = Assert.Single(search.InsideResults);
         Assert.Equal("shopping.txt", hit.Name);
         Assert.Contains("bananas", hit.Snippet, StringComparison.Ordinal);
-        Assert.Contains("2 text files", search.InsideMessage, StringComparison.Ordinal);
+        Assert.Contains("2 files", search.InsideMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Search_can_find_words_inside_a_generated_Word_file_after_a_separate_yes()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Study");
+        using (var file = File.Create(Path.Combine(folder, "lesson.docx")))
+        using (var zip = new ZipArchive(file, ZipArchiveMode.Create))
+        using (var writer = new StreamWriter(zip.CreateEntry("word/document.xml").Open()))
+        {
+            writer.Write("<w:document xmlns:w=\"urn:w\"><w:t>galaxy facts</w:t></w:document>");
+        }
+
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        var rootId = Assert.Single(search.Folders).Id;
+        Assert.False(search.Folders[0].CanReadDocuments);
+
+        search.Phrase = "Word document containing galaxy";
+        await search.SearchCommand.ExecuteAsync(null);
+        Assert.Empty(search.InsideResults);
+
+        await search.SetContentPermissionAsync(rootId, allow: true);
+        Assert.True(search.Folders[0].CanReadDocuments);
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Equal("lesson.docx", Assert.Single(search.InsideResults).Name);
+        Assert.Equal("1 file found", search.StatusTitle);
+        Assert.False(search.ShowsNothingFound);
+        Assert.Contains("1 file", search.InsideMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Choosing_one_folder_keeps_other_connected_folders_out_of_the_search()
+    {
+        await using var app = await TestApp.StartAsync();
+        var first = app.MakeFolder("First");
+        var second = app.MakeFolder("Second");
+        app.Directory.CreateDummyFile(Path.Combine("folders", "First", "alpha.txt"), "orbit");
+        app.Directory.CreateDummyFile(Path.Combine("folders", "Second", "beta.txt"), "orbit");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(first);
+        await search.ConnectFolderAsync(second);
+        foreach (var folder in search.Folders.ToArray())
+        {
+            await search.SetContentPermissionAsync(folder.Id, allow: true);
+        }
+
+        search.SelectedFolder = Assert.Single(search.SearchFolders, choice => choice.Name == "Second");
+        search.Phrase = "orbit";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Equal("beta.txt", Assert.Single(search.InsideResults).Name);
+        Assert.Equal("Searched 1 connected folder.", search.ScopeMessage);
     }
 
     [Fact]

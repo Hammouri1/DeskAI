@@ -1,7 +1,7 @@
 namespace DeskAI.Core.Content;
 
 /// <summary>
-/// The file endings DeskAI is willing to open and read as text.
+/// The file endings DeskAI is willing to open and extract words from.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -10,10 +10,9 @@ namespace DeskAI.Core.Content;
 /// disagreement would be a file opened that the other half believed was never touched.
 /// </para>
 /// <para>
-/// All of these are text by definition, so reading one runs no parser over hostile
-/// structure. PDFs and Office documents are absent deliberately: interpreting them means
-/// running a third-party parser over attacker-controlled binary, which is a separate
-/// security question. Widening this list is a security decision, not a convenience one.
+/// Plain-text files are decoded directly. DOCX and XLSX are ZIP containers with a narrow,
+/// bounded XML reader; legacy Office, PDF, images, and executable formats stay closed.
+/// Widening this list is a security decision, not a convenience one.
 /// </para>
 /// </remarks>
 public static class TextFileFormats
@@ -22,6 +21,7 @@ public static class TextFileFormats
     [
         ".txt", ".md", ".log", ".csv", ".tsv", ".json", ".jsonl", ".ndjson",
         ".xml", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".conf",
+        ".docx", ".xlsx",
     ];
 
     /// <summary>The endings, for wording a disclosure that must match the behaviour.</summary>

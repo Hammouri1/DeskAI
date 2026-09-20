@@ -33,9 +33,11 @@ Nothing moves until you press Tidy. It never overwrites, never deletes, and re-c
 the instant before it moves it. A tidy interrupted by a crash is resolved file by file, and
 DeskAI never guesses about a file it cannot prove.
 
-**Finding.** Search by name, type, size, or date. Save searches, pin them to Home with live
-counts, and find exact and possible duplicates — comparing file contents only when you ask, and
-never deleting what it finds.
+**Finding.** Search by name, type, size, or date. With a separate yes for a connected folder,
+search words inside notes and modern Word (`.docx`) and Excel (`.xlsx`) files locally. Save
+searches, pin them to Home with live counts, and find exact and possible duplicates — comparing
+file contents only when you ask, and never deleting what it finds. PDF text and recognizing
+objects in photos are not supported yet.
 
 **Understanding.** See what is using space, what has gone stale, and how organized a folder is.
 

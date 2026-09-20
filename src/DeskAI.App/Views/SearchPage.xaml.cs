@@ -14,6 +14,7 @@ public sealed partial class SearchPage : Page
     public SearchPage(SearchViewModel viewModel, IFolderPickerService folderPicker)
     {
         InitializeComponent();
+        PageSizer.Attach(this, PageContent);
         ViewModel = viewModel;
         _folderPicker = folderPicker;
         DataContext = viewModel;
@@ -147,6 +148,7 @@ public sealed partial class SearchPage : Page
         if (await confirmation.ShowAsync() == ContentDialogResult.Primary)
         {
             await ViewModel.ConnectFolderAsync(path);
+            await RefreshScopeReminderAsync();
         }
     }
 
@@ -178,28 +180,50 @@ public sealed partial class SearchPage : Page
         if (folder.CanReadContent)
         {
             await ViewModel.SetContentPermissionAsync(rootId, allow: false);
+            await RefreshScopeReminderAsync();
             return;
         }
 
+        if (await ConfirmDocumentReadingAsync(folder))
+        {
+            await ViewModel.SetContentPermissionAsync(rootId, allow: true);
+            await RefreshScopeReminderAsync();
+        }
+    }
+
+    private async void OnDocumentsPermissionClick(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: Guid rootId }
+            && ViewModel.Folders.FirstOrDefault(item => item.Id == rootId) is { } folder
+            && folder.CanUpgradeDocuments
+            && await ConfirmDocumentReadingAsync(folder))
+        {
+            await ViewModel.SetContentPermissionAsync(rootId, allow: true);
+            await RefreshScopeReminderAsync();
+        }
+    }
+
+    private static Task RefreshScopeReminderAsync() =>
+        ((App)Application.Current).MainAppWindow is MainWindow window
+            ? window.RefreshScopeAsync()
+            : Task.CompletedTask;
+
+    private async Task<bool> ConfirmDocumentReadingAsync(ConnectedFolderViewModel folder)
+    {
         var confirmation = new ContentDialog
         {
             XamlRoot = XamlRoot,
-            Title = "Let DeskAI read inside these files?",
+            Title = "Search inside this folder's documents?",
             Content = $"{folder.Path}\n\n"
-                + "DeskAI will open plain text files here — notes, lists, and settings files — and read the "
-                + "beginning of each one, so you can search for words written inside them.\n\n"
-                + "It will not open PDFs, Word documents, spreadsheets, photos, or programs.\n"
-                + "Reading inside never lets it move, rename, or delete anything.\n"
-                + "What it reads is never saved and never sent anywhere.\n\n"
-                + "You can turn this off at any time.",
+                + "DeskAI will read the beginning of up to 50 files per search: plain-text notes, modern Word (.docx), and Excel (.xlsx). "
+                + "It will not open PDFs, photos, older Office files, or programs.\n\n"
+                + "Reading happens on this computer. The words are not saved or sent to an AI service. "
+                + "This does not let DeskAI move, rename, or delete files. You can turn it off whenever you like.",
             PrimaryButtonText = "Allow reading",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
         };
 
-        if (await confirmation.ShowAsync() == ContentDialogResult.Primary)
-        {
-            await ViewModel.SetContentPermissionAsync(rootId, allow: true);
-        }
+        return await confirmation.ShowAsync() == ContentDialogResult.Primary;
     }
 }

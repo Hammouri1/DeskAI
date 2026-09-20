@@ -6,8 +6,8 @@
     xmlns:viewmodels="using:DeskAI.App.ViewModels"
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
-    <ScrollViewer>
-        <StackPanel Style="{StaticResource PageContentStyle}">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
+        <StackPanel x:Name="PageContent" Style="{StaticResource PageContentStyle}">
 
             <Border Style="{StaticResource PageIntroStyle}"><StackPanel Spacing="8" MaxWidth="640" HorizontalAlignment="Left">
                 <StackPanel Orientation="Horizontal" Spacing="10">
@@ -15,15 +15,24 @@
                     <controls:HelpButton Topic="search.searching" />
                 </StackPanel>
                 <TextBlock Style="{StaticResource BodySecondaryStyle}"
-                           Text="Find files by name, type, size, or date. Searching never moves, renames, or opens anything." />
+                           Text="Find files by name or details. With your permission, search words inside notes, Word, and Excel files too. Searching never changes a file." />
             </StackPanel></Border>
 
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="16">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <TextBlock Text="Look in" VerticalAlignment="Center"
+                                   Style="{StaticResource BodySecondaryStyle}" />
+                        <ComboBox MinWidth="220" MaxWidth="340"
+                                  ItemsSource="{x:Bind ViewModel.SearchFolders, Mode=OneWay}"
+                                  SelectedItem="{x:Bind ViewModel.SelectedFolder, Mode=TwoWay}"
+                                  DisplayMemberPath="Name"
+                                  AutomationProperties.Name="Folder to search" />
+                    </StackPanel>
                     <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" ColumnSpacing="10" RowSpacing="12">
                         <TextBox x:Name="PhraseBox"
                                  MaxLength="256"
-                                 PlaceholderText="photos from last month"
+                                 PlaceholderText="Try: Word document containing space"
                                  Text="{x:Bind ViewModel.Phrase, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
                                  KeyDown="OnPhraseKeyDown"
                                  AutomationProperties.Name="What are you looking for" />
@@ -286,10 +295,17 @@
                                                            Text="{x:Bind ContentState}" />
                                             </StackPanel>
                                         </StackPanel>
-                                        <Button Grid.Row="1" VerticalAlignment="Center"
-                                                Content="{x:Bind ContentAction}"
-                                                Tag="{x:Bind Id}"
-                                                Click="OnContentPermissionClick" />
+                                        <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+                                            <Button VerticalAlignment="Center"
+                                                    Content="{x:Bind ContentAction}"
+                                                    Tag="{x:Bind Id}"
+                                                    Click="OnContentPermissionClick" />
+                                            <Button VerticalAlignment="Center"
+                                                    Content="Read Word and Excel too"
+                                                    Visibility="{x:Bind CanUpgradeDocuments}"
+                                                    Tag="{x:Bind Id}"
+                                                    Click="OnDocumentsPermissionClick" />
+                                        </StackPanel>
                                         <Button Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" Content="Refresh"
                                                 Command="{Binding ElementName=Root, Path=ViewModel.RefreshFolderCommand}"
                                                 CommandParameter="{x:Bind Id}" />
@@ -314,7 +330,7 @@
                     </StackPanel>
                     <TextBlock Style="{StaticResource BodySecondaryStyle}" MaxWidth="640"
                                HorizontalAlignment="Left"
-                               Text="It looks only inside folders you connected. Normally it uses just the names, sizes, and dates it remembered. If you allow it for a folder, it can also read the beginning of plain text files there to find words written inside — never PDFs, photos, or programs, and nothing it reads is saved or sent anywhere. Disconnecting a folder immediately forgets everything remembered about it." />
+                               Text="It looks only in folders you connected. Normally it uses names, sizes, and dates. You can separately allow reading inside notes and modern Word and Excel files. PDFs, photos, and programs stay closed. Words read from a file are not saved or sent to AI. Disconnecting forgets the folder." />
                 </StackPanel>
             </Expander>
 

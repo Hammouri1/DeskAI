@@ -9,6 +9,7 @@ public sealed partial class AutomationPage : Page
     public AutomationPage(AutomationViewModel viewModel)
     {
         InitializeComponent();
+        PageSizer.Attach(this, PageContent);
         ViewModel = viewModel;
         DataContext = viewModel;
         Loaded += OnLoaded;

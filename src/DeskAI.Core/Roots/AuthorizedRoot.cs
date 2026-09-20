@@ -99,6 +99,9 @@ public enum RootAuthorizationScope
     /// no permission to move, rename, or delete anything.
     /// </summary>
     MetadataAndContent = 3,
+
+    /// <summary>Separately approved reading of plain text and bounded modern Office documents.</summary>
+    MetadataAndDocuments = 4,
 }
 
 public enum RootAccessLevel

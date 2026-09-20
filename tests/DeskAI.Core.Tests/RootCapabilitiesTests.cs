@@ -15,20 +15,23 @@ public sealed class RootCapabilitiesTests
     /// without adding its row makes the count assertion below fail.
     /// </summary>
     [Theory]
-    [InlineData(RootAuthorizationScope.MetadataOnly, true, false, false)]
-    [InlineData(RootAuthorizationScope.MetadataAndContent, true, true, false)]
-    [InlineData(RootAuthorizationScope.ControlledDemo, false, false, true)]
-    [InlineData(RootAuthorizationScope.Organize, false, false, true)]
+    [InlineData(RootAuthorizationScope.MetadataOnly, true, false, false, false)]
+    [InlineData(RootAuthorizationScope.MetadataAndContent, true, true, false, false)]
+    [InlineData(RootAuthorizationScope.MetadataAndDocuments, true, true, true, false)]
+    [InlineData(RootAuthorizationScope.ControlledDemo, false, false, false, true)]
+    [InlineData(RootAuthorizationScope.Organize, false, false, false, true)]
     public void EachScopeGrantsExactlyWhatItSays(
         RootAuthorizationScope scope,
         bool metadata,
         bool content,
+        bool documents,
         bool mutate)
     {
         var root = Root(scope);
 
         Assert.Equal(metadata, RootCapabilities.CanReadMetadata(root));
         Assert.Equal(content, RootCapabilities.CanReadContent(root));
+        Assert.Equal(documents, RootCapabilities.CanReadDocuments(root));
         Assert.Equal(mutate, RootCapabilities.CanMutate(root));
     }
 
@@ -80,6 +83,7 @@ public sealed class RootCapabilitiesTests
 
             Assert.False(RootCapabilities.CanReadMetadata(root));
             Assert.False(RootCapabilities.CanReadContent(root));
+            Assert.False(RootCapabilities.CanReadDocuments(root));
             Assert.False(RootCapabilities.CanMutate(root));
         }
     }
@@ -96,6 +100,7 @@ public sealed class RootCapabilitiesTests
         Assert.Equal(1, (int)RootAuthorizationScope.ControlledDemo);
         Assert.Equal(2, (int)RootAuthorizationScope.Organize);
         Assert.Equal(3, (int)RootAuthorizationScope.MetadataAndContent);
+        Assert.Equal(4, (int)RootAuthorizationScope.MetadataAndDocuments);
     }
 
     /// <summary>
@@ -106,7 +111,7 @@ public sealed class RootCapabilitiesTests
     [Fact]
     public void EveryScopeIsAccountedForInTheMatrix()
     {
-        Assert.Equal(4, Enum.GetValues<RootAuthorizationScope>().Length);
+        Assert.Equal(5, Enum.GetValues<RootAuthorizationScope>().Length);
     }
 
     /// <summary>
@@ -116,6 +121,7 @@ public sealed class RootCapabilitiesTests
     [Theory]
     [InlineData(RootAuthorizationScope.MetadataOnly, false)]
     [InlineData(RootAuthorizationScope.MetadataAndContent, true)]
+    [InlineData(RootAuthorizationScope.MetadataAndDocuments, true)]
     public void AReadingFolderCanBeTidiedOnlyAfterTidyingIsAllowed(RootAuthorizationScope scope, bool content)
     {
         var root = Root(scope);

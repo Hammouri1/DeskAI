@@ -522,6 +522,22 @@ V1.1 is complete in code, tests, and documents as of 2026-09-17, and the source 
 privately at https://github.com/Hammouri1/DeskAI. The owner's manual look at all of it, and the
 first Actions run, are the next things (`HANDOFF.md`).
 
+## Search Expansion — 2026-09-20
+
+- ✅ First safe slice: fix Search's contradictory connected-folder line and improve the wide
+  page layout; understand document-format words and match the remaining term inside local
+  content; add separately approved, bounded `.docx`/`.xlsx` reading without expanding any
+  older plain-text grant (ADR 0036 and its security review).
+- **Next, not yet implemented:** PDF text. Review a crash-resistant Windows PDF/OCR adapter
+  or isolated parser, malformed-document behavior, and the same scope/limit disclosures.
+- **After that, not yet implemented:** finding visual subjects such as a flower in a photo.
+  Choose a local vision model or add a separate per-search, per-image cloud disclosure and
+  explicit Send action for a verified vision-capable model. Do not upload images merely
+  because OpenRouter is configured or a folder is connected.
+
+The first slice is intentionally not labeled full AI search: the existing AI button can
+interpret only the person's typed sentence; actual file reading is deterministic local code.
+
 ## Explicitly Deferred Beyond V1 Unless Reprioritized
 
 Cross-platform clients, team/cloud sync, hosted accounts, model training on user data, broad Windows control, widgets, rich desktop-shell replacement, marketplace-scale plugins, and automatic permanent deletion.

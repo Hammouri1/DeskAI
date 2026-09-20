@@ -31,6 +31,7 @@ public static class RootCapabilities
         {
             RootAuthorizationScope.MetadataOnly => true,
             RootAuthorizationScope.MetadataAndContent => true,
+            RootAuthorizationScope.MetadataAndDocuments => true,
             _ => false,
         };
     }
@@ -50,8 +51,16 @@ public static class RootCapabilities
         return IsUsable(root) && root.AuthorizationScope switch
         {
             RootAuthorizationScope.MetadataAndContent => true,
+            RootAuthorizationScope.MetadataAndDocuments => true,
             _ => false,
         };
+    }
+
+    /// <summary>May DeskAI open modern Word and Excel documents here?</summary>
+    public static bool CanReadDocuments(AuthorizedRoot root)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        return IsUsable(root) && root.AuthorizationScope == RootAuthorizationScope.MetadataAndDocuments;
     }
 
     /// <summary>
@@ -89,6 +98,7 @@ public static class RootCapabilities
         {
             RootAuthorizationScope.MetadataOnly => true,
             RootAuthorizationScope.MetadataAndContent => true,
+            RootAuthorizationScope.MetadataAndDocuments => true,
             _ => false,
         };
     }

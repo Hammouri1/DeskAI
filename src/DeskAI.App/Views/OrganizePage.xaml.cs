@@ -21,6 +21,7 @@ public sealed partial class OrganizePage : Page
     public OrganizePage(TidyViewModel viewModel, IFolderPickerService folderPicker)
     {
         InitializeComponent();
+        PageSizer.Attach(this, PageContent);
         ViewModel = viewModel;
         _folderPicker = folderPicker;
         Loaded += OnLoaded;

@@ -24,7 +24,8 @@ public sealed record ContentSearchOutcome(
     IReadOnlyList<ContentHit> Hits,
     int FoldersIncluded,
     int FilesRead,
-    bool ReachedLimit)
+    bool ReachedLimit,
+    int FilesTruncated = 0)
 {
     public static ContentSearchOutcome NotAllowed { get; } = new([], 0, 0, false);
 
@@ -32,7 +33,7 @@ public sealed record ContentSearchOutcome(
 }
 
 /// <summary>
-/// Looks for words written inside the text files of folders that allowed it.
+/// Looks for words written inside supported files of folders that allowed it.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -82,18 +83,33 @@ public sealed class ContentSearchService(
     private readonly IFileIndex _index = index;
     private readonly IContentTextExtractor _extractor = extractor;
 
+    public Task<ContentSearchOutcome> SearchAsync(
+        string? phrase,
+        CancellationToken cancellationToken = default) =>
+        SearchAsync(phrase, DateTimeOffset.UtcNow, selectedRootId: null, cancellationToken);
+
+    public Task<ContentSearchOutcome> SearchAsync(
+        string? phrase,
+        DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default) =>
+        SearchAsync(phrase, nowUtc, selectedRootId: null, cancellationToken);
+
     public async Task<ContentSearchOutcome> SearchAsync(
         string? phrase,
+        DateTimeOffset nowUtc,
+        Guid? selectedRootId,
         CancellationToken cancellationToken = default)
     {
-        var needle = phrase?.Trim() ?? string.Empty;
+        var translation = NaturalLanguageQueryTranslator.Translate(phrase, nowUtc);
+        var needle = translation.Query.PathContains ?? string.Empty;
         if (needle.Length < MinimumPhraseLength)
         {
             return ContentSearchOutcome.NotAllowed;
         }
 
         var allowed = (await _roots.ListAsync(cancellationToken).ConfigureAwait(false))
-            .Where(RootCapabilities.CanReadContent)
+            .Where(root => RootCapabilities.CanReadContent(root)
+                && (selectedRootId is null || root.Id == selectedRootId))
             .ToArray();
 
         if (allowed.Length == 0)
@@ -103,19 +119,55 @@ public sealed class ContentSearchService(
 
         var hits = new List<ContentHit>();
         var filesRead = 0;
+        var filesTruncated = 0;
         var reachedLimit = false;
+
+        var filter = translation.Query;
+        // The free words are matched inside a file, not required in its name. All other
+        // filters still narrow the candidate set before any handle is opened.
+        var candidates = new SearchQuery(
+            extensions: filter.Extensions,
+            categories: filter.Categories,
+            kinds: filter.Kinds,
+            minSizeBytes: filter.MinSizeBytes,
+            maxSizeBytes: filter.MaxSizeBytes,
+            modifiedAfterUtc: filter.ModifiedAfterUtc,
+            modifiedBeforeUtc: filter.ModifiedBeforeUtc,
+            limit: SearchQuery.MaxLimit);
 
         foreach (var root in allowed)
         {
-            foreach (var file in await _index
-                .SearchRootAsync(root.Id, new SearchQuery(limit: SearchQuery.MaxLimit), cancellationToken)
-                .ConfigureAwait(false))
+            var indexed = await _index.SearchRootAsync(root.Id, candidates, cancellationToken)
+                .ConfigureAwait(false);
+            if (indexed.Count >= SearchQuery.MaxLimit)
+            {
+                reachedLimit = true;
+            }
+
+            foreach (var file in indexed)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+
+                if ((filter.Extensions.Count > 0 && !filter.Extensions.Contains(Path.GetExtension(file.RelativePath).ToLowerInvariant()))
+                    || (filter.Categories.Count > 0 && !filter.Categories.Contains(file.Category))
+                    || (filter.Kinds.Count > 0 && !filter.Kinds.Contains(file.Kind))
+                    || (filter.MinSizeBytes is { } minimum && file.SizeBytes < minimum)
+                    || (filter.MaxSizeBytes is { } maximum && file.SizeBytes > maximum)
+                    || (filter.ModifiedAfterUtc is { } after && file.ModifiedAtUtc < after)
+                    || (filter.ModifiedBeforeUtc is { } before && file.ModifiedAtUtc > before))
+                {
+                    continue;
+                }
 
                 // Decided from the remembered name, so a file DeskAI would refuse to read is
                 // never even offered to the extractor.
                 if (!TextFileFormats.IsSupported(file.RelativePath))
+                {
+                    continue;
+                }
+
+                if ((file.Extension is ".docx" or ".xlsx")
+                    && !RootCapabilities.CanReadDocuments(root))
                 {
                     continue;
                 }
@@ -138,6 +190,11 @@ public sealed class ContentSearchService(
                     continue;
                 }
 
+                if (extraction.WasTruncated)
+                {
+                    filesTruncated++;
+                }
+
                 var position = extraction.Text.IndexOf(needle, StringComparison.OrdinalIgnoreCase);
                 if (position >= 0)
                 {
@@ -155,7 +212,7 @@ public sealed class ContentSearchService(
             }
         }
 
-        return new ContentSearchOutcome(hits.AsReadOnly(), allowed.Length, filesRead, reachedLimit);
+        return new ContentSearchOutcome(hits.AsReadOnly(), allowed.Length, filesRead, reachedLimit, filesTruncated);
     }
 
     /// <summary>

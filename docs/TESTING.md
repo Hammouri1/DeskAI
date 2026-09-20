@@ -157,6 +157,9 @@ changes a feature.
 | Search | Let AI read this (ADR 0033): no button with AI off; the dialog's words and service; Send sends the words alone (no file names, folder names, or locations); the reading replaces the phrase and is searched; cancel sends nothing; an off-shape answer, a service refusal, the daily limit, and a changed AI choice each leave the phrase alone with a reason | `SentenceAiPageTests`, `SentenceAiServiceTests`, `AiSentenceReadingTests`, `SentenceReadingProviderTests` |
 | Search | Saved searches | `SearchPageTests` |
 | Search | Reading inside text files: allow, search, withdraw | `SearchPageTests` |
+| Search | Reopened page shows a connected-folder status, never the contradictory "No folders connected" text (owner-found 2026-09-20; failing page test before fix) | `SearchPageTests` |
+| Search | Separate modern Word/Excel consent, natural-language content word, result when name does not match, readable snippet and honest count; old plain-text grant cannot open Office files | `SearchPageTests`, `ConnectedFolderServiceTests`, `ContentSearchServiceTests`, `PlainTextExtractorTests`, `RootCapabilitiesTests`, `SqliteAuthorizedRootRepositoryTests` |
+| Search | "Look in" limits both name and inside-file matches to the selected connected folder; a query cannot select a path itself | `SearchPageTests`, `ContentSearchServiceTests` |
 | Automatic tasks | Write, draft from a sentence, turn off, delete rules | `AutomationPageTests` |
 | Automatic tasks | Let AI read this (ADR 0033): the words alone are sent after the dialog; the reading fills the boxes as a typed sentence would and saves nothing; a destination outside the folder is refused whole | `SentenceAiPageTests`, `AiSentenceReadingTests` |
 | Automatic tasks | Practice run (moves nothing) | `AutomationPageTests` |

@@ -71,11 +71,20 @@ public sealed class FileSearchService(IAuthorizedRootRepository roots, IFileInde
     public async Task<SearchOutcome> SearchAsync(
         string? phrase,
         DateTimeOffset nowUtc,
+        CancellationToken cancellationToken = default) =>
+        await SearchAsync(phrase, nowUtc, selectedRootId: null, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>Searches one selected connected folder, or all when no folder was selected.</summary>
+    public async Task<SearchOutcome> SearchAsync(
+        string? phrase,
+        DateTimeOffset nowUtc,
+        Guid? selectedRootId,
         CancellationToken cancellationToken = default)
     {
         var translation = NaturalLanguageQueryTranslator.Translate(phrase, nowUtc);
         var searchable = (await _roots.ListAsync(cancellationToken).ConfigureAwait(false))
-            .Where(IsSearchable)
+            .Where(root => IsSearchable(root)
+                && (selectedRootId is null || root.Id == selectedRootId))
             .ToArray();
 
         // An unfiltered query would list every remembered file, which is not a search

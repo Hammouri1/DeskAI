@@ -66,6 +66,8 @@ public sealed partial class NaturalLanguageQueryTranslator
         "find", "for", "from", "get", "i", "in", "is", "made", "me", "modified", "my",
         "need", "of", "on", "or", "please", "search", "show", "some", "that", "the", "them",
         "these", "this", "those", "want", "was", "were", "with",
+        "about", "contain", "containing", "contains", "has", "have", "inside", "says", "text",
+        "word", "words", "written", "whose",
     };
 
     /// <summary>
@@ -96,6 +98,7 @@ public sealed partial class NaturalLanguageQueryTranslator
         var remaining = text.ToLowerInvariant();
 
         var endings = TakeFileEndings(ref remaining, chips);
+        TakeNamedFileEndings(ref remaining, endings, chips);
         var categories = TakeCategories(ref remaining, chips);
         var (minSize, maxSize) = TakeSizes(ref remaining, chips);
         var changedAfter = TakeChangedAfter(ref remaining, chips, nowUtc);
@@ -132,6 +135,23 @@ public sealed partial class NaturalLanguageQueryTranslator
             }
 
             Blank(ref remaining, match);
+        }
+    }
+
+    private static void TakeNamedFileEndings(ref string remaining, List<string> endings, List<QueryChip> chips)
+    {
+        foreach (var (pattern, ending) in new[]
+        {
+            (@"\bpdfs?\b", ".pdf"),
+            (@"\b(?:word documents?|docx)\b", ".docx"),
+            (@"\b(?:excel (?:files?|sheets?|spreadsheets?)|xlsx)\b", ".xlsx"),
+        })
+        {
+            if (TryTake(ref remaining, pattern) && !endings.Contains(ending, StringComparer.Ordinal))
+            {
+                endings.Add(ending);
+                chips.Add(new QueryChip(QueryFilter.FileEnding, $"Ends with {ending}"));
+            }
         }
     }
 
@@ -257,7 +277,7 @@ public sealed partial class NaturalLanguageQueryTranslator
             text = text[..SearchQuery.MaxTextLength];
         }
 
-        chips.Add(new QueryChip(QueryFilter.Text, $"Name or folder contains \"{text}\""));
+        chips.Add(new QueryChip(QueryFilter.Text, $"Look for \"{text}\""));
         return text;
     }
 

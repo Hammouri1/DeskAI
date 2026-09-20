@@ -8,7 +8,7 @@ using DeskAI.Safety;
 namespace DeskAI.Infrastructure.Content;
 
 /// <summary>
-/// Reads a bounded prefix of text out of plain-text files in a content-authorized folder.
+/// Reads bounded words from approved text and modern Office files in a content-authorized folder.
 /// </summary>
 /// <remarks>
 /// <para>
@@ -18,11 +18,8 @@ namespace DeskAI.Infrastructure.Content;
 /// alone a file handle.
 /// </para>
 /// <para>
-/// Only plain-text formats are read. Formats such as PDF and Office documents need a
-/// third-party parser to interpret an attacker-controlled binary structure, which is a much
-/// larger security question than reading bytes; they are deliberately refused here rather
-/// than half-supported. An extension DeskAI does not read is refused <em>before</em> the
-/// file is opened, so an unsupported file is never touched at all.
+/// DOCX and XLSX use only a bounded, local ZIP/XML reader. PDF, older Office formats, images,
+/// and any other extension are refused before opening. The content is never sent to AI.
 /// </para>
 /// <para>
 /// Nothing is written, created, or kept. The file is opened read-only, a bounded prefix is
@@ -55,6 +52,14 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy) : IContentTextExt
                 "This folder was not connected for reading inside files.");
         }
 
+        if ((relativePath.EndsWith(".docx", StringComparison.OrdinalIgnoreCase)
+                || relativePath.EndsWith(".xlsx", StringComparison.OrdinalIgnoreCase))
+            && !RootCapabilities.CanReadDocuments(root))
+        {
+            return TextExtraction.Refused(relativePath, TextExtractionStatus.NotAuthorized,
+                "This folder has not been allowed to read Word and Excel documents.");
+        }
+
         if (_pathPolicy.ValidateRoot(root).Status == ValidationStatus.Blocked
             || _pathPolicy.ValidateRelativePath(root, relativePath).Status == ValidationStatus.Blocked)
         {
@@ -72,7 +77,7 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy) : IContentTextExt
             return TextExtraction.Refused(
                 relativePath,
                 TextExtractionStatus.UnsupportedFormat,
-                "DeskAI only reads plain text files, so this one was left closed.");
+                "DeskAI does not read inside this kind of file, so it was left closed.");
         }
 
         var resolved = ResolveInsideRoot(root.CanonicalPath, relativePath);
@@ -150,6 +155,25 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy) : IContentTextExt
                     "That file changed while DeskAI was opening it, so it was left alone.");
             }
 
+            var extension = Path.GetExtension(relativePath);
+            if (extension.Equals(".docx", StringComparison.OrdinalIgnoreCase)
+                || extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase))
+            {
+                if (stream.Length > OfficeOpenXmlReader.MaxContainerBytes)
+                {
+                    return TextExtraction.Refused(relativePath, TextExtractionStatus.Unavailable,
+                        "This document is too large for a quick search, so DeskAI skipped it.");
+                }
+
+                var (words, wasTruncated) = await OfficeOpenXmlReader
+                    .ReadAsync(stream, extension, options.MaxBytes, cancellationToken)
+                    .ConfigureAwait(false);
+                return new TextExtraction(relativePath, TextExtractionStatus.Extracted, words,
+                    wasTruncated, wasTruncated
+                        ? "Part of this document was read. There may be more."
+                        : "This document was read locally.");
+            }
+
             var buffer = new byte[options.MaxBytes];
             var read = await stream.ReadAtLeastAsync(
                 buffer,
@@ -181,7 +205,9 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy) : IContentTextExt
         }
         catch (Exception exception) when (exception is IOException
             or UnauthorizedAccessException
-            or System.Security.SecurityException)
+            or System.Security.SecurityException
+            or System.Xml.XmlException
+            or NotSupportedException)
         {
             return TextExtraction.Refused(
                 relativePath,

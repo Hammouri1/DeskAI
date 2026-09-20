@@ -64,6 +64,11 @@ User-controlled categories:
 - extracted document text/content;
 - image pixels/content.
 
+The 2026-09-20 local-document search extension (ADR 0036) changes none of these cloud
+categories. `Let AI read this` still sends only the person's typed words. Text extracted from
+`.docx` or `.xlsx` is searched locally and never reaches a provider; configuring OpenRouter
+does not permit image upload or provider access to a directory.
+
 The request builder applies policy before provider code sees data. A provider adapter cannot expand disclosure. Display a concise request summary and make “Local” versus named cloud provider obvious. Protected items never enter requests.
 
 ## Structured Output

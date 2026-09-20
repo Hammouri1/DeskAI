@@ -6,8 +6,8 @@
     xmlns:viewmodels="using:DeskAI.App.ViewModels"
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
-    <ScrollViewer>
-        <Grid Margin="32,28,32,40" MaxWidth="1240" HorizontalAlignment="Stretch" RowDefinitions="Auto,Auto" RowSpacing="22">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
+        <Grid x:Name="PageContent" Margin="32,28,32,40" MaxWidth="1320" HorizontalAlignment="Left" RowDefinitions="Auto,Auto" RowSpacing="22">
 
             <!--
                 Two columns when the window is wide: the rules on the left, "Checking for you" on

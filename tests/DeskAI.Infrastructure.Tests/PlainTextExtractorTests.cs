@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using System.Text;
 using DeskAI.Core.Content;
 using DeskAI.Core.Roots;
@@ -47,6 +48,68 @@ public sealed class PlainTextExtractorTests
         Assert.Equal(TextExtractionStatus.Extracted, result.Status);
         Assert.Equal("generated dummy words", result.Text);
         Assert.False(result.WasTruncated);
+    }
+
+    [Theory]
+    [InlineData("notes.docx", "word/document.xml", "<w:document xmlns:w=\"urn:w\"><w:t>galaxy</w:t><w:t> flowers</w:t></w:document>")]
+    [InlineData("budget.xlsx", "xl/sharedStrings.xml", "<sst><si><t>orbit budget</t></si></sst>")]
+    public async Task ExtractAsync_ReadsWordsInGeneratedModernOfficeFiles(string name, string part, string xml)
+    {
+        using var sandbox = new TemporaryDirectory();
+        using (var file = File.Create(Path.Combine(sandbox.Path, name)))
+        using (var zip = new ZipArchive(file, ZipArchiveMode.Create))
+        using (var writer = new StreamWriter(zip.CreateEntry(part).Open()))
+        {
+            writer.Write(xml);
+        }
+
+        var result = await ExtractAsync(sandbox, name, scope: RootAuthorizationScope.MetadataAndDocuments);
+
+        Assert.Equal(TextExtractionStatus.Extracted, result.Status);
+        Assert.Contains(name.EndsWith(".docx", StringComparison.Ordinal) ? "galaxy flowers" : "orbit budget",
+            result.Text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ExtractAsync_RefusesOfficeXmlWithExternalEntities()
+    {
+        using var sandbox = new TemporaryDirectory();
+        using (var file = File.Create(Path.Combine(sandbox.Path, "bad.docx")))
+        using (var zip = new ZipArchive(file, ZipArchiveMode.Create))
+        using (var writer = new StreamWriter(zip.CreateEntry("word/document.xml").Open()))
+        {
+            writer.Write("<!DOCTYPE x [<!ENTITY steal SYSTEM 'file:///private'>]><x><t>&steal;</t></x>");
+        }
+
+        var result = await ExtractAsync(sandbox, "bad.docx", scope: RootAuthorizationScope.MetadataAndDocuments);
+
+        Assert.False(result.Succeeded);
+        Assert.Empty(result.Text);
+    }
+
+    [Fact]
+    public async Task ExtractAsync_RefusesOfficeDocumentWithoutContentPermission()
+    {
+        using var sandbox = new TemporaryDirectory();
+        sandbox.CreateDummyFile("notes.docx", "not actually an archive");
+
+        var result = await Extractor().ExtractAsync(
+            Root(sandbox.Path, RootAuthorizationScope.MetadataOnly),
+            "notes.docx", TextExtractionOptions.Default, TestContext.Current.CancellationToken);
+
+        Assert.Equal(TextExtractionStatus.NotAuthorized, result.Status);
+    }
+
+    [Fact]
+    public async Task ExtractAsync_OldPlainTextPermissionDoesNotSilentlyGrantOfficeReading()
+    {
+        using var sandbox = new TemporaryDirectory();
+        sandbox.CreateDummyFile("notes.docx", "not actually an archive");
+
+        var result = await ExtractAsync(sandbox, "notes.docx");
+
+        Assert.Equal(TextExtractionStatus.NotAuthorized, result.Status);
+        Assert.Empty(result.Text);
     }
 
     /// <summary>
@@ -215,9 +278,10 @@ public sealed class PlainTextExtractorTests
     private static Task<TextExtraction> ExtractAsync(
         TemporaryDirectory sandbox,
         string relativePath,
-        TextExtractionOptions? options = null) =>
+        TextExtractionOptions? options = null,
+        RootAuthorizationScope scope = RootAuthorizationScope.MetadataAndContent) =>
         Extractor().ExtractAsync(
-            Root(sandbox.Path, RootAuthorizationScope.MetadataAndContent),
+            Root(sandbox.Path, scope),
             relativePath,
             options ?? TextExtractionOptions.Default,
             TestContext.Current.CancellationToken);

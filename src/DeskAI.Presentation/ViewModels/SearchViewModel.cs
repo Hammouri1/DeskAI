@@ -52,6 +52,12 @@ public sealed record ContentHitViewModel(string Name, string Location, string Sn
 /// <summary>One saved search, formatted for its row.</summary>
 public sealed record SavedSearchViewModel(Guid Id, string Name, string Phrase);
 
+/// <summary>A folder the person can deliberately limit this search to.</summary>
+public sealed record SearchFolderChoiceViewModel(Guid Id, string Name)
+{
+    public static SearchFolderChoiceViewModel All { get; } = new(Guid.Empty, "All connected folders");
+}
+
 /// <summary>One connected folder, formatted for the folder list.</summary>
 /// <remarks>
 /// The row states whether DeskAI may read inside this folder's files. A permission granted
@@ -63,11 +69,16 @@ public sealed record ConnectedFolderViewModel(
     string Name,
     string Path,
     string Remembered,
-    bool CanReadContent)
+    bool CanReadContent,
+    bool CanReadDocuments = false)
 {
     public string ContentState => CanReadContent
-        ? "DeskAI can read inside the text files here."
+        ? CanReadDocuments
+            ? "DeskAI can read notes, Word, and Excel files here."
+            : "DeskAI can read plain-text files here. Word and Excel still need your permission."
         : "Names, sizes, and dates only.";
+
+    public bool CanUpgradeDocuments => CanReadContent && !CanReadDocuments;
 
     public string ContentAction => CanReadContent ? "Stop reading inside" : "Read inside files";
 
@@ -89,7 +100,8 @@ public sealed record ConnectedFolderViewModel(
             folder.Name,
             folder.Path,
             remembered,
-            folder.CanReadContent);
+            folder.CanReadContent,
+            folder.CanReadDocuments);
     }
 }
 
@@ -131,6 +143,7 @@ public sealed class SearchViewModel : ObservableObject
     private bool _showsInsideFiles;
     private bool _isBusy;
     private bool _hasSearched;
+    private SearchFolderChoiceViewModel _selectedFolder = SearchFolderChoiceViewModel.All;
 
     public SearchViewModel(
         FileSearchService search,
@@ -156,6 +169,15 @@ public sealed class SearchViewModel : ObservableObject
     }
 
     public ObservableCollection<ConnectedFolderViewModel> Folders { get; } = [];
+
+    public ObservableCollection<SearchFolderChoiceViewModel> SearchFolders { get; } =
+        [SearchFolderChoiceViewModel.All];
+
+    public SearchFolderChoiceViewModel SelectedFolder
+    {
+        get => _selectedFolder;
+        set => SetProperty(ref _selectedFolder, value ?? SearchFolderChoiceViewModel.All);
+    }
 
     /// <summary>Files whose words matched, from folders that allowed reading inside.</summary>
     public ObservableCollection<ContentHitViewModel> InsideResults { get; } = [];
@@ -334,7 +356,7 @@ public sealed class SearchViewModel : ObservableObject
     public bool HasChips => Chips.Count > 0;
 
     /// <summary>True only after a search that found nothing, so the first visit stays calm.</summary>
-    public bool ShowsNothingFound => _hasSearched && Results.Count == 0;
+    public bool ShowsNothingFound => _hasSearched && Results.Count == 0 && InsideResults.Count == 0;
 
     public ObservableCollection<SavedSearchViewModel> SavedSearches { get; } = [];
 
@@ -550,7 +572,7 @@ public sealed class SearchViewModel : ObservableObject
         try
         {
             var result = allow
-                ? await _folders.AllowContentAsync(rootId).ConfigureAwait(true)
+                ? await _folders.AllowDocumentsAsync(rootId).ConfigureAwait(true)
                 : await _folders.StopContentAsync(rootId).ConfigureAwait(true);
             await ReloadFoldersAsync().ConfigureAwait(true);
             FolderMessage = result.Explanation;
@@ -593,15 +615,29 @@ public sealed class SearchViewModel : ObservableObject
     {
         var connected = await _folders.ListAsync().ConfigureAwait(true);
         Folders.Clear();
+        var selectedId = SelectedFolder.Id;
+        SearchFolders.Clear();
+        SearchFolders.Add(SearchFolderChoiceViewModel.All);
         foreach (var folder in connected)
         {
             Folders.Add(ConnectedFolderViewModel.From(folder));
+            SearchFolders.Add(new SearchFolderChoiceViewModel(folder.Id, folder.Name));
         }
+
+        SelectedFolder = SearchFolders.FirstOrDefault(choice => choice.Id == selectedId)
+            ?? SearchFolderChoiceViewModel.All;
+        OnPropertyChanged(nameof(SelectedFolder));
 
         OnPropertyChanged(nameof(HasFolders));
         if (Folders.Count == 0)
         {
             FolderMessage = "No folders connected yet.";
+        }
+        else if (FolderMessage == "No folders connected yet.")
+        {
+            FolderMessage = Folders.Count == 1
+                ? "1 folder connected."
+                : $"{Folders.Count} folders connected.";
         }
     }
 
@@ -616,13 +652,14 @@ public sealed class SearchViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            var outcome = await _search.SearchAsync(Phrase, _clock.UtcNow).ConfigureAwait(true);
+            var selectedRootId = SelectedFolder.Id == Guid.Empty ? (Guid?)null : SelectedFolder.Id;
+            var outcome = await _search.SearchAsync(Phrase, _clock.UtcNow, selectedRootId).ConfigureAwait(true);
             Apply(outcome);
 
             // Looking inside files is a separate pass, after the results are on screen, and
             // only in folders that allowed it. It finds files whose words match even when
             // the name says nothing, which is the whole reason someone grants the permission.
-            ApplyInsideFiles(await _insideFiles.SearchAsync(Phrase).ConfigureAwait(true));
+            ApplyInsideFiles(await _insideFiles.SearchAsync(Phrase, _clock.UtcNow, selectedRootId).ConfigureAwait(true));
         }
         catch (ArgumentException)
         {
@@ -685,7 +722,7 @@ public sealed class SearchViewModel : ObservableObject
 
             StatusMessage = outcome.ReachedLimit
                 ? "Showing the first matches only. Narrow the search to see fewer, more useful results."
-                : "These are names, sizes, and dates DeskAI remembered. Nothing has been opened or changed.";
+                : "These matches came from the file names and details DeskAI remembered. Nothing was changed.";
 
             ScopeMessage = outcome.FoldersSearched == 1
                 ? "Searched 1 connected folder."
@@ -700,7 +737,7 @@ public sealed class SearchViewModel : ObservableObject
     /// </summary>
     /// <remarks>
     /// The count of files read is stated rather than hidden. "Nothing matched" and "nothing
-    /// matched in the first fifty files DeskAI opened" mean different things to someone
+    /// matched in the first fifty files DeskAI checked" mean different things to someone
     /// deciding whether to trust the answer.
     /// </remarks>
     private void ApplyInsideFiles(ContentSearchOutcome outcome)
@@ -724,18 +761,33 @@ public sealed class SearchViewModel : ObservableObject
                 hit.Snippet));
         }
 
-        var read = outcome.FilesRead == 1 ? "1 text file" : $"{outcome.FilesRead} text files";
+        var read = outcome.FilesRead == 1 ? "1 file" : $"{outcome.FilesRead} files";
         InsideMessage = outcome.Hits.Count switch
         {
+            0 when outcome.FilesRead == 0 =>
+                "No readable files were opened for this search. DeskAI can read notes, modern Word and Excel files; not PDFs or photos yet.",
             0 when outcome.ReachedLimit =>
-                $"Nothing found in the first {read} DeskAI opened. Narrow the search to look at different files.",
-            0 => $"Nothing found inside the {read} DeskAI opened.",
+                $"Nothing found in the first {read} DeskAI checked. Narrow the search to look at different files.",
+            0 => $"Nothing found inside the {read} DeskAI checked.",
             _ when outcome.ReachedLimit =>
-                $"Found in {outcome.Hits.Count} of the first {read} DeskAI opened. There may be more.",
-            _ => $"Found in {outcome.Hits.Count} of {read} DeskAI opened.",
+                $"Found in {outcome.Hits.Count} of the first {read} DeskAI checked. There may be more.",
+            _ => $"Found in {outcome.Hits.Count} of {read} DeskAI checked.",
         };
+        if (outcome.FilesTruncated > 0)
+        {
+            InsideMessage += outcome.FilesTruncated == 1
+                ? " One file was only partly read."
+                : $" {outcome.FilesTruncated} files were only partly read.";
+        }
+
+        if (outcome.Hits.Count > 0 && Results.Count == 0)
+        {
+            StatusTitle = outcome.Hits.Count == 1 ? "1 file found" : $"{outcome.Hits.Count} files found";
+            StatusMessage = "These files matched words inside them. DeskAI did not change anything.";
+        }
 
         OnPropertyChanged(nameof(ShowsInsideFiles));
+        OnPropertyChanged(nameof(ShowsNothingFound));
     }
 
     private void Reset()

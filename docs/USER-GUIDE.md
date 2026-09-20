@@ -18,7 +18,10 @@ happens, and every move is written down so it can be undone.
   Undo is right there, even after you close DeskAI. This is also where "Tidy while I'm away"
   lives.
 - **Search** — find files by name, type, size, or date ("photos from last month"). Connect
-  folders here. You can also let DeskAI read inside plain text files in a folder, separately.
+  folders here. You can separately allow searching words inside notes, modern Word (`.docx`),
+  and Excel (`.xlsx`) files. Nothing read from a file is sent to AI. PDFs, old Office files,
+  and what a photo depicts cannot yet be searched inside. **Look in** lets you choose one
+  connected folder or search all of them.
 - **Automatic tasks** — write rules ("move invoices to Documents"), try them as a practice run,
   and let DeskAI check your folders every so often and tell you when something matches.
 - **My workspace** — starter packs, pinned searches, folder templates, DeskAI's look, and

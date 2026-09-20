@@ -6,8 +6,8 @@
     xmlns:viewmodels="using:DeskAI.App.ViewModels"
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
-    <ScrollViewer>
-        <StackPanel Style="{StaticResource PageContentStyle}">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
+        <StackPanel x:Name="PageContent" Style="{StaticResource PageContentStyle}">
 
             <!-- One job, said once: what this page is for and the promise that goes with it. -->
             <Border Style="{StaticResource PageIntroStyle}"><StackPanel Spacing="6" MaxWidth="640" HorizontalAlignment="Left">
@@ -435,28 +435,28 @@
                 The optional four-step explanation follows the action. It opens for someone who
                 has not allowed tidying anywhere yet and closes once the workflow is familiar.
             -->
-            <Expander HorizontalAlignment="Stretch" Header="How tidying works"
+            <Expander HorizontalAlignment="Stretch" HorizontalContentAlignment="Left" Header="How tidying works"
                       IsExpanded="{x:Bind ViewModel.HowItWorksOpen, Mode=TwoWay}">
                 <StackPanel Spacing="10" MaxWidth="640" HorizontalAlignment="Left">
                     <ItemsControl ItemsSource="{x:Bind ViewModel.HowItWorksSteps}" AutomationProperties.Name="How tidying works">
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="x:String">
-                                <StackPanel Orientation="Horizontal" Spacing="10" Margin="0,0,0,8">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10" Margin="0,0,0,8">
                                     <FontIcon FontSize="12" Glyph="&#xE76C;" VerticalAlignment="Top" Margin="0,3,0,0"
                                               Foreground="{ThemeResource DeskTextSecondaryBrush}" />
-                                    <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                    <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
                                                Foreground="{ThemeResource DeskTextPrimaryBrush}"
                                                Text="{x:Bind}" />
-                                </StackPanel>
+                                </Grid>
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
-                    <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="10">
                         <FontIcon FontSize="13" Glyph="&#xE72E;" VerticalAlignment="Top" Margin="0,3,0,0"
                                   Foreground="{ThemeResource DeskAccentBrush}" />
-                        <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                        <TextBlock Grid.Column="1" Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
                                    Text="{x:Bind ViewModel.HowItWorksPromise}" />
-                    </StackPanel>
+                    </Grid>
                 </StackPanel>
             </Expander>
         </StackPanel>

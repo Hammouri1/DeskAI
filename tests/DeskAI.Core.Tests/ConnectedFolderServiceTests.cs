@@ -120,6 +120,23 @@ public sealed class ConnectedFolderServiceTests
             Assert.Single(folders.Saved).AuthorizationScope);
     }
 
+    [Fact]
+    public async Task AllowDocumentsAsync_UsesANewScopeSoOldTextConsentStaysNarrow()
+    {
+        var folders = new FakeFolders();
+        var service = new ConnectedFolderService(folders, new FakeIndex(), folders);
+        var connected = await service.ConnectAsync(SamplePath, TestContext.Current.CancellationToken);
+        await service.AllowContentAsync(connected.Folder!.Id, TestContext.Current.CancellationToken);
+        Assert.False(RootCapabilities.CanReadDocuments(Assert.Single(folders.Saved)));
+
+        var upgraded = await service.AllowDocumentsAsync(
+            connected.Folder.Id, TestContext.Current.CancellationToken);
+
+        Assert.True(upgraded.IsAllowed);
+        Assert.True(upgraded.Folder!.CanReadDocuments);
+        Assert.Equal(RootAuthorizationScope.MetadataAndDocuments, Assert.Single(folders.Saved).AuthorizationScope);
+    }
+
     /// <summary>
     /// Reading inside files must stay reversible, and taking it back must leave the folder
     /// connected rather than silently disconnecting it.

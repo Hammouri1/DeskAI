@@ -207,6 +207,12 @@ Always show actual scope (“Searching 3 authorized folders”). Natural-languag
 
 Reading inside files is a separate, visible permission. Connecting a folder never grants it; a second dialog asks, and names what is opened, what is not, and that nothing read is saved or sent. Each folder row states in words whether DeskAI may read inside it, because a permission a person cannot see is one they cannot reconsider, and withdrawing it takes one click with no confirmation. Results found by their contents appear in their own section with a snippet showing why they matched, and the section always says how many files were actually opened — “nothing matched” and “nothing matched in the first fifty files” mean different things. No safety sentence anywhere may claim DeskAI never opens files: that stops being true the moment someone grants this, so the wording is conditional on the permission instead.
 
+**2026-09-20 refinement (ADR 0036).** An old plain-text grant is shown as such and has a separate **Read Word and Excel too** action. The new dialog names the two modern formats and the local, bounded read. Search can accept "Word document containing galaxy" without requiring galaxy in the name; results show the matching text and the actual number of files read. PDF text and photo subjects are stated as not supported rather than yielding a false "searched everything" impression. The folder-status line must never say "No folders connected" while a folder row is visible; a page test caught this owner-visible contradiction before the fix. Search, Organize, and Automatic tasks align their page content with the left content edge and use the viewport width up to a readable maximum instead of leaving a large empty gutter.
+
+**Look in** sits before Search: all connected folders by default, or one folder the person
+chooses. A saved search still saves words only; the folder choice belongs to this visit and
+never becomes a lasting permission or an AI-selected path.
+
 ## Rules and Automation
 
 Use a readable “When / If / Then / Scope” editor. When AI drafts a rule, show the deterministic interpretation and a simulation against sample/current indexed files before approval. Clearly distinguish enabled, scheduled/watched, manual-only, paused, and needs-review. Provide a kill switch/pause-all action.

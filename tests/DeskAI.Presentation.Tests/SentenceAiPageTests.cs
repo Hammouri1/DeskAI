@@ -76,7 +76,7 @@ public sealed class SentenceAiPageTests
         Assert.Equal("photos holiday", search.Phrase);
         Assert.Contains("OpenRouter read it as \"photos holiday\"", search.AiMessage, StringComparison.Ordinal);
         Assert.Contains("Photos", search.Chips);
-        Assert.Contains("Name or folder contains \"holiday\"", search.Chips);
+        Assert.Contains("Look for \"holiday\"", search.Chips);
         Assert.Equal("holiday.jpg", Assert.Single(search.Results).Name);
         Assert.True(search.CanSaveCurrentSearch);
     }

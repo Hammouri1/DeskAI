@@ -49,6 +49,21 @@ public sealed class SqliteAuthorizedRootRepositoryTests
     }
 
     [Fact]
+    public async Task Document_reading_scope_can_be_disconnected_and_forgets_its_tidy_grant()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var repository = await CreateAsync(sandbox);
+        var root = Reading(sandbox, RootAuthorizationScope.MetadataAndDocuments);
+        await repository.SaveAsync(root, TestContext.Current.CancellationToken);
+        await repository.AllowTidyAsync(root.Id, DateTimeOffset.UnixEpoch, TestContext.Current.CancellationToken);
+        Assert.True(RootCapabilities.CanTidy((await repository.FindAsync(root.Id, TestContext.Current.CancellationToken))!));
+
+        await repository.RemoveAsync(root.Id, TestContext.Current.CancellationToken);
+
+        Assert.Null(await repository.FindAsync(root.Id, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task Disconnecting_a_folder_forgets_its_tidy_permission()
     {
         using var sandbox = new TemporaryDirectory();
