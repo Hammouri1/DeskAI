@@ -12,6 +12,17 @@ namespace DeskAI.Core.Search;
 /// </remarks>
 public sealed record ContentHit(string RootName, string RelativePath, string Name, string Snippet);
 
+/// <summary>One attempted file and what the bounded local read established.</summary>
+public enum ContentCheckStatus { Matched, NoMatch, CouldNotRead }
+
+public sealed record ContentFileCheck(
+    string RootName,
+    string RelativePath,
+    string Name,
+    ContentCheckStatus Status,
+    bool WasTruncated,
+    string Explanation);
+
 /// <summary>
 /// What looking inside files found, and how much was actually looked at.
 /// </summary>
@@ -29,6 +40,9 @@ public sealed record ContentSearchOutcome(
     int FilesSkipped = 0)
 {
     public static ContentSearchOutcome NotAllowed { get; } = new([], 0, 0, false);
+
+    /// <summary>Only names and fixed status wording for this result; never persisted.</summary>
+    public IReadOnlyList<ContentFileCheck> CheckedFiles { get; init; } = [];
 
     public bool WasSearched => FoldersIncluded > 0;
 }
@@ -120,6 +134,7 @@ public sealed class ContentSearchService(
         }
 
         var hits = new List<ContentHit>();
+        var checks = new List<ContentFileCheck>();
         var filesRead = 0;
         var filesTruncated = 0;
         var filesSkipped = 0;
@@ -203,6 +218,8 @@ public sealed class ContentSearchService(
                 if (!extraction.Succeeded)
                 {
                     filesSkipped++;
+                    checks.Add(new ContentFileCheck(root.DisplayName, file.RelativePath, file.Name,
+                        ContentCheckStatus.CouldNotRead, false, extraction.Explanation));
                     continue;
                 }
 
@@ -212,6 +229,9 @@ public sealed class ContentSearchService(
                 }
 
                 var position = extraction.Text.IndexOf(needle, StringComparison.OrdinalIgnoreCase);
+                checks.Add(new ContentFileCheck(root.DisplayName, file.RelativePath, file.Name,
+                    position >= 0 ? ContentCheckStatus.Matched : ContentCheckStatus.NoMatch,
+                    extraction.WasTruncated, extraction.Explanation));
                 if (position >= 0)
                 {
                     hits.Add(new ContentHit(
@@ -229,7 +249,10 @@ public sealed class ContentSearchService(
         }
 
         return new ContentSearchOutcome(hits.AsReadOnly(), allowed.Length, filesRead, reachedLimit,
-            filesTruncated, filesSkipped);
+            filesTruncated, filesSkipped)
+        {
+            CheckedFiles = checks.AsReadOnly(),
+        };
     }
 
     /// <summary>

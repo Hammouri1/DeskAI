@@ -1145,4 +1145,10 @@ Connect only the generated Downloads.
 4. Press **Stop PDF reading**, search again, and confirm no PDF text hit. Word/Excel reading
    should remain allowed. Disconnect and confirm the folder and results disappear.
 
+If a PDF lives one folder below the connected folder, press that folder row's **Refresh** after
+adding it. Search `pdf` alone to confirm its name was remembered. Then search for a word that
+is inside one PDF and absent from another. Open **Files checked**: the first should say it
+matched, the second should say it was read without a match. A damaged PDF should say it could
+not be read. This list is local to the current result; no extracted text is saved.
+
 This check is for text-based PDFs only. Scanned pages and photographs remain outside scope.

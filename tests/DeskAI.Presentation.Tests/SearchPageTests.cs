@@ -228,6 +228,8 @@ public sealed class SearchPageTests
         await search.SetContentPermissionAsync(rootId, allow: true);
         await search.SearchCommand.ExecuteAsync(null);
         Assert.Empty(search.InsideResults);
+        Assert.Contains("Refresh", search.InsideMessage, StringComparison.Ordinal);
+        Assert.Contains("PDF reading", search.InsideMessage, StringComparison.Ordinal);
 
         await search.SetPdfPermissionAsync(rootId, allow: true);
         Assert.True(Assert.Single(search.Folders).CanReadPdf);
@@ -239,6 +241,74 @@ public sealed class SearchPageTests
         await search.SearchCommand.ExecuteAsync(null);
         Assert.Empty(search.InsideResults);
         Assert.True(Assert.Single(search.Folders).CanReadDocuments);
+    }
+
+    [Fact]
+    public async Task A_new_Pdf_in_a_subfolder_is_found_after_refresh_and_Pdf_permission()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Presentations");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        var rootId = Assert.Single(search.Folders).Id;
+
+        var subfolder = Directory.CreateDirectory(Path.Combine(folder, "Seminar"));
+        var builder = new PdfDocumentBuilder();
+        var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+        builder.AddPage(PageSize.A4).AddText("generated eliana presentation", 12, new PdfPoint(25, 700), font);
+        File.WriteAllBytes(Path.Combine(subfolder.FullName, "handout.pdf"), builder.Build());
+        search.Phrase = "pdf eliana";
+        search.SelectedFolder = Assert.Single(search.SearchFolders, choice => choice.Name == "Presentations");
+
+        await search.SearchCommand.ExecuteAsync(null);
+        Assert.Empty(search.InsideResults);
+        await search.RefreshFolderCommand.ExecuteAsync(rootId);
+        await search.SetContentPermissionAsync(rootId, allow: true);
+        await search.SearchCommand.ExecuteAsync(null);
+        Assert.Empty(search.InsideResults);
+
+        await search.SetPdfPermissionAsync(rootId, allow: true);
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Equal("handout.pdf", Assert.Single(search.InsideResults).Name);
+        Assert.Contains("eliana", search.InsideResults[0].Snippet, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task Search_explains_which_Pdfs_matched_did_not_match_or_could_not_be_read()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Presentations");
+        var subfolder = Directory.CreateDirectory(Path.Combine(folder, "Seminar"));
+        var builder = new PdfDocumentBuilder();
+        var font = builder.AddStandard14Font(Standard14Font.Helvetica);
+        builder.AddPage(PageSize.A4).AddText("generated nebula topic", 12, new PdfPoint(25, 700), font);
+        File.WriteAllBytes(Path.Combine(folder, "match.pdf"), builder.Build());
+        var other = new PdfDocumentBuilder();
+        var otherFont = other.AddStandard14Font(Standard14Font.Helvetica);
+        other.AddPage(PageSize.A4).AddText("generated unrelated topic", 12,
+            new PdfPoint(25, 700), otherFont);
+        File.WriteAllBytes(Path.Combine(subfolder.FullName, "other.pdf"), other.Build());
+        File.WriteAllText(Path.Combine(subfolder.FullName, "broken.pdf"), "%PDF-1.4 generated broken file");
+
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        var rootId = Assert.Single(search.Folders).Id;
+        await search.SetContentPermissionAsync(rootId, allow: true);
+        await search.SetPdfPermissionAsync(rootId, allow: true);
+        search.Phrase = "pdf nebula";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Contains("See Files checked", search.InsideMessage, StringComparison.Ordinal);
+        Assert.Equal("Matched the words inside.",
+            Assert.Single(search.CheckedFiles, file => file.Name == "match.pdf").Result);
+        Assert.Equal("Read, but the words did not match.",
+            Assert.Single(search.CheckedFiles, file => file.Name == "other.pdf").Result);
+        Assert.StartsWith("Could not read:",
+            Assert.Single(search.CheckedFiles, file => file.Name == "broken.pdf").Result,
+            StringComparison.Ordinal);
     }
 
     [Fact]

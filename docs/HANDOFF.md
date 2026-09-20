@@ -13,6 +13,12 @@ PDF yes after Office reading, uses a local bounded helper process, and never sen
 text to AI. Scanned pages and image subjects are still outside scope. The older "Search today"
 and "Agreed next milestone" sections below describe the starting point for that task; do not
 reuse them as the next prompt. The owner's manual PDF check is in `docs/MANUAL-TESTING.md`.
+The subsequent owner report found that the result did not say which PDF had no matching word
+and which PDF could not be read. Search now has a **Files checked** list for each attempted
+file, and a generated subfolder PDF page test. Search `pdf` alone to check which PDF names
+are remembered after a folder refresh.
+The follow-up Release build has zero warnings/errors; all 1,400 tests pass with none skipped;
+format and the safe UI preview build pass. The follow-up did not access the owner's PDFs.
 Release build: zero warnings/errors; all 1,398 tests pass with none skipped; `dotnet format`
 reports no changes. The UI preview build and a self-contained publish both succeeded; the
 publish includes `PdfWorker/DeskAI.PdfWorker.exe`. The preview window itself was not visually

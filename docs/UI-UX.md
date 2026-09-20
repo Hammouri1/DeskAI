@@ -211,6 +211,8 @@ Reading inside files is a separate, visible permission. Connecting a folder neve
 
 **PDF text (ADR 0037).** An Office-approved row offers **Read PDF text too**, with its own local-reading dialog. The row then shows that PDF text is allowed and offers **Stop PDF reading**. Empty, encrypted, damaged, or unsupported PDFs are counted as skipped, and a partial read is stated. Scanned pages and photo subjects remain unsupported.
 
+After a person found one PDF match while two other files could not be read, Search gained a collapsed **Files checked** list. It names each attempted file and says whether its text matched, had no match, was only partly read, or could not be read. The summary points there and explains that searching `pdf` alone lists remembered PDFs by name. This keeps a missed match distinct from a PDF the reader could not open.
+
 **Look in** sits before Search: all connected folders by default, or one folder the person
 chooses. A saved search still saves words only; the folder choice belongs to this visit and
 never becomes a lasting permission or an AI-selected path.

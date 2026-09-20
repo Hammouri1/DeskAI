@@ -49,6 +49,27 @@ public sealed record SearchResultViewModel(string Name, string Location, string 
 /// </remarks>
 public sealed record ContentHitViewModel(string Name, string Location, string Snippet);
 
+/// <summary>Explains one attempted local read without keeping the file's text.</summary>
+public sealed record ContentCheckViewModel(string Name, string Location, string Result)
+{
+    public static ContentCheckViewModel From(ContentFileCheck check)
+    {
+        var folder = Path.GetDirectoryName(check.RelativePath);
+        var location = string.IsNullOrEmpty(folder)
+            ? check.RootName
+            : $"{check.RootName} / {folder}";
+        var result = check.Status switch
+        {
+            ContentCheckStatus.Matched when check.WasTruncated => "Matched in the part read; there may be more.",
+            ContentCheckStatus.Matched => "Matched the words inside.",
+            ContentCheckStatus.NoMatch when check.WasTruncated => "No match in the part read; there may be more.",
+            ContentCheckStatus.NoMatch => "Read, but the words did not match.",
+            _ => $"Could not read: {check.Explanation}",
+        };
+        return new ContentCheckViewModel(check.Name, location, result);
+    }
+}
+
 /// <summary>One saved search, formatted for its row.</summary>
 public sealed record SavedSearchViewModel(Guid Id, string Name, string Phrase);
 
@@ -186,6 +207,10 @@ public sealed class SearchViewModel : ObservableObject
 
     /// <summary>Files whose words matched, from folders that allowed reading inside.</summary>
     public ObservableCollection<ContentHitViewModel> InsideResults { get; } = [];
+
+    public ObservableCollection<ContentCheckViewModel> CheckedFiles { get; } = [];
+
+    public bool HasCheckedFiles => CheckedFiles.Count > 0;
 
     /// <summary>What was looked at inside files, stated rather than implied.</summary>
     public string InsideMessage
@@ -770,13 +795,20 @@ public sealed class SearchViewModel : ObservableObject
     private void ApplyInsideFiles(ContentSearchOutcome outcome)
     {
         InsideResults.Clear();
+        CheckedFiles.Clear();
         ShowsInsideFiles = outcome.WasSearched;
 
         if (!outcome.WasSearched)
         {
             InsideMessage = string.Empty;
             OnPropertyChanged(nameof(ShowsInsideFiles));
+            OnPropertyChanged(nameof(HasCheckedFiles));
             return;
+        }
+
+        foreach (var check in outcome.CheckedFiles)
+        {
+            CheckedFiles.Add(ContentCheckViewModel.From(check));
         }
 
         foreach (var hit in outcome.Hits)
@@ -792,7 +824,7 @@ public sealed class SearchViewModel : ObservableObject
         InsideMessage = outcome.Hits.Count switch
         {
             0 when outcome.FilesRead == 0 =>
-                "No readable files were opened for this search. DeskAI can read notes, modern Word and Excel files, and PDF text after each permission. Photos stay closed.",
+                "No eligible files were opened. If you added a file, press Refresh on its connected folder. PDF text also needs its own PDF reading permission. Search 'pdf' alone to see remembered PDF names.",
             0 when outcome.ReachedLimit =>
                 $"Nothing found in the first {read} DeskAI checked. Narrow the search to look at different files.",
             0 => $"Nothing found inside the {read} DeskAI checked.",
@@ -814,6 +846,11 @@ public sealed class SearchViewModel : ObservableObject
                 : $" {outcome.FilesSkipped} files could not be read.";
         }
 
+        if (outcome.CheckedFiles.Count > 0)
+        {
+            InsideMessage += " See Files checked for each result. Search 'pdf' alone to list remembered PDFs by name.";
+        }
+
         if (outcome.Hits.Count > 0 && Results.Count == 0)
         {
             StatusTitle = outcome.Hits.Count == 1 ? "1 file found" : $"{outcome.Hits.Count} files found";
@@ -822,6 +859,7 @@ public sealed class SearchViewModel : ObservableObject
 
         OnPropertyChanged(nameof(ShowsInsideFiles));
         OnPropertyChanged(nameof(ShowsNothingFound));
+        OnPropertyChanged(nameof(HasCheckedFiles));
     }
 
     private void Reset()
@@ -829,8 +867,10 @@ public sealed class SearchViewModel : ObservableObject
         Chips.Clear();
         Results.Clear();
         InsideResults.Clear();
+        CheckedFiles.Clear();
         ShowsInsideFiles = false;
         InsideMessage = string.Empty;
+        OnPropertyChanged(nameof(HasCheckedFiles));
     }
 
     private void RaiseListChanges()

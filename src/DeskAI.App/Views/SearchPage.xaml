@@ -184,6 +184,28 @@
                         </DataTemplate>
                     </ItemsControl.ItemTemplate>
                 </ItemsControl>
+
+                <Expander Header="Files checked"
+                          Visibility="{x:Bind ViewModel.HasCheckedFiles, Mode=OneWay}">
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.CheckedFiles, Mode=OneWay}"
+                                  AutomationProperties.Name="Files checked for content matches">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:ContentCheckViewModel">
+                                <Border Style="{StaticResource RowCardStyle}">
+                                    <StackPanel Spacing="3">
+                                        <TextBlock FontWeight="SemiBold" TextTrimming="CharacterEllipsis"
+                                                   Text="{x:Bind Name}" />
+                                        <TextBlock Style="{StaticResource CaptionStyle}"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   Text="{x:Bind Location}" />
+                                        <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                                   Text="{x:Bind Result}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </Expander>
             </StackPanel>
 
             <Border Style="{StaticResource CardStyle}"
