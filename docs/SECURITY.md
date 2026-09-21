@@ -163,15 +163,27 @@ uses only bounded `ppt/slides/slideN.xml` parts, never media or relationships: 8
 entities. It reports partial reads and identifies the matching slide. No text is persisted
 or sent to a provider, and this grant does not authorize OCR or images.
 
-For future visual Search, the owner chose a **connected local AI when available**, and
-otherwise a fresh choice to send selected images to the chosen cloud AI for that search
-(ADR 0038, amended 2026-09-21). A configured provider and the current PDF/text grants do
-not authorize opening, analyzing, or uploading images. Before cloud transport the app must
-show the exact selected images, provider, count, size, and cost implications, then require
-Send for that search; an earlier Send is not reusable consent. Declining sends nothing.
-Any implementation needs its own visual-reading permission, bounded processing and storage
-design, protected-path checks, model capability checks, and security review. This decision
-adds no visual-reading capability to the current application.
+Visual Search (ADR 0038, `docs/security/2026-09-21-visual-search-review.md`) uses a fresh
+**Read pictures** choice for each search; PDF, slide-text, and folder metadata grants do
+not authorize that read. It can inspect at most 30 indexed image-bearing files, 12 images,
+4 MB of encoded image bytes, and 30 seconds of preparation. Supported standalone images
+are JPEG, PNG, and WebP; bounded modern PowerPoint slide relationships and the first 20
+pages of a PDF can provide embedded images. The PDF worker receives bytes, not paths. The
+reader checks root/path policy, every path component for links, and on Windows verifies the
+open file handle's final path. A result has short AI evidence plus page or slide where known.
+No image or derived index is saved.
+
+If a local AI is selected, images go only to its validated loopback endpoint. If a cloud
+provider is selected, a second dialog lists the exact image batch, provider, total size,
+and cost warning and requires **Send**. Cancel sends nothing. A batch is single-use and
+expires after two minutes; settings, model, local endpoint, and connected roots are checked
+again before sending. The model gets the phrase and one data-URL image per request, never a
+file name, path, filesystem tool, or API key belonging to a different provider. The
+configured provider may charge for each request; the existing daily request cap applies.
+Unknown or text-only models can reject images; DeskAI stops and never silently falls back.
+No model is downloaded. AI results are untrusted suggestions, displayed only, and no file
+mutation follows them. Rasterized page OCR, unsupported PDF image filters, and complete
+coverage of deep or large roots are not promised.
 
 The index remembers file metadata so search and storage summaries do not require a fresh
 scan. It is subject to the same rules as any other cached state:

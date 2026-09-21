@@ -1,6 +1,7 @@
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
+using System.Text.Json;
 
 namespace DeskAI.Infrastructure.Content;
 
@@ -12,6 +13,125 @@ public sealed class PdfProcessReader
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
     private readonly string _workerPath = Path.Combine(
         AppContext.BaseDirectory, "PdfWorker", "DeskAI.PdfWorker.exe");
+
+    public sealed record PdfImage(int Page, string MediaType, byte[] Bytes);
+
+    public async Task<IReadOnlyList<PdfImage>> ReadImagesAsync(
+        Stream file, int maximumImages, CancellationToken cancellationToken)
+    {
+        if (file.Length is < 8 or > MaxPdfBytes || maximumImages <= 0 || !File.Exists(_workerPath))
+        {
+            return [];
+        }
+
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(Timeout);
+        using var process = new Process
+        {
+            StartInfo = new ProcessStartInfo(_workerPath, "images")
+            {
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardInput = true,
+                RedirectStandardOutput = true,
+                WorkingDirectory = Path.GetDirectoryName(_workerPath)!,
+            },
+        };
+        var started = false;
+        try
+        {
+            process.Start();
+            started = true;
+            var chunk = new byte[8192];
+            var transferred = 0;
+            int count;
+            while ((count = await file.ReadAsync(chunk, deadline.Token).ConfigureAwait(false)) > 0)
+            {
+                transferred += count;
+                if (transferred > MaxPdfBytes)
+                {
+                    return [];
+                }
+
+                await process.StandardInput.BaseStream.WriteAsync(
+                    chunk.AsMemory(0, count), deadline.Token).ConfigureAwait(false);
+            }
+
+            process.StandardInput.Close();
+            const int maxReply = 6 * 1024 * 1024;
+            var output = new byte[maxReply + 1];
+            var read = 0;
+            while (read < output.Length)
+            {
+                var received = await process.StandardOutput.BaseStream.ReadAsync(
+                    output.AsMemory(read), deadline.Token).ConfigureAwait(false);
+                if (received == 0)
+                {
+                    break;
+                }
+
+                read += received;
+            }
+
+            if (read > maxReply)
+            {
+                return [];
+            }
+
+            await process.WaitForExitAsync(deadline.Token).ConfigureAwait(false);
+            if (process.ExitCode != 0)
+            {
+                return [];
+            }
+
+            using var json = JsonDocument.Parse(output.AsMemory(0, read));
+            if (json.RootElement.ValueKind != JsonValueKind.Array)
+            {
+                return [];
+            }
+
+            var result = new List<PdfImage>();
+            foreach (var item in json.RootElement.EnumerateArray().Take(Math.Min(maximumImages, 12)))
+            {
+                var page = item.GetProperty("page").GetInt32();
+                var media = item.GetProperty("mediaType").GetString();
+                var encoded = item.GetProperty("data").GetString();
+                if (page is < 1 or > 20 || media is not ("image/jpeg" or "image/png")
+                    || encoded is null || encoded.Length > 1_400_000)
+                {
+                    return [];
+                }
+
+                var bytes = Convert.FromBase64String(encoded);
+                if (bytes.Length > 1024 * 1024)
+                {
+                    return [];
+                }
+
+                result.Add(new PdfImage(page, media, bytes));
+            }
+
+            return result.AsReadOnly();
+        }
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
+        {
+            return [];
+        }
+        catch (Exception exception) when (exception is IOException or Win32Exception
+            or InvalidOperationException or JsonException or FormatException
+            or KeyNotFoundException)
+        {
+            return [];
+        }
+        finally
+        {
+            if (started && !process.HasExited)
+            {
+                try { process.Kill(entireProcessTree: true); }
+                catch (Exception exception) when (exception is InvalidOperationException or Win32Exception) { }
+            }
+        }
+    }
 
     public async Task<(string Text, bool Truncated)?> ReadAsync(
         Stream file, CancellationToken cancellationToken)

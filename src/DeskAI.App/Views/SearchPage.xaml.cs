@@ -1,5 +1,6 @@
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
+using DeskAI.Core.Ai;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
@@ -55,6 +56,76 @@ public sealed partial class SearchPage : Page
         {
             await ViewModel.AskAiToReadAsync(question);
         }
+    }
+
+    private async void OnSearchPicturesClick(object sender, RoutedEventArgs e)
+    {
+        if (!ViewModel.CanSearchPictures)
+        {
+            return;
+        }
+
+        var scope = ViewModel.SelectedFolder.Id == Guid.Empty
+            ? "all connected folders"
+            : ViewModel.SelectedFolder.Name;
+        var readDialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Read pictures for this search?",
+            Content = $"DeskAI will open pictures in {scope}, including nested folders, to find “{ViewModel.Phrase}”. "
+                + "This includes pictures inside PDFs and modern PowerPoint slides. "
+                + "It checks at most 30 files and 12 pictures, up to 4 MB total. No image content is saved. "
+                + (ViewModel.VisualAiName == "Local AI"
+                    ? "The pictures will go only to your connected local AI on this computer."
+                    : "Before any picture goes online, DeskAI will show the exact list and ask again."),
+            PrimaryButtonText = "Read pictures",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        if (await readDialog.ShowAsync() != ContentDialogResult.Primary)
+        {
+            return;
+        }
+
+        var batch = await ViewModel.PreparePictureSearchAsync(visualReadApproved: true);
+        if (batch is null)
+        {
+            return;
+        }
+
+        if (batch.Mode == AiMode.Cloud)
+        {
+            var list = string.Join("\n", batch.Images.Select(image =>
+                $"• {image.FileName} — {image.Location} ({image.Bytes.Length / 1024d:0.#} KB)"));
+            var sendDialog = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = $"Send {batch.Images.Count} pictures to {batch.ServiceName}?",
+                Content = new ScrollViewer
+                {
+                    MaxHeight = 360,
+                    Content = new TextBlock
+                    {
+                        TextWrapping = TextWrapping.Wrap,
+                        Text = $"Destination: {batch.Destination}\n\nThese exact image bytes and your description will be sent. "
+                            + "Names and folder paths are shown here for your choice; they are not included in the AI request. "
+                            + "Your provider may charge for each picture. The total image data is "
+                            + $"{batch.Images.Sum(image => image.Bytes.Length) / 1024d:0.#} KB. "
+                            + "This permission applies only to this search.\n\n" + list,
+                    },
+                },
+                PrimaryButtonText = "Send these pictures",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+            };
+            if (await sendDialog.ShowAsync() != ContentDialogResult.Primary)
+            {
+                await ViewModel.SearchPicturesAsync(batch, cloudSendApproved: false);
+                return;
+            }
+        }
+
+        await ViewModel.SearchPicturesAsync(batch, cloudSendApproved: batch.Mode == AiMode.Cloud);
     }
 
     /// <summary>Asks for a name, then saves the phrase currently in the box.</summary>

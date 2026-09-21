@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 using UglyToad.PdfPig;
 using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 
@@ -33,6 +34,53 @@ try
     if (document.IsEncrypted || document.NumberOfPages < 1)
     {
         return 2;
+    }
+
+    if (args.Length == 1 && args[0] == "images")
+    {
+        var images = new List<object>();
+        var totalBytes = 0;
+        for (var page = 1; page <= Math.Min(document.NumberOfPages, maxPages)
+            && images.Count < 12; page++)
+        {
+            foreach (var image in document.GetPage(page).GetImages())
+            {
+                if (image.WidthInSamples < 1 || image.HeightInSamples < 1
+                    || (long)image.WidthInSamples * image.HeightInSamples > 4_000_000)
+                {
+                    continue;
+                }
+
+                byte[]? bytes = null;
+                string? mediaType = null;
+                if (image.RawMemory.Length <= 1024 * 1024
+                    && image.RawBytes.StartsWith(new byte[] { 0xFF, 0xD8, 0xFF }))
+                {
+                    bytes = image.RawMemory.ToArray();
+                    mediaType = "image/jpeg";
+                }
+                else if (image.TryGetPng(out var png) && png is { Length: <= 1024 * 1024 })
+                {
+                    bytes = png;
+                    mediaType = "image/png";
+                }
+
+                if (bytes is null || totalBytes + bytes.Length > 4 * 1024 * 1024)
+                {
+                    continue;
+                }
+
+                images.Add(new { page, mediaType, data = Convert.ToBase64String(bytes) });
+                totalBytes += bytes.Length;
+                if (images.Count >= 12)
+                {
+                    break;
+                }
+            }
+        }
+
+        await Console.OpenStandardOutput().WriteAsync(JsonSerializer.SerializeToUtf8Bytes(images));
+        return 0;
     }
 
     var text = new StringBuilder();

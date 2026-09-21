@@ -1,5 +1,24 @@
 # DeskAI — Coding Handoff
 
+## 2026-09-21 visual Search update
+
+After the slide-text commit `991a275`, the owner clarified that DeskAI must **not**
+download a vision model. A configured local AI may inspect pictures; otherwise a chosen
+cloud AI may receive an exact selected batch only after a fresh Send dialog for that
+search. The visual action uses a first fresh **Read pictures** dialog; candidate files
+come from the connected folder's metadata index and can be nested. It can inspect bounded
+JPEG/PNG/WebP files, pictures referenced by modern PowerPoint slides, and extractable
+images on the first 20 PDF pages. Results identify page/slide where known and show short
+AI evidence. Selected picture bytes are sent only after the appropriate choice; no
+derived image index is persisted, and no file name or path is sent to the model.
+Limits are 30 files, 12 pictures, 4 MB total, 30 seconds preparation, and the existing
+scanner depth-4 / 2,000-entry cap. An unsupported or text-only vision model may refuse;
+there is no provider fallback or model download. See ADR 0038 and its security review.
+Generated-data page tests use fake transport and keys. The full preview configuration
+build passed with 0 warnings/errors, all 1,416 tests passed, and `dotnet format` reported
+no changes. It has not been pushed or released; do not claim the owner is running it until
+they launch a new build.
+
 Updated 2026-09-20 after the PDF search follow-up. This is a map, not a replacement for
 `AGENTS.md` or `docs/SECURITY.md`. Read those before changing code; security rules win if
 documents conflict. The owner wants one coherent milestone at a time, plain UI wording,

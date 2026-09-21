@@ -1,6 +1,6 @@
 # ADR 0038: User-Controlled Visual Search Direction
 
-- Status: Accepted product and privacy direction; implementation deferred
+- Status: Implemented as bounded, per-search visual inspection (2026-09-21)
 - Date: 2026-09-21
 
 ## Context
@@ -21,12 +21,20 @@ authorizes another image upload. Declining leaves images closed for that search.
 download is built into DeskAI. Search still enters only explicitly connected roots and
 their bounded subfolders.
 
-## Before Implementation
+## Implementation
 
-Design a separate visual-reading permission, compatible-model checks, bounded processing
-of standalone and embedded images, protected-path and link checks, result evidence such as
-page or slide number, and a storage and deletion policy for any derived index. The cloud
-request must be built from an exact, rechecked selection and never expose a filesystem
-tool to the model. Review parser and model isolation, performance, and privacy before code.
-Existing PDF and document grants do not expand to pictures automatically. Until then the
-UI must continue to say visual search and OCR are unavailable.
+The visual-reading permission is a fresh Search dialog for each attempt, not a persisted
+folder grant. Only after **Read pictures** does DeskAI open up to 30 indexed image-bearing
+files and hold up to 12 encoded pictures / 4 MB in memory. JPEG, PNG, and WebP files,
+images referenced by the first 40 modern PowerPoint slides, and extractable images on the
+first 20 PDF pages are eligible. The local PDF worker sees bytes, no path. A picture in a
+PowerPoint or PDF result names its slide or page. Other formats, rasterized whole pages,
+unsupported PDF image encodings, and anything beyond the bounds are not promised.
+
+For a configured local AI, the selected images go only to its loopback endpoint. For a
+configured cloud provider, a second dialog lists the exact image batch, provider, size,
+and cost warning. Cancel sends nothing. Each batch can be used once and expires after two
+minutes; changed AI choice or disconnected root refuses before transport. No file name or
+path is in the image request. A text-only model may reject images; DeskAI says so and does
+not switch providers automatically. No vision model is downloaded or image index stored.
+The text, PDF, and slide grants remain independent. See the visual security review.

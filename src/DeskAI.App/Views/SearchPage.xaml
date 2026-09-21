@@ -54,6 +54,9 @@
                                     IsEnabled="{x:Bind ViewModel.CanAskAi, Mode=OneWay}"
                                     Click="OnAskAiClick" />
                             <controls:HelpButton Topic="search.askAi" />
+                            <Button Content="Find pictures with AI"
+                                    IsEnabled="{x:Bind ViewModel.CanSearchPictures, Mode=OneWay}"
+                                    Click="OnSearchPicturesClick" />
                         </StackPanel>
                     </Grid>
 
@@ -206,6 +209,27 @@
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
                 </Expander>
+            </StackPanel>
+
+            <StackPanel Spacing="12" Visibility="{x:Bind ViewModel.ShowsVisualResults, Mode=OneWay}">
+                <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Found in pictures" />
+                <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                           Text="{x:Bind ViewModel.VisualMessage, Mode=OneWay}" />
+                <ItemsControl ItemsSource="{x:Bind ViewModel.VisualResults, Mode=OneWay}"
+                              AutomationProperties.Name="Files matched by picture contents">
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="viewmodels:ContentHitViewModel">
+                            <Border Style="{StaticResource RowCardStyle}">
+                                <StackPanel Spacing="4">
+                                    <TextBlock FontWeight="SemiBold" Text="{x:Bind Name}" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}" Text="{x:Bind Location}" />
+                                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                               Text="{x:Bind Snippet}" />
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
             </StackPanel>
 
             <Border Style="{StaticResource CardStyle}"

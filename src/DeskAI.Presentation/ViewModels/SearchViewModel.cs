@@ -168,6 +168,7 @@ public sealed class SearchViewModel : ObservableObject
     private readonly IClock _clock;
     private readonly SearchRequest _request;
     private readonly SentenceAiService _sentenceAi;
+    private readonly VisualSearchService? _visualSearch;
     private SentenceAiStatus? _aiStatus;
     private string _aiMessage = string.Empty;
     private string _phrase = string.Empty;
@@ -178,6 +179,7 @@ public sealed class SearchViewModel : ObservableObject
         "Try \"photos from last month\" or \"documents over 10 mb\". DeskAI reads only the folders you connected.";
     private string _scopeMessage = string.Empty;
     private string _insideMessage = string.Empty;
+    private string _visualMessage = string.Empty;
     private bool _showsInsideFiles;
     private bool _isBusy;
     private bool _hasSearched;
@@ -190,7 +192,8 @@ public sealed class SearchViewModel : ObservableObject
         ISavedSearchRepository savedSearches,
         IClock clock,
         SearchRequest request,
-        SentenceAiService sentenceAi)
+        SentenceAiService sentenceAi,
+        VisualSearchService? visualSearch = null)
     {
         _search = search;
         _folders = folders;
@@ -199,6 +202,7 @@ public sealed class SearchViewModel : ObservableObject
         _clock = clock;
         _request = request;
         _sentenceAi = sentenceAi;
+        _visualSearch = visualSearch;
         SearchCommand = new AsyncRelayCommand(RunAsync, () => !IsBusy);
         RunSavedSearchCommand = new AsyncRelayCommand<Guid>(RunSavedSearchAsync, _ => !IsBusy);
         DeleteSavedSearchCommand = new AsyncRelayCommand<Guid>(DeleteSavedSearchAsync, _ => !IsBusy);
@@ -221,6 +225,20 @@ public sealed class SearchViewModel : ObservableObject
     public ObservableCollection<ContentHitViewModel> InsideResults { get; } = [];
 
     public ObservableCollection<ContentCheckViewModel> CheckedFiles { get; } = [];
+
+    public ObservableCollection<ContentHitViewModel> VisualResults { get; } = [];
+
+    public string VisualMessage
+    {
+        get => _visualMessage;
+        private set => SetProperty(ref _visualMessage, value);
+    }
+
+    public bool ShowsVisualResults => VisualResults.Count > 0 || !string.IsNullOrEmpty(VisualMessage);
+
+    public bool CanSearchPictures => HasAi && !string.IsNullOrWhiteSpace(Phrase) && !IsBusy;
+
+    public string VisualAiName => _aiStatus?.ServiceName ?? "AI";
 
     public bool HasCheckedFiles => CheckedFiles.Count > 0;
 
@@ -284,6 +302,7 @@ public sealed class SearchViewModel : ObservableObject
             {
                 OnPropertyChanged(nameof(CanSaveCurrentSearch));
                 OnPropertyChanged(nameof(CanAskAi));
+                OnPropertyChanged(nameof(CanSearchPictures));
             }
         }
     }
@@ -389,6 +408,7 @@ public sealed class SearchViewModel : ObservableObject
             {
                 SearchCommand.NotifyCanExecuteChanged();
                 OnPropertyChanged(nameof(CanAskAi));
+                OnPropertyChanged(nameof(CanSearchPictures));
             }
         }
     }
@@ -398,7 +418,8 @@ public sealed class SearchViewModel : ObservableObject
     public bool HasChips => Chips.Count > 0;
 
     /// <summary>True only after a search that found nothing, so the first visit stays calm.</summary>
-    public bool ShowsNothingFound => _hasSearched && Results.Count == 0 && InsideResults.Count == 0;
+    public bool ShowsNothingFound => _hasSearched && Results.Count == 0 && InsideResults.Count == 0
+        && VisualResults.Count == 0;
 
     public ObservableCollection<SavedSearchViewModel> SavedSearches { get; } = [];
 
@@ -439,6 +460,8 @@ public sealed class SearchViewModel : ObservableObject
         OnPropertyChanged(nameof(HasAi));
         OnPropertyChanged(nameof(CanAskAi));
         OnPropertyChanged(nameof(AskAiText));
+        OnPropertyChanged(nameof(CanSearchPictures));
+        OnPropertyChanged(nameof(VisualAiName));
 
         if (_request.TakePhrase() is { } typed)
         {
@@ -764,6 +787,68 @@ public sealed class SearchViewModel : ObservableObject
         }
     }
 
+    /// <summary>Called only after the page asks to read pictures for this search.</summary>
+    public async Task<VisualSearchBatch?> PreparePictureSearchAsync(bool visualReadApproved)
+    {
+        if (_visualSearch is null)
+        {
+            VisualMessage = "Picture search is not available in this build.";
+            OnPropertyChanged(nameof(ShowsVisualResults));
+            return null;
+        }
+
+        IsBusy = true;
+        VisualResults.Clear();
+        VisualMessage = "Finding pictures in the selected connected folder…";
+        OnPropertyChanged(nameof(ShowsVisualResults));
+        try
+        {
+            var selectedRootId = SelectedFolder.Id == Guid.Empty ? (Guid?)null : SelectedFolder.Id;
+            var (batch, message) = await _visualSearch.PrepareAsync(Phrase, selectedRootId,
+                visualReadApproved).ConfigureAwait(true);
+            VisualMessage = message;
+            return batch;
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>Cloud approval comes from the separate Send dialog; local uses the read dialog.</summary>
+    public async Task SearchPicturesAsync(VisualSearchBatch batch, bool cloudSendApproved)
+    {
+        if (_visualSearch is null)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var outcome = await _visualSearch.SearchAsync(batch, cloudSendApproved).ConfigureAwait(true);
+            VisualResults.Clear();
+            foreach (var hit in outcome.Matches)
+            {
+                VisualResults.Add(new ContentHitViewModel(hit.Name, hit.Location,
+                    $"AI saw: {hit.Explanation}"));
+            }
+
+            VisualMessage = outcome.Message;
+            OnPropertyChanged(nameof(ShowsVisualResults));
+            if (outcome.Matches.Count > 0 && Results.Count == 0 && InsideResults.Count == 0)
+            {
+                StatusTitle = outcome.Matches.Count == 1 ? "1 file found" : $"{outcome.Matches.Count} pictures matched";
+                StatusMessage = "These pictures may match your description. Check the file yourself; AI can be mistaken.";
+                OnPropertyChanged(nameof(ShowsNothingFound));
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     private void Apply(SearchOutcome outcome)
     {
         Reset();
@@ -808,7 +893,9 @@ public sealed class SearchViewModel : ObservableObject
 
             StatusMessage = outcome.ReachedLimit
                 ? "Showing the first matches only. Narrow the search to see fewer, more useful results."
-                : "These matches came from the file names and details DeskAI remembered. Nothing was changed.";
+                : Results.Count == 0 && HasAi
+                    ? "Names did not match. To search what a picture shows, press Find pictures with AI."
+                    : "These matches came from the file names and details DeskAI remembered. Nothing was changed.";
 
             ScopeMessage = outcome.FoldersSearched == 1
                 ? "Searched 1 connected folder."
@@ -903,6 +990,9 @@ public sealed class SearchViewModel : ObservableObject
         Results.Clear();
         InsideResults.Clear();
         CheckedFiles.Clear();
+        VisualResults.Clear();
+        VisualMessage = string.Empty;
+        OnPropertyChanged(nameof(ShowsVisualResults));
         ShowsInsideFiles = false;
         InsideMessage = string.Empty;
         OnPropertyChanged(nameof(HasCheckedFiles));

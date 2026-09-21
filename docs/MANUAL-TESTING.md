@@ -1166,3 +1166,26 @@ grant there must be no slide-text hit; after the dialog and Allow, the result sh
 the presentation, nested folder, and Slide 2. Cancel first to verify it does not grant
 reading. Press **Stop PowerPoint reading** and confirm the text hit disappears while any
 separately allowed PDF text remains searchable. Search never changes the presentation.
+
+# Picture search check (ADR 0038)
+
+Use a newly made folder under a location DeskAI permits, containing only generated or
+disposable sample images and a generated PDF/PPTX. Do not use an existing personal folder
+or private document. The isolated UI preview cannot contact an AI service or save a key,
+so it can check layout only; the owner can use a separate controlled local test folder in
+the normal app if they want to check a real vision-capable model.
+
+1. Configure a vision-capable local AI or a chosen cloud provider in **Privacy and AI**.
+   Search for a scene description that is not in a sample filename. Plain Search should
+   still describe only name and allowed text matches; press **Find pictures with AI**.
+2. Cancel **Read pictures** once. Nothing should be opened or sent. Try again and check
+   that the dialog names the selected folder scope and the 30-file / 12-picture / 4-MB caps.
+3. If cloud AI is selected, inspect the second dialog: every proposed sample image, its
+   file location, page or slide where applicable, total bytes, provider destination, and
+   cost warning must be visible. Cancel; no request should be made. Try again and press
+   **Send these pictures** only if you intend to spend that provider's allowance.
+4. A matching sample should appear under **Found in pictures** with a short AI reason and
+   page or slide when applicable. Check the actual sample yourself; the AI can be wrong.
+   A text-only model should produce a refusal, not a silent switch to another provider.
+5. Add a fresh sample file and press the connected folder's **Refresh** before searching.
+   Disconnect the folder and verify the old visual result disappears after the next search.

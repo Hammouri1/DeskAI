@@ -76,6 +76,9 @@ public static class DeskAiApplicationServices
         services.AddSingleton<PdfProcessReader>();
         services.AddSingleton<IContentTextExtractor, PlainTextExtractor>();
         services.AddSingleton<ContentSearchService>();
+        services.AddSingleton<IVisualAssetReader, VisualAssetReader>();
+        services.AddSingleton<IVisualImageMatcher, ConfiguredVisualImageMatcher>();
+        services.AddSingleton<VisualSearchService>();
         services.AddSingleton<StorageSummaryService>();
         services.AddSingleton<DuplicateFinderService>();
         // Reads whole files to tell real copies apart. Only DuplicateCheckService takes it, and
