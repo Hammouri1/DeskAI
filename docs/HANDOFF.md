@@ -2,6 +2,12 @@
 
 ## 2026-09-21 public 1.1.0 release preparation
 
+An original transparent DeskAI logo was generated for this project: an abstract D/folder with
+an inner intelligence spark in the product's mint and deep-navy palette. The source PNG is in
+`src/DeskAI.App/Assets/DeskAI.Logo.png`; a multi-size ICO is embedded as the executable icon,
+and the navigation pane plus README use the PNG. A source/asset regression pins all three uses;
+the full suite now contains 1,423 tests.
+
 Ask DeskAI now carries a visible and accessible **BETA** pill. Its existing boundary is
 unchanged: natural-language file-search, storage, and organize questions only, not general
 chat. The README now accurately covers PDF/PowerPoint text search, bounded local PDF OCR,

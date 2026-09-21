@@ -5,6 +5,7 @@
     <TargetPlatformMinVersion>10.0.26100.0</TargetPlatformMinVersion>
     <RootNamespace>DeskAI.App</RootNamespace>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\DeskAI.ico</ApplicationIcon>
     <Platforms>x64</Platforms>
     <PlatformTarget>x64</PlatformTarget>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
@@ -21,6 +22,7 @@
     <Compile Include="..\..\tools\UiPreview.cs" Link="Development\UiPreview.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\DeskAI.Logo.png" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="..\DeskAI.Core\DeskAI.Core.csproj" />
     <ProjectReference Include="..\DeskAI.Safety\DeskAI.Safety.csproj" />
     <ProjectReference Include="..\DeskAI.Infrastructure\DeskAI.Infrastructure.csproj" />

@@ -46,6 +46,25 @@ public sealed partial class ShellLayoutTests
     }
 
     [Fact]
+    public void The_generated_DeskAI_logo_is_used_by_the_window_and_executable()
+    {
+        var logo = AppFile(Path.Combine("Assets", "DeskAI.Logo.png"));
+        var icon = AppFile(Path.Combine("Assets", "DeskAI.ico"));
+        Assert.True(File.Exists(logo));
+        Assert.True(File.Exists(icon));
+        Assert.True(new FileInfo(logo).Length > 0);
+        Assert.True(new FileInfo(icon).Length > 0);
+
+        var window = File.ReadAllText(AppFile("MainWindow.xaml"));
+        Assert.Contains("Source=\"ms-appx:///Assets/DeskAI.Logo.png\"", window, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.Name=\"DeskAI logo\"", window, StringComparison.Ordinal);
+
+        var project = File.ReadAllText(AppFile("DeskAI.App.csproj"));
+        Assert.Contains("<ApplicationIcon>Assets\\DeskAI.ico</ApplicationIcon>", project,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Every_tile_tint_exists_in_dark_light_and_high_contrast_and_is_never_the_accent()
     {
         var theme = File.ReadAllText(AppFile(Path.Combine("Themes", "DeskAITheme.xaml")));

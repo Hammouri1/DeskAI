@@ -1,5 +1,9 @@
 # DeskAI
 
+<p align="center">
+  <img src="src/DeskAI.App/Assets/DeskAI.Logo.png" alt="DeskAI logo" width="144" />
+</p>
+
 > A private, local-first AI workspace for safely organizing, finding, and understanding files on Windows.
 
 [![Build and test](https://github.com/Hammouri1/DeskAI/actions/workflows/build.yml/badge.svg)](https://github.com/Hammouri1/DeskAI/actions/workflows/build.yml)
@@ -25,7 +29,7 @@ Connected folder → scan → classify → propose plan → safety validation
                   → preview → your approval → execute → journal → undo
 ```
 
-**Status:** version 1.1.0 release candidate. 1,422 automated tests pass and the x64 Release
+**Status:** version 1.1.0 release candidate. 1,423 automated tests pass and the x64 Release
 build has zero warnings. It still needs final public-release and manual smoke-test sign-off,
 and the download is not code-signed — see [Honest limits](#honest-limits).
 
@@ -115,7 +119,7 @@ These are properties of the code, each covered by tests:
 - MVVM presentation, dependency injection at the composition root, async and cancellable I/O
 - SQLite (schema version 14) for settings, rules, saved searches, plans, the metadata index, and
   the operation journal
-- xUnit — 1,422 tests across five projects, including page tests that use each feature the way a
+- xUnit — 1,423 tests across five projects, including page tests that use each feature the way a
   person does
 - No Electron, no Node.js, no Python, no hosted backend
 

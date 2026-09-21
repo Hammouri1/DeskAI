@@ -24,7 +24,9 @@
                 <Border Width="34" Height="34" CornerRadius="11"
                         Background="{ThemeResource DeskSurfaceRaisedBrush}"
                         BorderBrush="{ThemeResource DeskLineStrongBrush}" BorderThickness="1">
-                    <FontIcon FontSize="14" Glyph="&#xE8B7;" Foreground="{ThemeResource DeskTextPrimaryBrush}" />
+                    <Image Source="ms-appx:///Assets/DeskAI.Logo.png"
+                           Margin="3" Stretch="Uniform"
+                           AutomationProperties.Name="DeskAI logo" />
                 </Border>
                 <TextBlock FontFamily="Segoe UI Variable Display" FontSize="20" FontWeight="SemiBold"
                            VerticalAlignment="Center"
