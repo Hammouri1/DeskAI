@@ -13,8 +13,9 @@ Built the same day, after the owner's first look at 1.0. Version number in
   slides and 256 KB of text, and returns every matching deck among the bounded files checked.
 - PDF text search now checks up to 32 MB, 100 pages, and 256 KB of text. Matching tolerates
   layout whitespace inside words, which is common in exported PDFs and formatted slides.
-- Picture reading is disabled for this launch; Search has no image-reading or image-upload
-  action. Scanned/image-only words are not claimed as searchable.
+- AI picture reading and image upload are disabled for this launch. A separate **Search
+  scanned PDF words** action can use bounded Windows on-device OCR after confirmation for
+  that search; its approximate results show page evidence and must be verified in the PDF.
 - The Desktop connects even when DeskAI itself was unzipped onto it. A folder that merely
   contains a protected place (DeskAI's own program folder) connects with that part skipped;
   a folder inside a protected place is still refused.

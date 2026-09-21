@@ -166,6 +166,7 @@ changes a feature.
 | Search | Launch build keeps picture reading unavailable even when AI is configured; the Search page has no picture-search entry point | `SearchPageTests` |
 | Shell | Published startup explicitly shows, activates, and foregrounds the main window instead of leaving an invisible healthy process | `ShellLayoutTests` |
 | Search | A generated 21-page PDF with the searched word only on page 21 appears in Files checked as partly read, with the 20-page or 64-KB text limit stated (owner-found ambiguity, 2026-09-21; page test failed before wording fix) | `SearchPageTests` |
+| Search | A flattened PDF is not OCR-read by normal search or after cancel; one-run approval finds a word on its reported page without any AI/network request | `SearchPageTests` |
 | Search | "Look in" limits both name and inside-file matches to the selected connected folder; a query cannot select a path itself | `SearchPageTests`, `ContentSearchServiceTests` |
 | Automatic tasks | Write, draft from a sentence, turn off, delete rules | `AutomationPageTests` |
 | Automatic tasks | Let AI read this (ADR 0033): the words alone are sent after the dialog; the reading fills the boxes as a typed sentence would and saves nothing; a destination outside the folder is refused whole | `SentenceAiPageTests`, `AiSentenceReadingTests` |

@@ -1,5 +1,7 @@
 using System.IO.Compression;
 using DeskAI.App.ViewModels;
+using DeskAI.Core.Abstractions;
+using DeskAI.Core.Content;
 using UglyToad.PdfPig.Core;
 using UglyToad.PdfPig.Content;
 using UglyToad.PdfPig.Fonts.Standard14Fonts;
@@ -469,6 +471,44 @@ public sealed class SearchPageTests
 
         Assert.Empty(search.InsideResults);
         Assert.Contains("could not be read", search.InsideMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Scanned_Pdf_search_requires_one_run_approval_and_shows_the_Ocr_page()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Scans");
+        var builder = new PdfDocumentBuilder();
+        builder.AddPage(PageSize.A4);
+        File.WriteAllBytes(Path.Combine(folder, "flattened.pdf"), builder.Build());
+        app.PdfOcr.Result = new PdfOcrResult(
+            "Mohammad Al-Hammouri",
+            [new ExtractedTextSection("Page 8", 0, 20)],
+            WasTruncated: false);
+
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        var rootId = Assert.Single(search.Folders).Id;
+        await search.SetContentPermissionAsync(rootId, allow: true);
+        await search.SetPdfPermissionAsync(rootId, allow: true);
+        search.Phrase = "pdf hammouri";
+
+        await search.SearchCommand.ExecuteAsync(null);
+        Assert.Empty(search.InsideResults);
+        Assert.Equal(0, app.PdfOcr.Calls);
+
+        await search.SearchScannedPdfsAsync(approved: false);
+        Assert.Equal(0, app.PdfOcr.Calls);
+
+        await search.SearchScannedPdfsAsync(approved: true);
+        var hit = Assert.Single(search.InsideResults);
+        Assert.Equal("flattened.pdf", hit.Name);
+        Assert.Contains("Page 8", hit.Location, StringComparison.Ordinal);
+        Assert.Contains("Hammouri", hit.Snippet, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("approximate", search.InsideMessage, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(1, app.PdfOcr.Calls);
+        Assert.Empty(app.Internet.Requests);
     }
 
     [Fact]

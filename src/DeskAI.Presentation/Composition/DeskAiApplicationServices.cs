@@ -75,6 +75,7 @@ public static class DeskAiApplicationServices
         // connected for reading inside, so registering it grants nothing on its own.
         services.AddSingleton<PdfProcessReader>();
         services.AddSingleton<IContentTextExtractor, PlainTextExtractor>();
+        services.AddSingleton<IPdfOcrReader, NoPdfOcrReader>();
         services.AddSingleton<ContentSearchService>();
         services.AddSingleton<IVisualAssetReader, VisualAssetReader>();
         services.AddSingleton<IVisualImageMatcher, ConfiguredVisualImageMatcher>();

@@ -2,6 +2,7 @@ using DeskAI.AI.Transport;
 using DeskAI.App.Composition;
 using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
+using DeskAI.Core.Content;
 using DeskAI.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -58,6 +59,9 @@ internal sealed class TestApp : IAsyncDisposable
 
     public SandboxKnownFolders KnownFolders => (SandboxKnownFolders)_services.GetRequiredService<IKnownFolders>();
 
+    public RecordingPdfOcrReader PdfOcr =>
+        (RecordingPdfOcrReader)_services.GetRequiredService<IPdfOcrReader>();
+
     /// <summary>The generated folder standing in for the person's Desktop. Created on first use.</summary>
     public string DesktopPath => System.IO.Path.Combine(Sandbox, "Desktop");
 
@@ -107,6 +111,7 @@ internal sealed class TestApp : IAsyncDisposable
         Replace<IFindingNotifier>(services, new RecordingNotifier());
         Replace<IBackgroundPresence>(services, new RecordingPresence());
         Replace<IAppearanceApplier>(services, new RecordingAppearanceApplier());
+        Replace<IPdfOcrReader>(services, new RecordingPdfOcrReader());
 
         // The real wallpaper and the real Desktop must be unreachable from any test. Both
         // are replaced, and the Desktop is asserted to be inside this test's own folder.
@@ -180,5 +185,18 @@ internal sealed class TestApp : IAsyncDisposable
         }
 
         services.AddSingleton(instance);
+    }
+}
+
+internal sealed class RecordingPdfOcrReader : IPdfOcrReader
+{
+    public PdfOcrResult? Result { get; set; }
+    public int Calls { get; private set; }
+
+    public Task<PdfOcrResult?> ReadAsync(ReadOnlyMemory<byte> pdfBytes,
+        CancellationToken cancellationToken = default)
+    {
+        Calls++;
+        return Task.FromResult(Result);
     }
 }

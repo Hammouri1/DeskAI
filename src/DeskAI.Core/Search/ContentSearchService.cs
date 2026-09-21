@@ -117,7 +117,28 @@ public sealed class ContentSearchService(
         string? phrase,
         DateTimeOffset nowUtc,
         Guid? selectedRootId,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        await SearchCoreAsync(phrase, nowUtc, selectedRootId, pdfOcrOnly: false,
+            TextExtractionOptions.Default, MaxFilesRead, cancellationToken).ConfigureAwait(false);
+
+    /// <summary>Runs the explicit, separately confirmed local OCR pass over PDF files only.</summary>
+    public async Task<ContentSearchOutcome> SearchPdfOcrAsync(
+        string? phrase,
+        DateTimeOffset nowUtc,
+        Guid? selectedRootId,
+        CancellationToken cancellationToken = default) =>
+        await SearchCoreAsync(phrase, nowUtc, selectedRootId, pdfOcrOnly: true,
+            new TextExtractionOptions(WindowsPdfOcrLimits.MaxTextBytes, usePdfOcr: true),
+            WindowsPdfOcrLimits.MaxFiles, cancellationToken).ConfigureAwait(false);
+
+    private async Task<ContentSearchOutcome> SearchCoreAsync(
+        string? phrase,
+        DateTimeOffset nowUtc,
+        Guid? selectedRootId,
+        bool pdfOcrOnly,
+        TextExtractionOptions extractionOptions,
+        int maxFiles,
+        CancellationToken cancellationToken)
     {
         var translation = NaturalLanguageQueryTranslator.Translate(phrase, nowUtc);
         var needle = translation.Query.PathContains ?? string.Empty;
@@ -170,6 +191,11 @@ public sealed class ContentSearchService(
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
+                if (pdfOcrOnly && file.Extension != ".pdf")
+                {
+                    continue;
+                }
+
                 if ((filter.Extensions.Count > 0 && !filter.Extensions.Contains(Path.GetExtension(file.RelativePath).ToLowerInvariant()))
                     || (filter.Categories.Count > 0 && !filter.Categories.Contains(file.Category))
                     || (filter.Kinds.Count > 0 && !filter.Kinds.Contains(file.Kind))
@@ -204,7 +230,7 @@ public sealed class ContentSearchService(
                     continue;
                 }
 
-                if (filesRead >= MaxFilesRead)
+                if (filesRead >= maxFiles)
                 {
                     reachedLimit = true;
                     break;
@@ -218,7 +244,7 @@ public sealed class ContentSearchService(
 
                 filesRead++;
                 var extraction = await _extractor
-                    .ExtractAsync(root, file.RelativePath, TextExtractionOptions.Default, cancellationToken)
+                    .ExtractAsync(root, file.RelativePath, extractionOptions, cancellationToken)
                     .ConfigureAwait(false);
 
                 // A refusal is not an error here. A file may have gone, or turned out not to

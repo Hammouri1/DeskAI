@@ -128,6 +128,33 @@ public sealed partial class SearchPage : Page
         await ViewModel.SearchPicturesAsync(batch, cloudSendApproved: batch.Mode == AiMode.Cloud);
     }
 
+    private async void OnSearchScannedPdfsClick(object sender, RoutedEventArgs e)
+    {
+        if (!ViewModel.CanSearchScannedPdfs)
+        {
+            return;
+        }
+
+        var scope = ViewModel.SelectedFolder.Id == Guid.Empty
+            ? "connected folders with PDF permission"
+            : ViewModel.SelectedFolder.Name;
+        var confirmation = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Read scanned PDF words on this computer?",
+            Content = $"DeskAI will use Windows on-device OCR to look for “{ViewModel.Phrase}” in {scope}. "
+                + "It opens at most 10 PDFs, up to 8 MB each, and the first 20 pages of each PDF. "
+                + "OCR can miss or misread words, so you are responsible for verifying important results in the original PDF. "
+                + "No page image or recognized text is uploaded, saved, or used to change a file. This approval is for this search only.",
+            PrimaryButtonText = "Read scanned PDF words",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+
+        await ViewModel.SearchScannedPdfsAsync(
+            await confirmation.ShowAsync() == ContentDialogResult.Primary);
+    }
+
     /// <summary>Asks for a name, then saves the phrase currently in the box.</summary>
     private async void OnSaveSearchClick(object sender, RoutedEventArgs e)
     {

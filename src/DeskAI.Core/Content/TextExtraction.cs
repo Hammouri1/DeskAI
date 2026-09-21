@@ -45,13 +45,17 @@ public sealed record TextExtractionOptions
     /// </summary>
     public static TextExtractionOptions Default { get; } = new(maxBytes: 256 * 1024);
 
-    public TextExtractionOptions(int maxBytes)
+    public TextExtractionOptions(int maxBytes, bool usePdfOcr = false)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(maxBytes, 1);
         MaxBytes = maxBytes;
+        UsePdfOcr = usePdfOcr;
     }
 
     public int MaxBytes { get; }
+
+    /// <summary>Whether this one call may use local OCR on scanned PDF pages.</summary>
+    public bool UsePdfOcr { get; }
 }
 
 /// <summary>

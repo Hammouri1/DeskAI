@@ -1,5 +1,23 @@
 # DeskAI — Coding Handoff
 
+## 2026-09-21 flattened-PDF OCR fix
+
+The supplied `Alpha Analytics Final.pdf` is valid and unencrypted, but pages 2–7 have no
+extractable text and page 8's visible `Mohammad Al-Hammouri` is flattened into pixels. The
+normal PDF reader therefore correctly reported no text match. Search now has a separate
+**Search scanned PDF words** action. It requires the existing content and PDF permissions
+plus a fresh confirmation for each run, then uses Windows on-device OCR on at most 10 PDFs,
+8 MB each, first 20 pages, and 256 KB recognized text per file. Nothing is uploaded,
+persisted, or allowed to change a file; the UI labels OCR approximate and puts verification
+responsibility on the user. AI picture reading remains disabled.
+
+The owner-found page-flow regression proves normal search and Cancel do not call OCR, an
+approved run finds `Hammouri` on Page 8, and no AI transport is used. A one-off probe through
+the production `WindowsPdfOcrReader` against the supplied PDF recovered
+`Mohammad Al-Hammouri` on Page 8. The temporary probe was deleted. ADR 0040 and the dated
+security review record the boundary. Final Release build/format/commit details follow in
+the current task history.
+
 ## 2026-09-21 launch search reliability follow-up
 
 The owner's screenshots showed the concrete failure: PowerPoints of about 8.3 MB and

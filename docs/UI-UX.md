@@ -228,6 +228,11 @@ bytes, the provider destination, and a cost warning. Cancel sends nothing. Resul
 says AI can be mistaken. It does not imply all files, PDF pages, or image encodings were read.
 
 After a person found one PDF match while two other files could not be read, Search gained a collapsed **Files checked** list. It names each attempted file and says whether its text matched, had no match, was only partly read, or could not be read. The summary points there and explains that searching `pdf` alone lists remembered PDFs by name. This keeps a missed match distinct from a PDF the reader could not open.
+
+**Search scanned PDF words** is separate from ordinary Search. It is enabled only for a
+non-empty phrase and a selected connected scope with PDF permission. Every click previews
+the local-only limits and warns that OCR is approximate; Cancel reads no page image. Results
+state that the person must verify important matches in the original PDF.
 If a PDF is only partly read, its row names the first-100-pages or 256-KB text limit and says a word may be later. The folder location remains visible even when no content word matches, so a PDF in a subfolder is not mistaken for a file the scanner missed.
 
 **Look in** sits before Search: all connected folders by default, or one folder the person

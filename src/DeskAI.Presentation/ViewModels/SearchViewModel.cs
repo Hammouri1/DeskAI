@@ -219,7 +219,13 @@ public sealed class SearchViewModel : ObservableObject
     public SearchFolderChoiceViewModel SelectedFolder
     {
         get => _selectedFolder;
-        set => SetProperty(ref _selectedFolder, value ?? SearchFolderChoiceViewModel.All);
+        set
+        {
+            if (SetProperty(ref _selectedFolder, value ?? SearchFolderChoiceViewModel.All))
+            {
+                OnPropertyChanged(nameof(CanSearchScannedPdfs));
+            }
+        }
     }
 
     /// <summary>Files whose words matched, from folders that allowed reading inside.</summary>
@@ -241,6 +247,11 @@ public sealed class SearchViewModel : ObservableObject
     // also blocks a stale UI binding if the button is accidentally restored on its own.
     public bool CanSearchPictures => HasAi && !string.IsNullOrWhiteSpace(Phrase)
         && !IsBusy && PictureSearchEnabled;
+
+    /// <summary>OCR stays separate from normal PDF permission and requires confirmation per run.</summary>
+    public bool CanSearchScannedPdfs => !string.IsNullOrWhiteSpace(Phrase) && !IsBusy
+        && Folders.Any(folder => folder.CanReadPdf
+            && (SelectedFolder.Id == Guid.Empty || folder.Id == SelectedFolder.Id));
 
     public string VisualAiName => _aiStatus?.ServiceName ?? "AI";
 
@@ -307,6 +318,7 @@ public sealed class SearchViewModel : ObservableObject
                 OnPropertyChanged(nameof(CanSaveCurrentSearch));
                 OnPropertyChanged(nameof(CanAskAi));
                 OnPropertyChanged(nameof(CanSearchPictures));
+                OnPropertyChanged(nameof(CanSearchScannedPdfs));
             }
         }
     }
@@ -413,6 +425,7 @@ public sealed class SearchViewModel : ObservableObject
                 SearchCommand.NotifyCanExecuteChanged();
                 OnPropertyChanged(nameof(CanAskAi));
                 OnPropertyChanged(nameof(CanSearchPictures));
+                OnPropertyChanged(nameof(CanSearchScannedPdfs));
             }
         }
     }
@@ -742,6 +755,7 @@ public sealed class SearchViewModel : ObservableObject
         OnPropertyChanged(nameof(SelectedFolder));
 
         OnPropertyChanged(nameof(HasFolders));
+        OnPropertyChanged(nameof(CanSearchScannedPdfs));
         if (Folders.Count == 0)
         {
             FolderMessage = "No folders connected yet.";
@@ -784,6 +798,33 @@ public sealed class SearchViewModel : ObservableObject
             StatusMessage = $"Try a shorter phrase, under {MaxPhraseLength} characters.";
             ScopeMessage = string.Empty;
             RaiseListChanges();
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    /// <summary>Called only after the page's one-run local OCR confirmation.</summary>
+    public async Task SearchScannedPdfsAsync(bool approved)
+    {
+        if (!approved || !CanSearchScannedPdfs)
+        {
+            return;
+        }
+
+        IsBusy = true;
+        try
+        {
+            var selectedRootId = SelectedFolder.Id == Guid.Empty ? (Guid?)null : SelectedFolder.Id;
+            var outcome = await _insideFiles.SearchPdfOcrAsync(
+                Phrase, _clock.UtcNow, selectedRootId).ConfigureAwait(true);
+            ApplyInsideFiles(outcome);
+            InsideMessage += " Scanned-page OCR is approximate; verify important results in the PDF. Nothing was uploaded or saved.";
+            if (outcome.Hits.Count > 0)
+            {
+                StatusMessage = "These PDFs matched approximate words read from their page images. Verify the result in the PDF.";
+            }
         }
         finally
         {

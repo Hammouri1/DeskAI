@@ -26,12 +26,16 @@ namespace DeskAI.Infrastructure.Content;
 /// decoded, and the text is returned to the caller and stored nowhere.
 /// </para>
 /// </remarks>
-public sealed class PlainTextExtractor(IPathPolicy pathPolicy, PdfProcessReader pdfReader) : IContentTextExtractor
+public sealed class PlainTextExtractor(
+    IPathPolicy pathPolicy,
+    PdfProcessReader pdfReader,
+    IPdfOcrReader pdfOcrReader) : IContentTextExtractor
 {
     private readonly IPathPolicy _pathPolicy = pathPolicy;
     private readonly PdfProcessReader _pdfReader = pdfReader;
+    private readonly IPdfOcrReader _pdfOcrReader = pdfOcrReader;
 
-    public PlainTextExtractor(IPathPolicy pathPolicy) : this(pathPolicy, new PdfProcessReader()) { }
+    public PlainTextExtractor(IPathPolicy pathPolicy) : this(pathPolicy, new PdfProcessReader(), new NoPdfOcrReader()) { }
 
     public async Task<TextExtraction> ExtractAsync(
         AuthorizedRoot root,
@@ -182,13 +186,48 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy, PdfProcessReader 
                 }
 
                 var result = await _pdfReader.ReadAsync(stream, cancellationToken).ConfigureAwait(false);
-                if (result is not { } pdf || string.IsNullOrWhiteSpace(pdf.Text))
+                if (!options.UsePdfOcr && (result is not { } extracted || string.IsNullOrWhiteSpace(extracted.Text)))
                 {
                     return TextExtraction.Refused(relativePath, TextExtractionStatus.Unavailable,
                         "This PDF could not be read here. It may be encrypted, damaged, or unsupported.");
                 }
 
-                var pdfBytes = Encoding.UTF8.GetBytes(pdf.Text);
+                var text = result?.Text ?? string.Empty;
+                var sections = new List<ExtractedTextSection>();
+                var ocrTruncated = false;
+                if (options.UsePdfOcr)
+                {
+                    if (stream.Length > WindowsPdfOcrLimits.MaxPdfBytes)
+                    {
+                        return TextExtraction.Refused(relativePath, TextExtractionStatus.Unavailable,
+                            "This scanned PDF is over the 8 MB local OCR limit.");
+                    }
+
+                    stream.Position = 0;
+                    var source = new byte[stream.Length];
+                    await stream.ReadExactlyAsync(source, cancellationToken).ConfigureAwait(false);
+                    var ocr = await _pdfOcrReader.ReadAsync(source, cancellationToken).ConfigureAwait(false);
+                    if (ocr is { } recognized && !string.IsNullOrWhiteSpace(recognized.Text))
+                    {
+                        var start = text.Length;
+                        if (start > 0) text += "\n";
+                        start = text.Length;
+                        text += recognized.Text;
+                        sections.AddRange(recognized.Sections.Select(section =>
+                            section with { Start = section.Start + start, End = section.End + start }));
+                        ocrTruncated = recognized.WasTruncated;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    return TextExtraction.Refused(relativePath, TextExtractionStatus.Unavailable,
+                        options.UsePdfOcr
+                            ? "No words were recognized on the scanned pages. OCR is approximate and may miss text."
+                            : "This PDF could not be read here. It may be encrypted, damaged, or unsupported.");
+                }
+
+                var pdfBytes = Encoding.UTF8.GetBytes(text);
                 var limit = Math.Min(options.MaxBytes, 256 * 1024);
                 var length = Math.Min(pdfBytes.Length, limit);
                 while (length < pdfBytes.Length && length > 0 && (pdfBytes[length] & 0xC0) == 0x80)
@@ -196,10 +235,15 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy, PdfProcessReader 
                     length--;
                 }
 
-                var pdfTruncated = pdf.Truncated || length < pdfBytes.Length;
+                var pdfTruncated = (result?.Truncated ?? false) || ocrTruncated || length < pdfBytes.Length;
                 return new TextExtraction(relativePath, TextExtractionStatus.Extracted,
                     Encoding.UTF8.GetString(pdfBytes, 0, length), pdfTruncated,
-                    pdfTruncated ? "Part of this PDF was read. There may be more." : "PDF text was read locally.");
+                    options.UsePdfOcr
+                        ? "Scanned PDF words were read with approximate on-device OCR. Verify the result in the file."
+                        : pdfTruncated ? "Part of this PDF was read. There may be more." : "PDF text was read locally.")
+                {
+                    Sections = sections,
+                };
             }
             if (extension.Equals(".docx", StringComparison.OrdinalIgnoreCase)
                 || extension.Equals(".xlsx", StringComparison.OrdinalIgnoreCase))

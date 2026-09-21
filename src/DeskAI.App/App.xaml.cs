@@ -85,6 +85,15 @@ public partial class App : Application
                 services.AddSingleton<IBackupFilePickerService, WindowsBackupFilePickerService>();
                 services.AddSingleton<IFindingNotifier, WindowsFindingNotifier>();
 
+                foreach (var existing in services
+                    .Where(descriptor => descriptor.ServiceType == typeof(IPdfOcrReader))
+                    .ToArray())
+                {
+                    services.Remove(existing);
+                }
+
+                services.AddSingleton<IPdfOcrReader, WindowsPdfOcrReader>();
+
                 // Replace, never add alongside. A second registration would leave
                 // NoBackgroundPresence reachable through IEnumerable<IBackgroundPresence>, and
                 // whichever one was resolved would decide whether DeskAI offers to keep running
