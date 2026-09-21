@@ -7,14 +7,15 @@ or Windows startup, and it never checks the internet for updates.
 
 - Windows 11, version 24H2 or later (build 26100), 64-bit.
 - Nothing else. The zip includes everything DeskAI runs on. An ordinary laptop is plenty:
-  DeskAI reads names, sizes, and dates, not file contents, and connecting a folder of a few
+  DeskAI initially reads names, sizes, and dates; reading file contents requires separate
+  permission. Connecting a folder of a few
   thousand files takes well under a second (`PERFORMANCE.md`). About 200 MB of disk for the app
   folder; its memory in `%LocalAppData%\DeskAI` is a few megabytes.
 
 ## Install
 
-There is no published release yet, so the Releases page is empty. Until there is one, you will
-either be sent a zip or build one yourself with the commands in the README.
+Until the first release is published, the Releases page has no official zip. Build from source
+or use a zip you created yourself; after release, use the GitHub Release asset.
 
 1. Get `DeskAI-<version>-win-x64.zip` — from the GitHub **Releases** page once one exists, or
    from whoever sent it to you.

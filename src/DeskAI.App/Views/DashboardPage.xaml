@@ -192,6 +192,10 @@
                             <TextBlock FontWeight="SemiBold"
                                        Foreground="{ThemeResource DeskTextPrimaryBrush}"
                                        Text="Ask about your folders in your own words" />
+                            <Border Style="{StaticResource PillStyle}"
+                                    AutomationProperties.Name="Beta feature">
+                                <TextBlock Style="{StaticResource PillTextStyle}" Text="BETA" />
+                            </Border>
                             <controls:HelpButton Topic="home.ask" />
                         </StackPanel>
                         <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">

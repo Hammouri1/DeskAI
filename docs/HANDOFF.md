@@ -1,5 +1,20 @@
 # DeskAI — Coding Handoff
 
+## 2026-09-21 public 1.1.0 release preparation
+
+Ask DeskAI now carries a visible and accessible **BETA** pill. Its existing boundary is
+unchanged: natural-language file-search, storage, and organize questions only, not general
+chat. The README now accurately covers PDF/PowerPoint text search, bounded local PDF OCR,
+the disabled image-search action, current safety limits, and 1,422 passing tests. The default
+displayed version is 1.1.0.
+
+The release workflow was exercised locally. Locked solution restore originally disagreed with
+stale runtime sections in library lock files, and publishing could omit the PDF worker's runtime
+assets. Library locks now match their projects, `DeskAI.PdfWorker` declares `win-x64`, and the
+worker now declares that runtime so the locked solution restore covers it. Release build, test,
+format, and self-contained publish all pass. The workflow now also attaches a SHA-256 checksum beside the zip and SBOM.
+No push, tag, or GitHub Release was made in this task; those remain explicit owner actions.
+
 ## 2026-09-21 flattened-PDF OCR fix
 
 The supplied `Alpha Analytics Final.pdf` is valid and unencrypted, but pages 2–7 have no
@@ -73,7 +88,7 @@ generated-data tests, a beginner-friendly explanation, and a commit for each com
 
 ## Checkout and release state
 
-- Repository: `C:\Users\Hammouri\Desktop\DeskAI`, branch `main`. The PDF search follow-up
+- Repository: the local DeskAI checkout, branch `main`. The PDF search follow-up
   began with `66a8e3b` (`Explain per-file PDF search outcomes`). Later local commits added a
   generated PDF one subfolder down for safe manual checking and clarified partly-read PDF
   wording. Verify Git state before work; these commits remain local until the owner chooses
@@ -214,7 +229,7 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 
 ## Copy-paste starter prompt
 
-> Continue DeskAI at `C:\Users\Hammouri\Desktop\DeskAI`. Read `AGENTS.md`,
+> Continue DeskAI in the repository checkout. Read `AGENTS.md`,
 > `docs/HANDOFF.md`, and especially `docs/SECURITY.md`; confirm `66a8e3b` is in the
 > checkout and inspect Git status. PDF text search and its per-file **Files checked**
 > follow-up are implemented locally but not pushed or released. First help me verify the

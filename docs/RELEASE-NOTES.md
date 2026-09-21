@@ -2,10 +2,13 @@
 
 ## 1.1 — 2026-09-16 (not tagged yet)
 
-Built the same day, after the owner's first look at 1.0. Version number in
-`Directory.Build.props` still reads 1.0.0; bumping it is the owner's call before tagging.
+Prepared after the owner's first look at 1.0. `Directory.Build.props` now reads 1.1.0 for the
+public release candidate; the release workflow still derives the final version from its tag.
 
 **Fixes**
+
+- **Ask DeskAI** is visibly marked **BETA**. It accepts natural wording for file-search,
+  storage, and organize questions; it is not presented as a general chatbot.
 
 - The unpackaged release now explicitly shows and foregrounds its main window at startup,
   instead of sometimes remaining as an invisible process in Task Manager.

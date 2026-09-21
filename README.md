@@ -2,6 +2,10 @@
 
 > A private, local-first AI workspace for safely organizing, finding, and understanding files on Windows.
 
+[![Build and test](https://github.com/Hammouri1/DeskAI/actions/workflows/build.yml/badge.svg)](https://github.com/Hammouri1/DeskAI/actions/workflows/build.yml)
+[![Windows 11](https://img.shields.io/badge/Windows_11-24H2%2B-0078D4?logo=windows11)](docs/INSTALL.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-4DD8A8.svg)](LICENSE)
+
 DeskAI is an open-source Windows desktop app that helps you tidy, search, and understand your
 own files — without ever handing an AI model control of your computer. It looks only inside
 folders you connect, explains what it wants to do, shows you a preview, and changes nothing
@@ -21,9 +25,9 @@ Connected folder → scan → classify → propose plan → safety validation
                   → preview → your approval → execute → journal → undo
 ```
 
-**Status:** version 1.1, complete in code, tests, and documentation. 1,355 automated tests pass;
-the Release build has zero warnings. It has not yet been through a full manual sign-off, and the
-download is not code-signed — see [Honest limits](#honest-limits).
+**Status:** version 1.1.0 release candidate. 1,422 automated tests pass and the x64 Release
+build has zero warnings. It still needs final public-release and manual smoke-test sign-off,
+and the download is not code-signed — see [Honest limits](#honest-limits).
 
 ## What DeskAI does today
 
@@ -33,11 +37,12 @@ Nothing moves until you press Tidy. It never overwrites, never deletes, and re-c
 the instant before it moves it. A tidy interrupted by a crash is resolved file by file, and
 DeskAI never guesses about a file it cannot prove.
 
-**Finding.** Search by name, type, size, or date. With a separate yes for a connected folder,
-search words inside notes and modern Word (`.docx`) and Excel (`.xlsx`) files locally. Save
-searches, pin them to Home with live counts, and find exact and possible duplicates — comparing
-file contents only when you ask, and never deleting what it finds. PDF text and recognizing
-objects in photos are not supported yet.
+**Finding.** Search by name, type, size, or date. With separate, visible permissions, search
+words inside notes, modern Word (`.docx`), Excel (`.xlsx`), PDF, and PowerPoint (`.pptx`) files
+locally. A separately confirmed on-device OCR pass can search approximate words on scanned PDF
+pages and show the matching page. Save searches, pin them to Home with live counts, and find
+exact and possible duplicates—comparing file contents only when you ask and never deleting what
+it finds. AI picture/scene search is disabled in this release.
 
 **Understanding.** See what is using space, what has gone stale, and how organized a folder is.
 
@@ -50,9 +55,10 @@ rule-matched files per run, stopping on anything unexpected, always undoable.
 and restore of your rules and saved searches.
 
 **Optional AI, four ways.** Ask AI about files rules could not place; have AI plan a folder
-structure; type a sentence like "PDFs from last month" and have it become a real search or rule;
-or ask DeskAI a question on Home. Every one shows you exactly what would be sent before it sends
-anything.
+structure; type a sentence like "PDFs from last month" and have it become a deterministic search
+or rule; or use **Ask DeskAI (BETA)** on Home. The beta accepts natural wording for file-search,
+storage, and organize questions—it is deliberately not a general chatbot. Only the words or
+bounded metadata shown in the consent UI can leave the computer.
 
 ## Privacy and AI modes
 
@@ -93,6 +99,11 @@ These are properties of the code, each covered by tests:
   exists ([ADR 0030](docs/decisions/0030-distribution-without-plugins-or-self-update.md)).
 - **Full manual sign-off is still outstanding.** The automated tests are thorough, but a person
   has not yet walked every screen.
+- **Ask DeskAI is beta.** It handles file-search, storage, and organize questions, not general
+  conversation, and its interpretation can be wrong.
+- **OCR is approximate.** Scanned-PDF search can miss or misread stylized, small, rotated, or
+  unsupported-language text; verify important results in the original document.
+- **No image-subject search in this release.** AI picture reading and uploads are disabled.
 - **Windows only.** Filesystem semantics, known folders, and shell integration differ too much per
   platform for a shared implementation to be honest about its guarantees.
 - **Not built:** renaming files, smart collections, semantic search, plugins, localization, and
@@ -104,7 +115,7 @@ These are properties of the code, each covered by tests:
 - MVVM presentation, dependency injection at the composition root, async and cancellable I/O
 - SQLite (schema version 14) for settings, rules, saved searches, plans, the metadata index, and
   the operation journal
-- xUnit — 1,355 tests across five projects, including page tests that use each feature the way a
+- xUnit — 1,422 tests across five projects, including page tests that use each feature the way a
   person does
 - No Electron, no Node.js, no Python, no hosted backend
 
@@ -128,8 +139,8 @@ composes the system and holds no filesystem business logic.
 
 ## Getting it and running it
 
-There is **no published release yet**, so there is no zip to download from the Releases page.
-Until there is, there are two ways to run DeskAI.
+Until the first release is published, there is no official zip on the Releases page. After a
+`v1.1.0` tag is published, use only the zip attached to that GitHub Release or build from source.
 
 **If someone sent you a zip.** Unzip it wherever you keep programs — for example
 `C:\Apps\DeskAI` — and run `DeskAI.App.exe`. Nothing is installed: no Program Files, no registry,
@@ -183,10 +194,21 @@ dotnet test DeskAI.sln -c Release --no-build
 Do not point development tools or tests at real personal folders. Development and every test use
 generated temporary data only.
 
+## Documentation
+
+- [Install, update, and remove](docs/INSTALL.md)
+- [User guide](docs/USER-GUIDE.md)
+- [Security model](docs/SECURITY.md)
+- [AI providers and privacy](docs/AI-PROVIDERS.md)
+- [Architecture](docs/ARCHITECTURE.md)
+- [Testing strategy](docs/TESTING.md)
+- [Roadmap](docs/ROADMAP.md)
+- [Release notes](docs/RELEASE-NOTES.md)
+
 ## Design decisions
 
 Every significant decision is written down with its reasoning, including the ones that were
-rejected: 35 records in [docs/decisions](docs/decisions), and a security review for each
+rejected: 40 records in [docs/decisions](docs/decisions), and a security review for each
 capability that touches a file or a Windows setting in [docs/security](docs/security).
 
 ## Contributing and security

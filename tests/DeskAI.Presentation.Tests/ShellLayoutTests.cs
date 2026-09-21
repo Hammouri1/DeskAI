@@ -162,6 +162,19 @@ public sealed partial class ShellLayoutTests
         Assert.Contains("window.Reveal();", startup, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Ask_DeskAI_is_visibly_marked_as_a_beta_feature()
+    {
+        var xaml = File.ReadAllText(AppFile(Path.Combine("Views", "DashboardPage.xaml")));
+        var cardHeading = Regex.Match(xaml,
+            @"Text=""Ask about your folders in your own words""(.*?)<controls:HelpButton Topic=""home.ask""",
+            RegexOptions.Singleline).Groups[1].Value;
+
+        Assert.NotEmpty(cardHeading);
+        Assert.Contains("Text=\"BETA\"", cardHeading, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.Name=\"Beta feature\"", cardHeading, StringComparison.Ordinal);
+    }
+
     private static string AppFile(string relative) =>
         Path.Combine(RepositoryRoot(), "src", "DeskAI.App", relative);
 

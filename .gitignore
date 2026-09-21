@@ -12,6 +12,9 @@ TestResults/
 .dotnet-cli-home/
 .nuget-packages/
 artifacts/
+publish/
+*.zip
+*.sha256
 test-sandboxes/
 
 # Subagent-driven development scratch (ledger, briefs, review packages)
