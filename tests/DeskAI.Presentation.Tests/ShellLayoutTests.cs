@@ -150,6 +150,18 @@ public sealed partial class ShellLayoutTests
         Assert.Contains("NoBackgroundPresence", preview, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Published_startup_explicitly_shows_and_foregrounds_the_main_window()
+    {
+        var source = File.ReadAllText(AppFile("App.xaml.cs"));
+        var startup = Regex.Match(source,
+            @"var window = _host\.Services\.GetRequiredService<MainWindow>\(\);(.*?)await ConnectTheBackgroundPresenceAsync",
+            RegexOptions.Singleline).Groups[1].Value;
+
+        Assert.NotEmpty(startup);
+        Assert.Contains("window.Reveal();", startup, StringComparison.Ordinal);
+    }
+
     private static string AppFile(string relative) =>
         Path.Combine(RepositoryRoot(), "src", "DeskAI.App", relative);
 

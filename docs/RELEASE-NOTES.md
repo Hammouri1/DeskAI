@@ -7,6 +7,8 @@ Built the same day, after the owner's first look at 1.0. Version number in
 
 **Fixes**
 
+- The unpackaged release now explicitly shows and foregrounds its main window at startup,
+  instead of sometimes remaining as an invisible process in Task Manager.
 - Search no longer skips ordinary 8–32 MB modern PowerPoint decks. It checks up to 200
   slides and 256 KB of text, and returns every matching deck among the bounded files checked.
 - PDF text search now checks up to 32 MB, 100 pages, and 256 KB of text. Matching tolerates

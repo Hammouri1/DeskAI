@@ -151,7 +151,9 @@ public partial class App : Application
             // The chosen look is painted before the window shows, so it never flashes the default.
             _host.Services.GetRequiredService<IAppearanceApplier>().Apply(
                 await _host.Services.GetRequiredService<IAppearanceSettingsRepository>().LoadAsync());
-            window.Activate();
+            // Show explicitly as well as activating. In an unpackaged published build,
+            // Activate alone can leave a healthy process running with no visible window.
+            window.Reveal();
 #if !DESKAI_UI_PREVIEW
             await ConnectTheBackgroundPresenceAsync(window);
 #endif

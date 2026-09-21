@@ -22,6 +22,13 @@ Final verification completed: the full Release UI-preview build passed with 0 wa
 0 errors; all 1,419 tests passed with no skips; `dotnet format --verify-no-changes` passed.
 No personal PDF, PowerPoint, folder, or API key was opened during development or testing.
 
+The first local 1.1.0 publish then exposed a window-startup bug: the process stayed healthy
+in Task Manager but no window appeared. Published startup had called WinUI `Activate()` only.
+It now calls `MainWindow.Reveal()`, which explicitly shows the AppWindow, activates it, and
+requests the foreground. A source-level presentation regression test pins this launch path.
+After this correction the preview build again passed with 0 warnings/errors, all 1,420 tests
+passed, and formatting verification passed. Republish 1.1.0 before asking the owner to retry.
+
 ## 2026-09-21 visual Search update
 
 After the slide-text commit `991a275`, the owner clarified that DeskAI must **not**
