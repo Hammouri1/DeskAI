@@ -236,7 +236,8 @@ public sealed class ContentSearchService(
                     filesTruncated++;
                 }
 
-                var position = extraction.Text.IndexOf(needle, StringComparison.OrdinalIgnoreCase);
+                var match = FindMatch(extraction.Text, needle);
+                var position = match?.Position ?? -1;
                 checks.Add(new ContentFileCheck(root.DisplayName, file.RelativePath, file.Name,
                     position >= 0 ? ContentCheckStatus.Matched : ContentCheckStatus.NoMatch,
                     extraction.WasTruncated, extraction.Explanation));
@@ -246,7 +247,7 @@ public sealed class ContentSearchService(
                         root.DisplayName,
                         file.RelativePath,
                         file.Name,
-                        Snippet(extraction.Text, position, needle.Length))
+                        Snippet(extraction.Text, position, match!.Value.Length))
                     {
                         Section = extraction.Sections.FirstOrDefault(section =>
                             position >= section.Start && position < section.End)?.Label,
@@ -265,6 +266,50 @@ public sealed class ContentSearchService(
         {
             CheckedFiles = checks.AsReadOnly(),
         };
+    }
+
+    /// <summary>
+    /// Tries an exact match first, then ignores layout whitespace inserted inside words by
+    /// PDF and Office extractors. The returned coordinates still point into the original
+    /// text so snippets and slide labels remain truthful.
+    /// </summary>
+    private static (int Position, int Length)? FindMatch(string text, string needle)
+    {
+        var exact = text.IndexOf(needle, StringComparison.OrdinalIgnoreCase);
+        if (exact >= 0)
+        {
+            return (exact, needle.Length);
+        }
+
+        var compactNeedle = new string(needle.Where(character => !char.IsWhiteSpace(character)).ToArray());
+        if (compactNeedle.Length < MinimumPhraseLength)
+        {
+            return null;
+        }
+
+        var compactText = new System.Text.StringBuilder(text.Length);
+        var originalPositions = new List<int>(text.Length);
+        for (var index = 0; index < text.Length; index++)
+        {
+            if (char.IsWhiteSpace(text[index]))
+            {
+                continue;
+            }
+
+            compactText.Append(text[index]);
+            originalPositions.Add(index);
+        }
+
+        var compactPosition = compactText.ToString().IndexOf(compactNeedle,
+            StringComparison.OrdinalIgnoreCase);
+        if (compactPosition < 0)
+        {
+            return null;
+        }
+
+        var start = originalPositions[compactPosition];
+        var end = originalPositions[compactPosition + compactNeedle.Length - 1] + 1;
+        return (start, end - start);
     }
 
     /// <summary>

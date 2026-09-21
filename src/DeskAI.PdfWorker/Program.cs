@@ -5,9 +5,10 @@ using UglyToad.PdfPig.DocumentLayoutAnalysis.TextExtractor;
 
 // The worker receives bytes, never a path. It has no reason to open another file or use
 // the network. A malformed parser input can terminate this process without taking Search down.
-const int maxInputBytes = 8 * 1024 * 1024;
-const int maxPages = 20;
-const int maxOutputBytes = 64 * 1024;
+const int maxInputBytes = 32 * 1024 * 1024;
+const int maxTextPages = 100;
+const int maxImagePages = 20;
+const int maxOutputBytes = 256 * 1024;
 
 try
 {
@@ -40,7 +41,7 @@ try
     {
         var images = new List<object>();
         var totalBytes = 0;
-        for (var page = 1; page <= Math.Min(document.NumberOfPages, maxPages)
+        for (var page = 1; page <= Math.Min(document.NumberOfPages, maxImagePages)
             && images.Count < 12; page++)
         {
             foreach (var image in document.GetPage(page).GetImages())
@@ -84,8 +85,8 @@ try
     }
 
     var text = new StringBuilder();
-    var truncated = document.NumberOfPages > maxPages;
-    for (var page = 1; page <= Math.Min(document.NumberOfPages, maxPages); page++)
+    var truncated = document.NumberOfPages > maxTextPages;
+    for (var page = 1; page <= Math.Min(document.NumberOfPages, maxTextPages); page++)
     {
         var words = ContentOrderTextExtractor.GetText(document.GetPage(page));
         if (Encoding.UTF8.GetByteCount(words) + Encoding.UTF8.GetByteCount(text.ToString()) + 1 > maxOutputBytes)

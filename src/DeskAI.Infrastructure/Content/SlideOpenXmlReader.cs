@@ -13,10 +13,10 @@ namespace DeskAI.Infrastructure.Content;
 /// </remarks>
 internal static class SlideOpenXmlReader
 {
-    internal const long MaxContainerBytes = 8L * 1024 * 1024;
-    private const long MaxSlideBytes = 256L * 1024;
+    internal const long MaxContainerBytes = 32L * 1024 * 1024;
+    private const long MaxSlideBytes = 1024L * 1024;
     private const int MaxEntries = 1_000;
-    private const int MaxSlides = 40;
+    private const int MaxSlides = 200;
     private const string DrawingNamespace = "http://schemas.openxmlformats.org/drawingml/2006/main";
 
     internal static async Task<(string Text, bool Truncated, IReadOnlyList<ExtractedTextSection> Sections)> ReadAsync(

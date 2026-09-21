@@ -20,7 +20,7 @@ change. The extractor independently refuses Office files unless scope 4 is prese
 Read modern Office Open XML using the .NET ZIP and XML readers only, from a read-only handle.
 Do not extract ZIP entries to disk, resolve XML entities, run macros, follow hyperlinks, or
 parse embedded objects. Keep the whole container at most 8 MB, at most 1,000 entries, at most
-40 selected XML parts, at most 256 KB of XML per part, and at most 64 KB of resulting words
+40 selected XML parts, at most 256 KB of XML per part, and at most 256 KB of resulting words
 per file. Search opens at most 50 supported files per request; it keeps snippets only in
 memory. A word in a search phrase is matched inside eligible files, while document type,
 size, category, and date still narrow candidates before reading.

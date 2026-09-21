@@ -162,6 +162,20 @@ public sealed class ContentSearchServiceTests
         Assert.Single(outcome.Hits);
     }
 
+    [Fact]
+    public async Task SearchAsync_MatchesAWordSplitByDocumentLayoutWhitespace()
+    {
+        var world = new World();
+        var study = world.AddRoot("Study", RootAuthorizationScope.MetadataDocumentsAndPdf);
+        world.AddFile(study, "exported.pdf", "Presented by Ham mour i");
+
+        var outcome = await world.Service.SearchAsync("hammouri", TestContext.Current.CancellationToken);
+
+        var hit = Assert.Single(outcome.Hits);
+        Assert.Equal("exported.pdf", hit.Name);
+        Assert.Contains("Ham mour i", hit.Snippet, StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// A file full of newlines and indentation must still produce one readable line, and a
     /// file cannot push control characters into the results list.

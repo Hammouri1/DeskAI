@@ -1153,7 +1153,7 @@ Connect only the generated Downloads.
    should remain allowed. Disconnect and confirm the folder and results disappear.
 
 This check is for text-based PDFs only. Scanned pages and photographs remain outside scope.
-For a PDF longer than 20 pages or with more than 64 KB of extractable text, **Files checked**
+For a PDF longer than 100 pages or with more than 256 KB of extractable text, **Files checked**
 should say it was partly read; a missing word may be beyond the part DeskAI read.
 
 # PowerPoint slide text check (ADR 0039)
@@ -1168,6 +1168,10 @@ reading. Press **Stop PowerPoint reading** and confirm the text hit disappears w
 separately allowed PDF text remains searchable. Search never changes the presentation.
 
 # Picture search check (ADR 0038)
+
+Temporarily disabled for the launch build. Confirm Search does not show **Find pictures with
+AI**, even after configuring AI. Do not perform the older steps below until the feature is
+explicitly re-enabled and reviewed for a later build.
 
 Use a newly made folder under a location DeskAI permits, containing only generated or
 disposable sample images and a generated PDF/PPTX. Do not use an existing personal folder

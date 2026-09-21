@@ -40,10 +40,10 @@ public enum TextExtractionStatus
 public sealed record TextExtractionOptions
 {
     /// <summary>
-    /// 64 KB: enough text to recognise what a document is, small enough that reading it
-    /// costs nothing noticeable and cannot be used to pull a large file into memory.
+    /// 256 KB: enough to cover substantially longer reports and slide decks while keeping
+    /// every local read explicitly bounded.
     /// </summary>
-    public static TextExtractionOptions Default { get; } = new(maxBytes: 64 * 1024);
+    public static TextExtractionOptions Default { get; } = new(maxBytes: 256 * 1024);
 
     public TextExtractionOptions(int maxBytes)
     {

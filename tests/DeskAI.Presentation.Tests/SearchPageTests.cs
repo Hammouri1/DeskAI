@@ -261,6 +261,31 @@ public sealed class SearchPageTests
     }
 
     [Fact]
+    public async Task Search_finds_every_matching_PowerPoint_including_a_presentation_over_eight_megabytes()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Presentations");
+        CreatePresentation(Path.Combine(folder, "small.pptx"), "Hammouri small");
+        CreatePresentation(Path.Combine(folder, "large.pptx"), "Hammouri large", paddingBytes: 9 * 1024 * 1024);
+
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        var rootId = Assert.Single(search.Folders).Id;
+        await search.SetContentPermissionAsync(rootId, allow: true);
+        await search.SetSlidesPermissionAsync(rootId, allow: true);
+        search.Phrase = "PowerPoint with Hammouri";
+
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Equal(2, search.InsideResults.Count);
+        Assert.Contains(search.InsideResults, result => result.Name == "small.pptx");
+        Assert.Contains(search.InsideResults, result => result.Name == "large.pptx");
+        Assert.DoesNotContain(search.CheckedFiles,
+            file => file.Result.Contains("too large", StringComparison.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task Pdf_text_needs_a_separate_yes_and_stops_after_revocation()
     {
         await using var app = await TestApp.StartAsync();
@@ -364,7 +389,7 @@ public sealed class SearchPageTests
     }
 
     [Fact]
-    public async Task Search_explains_when_a_Pdf_match_may_be_beyond_the_reading_limit()
+    public async Task Search_finds_Pdf_text_after_page_twenty()
     {
         await using var app = await TestApp.StartAsync();
         var folder = app.MakeFolder("Presentations");
@@ -388,12 +413,40 @@ public sealed class SearchPageTests
         search.Phrase = "pdf hammouri";
         await search.SearchCommand.ExecuteAsync(null);
 
-        Assert.Empty(search.InsideResults);
+        Assert.Equal("long presentation.pdf", Assert.Single(search.InsideResults).Name);
         var checkedFile = Assert.Single(search.CheckedFiles);
         Assert.Equal("long presentation.pdf", checkedFile.Name);
         Assert.Contains("Slides", checkedFile.Location, StringComparison.Ordinal);
-        Assert.Contains("first 20 pages or 64 KB of text", checkedFile.Result, StringComparison.Ordinal);
-        Assert.Contains("may be later", checkedFile.Result, StringComparison.Ordinal);
+        Assert.Equal("Matched the words inside.", checkedFile.Result);
+    }
+
+    [Fact]
+    public async Task Picture_reading_is_disabled_for_the_launch_build_even_when_Ai_is_configured()
+    {
+        await using var app = await TestApp.StartAsync();
+        await TidyAiTests.TurnOnOpenRouterAsync(app);
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        search.Phrase = "a dog smelling a flower";
+
+        Assert.False(search.CanSearchPictures);
+    }
+
+    private static void CreatePresentation(string path, string words, int paddingBytes = 0)
+    {
+        using var file = File.Create(path);
+        using var zip = new ZipArchive(file, ZipArchiveMode.Create);
+        using (var writer = new StreamWriter(zip.CreateEntry("ppt/slides/slide1.xml").Open()))
+        {
+            writer.Write($"<p:sld xmlns:p=\"http://schemas.openxmlformats.org/presentationml/2006/main\" xmlns:a=\"http://schemas.openxmlformats.org/drawingml/2006/main\"><a:t>{words}</a:t></p:sld>");
+        }
+
+        if (paddingBytes > 0)
+        {
+            using var padding = zip.CreateEntry("ppt/media/generated-padding.bin",
+                CompressionLevel.NoCompression).Open();
+            padding.Write(new byte[paddingBytes]);
+        }
     }
 
     [Fact]

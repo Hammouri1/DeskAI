@@ -34,7 +34,7 @@ content: it finds files whose words match a typed phrase, in folders that allowe
   `RootCapabilities.CanReadContent` and reads only through `IContentTextExtractor`, which
   refuses independently. A test fake counts opened files and asserts zero for every
   non-content scope.
-- **Unbounded reading.** At most 50 files per search, 64 KB each, and only files whose
+- **Unbounded reading.** At most 50 files per search, 256 KB each, and only files whose
   remembered name is a supported text format — decided from the index, so an unsupported
   file is never offered to the extractor. Phrases under three characters open nothing.
 - **Silently partial answers.** The result carries how many files were read and whether the

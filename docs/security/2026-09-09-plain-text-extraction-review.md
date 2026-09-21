@@ -20,7 +20,7 @@ words or a specific reason none were read.
 - **Formats and parser.** Plain text only, via the BCL. No PDF or Office parsing, so no
   third-party parser runs over attacker-controlled binary structure. Unsupported extensions
   are refused before opening, so those files are never touched. See ADR 0015.
-- **Bounds.** 64 KB per file by default, read from the beginning; one file per call. A very
+- **Bounds.** 256 KB per file by default, read from the beginning; one file per call. A very
   large file cannot be pulled into memory.
 - **Malformed and hostile documents.** A zero byte marks the file as not text rather than
   decoding it into nonsense. Invalid UTF-8 is replaced, never thrown, because the bytes are

@@ -62,11 +62,11 @@ public sealed record ContentCheckViewModel(string Name, string Location, string 
         var result = check.Status switch
         {
             ContentCheckStatus.Matched when check.WasTruncated && isPdf =>
-                "Matched in the part read (up to the first 20 pages or 64 KB of text); there may be more.",
+                "Matched in the part read (up to the first 100 pages or 256 KB of text); there may be more.",
             ContentCheckStatus.Matched when check.WasTruncated => "Matched in the part read; there may be more.",
             ContentCheckStatus.Matched => "Matched the words inside.",
             ContentCheckStatus.NoMatch when check.WasTruncated && isPdf =>
-                "No match in the part read (up to the first 20 pages or 64 KB of text); the words may be later.",
+                "No match in the part read (up to the first 100 pages or 256 KB of text); the words may be later.",
             ContentCheckStatus.NoMatch when check.WasTruncated => "No match in the part read; there may be more.",
             ContentCheckStatus.NoMatch => "Read, but the words did not match.",
             _ => $"Could not read: {check.Explanation}",
@@ -169,6 +169,7 @@ public sealed class SearchViewModel : ObservableObject
     private readonly SearchRequest _request;
     private readonly SentenceAiService _sentenceAi;
     private readonly VisualSearchService? _visualSearch;
+    private static bool PictureSearchEnabled => false;
     private SentenceAiStatus? _aiStatus;
     private string _aiMessage = string.Empty;
     private string _phrase = string.Empty;
@@ -236,7 +237,10 @@ public sealed class SearchViewModel : ObservableObject
 
     public bool ShowsVisualResults => VisualResults.Count > 0 || !string.IsNullOrEmpty(VisualMessage);
 
-    public bool CanSearchPictures => HasAi && !string.IsNullOrWhiteSpace(Phrase) && !IsBusy;
+    // Picture reading is deliberately dormant for the launch build. Keeping this false
+    // also blocks a stale UI binding if the button is accidentally restored on its own.
+    public bool CanSearchPictures => HasAi && !string.IsNullOrWhiteSpace(Phrase)
+        && !IsBusy && PictureSearchEnabled;
 
     public string VisualAiName => _aiStatus?.ServiceName ?? "AI";
 
@@ -893,9 +897,7 @@ public sealed class SearchViewModel : ObservableObject
 
             StatusMessage = outcome.ReachedLimit
                 ? "Showing the first matches only. Narrow the search to see fewer, more useful results."
-                : Results.Count == 0 && HasAi
-                    ? "Names did not match. To search what a picture shows, press Find pictures with AI."
-                    : "These matches came from the file names and details DeskAI remembered. Nothing was changed.";
+                : "These matches came from the file names and details DeskAI remembered. Nothing was changed.";
 
             ScopeMessage = outcome.FoldersSearched == 1
                 ? "Searched 1 connected folder."

@@ -54,9 +54,6 @@
                                     IsEnabled="{x:Bind ViewModel.CanAskAi, Mode=OneWay}"
                                     Click="OnAskAiClick" />
                             <controls:HelpButton Topic="search.askAi" />
-                            <Button Content="Find pictures with AI"
-                                    IsEnabled="{x:Bind ViewModel.CanSearchPictures, Mode=OneWay}"
-                                    Click="OnSearchPicturesClick" />
                         </StackPanel>
                     </Grid>
 

@@ -13,7 +13,11 @@ Read plain-text formats only: `.txt`, `.md`, `.log`, `.csv`, `.tsv`, `.json`, `.
 
 PDF and Office formats are deliberately excluded. Reading them means running a third-party parser over a compressed, structured, attacker-controlled binary — a much larger security question than reading bytes, involving a dependency to justify, a sandboxing decision, and malformed-document handling. Half-supporting them would be worse than not supporting them.
 
-Reads are bounded to 64 KB by default, taken from the beginning of the file. That is enough text to tell what a document is about, which is the only reason this capability exists, and it means a very large file cannot be pulled into memory. A file is called truncated only when bytes actually remain, so a file of exactly the limit is complete rather than cut short.
+Reads are bounded to 256 KB by default, taken from the beginning of the file. This launch-era
+limit replaced the original 64 KB bound after longer documents produced missed searches; it
+remains small enough that one file cannot be pulled unboundedly into memory. A file is called
+truncated only when bytes actually remain, so a file of exactly the limit is complete rather
+than cut short.
 
 Extracted text is returned to the caller and **stored nowhere**. Persisting it would need its own consent, its own database schema, and its own deletion controls. Nothing kept means nothing to leak and nothing to delete.
 

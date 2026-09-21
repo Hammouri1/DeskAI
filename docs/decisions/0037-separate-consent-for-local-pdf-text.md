@@ -18,10 +18,10 @@ direct **Stop PDF reading** action, which returns to scope 4. Stopping all conte
 returns to metadata-only. Existing scopes keep their exact meaning and numeric values.
 
 The trusted extractor performs the root, protected-path, containment, and link checks. It
-opens the file read-only and sends at most 8 MB through standard input to a fixed helper
+opens the file read-only and sends at most 32 MB through standard input to a fixed helper
 beside the application. The helper receives bytes, not a path, uses PdfPig 0.1.16 in strict
-parsing mode, and returns at most 64 KB of text from the first 20 pages. The parent waits at
-most five seconds per PDF, kills a stuck helper, and treats a crash or bad response as a
+parsing mode, and returns at most 256 KB of text from the first 100 pages. The parent waits at
+most ten seconds per PDF, kills a stuck helper, and treats a crash or bad response as a
 skipped file. Search attempts at most 50 files and has a 20-second limit checked between
 files. Skips and partial reads are visible; no extracted text is persisted or sent to AI.
 

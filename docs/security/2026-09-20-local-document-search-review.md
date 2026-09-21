@@ -14,7 +14,7 @@
 | Malformed or hostile ZIP/XML consumes memory or accesses a local/remote entity | Container, entry count, part count, expanded-part, XML-character/depth, and output bounds apply. `DtdProcessing.Prohibit` and a null XML resolver block external entities; a generated entity document is refused in a negative test. Parse failures become a per-file refusal. |
 | A document gives instructions to the AI | Its text is inert search data only. Search has no executor or provider transport. Existing injection tests prove that document wording is shown only as a snippet. |
 | A search sends private data to a cloud provider | The content extractor has no AI dependency. `Let AI read this` still sends only the typed sentence after its existing dialog; it receives no file text, image, path, or results. No real provider is called in tests. |
-| A changed or huge document is read without a visible limit | At most 50 files are attempted per request; 64 KB of words per file, 8 MB per Office container. The UI reports count and truncation; snippets are held only for the current page visit. |
+| A changed or huge document is read without a visible limit | At most 50 files are attempted per request; 256 KB of words per file, 8 MB per Word/Excel container. The UI reports count and truncation; snippets are held only for the current page visit. |
 | Disconnect leaves a permission or tidy history | The repository's removal and tidy-grant SQL include scope 4; a SQLite test proves disconnect erases it. |
 
 ## Known Limits and Rollback

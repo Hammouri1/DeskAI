@@ -217,7 +217,9 @@ the connected folder, bounds, and that slide pictures remain closed under this g
 the slide number after the relative folder location. Withdrawing this grant retains PDF
 reading if it was separately allowed.
 
-**Find pictures with AI (ADR 0038).** A separate Search button appears when AI is configured.
+**Find pictures with AI (ADR 0038).** This control is temporarily hidden for the launch build,
+and the view model reports the capability unavailable even when AI is configured. When it is
+reconsidered, the reviewed design is a separate Search button that appears when AI is configured.
 The first dialog names the selected connected-folder scope and the 30-file / 12-picture /
 4-MB limits, and asks to read pictures for this search. With a local AI, that is the only
 approval. With cloud AI, a second dialog lists every picture and its page or slide, total
@@ -226,7 +228,7 @@ bytes, the provider destination, and a cost warning. Cancel sends nothing. Resul
 says AI can be mistaken. It does not imply all files, PDF pages, or image encodings were read.
 
 After a person found one PDF match while two other files could not be read, Search gained a collapsed **Files checked** list. It names each attempted file and says whether its text matched, had no match, was only partly read, or could not be read. The summary points there and explains that searching `pdf` alone lists remembered PDFs by name. This keeps a missed match distinct from a PDF the reader could not open.
-If a PDF is only partly read, its row names the first-20-pages or 64-KB text limit and says a word may be later. The folder location remains visible even when no content word matches, so a PDF in a subfolder is not mistaken for a file the scanner missed.
+If a PDF is only partly read, its row names the first-100-pages or 256-KB text limit and says a word may be later. The folder location remains visible even when no content word matches, so a PDF in a subfolder is not mistaken for a file the scanner missed.
 
 **Look in** sits before Search: all connected folders by default, or one folder the person
 chooses. A saved search still saves words only; the folder choice belongs to this visit and

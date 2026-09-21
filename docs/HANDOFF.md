@@ -1,5 +1,27 @@
 # DeskAI — Coding Handoff
 
+## 2026-09-21 launch search reliability follow-up
+
+The owner's screenshots showed the concrete failure: PowerPoints of about 8.3 MB and
+13.5 MB were skipped by the old 8 MB quick-search bound, so only the smaller matching deck
+appeared. The launch fix raises local PDF/PPTX containers to 32 MB, PDF text to the first
+100 pages, PowerPoint text to the first 200 slides, and extracted text to 256 KB. PDF and
+Office layout whitespace inside a word is ignored for matching, so text extracted as
+`Ham mour i` can match `hammouri`; snippets still use the original text. All work remains
+local, read-only, permission-gated, bounded, and unpersisted. Image-only/scanned words still
+cannot match without OCR.
+
+The owner asked to disable image reading for today's launch. The Search page no longer
+offers **Find pictures with AI**, its view-model gate is fixed off, and ordinary no-result
+wording no longer directs a person to it. The reviewed visual-search implementation remains
+dormant in the codebase for later reconsideration. Generated page regressions cover two
+matching PPTX files including a 9 MB deck, a PDF match on page 21, and the disabled picture
+gate. This work still needs the final full build/test/format pass and commit recorded below.
+
+Final verification completed: the full Release UI-preview build passed with 0 warnings and
+0 errors; all 1,419 tests passed with no skips; `dotnet format --verify-no-changes` passed.
+No personal PDF, PowerPoint, folder, or API key was opened during development or testing.
+
 ## 2026-09-21 visual Search update
 
 After the slide-text commit `991a275`, the owner clarified that DeskAI must **not**
@@ -60,8 +82,8 @@ generated-data tests, a beginner-friendly explanation, and a commit for each com
   changes a file. Slide pictures still need the separate visual-search design.
 - `pdf` alone lists remembered PDF **names**. `pdf hammouri` means `.pdf` files whose
   **searchable text** contains `hammouri`; it does not promise every PDF will appear.
-  Search reads at most 50 eligible files per request. Each PDF is limited to 8 MB, the first
-  20 pages, 64 KB of extracted text, and a 5-second worker deadline; the search checks a
+  Search reads at most 50 eligible files per request. Each PDF is limited to 32 MB, the first
+  100 pages, 256 KB of extracted text, and a 10-second worker deadline; the search checks a
   20-second overall deadline between files. A match may be missed beyond those limits.
 - **Found inside your files** shows short snippets. The follow-up added a collapsed
   **Files checked** list naming each attempted file and distinguishing matched text, read

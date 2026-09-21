@@ -298,7 +298,7 @@ public sealed partial class SearchPage : Page
             XamlRoot = XamlRoot,
             Title = "Search text inside PDFs here?",
             Content = $"{folder.Path}\n\nDeskAI will read PDF text on this computer when you search. "
-                + "It checks up to 50 files per search, 8 MB and the first 20 pages per PDF. "
+                + "It checks up to 50 files per search, 32 MB and the first 100 pages per PDF. "
                 + "Scanned pages and photos are not read. Some PDFs may be skipped or only partly read.\n\n"
                 + "The words are not saved or sent to AI. You can stop PDF reading at any time.",
             PrimaryButtonText = "Allow PDF reading",
@@ -335,7 +335,7 @@ public sealed partial class SearchPage : Page
             XamlRoot = XamlRoot,
             Title = "Search text on PowerPoint slides here?",
             Content = $"{folder.Path}\n\nDeskAI will read text on modern PowerPoint (.pptx) slides on this computer when you search. "
-                + "It checks up to 50 files per search, 8 MB and the first 40 slides per presentation. "
+                + "It checks up to 50 files per search, 32 MB and the first 200 slides per presentation. "
                 + "Pictures, embedded objects, and older PowerPoint files stay closed. Some presentations may be skipped or partly read.\n\n"
                 + "The words are not saved or sent to AI. You can stop PowerPoint reading at any time.",
             PrimaryButtonText = "Allow PowerPoint reading",

@@ -148,18 +148,18 @@ The implementation uses Windows Credential Manager generic credentials with Desk
 
 Since 2026-09-11 (ADR 0024, review `docs/security/2026-09-11-duplicate-confirmation-review.md`) DeskAI can also read whole files to confirm duplicates — only files in Home's possible-copy groups, only after a dialog states how many files, folders, and bytes, and only when **Compare** is pressed; no permission is stored, so each check asks again. Reading is bounded (200 files, 64 KB first, 2 GB per file and 8 GB per check in full), refuses protected paths, paths leaving the folder, links, online-only files, and files changed since DeskAI remembered them, and produces a SHA-256 fingerprint held in memory, never stored or sent. Only the duplicate check can reach that reader.
 
-Since 2026-09-20 (ADR 0036, review `docs/security/2026-09-20-local-document-search-review.md`), a **new** `MetadataAndDocuments` scope permits local bounded reading of modern `.docx` and `.xlsx` text in addition to plain text. The earlier `MetadataAndContent` scope remains plain-text-only because its original dialog promised Word and Excel would stay closed; no old grant is silently widened. A folder row offers a new confirmation to upgrade, and either grant can be withdrawn. The ZIP/XML reader never writes archive entries, resolves XML entities, runs macros, or opens embedded objects. It limits the container to 8 MB, each selected XML part to 256 KB, at most 1,000 entries and 40 selected parts, and extracted words to 64 KB per file; Search attempts at most 50 files per request and reports partial reads. File text is never saved or sent to AI. That grant alone keeps PDFs and images closed; images remain closed pending a separate vision security review and, for any cloud image use, explicit per-request disclosure and Send approval.
+Since 2026-09-20 (ADR 0036, review `docs/security/2026-09-20-local-document-search-review.md`), a **new** `MetadataAndDocuments` scope permits local bounded reading of modern `.docx` and `.xlsx` text in addition to plain text. The earlier `MetadataAndContent` scope remains plain-text-only because its original dialog promised Word and Excel would stay closed; no old grant is silently widened. A folder row offers a new confirmation to upgrade, and either grant can be withdrawn. The ZIP/XML reader never writes archive entries, resolves XML entities, runs macros, or opens embedded objects. Word/Excel containers remain limited to 8 MB, each selected XML part to 256 KB, at most 1,000 entries and 40 selected parts, and extracted words to 256 KB per file; Search attempts at most 50 files per request and reports partial reads. File text is never saved or sent to AI. That grant alone keeps PDFs and images closed.
 
 ## Local Metadata Index
 
-PDF text search (ADR 0037, `docs/security/2026-09-20-pdf-text-search-review.md`) requires an additional affirmative folder grant, stored as scope 5. Old text and Office grants still cannot open PDFs. The extractor checks the root and relative path, refuses links, opens read-only, and passes at most 8 MB through standard input to a fixed local parser helper; the helper receives no path. A crashed or timed-out helper produces a skipped file. At most 20 pages and 64 KB of resulting text per PDF are considered; a search attempts at most 50 files and stops after 20 seconds between files. Encrypted, damaged, unsupported, and image-only PDFs have no searchable text. No OCR, persistent text, AI disclosure, or file mutation is granted.
+PDF text search (ADR 0037, `docs/security/2026-09-20-pdf-text-search-review.md`) requires an additional affirmative folder grant, stored as scope 5. Old text and Office grants still cannot open PDFs. The extractor checks the root and relative path, refuses links, opens read-only, and passes at most 32 MB through standard input to a fixed local parser helper; the helper receives no path. A crashed or timed-out helper produces a skipped file. At most 100 pages and 256 KB of resulting text per PDF are considered; the helper deadline is 10 seconds, while a search attempts at most 50 files and stops after 20 seconds between files. Encrypted, damaged, unsupported, and image-only PDFs have no searchable text. No OCR, persistent text, AI disclosure, or file mutation is granted.
 
 PowerPoint slide-text search (ADR 0039, `docs/security/2026-09-21-slide-text-search-review.md`)
 appends scopes 6 and 7 for slides alone or slides with PDF after the existing document grant.
 Neither earlier grant opens `.pptx`. The separate confirmation names modern PowerPoint text,
 the folder, and the limits; withdrawing slides keeps any independent PDF grant. The reader
-uses only bounded `ppt/slides/slideN.xml` parts, never media or relationships: 8 MB ZIP,
-1,000 entries, 40 slides, 256 KB XML per slide, 64 KB returned UTF-8 text, no DTD or external
+uses only bounded `ppt/slides/slideN.xml` parts, never media or relationships: 32 MB ZIP,
+1,000 entries, 200 slides, 1 MB XML per slide, 256 KB returned UTF-8 text, no DTD or external
 entities. It reports partial reads and identifies the matching slide. No text is persisted
 or sent to a provider, and this grant does not authorize OCR or images.
 
@@ -172,6 +172,10 @@ pages of a PDF can provide embedded images. The PDF worker receives bytes, not p
 reader checks root/path policy, every path component for links, and on Windows verifies the
 open file handle's final path. A result has short AI evidence plus page or slide where known.
 No image or derived index is saved.
+
+For the 2026-09-21 launch build, the picture-search button is removed and the presentation
+capability gate returns false. Therefore no Search-page action can begin image reading or
+image upload. The reviewed implementation remains dormant for possible later use.
 
 If a local AI is selected, images go only to its validated loopback endpoint. If a cloud
 provider is selected, a second dialog lists the exact image batch, provider, total size,

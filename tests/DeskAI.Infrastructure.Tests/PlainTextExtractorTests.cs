@@ -192,7 +192,7 @@ public sealed class PlainTextExtractorTests
         using var sandbox = new TemporaryDirectory();
         using (var file = File.Create(Path.Combine(sandbox.Path, "large.pptx")))
         {
-            file.SetLength(8L * 1024 * 1024 + 1);
+            file.SetLength(32L * 1024 * 1024 + 1);
         }
 
         var result = await ExtractAsync(sandbox, "large.pptx",

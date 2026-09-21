@@ -8,9 +8,9 @@ namespace DeskAI.Infrastructure.Content;
 /// <summary>Runs the PDF parser outside the UI process using bounded in-memory bytes.</summary>
 public sealed class PdfProcessReader
 {
-    public const int MaxPdfBytes = 8 * 1024 * 1024;
-    private const int MaxResponseBytes = 64 * 1024 + 1;
-    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(5);
+    public const int MaxPdfBytes = 32 * 1024 * 1024;
+    private const int MaxResponseBytes = 256 * 1024 + 1;
+    private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(10);
     private readonly string _workerPath = Path.Combine(
         AppContext.BaseDirectory, "PdfWorker", "DeskAI.PdfWorker.exe");
 
@@ -183,7 +183,7 @@ public sealed class PdfProcessReader
 
             process.StandardInput.Close();
 
-            // The child is expected to produce at most one flag byte and 64 KB of text.
+            // The child is expected to produce at most one flag byte and 256 KB of text.
             // Bound the pipe anyway so a broken child cannot fill the parent's memory.
             var output = new byte[MaxResponseBytes + 1];
             var read = 0;

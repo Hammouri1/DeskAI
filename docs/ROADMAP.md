@@ -112,7 +112,7 @@ Goal: find and understand files without needing to move them.
    anywhere; the refusal path is deliberately built and tested before the capability it
    guards. See `docs/decisions/0014-content-access-capability-gate.md` and
    `docs/security/2026-09-09-content-access-gate-review.md`.
-   Stage 2 completed 2026-09-09: `PlainTextExtractor` reads a bounded 64 KB prefix of plain
+   Stage 2 completed 2026-09-09: `PlainTextExtractor` reads a bounded prefix of plain
    text from one file in a content-authorized folder. Plain-text formats only; PDF and
    Office are refused before opening, because parsing them means running a third-party
    parser over attacker-controlled binary and is its own security question. Extracted text
@@ -126,7 +126,7 @@ Goal: find and understand files without needing to move them.
    permission is shown in words on the folder row and can be withdrawn without confirmation.
    Disconnect now works for a content-authorized folder, closing the gap ADR 0014 recorded.
    `ContentSearchService` finds files whose words match a typed phrase — at most 50 files per
-   search, 64 KB each, text formats only — and the results state how many files were opened.
+   search, currently 256 KB each, text formats only — and the results state how many files were opened.
    Sending extracted text to an AI provider, reading PDF or Office documents, and storing
    extracted text each remain unaccepted. See
    `docs/security/2026-09-09-content-consent-and-search-review.md`.

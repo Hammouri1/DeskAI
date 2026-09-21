@@ -189,7 +189,7 @@ public sealed class PlainTextExtractor(IPathPolicy pathPolicy, PdfProcessReader 
                 }
 
                 var pdfBytes = Encoding.UTF8.GetBytes(pdf.Text);
-                var limit = Math.Min(options.MaxBytes, 64 * 1024);
+                var limit = Math.Min(options.MaxBytes, 256 * 1024);
                 var length = Math.Min(pdfBytes.Length, limit);
                 while (length < pdfBytes.Length && length > 0 && (pdfBytes[length] & 0xC0) == 0x80)
                 {
