@@ -14,13 +14,18 @@ or Windows startup, and it never checks the internet for updates.
 
 ## Install
 
-Until the first release is published, the Releases page has no official zip. Build from source
-or use a zip you created yourself; after release, use the GitHub Release asset.
+No programming tools or commands are required.
 
-1. Get `DeskAI-<version>-win-x64.zip` — from the GitHub **Releases** page once one exists, or
-   from whoever sent it to you.
-2. Unzip it somewhere you keep programs, for example `C:\Apps\DeskAI`.
-3. Run `DeskAI.App.exe`.
+1. Open <https://github.com/Hammouri1/DeskAI/releases/latest>.
+2. Find **Assets** and click `DeskAI-1.1.0-win-x64.zip`.
+3. Wait for the download to finish.
+4. Open Downloads, right-click the downloaded zip, and choose **Extract All**.
+5. Leave the suggested destination selected and press **Extract**.
+6. Open the extracted `DeskAI-1.1.0-win-x64` folder.
+7. Double-click `DeskAI.App.exe`. Look for the mint DeskAI logo.
+
+Keep the other files beside `DeskAI.App.exe`; they are parts of the application. Do not try to
+run the executable directly from inside the zip.
 
 The first time, Windows may show a **"Windows protected your PC"** notice, because the app is
 not yet signed with a paid certificate. Choose **More info**, then **Run anyway**.
@@ -28,6 +33,21 @@ not yet signed with a paid certificate. Choose **More info**, then **Run anyway*
 Once releases exist, the zip on the Releases page will be the only place DeskAI is published, and
 you should not run a copy from anywhere else. Until then, run only a zip from someone you trust
 or one you built yourself from the source.
+
+## If DeskAI does not open
+
+1. Confirm the computer is running 64-bit Windows 11 24H2 or later: open **Settings → System →
+   About**, then look under **Windows specifications**.
+2. Confirm the zip was extracted and that all its files are still together.
+3. Open Task Manager with **Ctrl+Shift+Esc**. If `DeskAI.App` is listed, select it, choose
+   **End task**, then double-click `DeskAI.App.exe` again.
+4. Check the hidden icons beside the Windows clock for the DeskAI logo; click it if DeskAI was
+   asked to continue checking after its window closed.
+5. If Windows Security removed or blocked a file, download the zip again from the official
+   GitHub Release. Do not disable antivirus protection.
+
+If it still does not open, create a GitHub issue and include the Windows version and what happened:
+<https://github.com/Hammouri1/DeskAI/issues>.
 
 ## Where DeskAI keeps its memory
 

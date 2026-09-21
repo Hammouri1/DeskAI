@@ -143,15 +143,21 @@ composes the system and holds no filesystem business logic.
 
 ## Getting it and running it
 
-Until the first release is published, there is no official zip on the Releases page. After a
-`v1.1.0` tag is published, use only the zip attached to that GitHub Release or build from source.
+You do **not** need to be a developer and you do not need to install .NET.
 
-**If someone sent you a zip.** Unzip it wherever you keep programs — for example
-`C:\Apps\DeskAI` — and run `DeskAI.App.exe`. Nothing is installed: no Program Files, no registry,
-no Windows startup entry. Deleting the folder removes the app.
+1. Open the [latest DeskAI release](https://github.com/Hammouri1/DeskAI/releases/latest).
+2. Under **Assets**, download `DeskAI-1.1.0-win-x64.zip`.
+3. In Downloads, right-click the zip, choose **Extract All**, then press **Extract**.
+4. Open the extracted `DeskAI-1.1.0-win-x64` folder.
+5. Double-click `DeskAI.App.exe`—the file with the mint DeskAI logo.
 
-**If you have the source.** You need Windows 11 24H2 or later (64-bit) and the .NET SDK named in
-`global.json`. Then:
+Do not run the app while it is still inside the zip. Keep all extracted files together. DeskAI
+is portable: it does not install into Program Files, modify Windows startup, or require an
+account.
+
+### For developers building from source
+
+You need Windows 11 24H2 or later (64-bit) and the .NET SDK named in `global.json`:
 
 ```powershell
 git clone https://github.com/Hammouri1/DeskAI.git

@@ -9,6 +9,8 @@ public release candidate; the release workflow still derives the final version f
 
 - DeskAI now has an original mint-and-navy application logo in the navigation pane, executable,
   and public README.
+- The README and install guide now start with non-developer download, Extract All, SmartScreen,
+  first-run, and troubleshooting steps.
 - **Ask DeskAI** is visibly marked **BETA**. It accepts natural wording for file-search,
   storage, and organize questions; it is not presented as a general chatbot.
 
