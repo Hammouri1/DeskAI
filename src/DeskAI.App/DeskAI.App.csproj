@@ -37,7 +37,7 @@
   </ItemGroup>
   <Target Name="CopyPdfWorker" AfterTargets="Build">
     <ItemGroup>
-      <PdfWorkerFile Include="..\DeskAI.PdfWorker\bin\$(Configuration)\net10.0\*.*" />
+      <PdfWorkerFile Include="..\DeskAI.PdfWorker\bin\$(Configuration)\net10.0\win-x64\*.*" />
     </ItemGroup>
     <Copy SourceFiles="@(PdfWorkerFile)" DestinationFolder="$(OutDir)PdfWorker\" SkipUnchangedFiles="true" />
   </Target>

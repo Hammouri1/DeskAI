@@ -65,6 +65,27 @@ public sealed partial class ShellLayoutTests
     }
 
     [Fact]
+    public void Pdf_worker_copy_targets_follow_its_win_x64_build_output()
+    {
+        var repository = RepositoryRoot();
+        var worker = File.ReadAllText(Path.Combine(repository, "src", "DeskAI.PdfWorker", "DeskAI.PdfWorker.csproj"));
+        Assert.Contains("<RuntimeIdentifier>win-x64</RuntimeIdentifier>", worker, StringComparison.Ordinal);
+
+        var consumers = new[]
+        {
+            AppFile("DeskAI.App.csproj"),
+            Path.Combine(repository, "tests", "DeskAI.Infrastructure.Tests", "DeskAI.Infrastructure.Tests.csproj"),
+            Path.Combine(repository, "tests", "DeskAI.Presentation.Tests", "DeskAI.Presentation.Tests.csproj"),
+        };
+
+        foreach (var consumer in consumers)
+        {
+            var project = File.ReadAllText(consumer);
+            Assert.Contains("net10.0\\win-x64\\*.*", project, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void Every_tile_tint_exists_in_dark_light_and_high_contrast_and_is_never_the_accent()
     {
         var theme = File.ReadAllText(AppFile(Path.Combine("Themes", "DeskAITheme.xaml")));

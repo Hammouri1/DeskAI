@@ -14,7 +14,7 @@
     <ProjectReference Include="..\..\src\DeskAI.Infrastructure\DeskAI.Infrastructure.csproj" />
   </ItemGroup>
   <Target Name="CopyPdfWorker" AfterTargets="Build">
-    <ItemGroup><PdfWorkerFile Include="..\..\src\DeskAI.PdfWorker\bin\$(Configuration)\net10.0\*.*" /></ItemGroup>
+    <ItemGroup><PdfWorkerFile Include="..\..\src\DeskAI.PdfWorker\bin\$(Configuration)\net10.0\win-x64\*.*" /></ItemGroup>
     <Copy SourceFiles="@(PdfWorkerFile)" DestinationFolder="$(OutDir)PdfWorker\" SkipUnchangedFiles="true" />
   </Target>
 </Project>

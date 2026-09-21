@@ -221,6 +221,18 @@ need a separate reviewed design; this choice does not implement visual search.
 Earlier V0.7–V1.1 manual sign-offs and release decisions remain the owner's. Architecture
 guard tests are separate hardening work; do not add unrelated features to the PDF follow-up.
 
+## V1.1 release pipeline correction
+
+- The first clean GitHub Actions run for `v1.1.0` exposed a stale-output bug that local
+  builds had hidden. `DeskAI.PdfWorker` builds for `win-x64`, while the app and PDF page-test
+  projects were still copying from its older non-RID output folder.
+- All three copy targets now follow `bin/<configuration>/net10.0/win-x64`, and a source-level
+  page regression test keeps the worker project and its consumers aligned.
+- A clean local Release build now has zero warnings/errors, all 1,424 tests pass, formatting
+  is clean, and a self-contained package includes both the app and PDF-worker executables.
+  Replace the failed, unreleased `v1.1.0` tag and verify the hosted workflow creates the ZIP,
+  checksum, and SBOM.
+
 ## Working rules for the next coding session
 
 - Read `AGENTS.md`, `docs/SECURITY.md`, and the relevant product, architecture, testing,
