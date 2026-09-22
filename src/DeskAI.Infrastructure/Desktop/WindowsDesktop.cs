@@ -101,46 +101,47 @@ public sealed class FilePictureInspector : IPictureInspector
 
 /// <summary>The person's own folders, asked from Windows rather than guessed from a user name.</summary>
 /// <remarks>
-/// Desktop, Documents, and Pictures come from <see cref="Environment.GetFolderPath(Environment.SpecialFolder)"/>.
-/// .NET has no special-folder value for Downloads, so that one is asked through the same
-/// Windows known-folder call the others use underneath, <c>SHGetKnownFolderPath</c>, by its
-/// documented ID. Nothing here reads the registry or builds a path from a user name.
+/// All four folders come from <c>SHGetKnownFolderPath</c>, by their documented IDs. Using one
+/// Windows API for every folder matters on computers where OneDrive, an administrator, or the
+/// person has redirected Desktop, Documents, or Pictures. Nothing here reads the registry or
+/// builds a path from a user name.
 /// </remarks>
 public sealed class WindowsKnownFolders : IKnownFolders
 {
-    // FOLDERID_Downloads, from the Windows SDK's KnownFolders.h.
+    // Folder IDs from the Windows SDK's KnownFolders.h.
+    private static readonly Guid DesktopFolderId = new("B4BFCC3A-DB2C-424C-B029-7FE99A87C641");
     private static readonly Guid DownloadsFolderId = new("374DE290-123F-4565-9164-39C4925E467B");
+    private static readonly Guid DocumentsFolderId = new("FDD39AD0-238F-46AF-ADB4-6C85480369C7");
+    private static readonly Guid PicturesFolderId = new("33E28130-4E1E-4676-835A-98395C3BC3BB");
 
-    public string? Desktop => Clean(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory));
+    public string? Desktop => Find(DesktopFolderId);
 
-    public string? Downloads
+    public string? Downloads => Find(DownloadsFolderId);
+
+    public string? Documents => Find(DocumentsFolderId);
+
+    public string? Pictures => Find(PicturesFolderId);
+
+    private static string? Find(Guid folderId)
     {
-        get
+        if (!OperatingSystem.IsWindows())
         {
-            if (!OperatingSystem.IsWindows())
-            {
-                return null;
-            }
+            return null;
+        }
 
-            var id = DownloadsFolderId;
-            var result = SHGetKnownFolderPath(ref id, 0, IntPtr.Zero, out var buffer);
-            try
+        var result = SHGetKnownFolderPath(ref folderId, 0, IntPtr.Zero, out var buffer);
+        try
+        {
+            return result == 0 && buffer != IntPtr.Zero ? Clean(Marshal.PtrToStringUni(buffer)) : null;
+        }
+        finally
+        {
+            if (buffer != IntPtr.Zero)
             {
-                return result == 0 && buffer != IntPtr.Zero ? Clean(Marshal.PtrToStringUni(buffer)) : null;
-            }
-            finally
-            {
-                if (buffer != IntPtr.Zero)
-                {
-                    Marshal.FreeCoTaskMem(buffer);
-                }
+                Marshal.FreeCoTaskMem(buffer);
             }
         }
     }
-
-    public string? Documents => Clean(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments));
-
-    public string? Pictures => Clean(Environment.GetFolderPath(Environment.SpecialFolder.MyPictures));
 
     private static string? Clean(string? path) => string.IsNullOrWhiteSpace(path) ? null : path;
 

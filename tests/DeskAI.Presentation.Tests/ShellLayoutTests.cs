@@ -45,6 +45,19 @@ public sealed partial class ShellLayoutTests
         Assert.Contains("Text=\"{Binding ScopeMessage}\"", xaml, StringComparison.Ordinal);
     }
 
+    /// <summary>A first-time user should know the valid scope before the picker invites a choice.</summary>
+    [Fact]
+    public void Folder_pages_name_the_four_valid_places_before_a_person_chooses()
+    {
+        const string guidance = "Choose Desktop, Downloads, Documents, Pictures, or a folder inside one of them.";
+        var search = File.ReadAllText(AppFile(Path.Combine("Views", "SearchPage.xaml")));
+        var organize = File.ReadAllText(AppFile(Path.Combine("Views", "OrganizePage.xaml")));
+
+        Assert.Contains($"Text=\"{guidance}\"", search, StringComparison.Ordinal);
+        Assert.Contains("Content=\"Choose inside your folders\"", organize, StringComparison.Ordinal);
+        Assert.Contains($"ToolTipService.ToolTip=\"{guidance}\"", organize, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void The_generated_DeskAI_logo_is_used_by_the_window_and_executable()
     {

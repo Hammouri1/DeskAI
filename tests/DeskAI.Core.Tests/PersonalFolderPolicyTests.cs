@@ -42,6 +42,8 @@ public sealed class PersonalFolderPolicyTests
     public void Anything_else_is_refused_in_plain_words(string path)
     {
         Assert.Equal(PersonalFolderPolicy.OutsideReason, Policy.Refuse(path));
+        Assert.Contains("Home", PersonalFolderPolicy.OutsideReason, StringComparison.Ordinal);
+        Assert.Contains("folder inside", PersonalFolderPolicy.OutsideReason, StringComparison.Ordinal);
         Assert.Null(Policy.Containing(path));
     }
 
@@ -69,6 +71,7 @@ public sealed class PersonalFolderPolicyTests
 
         Assert.Empty(policy.List());
         Assert.Equal(PersonalFolderPolicy.NoneKnownReason, policy.Refuse(@"C:\DeskAITests\Someone\Desktop"));
+        Assert.Contains("reopen DeskAI", PersonalFolderPolicy.NoneKnownReason, StringComparison.Ordinal);
     }
 
     [Fact]

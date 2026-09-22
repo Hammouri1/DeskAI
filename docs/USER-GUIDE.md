@@ -41,9 +41,14 @@ even by picking it in a dialog.
 On Home (and on My workspace) the **Your folders** card lists the four. Press **Connect** on
 one; DeskAI asks first, then reads only the names, sizes, and dates of what is inside and opens
 it in Organize. To connect a folder *inside* one of the four, press **Connect a folder** on
-Search (or **Choose another folder** on Organize) and pick it in the Windows dialog. Connecting
+Search (or **Choose inside your folders** on Organize) and pick it in the Windows dialog. Connecting
 cannot move, rename, delete, or open a file until you allow more, and you can disconnect at any
 time on Search, which makes DeskAI forget everything about that folder.
+
+If a choice is refused, read the line below the folder controls. A whole drive, Program Files,
+another account's folder, a phone, and a cloud-only place are not valid choices. On a redirected
+or OneDrive-backed account, use the Desktop, Downloads, Documents, or Pictures location Windows
+shows for that account and make sure it is available locally.
 
 ## Tidying a folder
 

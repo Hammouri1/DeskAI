@@ -41,13 +41,18 @@ public sealed class DesktopAdapterTests
     }
 
     [Fact]
-    public void Known_folders_asks_Windows_rather_than_building_a_path_from_a_user_name()
+    public void Known_folders_returns_only_usable_absolute_locations_from_Windows()
     {
-        var desktop = new WindowsKnownFolders().Desktop;
+        var folders = new WindowsKnownFolders();
+        string?[] paths = [folders.Desktop, folders.Downloads, folders.Documents, folders.Pictures];
 
-        // Whatever the account's Desktop is, it comes from the known-folder API. This test does
-        // not look inside it and does not depend on where it is.
-        Assert.Equal(Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory), desktop ?? string.Empty);
+        // This asks Windows for paths but never opens the folders. A locked-down profile may
+        // omit one; every location Windows does return must be directly usable by path policy.
+        Assert.All(paths.Where(path => path is not null), path =>
+        {
+            Assert.False(string.IsNullOrWhiteSpace(path));
+            Assert.True(Path.IsPathFullyQualified(path));
+        });
     }
 
     [Fact]

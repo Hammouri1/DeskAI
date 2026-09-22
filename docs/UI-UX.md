@@ -66,7 +66,7 @@ stacked together — impossible to understand. Top to bottom:
 1. **Tidy a folder**, with one sentence: pick a folder, DeskAI suggests, nothing moves until
    you say so.
 2. **Folder bar**: a list of connected folders (the first is picked automatically) and
-   "Choose another folder", which goes through the Windows picker and a connect dialog.
+   "Choose inside your folders", which goes through the Windows picker and a connect dialog.
 3. **Permission card** when the folder may not be tidied yet: three promises on the green
    rail and one accent button, "Allow tidying", which opens a dialog naming the folder.
 4. **Suggestions grouped by destination folder**, each group a row with a three-state

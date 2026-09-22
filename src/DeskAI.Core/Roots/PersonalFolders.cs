@@ -34,10 +34,12 @@ public sealed record PersonalFolder(PersonalFolderKind Kind, string Name, string
 public sealed class PersonalFolderPolicy(IKnownFolders knownFolders)
 {
     public const string OutsideReason =
-        "DeskAI only works inside your Desktop, Downloads, Documents, and Pictures.";
+        "DeskAI only works inside your Desktop, Downloads, Documents, and Pictures. " +
+        "Use Your folders on Home to connect one, or choose a folder inside one of them.";
 
     public const string NoneKnownReason =
-        "DeskAI could not find your Desktop, Downloads, Documents, or Pictures folders.";
+        "Windows did not give DeskAI a usable location for Desktop, Downloads, Documents, or Pictures. " +
+        "Check that these folders are available on this computer, then reopen DeskAI.";
 
     private readonly IKnownFolders _knownFolders = knownFolders;
 

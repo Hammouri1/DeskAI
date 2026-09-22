@@ -1,5 +1,17 @@
 # Release notes
 
+## 1.1.2 — 2026-09-22
+
+- Windows now supplies Desktop, Downloads, Documents, and Pictures through the same official
+  known-folder API, so redirected personal folders are recognized consistently.
+- The folder picker starts in Documents instead of This PC, both folder pages explain the four
+  allowed places before a choice, and refusals point to the one-click **Your folders** card on
+  Home. The safety boundary is unchanged: drives, program folders, links, and other locations
+  remain unavailable.
+- The README now puts a direct Windows download and five short first-run steps near the top. The
+  install guide explains how to connect the first folder and what exact information to include
+  if Windows does not report a usable personal-folder path.
+
 ## 1.1.1 — 2026-09-22
 
 - The live unpackaged window now receives DeskAI's mint icon instead of the generic WinUI icon.

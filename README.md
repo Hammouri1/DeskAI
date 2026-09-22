@@ -29,8 +29,26 @@ Connected folder → scan → classify → propose plan → safety validation
                   → preview → your approval → execute → journal → undo
 ```
 
-**Status:** version 1.1.1. More than 1,400 automated tests pass and the x64 Release build has
+**Status:** version 1.1.2. More than 1,400 automated tests pass and the x64 Release build has
 zero warnings. The download is not code-signed — see [Honest limits](#honest-limits).
+
+## Download for Windows
+
+No programming tools, account, or .NET installation are needed.
+
+### [Download DeskAI 1.1.2 for Windows](https://github.com/Hammouri1/DeskAI/releases/download/v1.1.2/DeskAI-1.1.2-win-x64.zip)
+
+1. Open the downloaded zip and choose **Extract all**. Do not run DeskAI from inside the zip.
+2. Open the new `DeskAI-1.1.2-win-x64` folder.
+3. Double-click **DeskAI.App.exe**, the file with the mint DeskAI logo.
+4. If Windows says **Windows protected your PC**, choose **More info**, then **Run anyway**.
+5. On Home, find **Your folders** and press **Connect** beside Desktop, Downloads, Documents,
+   or Pictures. Use this card first; the folder picker accepts only these four places or folders
+   inside them.
+
+DeskAI supports 64-bit Windows 11 24H2 or newer. If the direct download does not start, use the
+[latest release page](https://github.com/Hammouri1/DeskAI/releases/latest) and open **Assets**.
+See [the step-by-step install guide](docs/INSTALL.md) if anything looks different.
 
 ## What DeskAI does today
 
@@ -140,21 +158,7 @@ tests/
 `Core` references nothing. `AI` references `Core` alone and contains no filesystem API. `App`
 composes the system and holds no filesystem business logic.
 
-## Getting it and running it
-
-You do **not** need to be a developer and you do not need to install .NET.
-
-1. Open the [latest DeskAI release](https://github.com/Hammouri1/DeskAI/releases/latest).
-2. Under **Assets**, download `DeskAI-1.1.1-win-x64.zip`.
-3. In Downloads, right-click the zip, choose **Extract All**, then press **Extract**.
-4. Open the extracted `DeskAI-1.1.1-win-x64` folder.
-5. Double-click `DeskAI.App.exe`—the file with the mint DeskAI logo.
-
-Do not run the app while it is still inside the zip. Keep all extracted files together. DeskAI
-is portable: it does not install into Program Files, modify Windows startup, or require an
-account.
-
-### For developers building from source
+## Building from source
 
 You need Windows 11 24H2 or later (64-bit) and the .NET SDK named in `global.json`:
 
@@ -167,7 +171,7 @@ dotnet publish src/DeskAI.App/DeskAI.App.csproj -c Release -r win-x64 --self-con
 Run `publish\DeskAI\DeskAI.App.exe`. The build takes a couple of minutes and needs no other
 tools.
 
-### Windows will warn you the first time
+### Why Windows warns the first time
 
 DeskAI is **not signed with a paid certificate**, so Windows shows **"Windows protected your
 PC"** the first time you run it. Choose **More info**, then **Run anyway**. This is what Windows

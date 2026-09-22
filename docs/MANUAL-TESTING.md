@@ -361,7 +361,7 @@ Use a new folder under Windows Temp filled with made-up files — for example a 
 
 1. Open **Organize**. Expected: "Tidy a folder", a folder list or a "Pick a folder to tidy"
    card, and (since step 5) an open "How tidying works" card under the title.
-2. Press **Choose another folder**, pick the test folder, and confirm. Expected: the folder is
+2. Press **Choose inside your folders**, pick the test folder, and confirm. Expected: the folder is
    selected and a green-edged card asks "Allow DeskAI to tidy …?" with three promises.
 3. Press **Allow tidying** and read the dialog. Cancel once and confirm nothing changed; then
    allow. Expected: suggestions grouped by folder (Documents, Pictures, Installers).
@@ -681,8 +681,9 @@ remember the names of what is on your real Desktop (it moves nothing until you p
 12. Allow tidying. Expected: loose files grouped by where they would go; shortcuts listed under
     left alone; nothing moved until you press Tidy. If you tidy, Undo puts it back. The row now
     says "Connected and allowed to tidy." with the green pill.
-13. On Search press **Connect a folder** and pick `C:\` or `C:\Program Files`. Expected: "DeskAI
-    only works inside your Desktop, Downloads, Documents, and Pictures." and nothing connected.
+13. On Search press **Connect a folder** and pick `C:\` or `C:\Program Files`. Expected: DeskAI
+    says it only works inside Desktop, Downloads, Documents, and Pictures and points to the
+    **Your folders** card on Home; nothing is connected.
     Pick a folder inside Documents. Expected: it connects.
 14. Press the "?" on both cards and check they read clearly. Tab through the section and the
     dialogs with the keyboard, then with Narrator on: each button reads "Connect Downloads" or

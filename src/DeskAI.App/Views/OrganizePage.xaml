@@ -48,7 +48,8 @@
                                 <TextBlock Style="{StaticResource PillTextStyle}" Text="Look only" />
                             </StackPanel>
                         </Border>
-                        <Button Grid.Column="1" Content="Choose another folder"
+                        <Button Grid.Column="1" Content="Choose inside your folders"
+                                ToolTipService.ToolTip="Choose Desktop, Downloads, Documents, Pictures, or a folder inside one of them."
                                 Click="OnChooseFolderClick" />
                     </Grid>
                     <StackPanel Orientation="Horizontal" Spacing="12">

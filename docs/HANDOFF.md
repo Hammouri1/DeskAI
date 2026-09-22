@@ -1,5 +1,23 @@
 # DeskAI — Coding Handoff
 
+## 2026-09-22 folder connection and first-download follow-up
+
+A first-time user could not connect the folders they tried and could not quickly tell how to
+download DeskAI from the README. The four-folder security boundary remains unchanged. The picker
+now begins in Documents rather than at This PC, both folder pages name valid choices before the
+person opens or completes the picker, and an outside-folder refusal points directly to Home's
+**Your folders** card. `WindowsKnownFolders` now calls `SHGetKnownFolderPath` for Desktop,
+Downloads, Documents, and Pictures instead of mixing two lookup mechanisms, which keeps Windows
+redirected-folder handling consistent. The README starts with a direct 1.1.2 zip link and five
+plain steps; the install and user guides now include the first connection and troubleshooting.
+
+The security rule did not broaden: only the four Windows-reported personal folders or their
+descendants can connect; protected paths and reparse points are still rejected. The dated folder
+connection review records the threat check. The Release solution build passed with zero warnings,
+all 1,428 tests passed with no skips, and `dotnet format --verify-no-changes` passed. The owner then
+explicitly requested the fix be pushed; version 1.1.2 and its direct release link were prepared for
+the tag-driven release workflow.
+
 ## 2026-09-21 public 1.1.0 release preparation
 
 An original transparent DeskAI logo was generated for this project: an abstract D/folder with

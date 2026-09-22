@@ -8,7 +8,10 @@ public sealed class WindowsFolderPickerService : IFolderPickerService
     {
         var picker = new FolderPicker
         {
-            SuggestedStartLocation = PickerLocationId.ComputerFolder,
+            // DeskAI may connect only a personal folder or something inside one. Starting at
+            // Documents makes the first visible choice valid instead of inviting a whole drive
+            // or program folder that deterministic policy must refuse.
+            SuggestedStartLocation = PickerLocationId.DocumentsLibrary,
         };
         picker.FileTypeFilter.Add("*");
         WinRT.Interop.InitializeWithWindow.Initialize(picker, ownerWindowHandle);

@@ -16,12 +16,13 @@ or Windows startup, and it never checks the internet for updates.
 
 No programming tools or commands are required.
 
-1. Open <https://github.com/Hammouri1/DeskAI/releases/latest>.
-2. Find **Assets** and click `DeskAI-1.1.1-win-x64.zip`.
+1. Click **[Download DeskAI 1.1.2 for Windows](https://github.com/Hammouri1/DeskAI/releases/download/v1.1.2/DeskAI-1.1.2-win-x64.zip)**.
+   If it does not start, open the [latest release](https://github.com/Hammouri1/DeskAI/releases/latest),
+   expand **Assets**, and click `DeskAI-1.1.2-win-x64.zip`.
 3. Wait for the download to finish.
 4. Open Downloads, right-click the downloaded zip, and choose **Extract All**.
 5. Leave the suggested destination selected and press **Extract**.
-6. Open the extracted `DeskAI-1.1.1-win-x64` folder.
+6. Open the extracted `DeskAI-1.1.2-win-x64` folder.
 7. Double-click `DeskAI.App.exe`. Look for the mint DeskAI logo.
 
 Keep the other files beside `DeskAI.App.exe`; they are parts of the application. Do not try to
@@ -30,9 +31,25 @@ run the executable directly from inside the zip.
 The first time, Windows may show a **"Windows protected your PC"** notice, because the app is
 not yet signed with a paid certificate. Choose **More info**, then **Run anyway**.
 
-Once releases exist, the zip on the Releases page will be the only place DeskAI is published, and
-you should not run a copy from anywhere else. Until then, run only a zip from someone you trust
-or one you built yourself from the source.
+The zip on this repository's Releases page is the only place DeskAI is published. Do not run a
+copy from anywhere else unless you built it yourself from this source.
+
+## Connect your first folder
+
+1. Open **Home** and find **Your folders**.
+2. Press **Connect** beside Desktop, Downloads, Documents, or Pictures.
+3. Read the question and press **Connect my ...**.
+
+DeskAI deliberately accepts only those four personal folders and folders inside them. If you use
+the picker on Search or Organize, do not choose **This PC**, a whole drive, Program Files, a phone,
+or a cloud location that has no local path. If Windows has moved a personal folder into OneDrive,
+DeskAI uses the location Windows reports; the folder must be available on this computer.
+
+If all four choices are missing or refused, confirm that they open normally in File Explorer,
+then close and reopen DeskAI. The message under the folder controls explains whether Windows did
+not report a usable location, the place is outside the four personal folders, or it crosses a
+link DeskAI cannot follow safely. Include that exact message in a GitHub issue if the problem
+continues.
 
 ## If DeskAI does not open
 

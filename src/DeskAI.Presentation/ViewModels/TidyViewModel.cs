@@ -733,7 +733,7 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
 
     private static readonly string[] Steps =
     [
-        "Pick a folder, or add one with \"Choose another folder\".",
+        "Pick a folder, or add one with \"Choose inside your folders\".",
         "Allow tidying for that folder. You can take it back at any time.",
         "Look through the suggestions. Untick anything you want to leave where it is.",
         "Press Tidy. Changed your mind? Press Undo, even after closing DeskAI.",
