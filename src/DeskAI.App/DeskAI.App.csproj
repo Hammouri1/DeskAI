@@ -45,4 +45,23 @@
   <Target Name="PublishPdfWorker" AfterTargets="Publish">
     <Exec Command="dotnet publish &quot;$(MSBuildThisFileDirectory)..\DeskAI.PdfWorker\DeskAI.PdfWorker.csproj&quot; -c $(Configuration) -r win-x64 --self-contained --no-restore -p:PublishSingleFile=true -o &quot;$(PublishDir)PdfWorker&quot;" />
   </Target>
+  <!--
+    Windows App SDK issue #6720: the unpackaged .NET 10 publish path can omit the app PRI and
+    compiled XAML even though it generated them in TargetDir. Without them, the process starts
+    but WinUI cannot create a visible interface. Keep this additive workaround until the pinned
+    SDK publishes these resources itself; SkipUnchangedFiles makes duplicate future copies inert.
+  -->
+  <Target Name="CopyUnpackagedWinUiResources" AfterTargets="Publish"
+          Condition="'$(WindowsPackageType)' == 'None'">
+    <ItemGroup>
+      <UnpackagedWinUiResource Include="$(TargetDir)**\*.xbf" />
+      <UnpackagedWinUiResource Include="$(ProjectPriFullPath)"
+                               Condition="Exists('$(ProjectPriFullPath)')" />
+    </ItemGroup>
+    <Error Condition="!Exists('$(ProjectPriFullPath)')"
+           Text="The WinUI project resource index was not generated; refusing to publish an app with no interface." />
+    <Copy SourceFiles="@(UnpackagedWinUiResource)"
+          DestinationFiles="@(UnpackagedWinUiResource->'$(PublishDir)%(RecursiveDir)%(Filename)%(Extension)')"
+          SkipUnchangedFiles="true" />
+  </Target>
 </Project>

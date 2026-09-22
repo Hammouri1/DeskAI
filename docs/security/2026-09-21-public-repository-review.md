@@ -17,8 +17,10 @@ review, not a guarantee that software can never contain a vulnerability.
 - The only Windows setting writer is the already reviewed, user-confirmed wallpaper adapter.
   File mutation remains constrained to the validated move/create/empty-folder undo pipeline.
 - The release workflow performs locked restore, the full test suite, a self-contained publish,
-  an SBOM, a known-vulnerable-package check, and a SHA-256 checksum. The release remains unsigned,
-  so Windows SmartScreen can warn.
+  an SBOM, a known-vulnerable-package check, a SHA-256 checksum, and a completeness check for the
+  WinUI resource index and compiled interface. The exact V1.1.0 download reproduced the missing-UI
+  failure; V1.1.1 includes the Windows App SDK publish workaround and must be smoke-tested again
+  from the final GitHub asset. The release remains unsigned, so Windows SmartScreen can warn.
 - GitHub reports the repository as public with secret scanning and push protection enabled.
   Private vulnerability reporting was enabled during this review, and a root `SECURITY.md` now
   directs reports there.

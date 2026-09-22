@@ -220,6 +220,39 @@ public sealed partial class ShellLayoutTests
         Assert.Contains("window.Reveal();", startup, StringComparison.Ordinal);
     }
 
+    /// <summary>Owner report 2026-09-22: startup recovery also remained invisible in the release.</summary>
+    [Fact]
+    public void Startup_failure_also_explicitly_shows_and_foregrounds_its_window()
+    {
+        var source = File.ReadAllText(AppFile("App.xaml.cs"));
+        var recovery = Regex.Match(source,
+            @"catch \(Exception exception\)(.*?)private async Task ConnectTheBackgroundPresenceAsync",
+            RegexOptions.Singleline).Groups[1].Value;
+
+        Assert.NotEmpty(recovery);
+        Assert.Contains("failureWindow.Reveal();", recovery, StringComparison.Ordinal);
+        Assert.DoesNotContain("_window.Activate();", recovery, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Owner report 2026-09-22: GitHub's ZIP ran without a window because publish omitted the
+    /// app PRI and XBF files. Windows App SDK issue #6720 documents the unpackaged publish bug.
+    /// </summary>
+    [Fact]
+    public void Unpackaged_publish_copies_the_compiled_WinUI_interface()
+    {
+        var project = File.ReadAllText(AppFile("DeskAI.App.csproj"));
+        Assert.Contains("Name=\"CopyUnpackagedWinUiResources\"", project, StringComparison.Ordinal);
+        Assert.Contains("Include=\"$(TargetDir)**\\*.xbf\"", project, StringComparison.Ordinal);
+        Assert.Contains("Include=\"$(ProjectPriFullPath)\"", project, StringComparison.Ordinal);
+        Assert.Contains("refusing to publish an app with no interface", project, StringComparison.Ordinal);
+
+        var workflow = File.ReadAllText(Path.Combine(RepositoryRoot(), ".github", "workflows", "release.yml"));
+        Assert.Contains("Verify the published interface", workflow, StringComparison.Ordinal);
+        Assert.Contains("publish/DeskAI/DeskAI.App.pri", workflow, StringComparison.Ordinal);
+        Assert.Contains("publish/DeskAI/MainWindow.xbf", workflow, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Ask_DeskAI_is_visibly_marked_as_a_beta_feature()
     {

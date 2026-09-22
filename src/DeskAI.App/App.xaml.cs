@@ -171,8 +171,9 @@ public partial class App : Application
         {
             var logger = _host.Services.GetRequiredService<ILogger<App>>();
             LogStartupFailure(logger, exception);
-            _window = MainWindow.CreateStartupFailureWindow();
-            _window.Activate();
+            var failureWindow = MainWindow.CreateStartupFailureWindow();
+            _window = failureWindow;
+            failureWindow.Reveal();
         }
     }
 

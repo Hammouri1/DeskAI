@@ -109,6 +109,12 @@ with `-p:Version=<tag>`, publishes `src/DeskAI.App` self-contained for `win-x64`
 on the runner only), and attaches both to a GitHub Release. The version shown on Privacy and AI
 comes from `<Version>` in `Directory.Build.props` unless the tag overrides it. To release:
 
+The unpackaged .NET 10 WinUI publish path currently omits the app's own PRI and compiled XAML
+(Windows App SDK issue #6720). `DeskAI.App.csproj` copies those already-generated resources into
+the publish directory, and the release workflow refuses to zip an output missing the executable,
+PRI, core XBF files, icon, or PDF worker. Do not remove that workaround until the pinned Windows
+App SDK is verified to publish the same complete output on a clean runner.
+
 ```powershell
 git tag v0.8.0
 git push origin v0.8.0

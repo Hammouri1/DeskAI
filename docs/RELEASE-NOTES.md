@@ -1,6 +1,22 @@
 # Release notes
 
-## 1.1 — 2026-09-16 (not tagged yet)
+## 1.1.1 — 2026-09-22
+
+- The live unpackaged window now receives DeskAI's mint icon instead of the generic WinUI icon.
+- Home's bounded content is centered in the usable page area on wide windows.
+- Both normal startup and the recovery path explicitly show and foreground their window. The
+  recovery window can no longer remain as an invisible process if settings or local state fail
+  during startup.
+- The self-contained publish now includes DeskAI's project resource index and compiled XAML.
+  Their omission by the unpackaged Windows App SDK publish path was the reason the V1.1.0 ZIP
+  could remain in Task Manager without ever drawing an interface. The release workflow now
+  refuses an incomplete publish.
+- The PDF worker is copied from its runtime-specific build folder, including on a clean GitHub
+  runner.
+- Public documentation no longer names owner-supplied test files or folders. GitHub private
+  vulnerability reporting is enabled and the security policy links directly to it.
+
+## 1.1 — 2026-09-16
 
 Prepared after the owner's first look at 1.0. `Directory.Build.props` now reads 1.1.0 for the
 public release candidate; the release workflow still derives the final version from its tag.

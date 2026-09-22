@@ -244,6 +244,14 @@ guard tests are separate hardening work; do not add unrelated features to the PD
   risks honestly. The existing V1.1 package is unsigned.
 - GitHub secret scanning, push protection, and private vulnerability reporting are enabled. The
   root `SECURITY.md` tells reporters to use a private advisory and not attach personal data.
+- The owner's downloaded V1.1.0 ZIP was reproduced locally: its checksum and required runtime
+  files were correct, but `DeskAI.App` stayed alive with no window. The isolated preview and
+  ordinary Release output opened. Comparing them proved `dotnet publish` had omitted
+  `DeskAI.App.pri`, `App.xbf`, `MainWindow.xbf`, and all page XBF files (Windows App SDK issue
+  #6720). The project now copies those generated resources after publish, and the release
+  workflow refuses an incomplete interface. Startup recovery also used bare `Activate()`; it
+  now calls `Reveal()`, with regression tests for both paths. Publish this as V1.1.1; do not
+  direct users back to V1.1.0.
 
 ## Working rules for the next coding session
 

@@ -29,9 +29,8 @@ Connected folder → scan → classify → propose plan → safety validation
                   → preview → your approval → execute → journal → undo
 ```
 
-**Status:** version 1.1.0 release candidate. 1,423 automated tests pass and the x64 Release
-build has zero warnings. It still needs final public-release and manual smoke-test sign-off,
-and the download is not code-signed — see [Honest limits](#honest-limits).
+**Status:** version 1.1.1. More than 1,400 automated tests pass and the x64 Release build has
+zero warnings. The download is not code-signed — see [Honest limits](#honest-limits).
 
 ## What DeskAI does today
 
@@ -119,7 +118,7 @@ These are properties of the code, each covered by tests:
 - MVVM presentation, dependency injection at the composition root, async and cancellable I/O
 - SQLite (schema version 14) for settings, rules, saved searches, plans, the metadata index, and
   the operation journal
-- xUnit — 1,423 tests across five projects, including page tests that use each feature the way a
+- xUnit — more than 1,400 tests across five projects, including page tests that use each feature the way a
   person does
 - No Electron, no Node.js, no Python, no hosted backend
 
@@ -146,9 +145,9 @@ composes the system and holds no filesystem business logic.
 You do **not** need to be a developer and you do not need to install .NET.
 
 1. Open the [latest DeskAI release](https://github.com/Hammouri1/DeskAI/releases/latest).
-2. Under **Assets**, download `DeskAI-1.1.0-win-x64.zip`.
+2. Under **Assets**, download `DeskAI-1.1.1-win-x64.zip`.
 3. In Downloads, right-click the zip, choose **Extract All**, then press **Extract**.
-4. Open the extracted `DeskAI-1.1.0-win-x64` folder.
+4. Open the extracted `DeskAI-1.1.1-win-x64` folder.
 5. Double-click `DeskAI.App.exe`—the file with the mint DeskAI logo.
 
 Do not run the app while it is still inside the zip. Keep all extracted files together. DeskAI

@@ -44,6 +44,23 @@ jobs:
           -p:Version=${{ env.VERSION }} -p:WindowsAppSDKSelfContained=true
           -o publish/DeskAI
 
+      - name: Verify the published interface
+        shell: pwsh
+        run: |
+          $required = @(
+            'publish/DeskAI/DeskAI.App.exe',
+            'publish/DeskAI/DeskAI.App.pri',
+            'publish/DeskAI/App.xbf',
+            'publish/DeskAI/MainWindow.xbf',
+            'publish/DeskAI/Views/DashboardPage.xbf',
+            'publish/DeskAI/Assets/DeskAI.ico',
+            'publish/DeskAI/PdfWorker/DeskAI.PdfWorker.exe'
+          )
+          $missing = @($required | Where-Object { -not (Test-Path -LiteralPath $_ -PathType Leaf) })
+          if ($missing.Count -gt 0) {
+            throw "The publish is incomplete and would not open: $($missing -join ', ')"
+          }
+
       - name: Zip
         shell: pwsh
         run: Compress-Archive -Path publish/DeskAI/* -DestinationPath DeskAI-${{ env.VERSION }}-win-x64.zip
