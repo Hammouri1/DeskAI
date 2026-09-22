@@ -261,4 +261,8 @@ DeskAI never contacts a DeskAI server or GitHub from inside the app. See ADR 003
 
 ## Reporting Vulnerabilities
 
-Before public release, add a private security-reporting address/process and `SECURITY.md` repository policy. Do not request public proof-of-concept disclosure for issues that could destroy or expose user data.
+The public repository enables GitHub private vulnerability reporting and carries the root
+`SECURITY.md` policy. Reports must use that private advisory channel rather than a public issue;
+reporters are asked not to attach personal documents, keys, databases, or private-path
+screenshots. Do not request public proof-of-concept disclosure for issues that could destroy or
+expose user data.

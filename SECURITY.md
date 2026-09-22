@@ -1,36 +1,40 @@
 # Security policy
 
-DeskAI moves people's files. A flaw here can cost someone their work, so reports are taken
-seriously and handled privately.
+## Supported version
 
-## Reporting a vulnerability
+Security fixes are made for the latest DeskAI release. Install the newest version from
+[GitHub Releases](https://github.com/Hammouri1/DeskAI/releases/latest) before reporting a
+problem that may already have been corrected.
 
-Please use **GitHub's private vulnerability reporting** on this repository ("Security" tab →
-"Report a vulnerability"). That reaches the maintainer without a public issue.
+## Report a vulnerability privately
 
-If that is unavailable, open an issue titled "Security contact request" with **no details**, and
-a private channel will be arranged.
+Please **do not open a public issue** for a suspected security or privacy vulnerability.
+Use GitHub's private reporting form instead:
 
-Please do not post a working exploit or step-by-step extraction path in public, and please do
-not include anyone's real files, paths, or keys in a report. Generated example files are enough.
+<https://github.com/Hammouri1/DeskAI/security/advisories/new>
 
-## What to include
+Include the DeskAI version, Windows version, what you expected, what happened, and the smallest
+safe reproduction you can provide. Do not attach personal documents, API keys, credential files,
+database files, or screenshots containing private paths. A generated sample is preferred.
 
-- What DeskAI did, what you expected, and the version shown at the bottom of Privacy and AI.
-- The smallest set of generated files and steps that shows it.
-- Whether a real file was moved, renamed, deleted, overwritten, read, or sent anywhere.
+The project owner will acknowledge the report through the private advisory, investigate it, and
+coordinate a fix and disclosure there. Please allow time for a safe release before publishing
+technical details that could put users' files or credentials at risk.
 
 ## What counts
 
-Anything that lets DeskAI do more than the person allowed: a move outside a connected folder, a
-move without the tidy permission or the preview, a delete or an overwrite, a file read without
-the reading permission, data sent to an AI service beyond the sharing choices, a key exposed, a
-run while nobody is watching beyond the ceiling in ADR 0031, or DeskAI starting with Windows.
+Report anything that lets DeskAI do more than the person allowed: moving outside a connected
+folder, changing a file without the tidy permission and reviewed plan, deleting or overwriting,
+reading a file without the relevant permission, sending more to AI than the sharing choices
+allow, exposing a credential, exceeding an approved unattended-tidy boundary, or starting with
+Windows.
 
-## Response
+Fixes are published as a new version on the Releases page. Reporter credit is included when the
+reporter wants it and disclosure is safe.
 
-You will get an acknowledgement within a few days and a fix or a clear answer as soon as one
-exists. Fixes ship as a new release on the Releases page. Credit is given if you want it.
+## Product security boundaries
 
-The design rules and the reviews behind each capability are in `docs/SECURITY.md` and
-`docs/security/`.
+DeskAI's detailed trust model is documented in [docs/SECURITY.md](docs/SECURITY.md). Important
+boundaries include explicit folder permission, deterministic validation before file changes,
+no silent overwrite or permanent deletion, Windows-protected credential storage, and explicit
+consent before supported cloud-AI requests.

@@ -374,6 +374,11 @@ saved data**. These are view-only tabs; switching one grants no permission and r
 Every page uses the same rounded intro surface and content spacing, the side menu collapses at
 smaller widths, and action rows wrap or move below their label rather than clipping it.
 
+On a wide window, Home's bounded content is centered in the usable page viewport rather than
+appearing offset toward the right. The unpackaged window also explicitly applies the same DeskAI
+icon embedded in the executable, so the title bar and task switcher do not show WinUI's generic
+default mark.
+
 Two more looks, **Lavender** and **Rose**, join Slate, Graphite, Sand, and Ocean. The preview for
 each look is large enough to show both its dark and light surfaces before choosing it. ADR 0028
 still applies unchanged: a look may tint only five neutral colours. Green remains the fixed

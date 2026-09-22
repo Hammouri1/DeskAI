@@ -220,7 +220,7 @@ changes a feature.
 | Whole app | Performance probe on a few thousand generated files (opt-in, `DESKAI_PERF`), recorded in `docs/PERFORMANCE.md` | `PerformanceProbe` |
 | Organize | Ask AI after turning AI on: one request to the chosen service, rejected key in plain words, removing the key stops it, daily limit | `AiJourneyTests`, `SettingsPageTests`, `CloudSuggestionProviderTests` |
 | Every page | "?" help next to each feature: complete, short, no jargon, placed | `HelpCatalogTests`, `HelpPlacementTests` |
-| Every page | Calm-workspace layout: shared introductions; task tabs on My workspace and Privacy and AI; responsive shell; an opt-in visual preview that replaces personal folders, keys, network, wallpaper, pickers, notifications, tray, and timers | `ShellLayoutTests` |
+| Every page | Calm-workspace layout: shared introductions; task tabs on My workspace and Privacy and AI; responsive shell; Home centered in the visible wide viewport; the DeskAI icon applied to the executable and live title bar; an opt-in visual preview that replaces personal folders, keys, network, wallpaper, pickers, notifications, tray, and timers | `ShellLayoutTests` |
 
 ## Quality Gates
 

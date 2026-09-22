@@ -23,9 +23,9 @@ No push, tag, or GitHub Release was made in this task; those remain explicit own
 
 ## 2026-09-21 flattened-PDF OCR fix
 
-The supplied `Alpha Analytics Final.pdf` is valid and unencrypted, but pages 2–7 have no
-extractable text and page 8's visible `Mohammad Al-Hammouri` is flattened into pixels. The
-normal PDF reader therefore correctly reported no text match. Search now has a separate
+An owner-supplied PDF test case was valid and unencrypted, but most pages had no extractable
+text and the requested visible words were flattened into pixels. The normal PDF reader therefore
+correctly reported no text match. Search now has a separate
 **Search scanned PDF words** action. It requires the existing content and PDF permissions
 plus a fresh confirmation for each run, then uses Windows on-device OCR on at most 10 PDFs,
 8 MB each, first 20 pages, and 256 KB recognized text per file. Nothing is uploaded,
@@ -33,9 +33,9 @@ persisted, or allowed to change a file; the UI labels OCR approximate and puts v
 responsibility on the user. AI picture reading remains disabled.
 
 The owner-found page-flow regression proves normal search and Cancel do not call OCR, an
-approved run finds `Hammouri` on Page 8, and no AI transport is used. A one-off probe through
-the production `WindowsPdfOcrReader` against the supplied PDF recovered
-`Mohammad Al-Hammouri` on Page 8. The temporary probe was deleted. ADR 0040 and the dated
+approved run finds the requested words on Page 8, and no AI transport is used. A one-off probe
+through the production `WindowsPdfOcrReader` against that locally supplied case recovered the
+words on Page 8. The temporary probe was deleted. ADR 0040 and the dated
 security review record the boundary. Final Release build/format/commit details follow in
 the current task history.
 
@@ -162,11 +162,10 @@ generated-data tests, a beginner-friendly explanation, and a commit for each com
   reading permission only grants or withdraws a read capability; it does not edit PDFs.
 - The owner may still be running an older local build. `66a8e3b` is committed locally but
   not released or pushed, so **Files checked** requires launching an updated build.
-- On 2026-09-21 the owner showed **Files checked** with `Fintech Rally Presentation
-  Template_EN.pdf` in `shefaa presntation / test pptx`: it was found in the nested folder,
-  partly read, and had no `hammouri` match in the part read. `full images.pdf` and
-  `shared image.pdf` were listed as unreadable. The exact reason for the partial read is
-  unknown without opening the owner's PDF, which the agent did not do. A generated 21-page
+- On 2026-09-21 the owner showed **Files checked** with one PDF in a nested connected folder:
+  it was found, partly read, and had no requested-word match in the part read. Two other PDFs
+  were listed as unreadable. The exact reason for the partial read is unknown without opening
+  the owner's PDF, which the agent did not do. A generated 21-page
   page test reproduced the ambiguity and Search now names the 20-page or 64-KB PDF text
   limit on partly read rows. This wording change is local, not released.
 
@@ -232,6 +231,19 @@ guard tests are separate hardening work; do not add unrelated features to the PD
   is clean, and a self-contained package includes both the app and PDF-worker executables.
   Replace the failed, unreleased `v1.1.0` tag and verify the hosted workflow creates the ZIP,
   checksum, and SBOM.
+
+## Post-release shell polish and public-repository review
+
+- The owner's 2026-09-21 screenshot showed WinUI's generic title-bar icon even though the new
+  logo appeared in the navigation pane. The app now copies `DeskAI.ico` into its output and calls
+  `AppWindow.SetIcon` for both normal and startup-failure windows.
+- Home's bounded grid now centers in a stretched scroll viewport instead of appearing shifted
+  right on a wide window. `ShellLayoutTests` protects both owner-found regressions.
+- Before the next public tag, re-run the full Release build/tests/format checks, inspect tracked
+  files and Git history for secrets and personal artifacts, and record any remaining distribution
+  risks honestly. The existing V1.1 package is unsigned.
+- GitHub secret scanning, push protection, and private vulnerability reporting are enabled. The
+  root `SECURITY.md` tells reporters to use a private advisory and not attach personal data.
 
 ## Working rules for the next coding session
 

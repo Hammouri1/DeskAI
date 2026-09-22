@@ -22,6 +22,7 @@
     <Compile Include="..\..\tools\UiPreview.cs" Link="Development\UiPreview.cs" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\DeskAI.ico" CopyToOutputDirectory="PreserveNewest" />
     <Content Include="Assets\DeskAI.Logo.png" CopyToOutputDirectory="PreserveNewest" />
     <ProjectReference Include="..\DeskAI.Core\DeskAI.Core.csproj" />
     <ProjectReference Include="..\DeskAI.Safety\DeskAI.Safety.csproj" />

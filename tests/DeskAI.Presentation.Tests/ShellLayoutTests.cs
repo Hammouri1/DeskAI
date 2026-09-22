@@ -62,6 +62,24 @@ public sealed partial class ShellLayoutTests
         var project = File.ReadAllText(AppFile("DeskAI.App.csproj"));
         Assert.Contains("<ApplicationIcon>Assets\\DeskAI.ico</ApplicationIcon>", project,
             StringComparison.Ordinal);
+        Assert.Contains("<Content Include=\"Assets\\DeskAI.ico\" CopyToOutputDirectory=\"PreserveNewest\" />", project,
+            StringComparison.Ordinal);
+
+        var windowSource = File.ReadAllText(AppFile("MainWindow.xaml.cs"));
+        Assert.Contains("AppWindow.SetIcon(iconPath);", windowSource, StringComparison.Ordinal);
+        Assert.Equal(2, Regex.Count(windowSource, @"\bApplyWindowIcon\(\);"));
+    }
+
+    /// <summary>Owner screenshot 2026-09-21: Home was visibly shifted right on a wide window.</summary>
+    [Fact]
+    public void Home_centers_its_bounded_content_in_the_visible_page_viewport()
+    {
+        var xaml = File.ReadAllText(AppFile(Path.Combine("Views", "DashboardPage.xaml")));
+
+        Assert.Contains("<ScrollViewer HorizontalContentAlignment=\"Stretch\">", xaml, StringComparison.Ordinal);
+        Assert.Contains("MaxWidth=\"1240\" HorizontalAlignment=\"Center\"", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("MaxWidth=\"1240\" HorizontalAlignment=\"Stretch\"", xaml,
+            StringComparison.Ordinal);
     }
 
     [Fact]

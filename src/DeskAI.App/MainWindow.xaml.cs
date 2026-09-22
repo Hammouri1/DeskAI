@@ -38,6 +38,7 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
         Title = "DeskAI";
+        ApplyWindowIcon();
         _shell = viewModel;
         RootNavigation.DataContext = viewModel;
         _navigationService = navigationService;
@@ -226,6 +227,7 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
         Title = "DeskAI — startup issue";
+        ApplyWindowIcon();
         RootNavigation.IsEnabled = false;
         ContentFrame.Content = new TextBlock
         {
@@ -236,6 +238,19 @@ public sealed partial class MainWindow : Window
     }
 
     public static MainWindow CreateStartupFailureWindow() => new();
+
+    /// <summary>
+    /// Applies DeskAI's mark to the live unpackaged window. The project icon alone brands the
+    /// executable, but WinUI otherwise leaves the title bar on its generic default icon.
+    /// </summary>
+    private void ApplyWindowIcon()
+    {
+        var iconPath = Path.Combine(AppContext.BaseDirectory, "Assets", "DeskAI.ico");
+        if (File.Exists(iconPath))
+        {
+            AppWindow.SetIcon(iconPath);
+        }
+    }
 
     private void OnNavigationItemInvoked(NavigationView sender, NavigationViewItemInvokedEventArgs args)
     {

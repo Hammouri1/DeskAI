@@ -6,8 +6,8 @@
     xmlns:viewmodels="using:DeskAI.App.ViewModels"
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
-    <ScrollViewer>
-        <Grid Margin="32,28,32,40" MaxWidth="1240" HorizontalAlignment="Stretch"
+    <ScrollViewer HorizontalContentAlignment="Stretch">
+        <Grid Margin="32,28,32,40" MaxWidth="1240" HorizontalAlignment="Center"
               RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" RowSpacing="22">
 
             <!--
