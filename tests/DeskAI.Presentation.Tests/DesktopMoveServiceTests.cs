@@ -98,6 +98,41 @@ public sealed class DesktopMoveServiceTests
         Assert.Empty(app.Internet.Requests);
     }
 
+    [Fact]
+    public async Task Tag_names_needs_the_same_yes_and_Put_back_restores_names()
+    {
+        await using var app = await TestApp.StartAsync();
+        app.MakeFile("Desktop", Path.Combine("Python stuff", "main.py"));
+        var desktop = await ConnectDesktopAsync(app);
+        var moves = app.Get<DesktopMoveService>();
+        await app.Get<DesktopGroupingService>().GuessAsync(desktop.Id, TestContext.Current.CancellationToken);
+        var preview = (await moves.PreviewAsync(desktop.Id, DesktopMoveCard.TagNames, TestContext.Current.CancellationToken)).Preview!;
+        var all = preview.Items.Select(item => item.OperationId).ToList();
+
+        Assert.True((await moves.ApplyAsync(preview, all, TestContext.Current.CancellationToken)).NeedsPermission);
+        await moves.AllowAsync(desktop.Id, TestContext.Current.CancellationToken);
+        var done = await moves.ApplyAsync(preview, all, TestContext.Current.CancellationToken);
+
+        Assert.Equal("Done. 1 folder renamed.", done.Summary);
+        Assert.True(Directory.Exists(Path.Combine(app.DesktopPath, "Coding – Python stuff")));
+        var back = await moves.PutBackAsync(desktop.Id, DesktopMoveCard.TagNames, TestContext.Current.CancellationToken);
+        Assert.Equal(1, back.Moved);
+        Assert.True(File.Exists(Path.Combine(app.DesktopPath, "Python stuff", "main.py")));
+    }
+
+    [Fact]
+    public async Task Tag_names_before_Find_groups_asks_for_groups_in_its_own_words()
+    {
+        await using var app = await TestApp.StartAsync();
+        app.MakeFile("Desktop", Path.Combine("Python stuff", "main.py"));
+        var desktop = await ConnectDesktopAsync(app);
+
+        var result = await app.Get<DesktopMoveService>().PreviewAsync(desktop.Id, DesktopMoveCard.TagNames, TestContext.Current.CancellationToken);
+
+        Assert.Null(result.Preview);
+        Assert.Equal("Find groups first, then DeskAI can add each group's name to its folders.", result.Message);
+    }
+
     internal static void MakeOldDesktop(TestApp app)
     {
         app.MakeFile("Desktop", Path.Combine("Old project", "main.py"), age: SevenMonths);

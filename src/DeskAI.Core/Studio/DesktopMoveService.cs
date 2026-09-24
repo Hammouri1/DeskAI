@@ -20,7 +20,7 @@ public sealed record DesktopLastChange(
     DesktopMoveCard Card, Guid TransactionId, DateTimeOffset FinishedAtUtc, IReadOnlyDictionary<Guid, string> Moved);
 
 /// <summary>
-/// Clear old stuff and Folder by group (ADR 0044): the preview, Move, Put back, the separate yes,
+/// Clear old stuff, Folder by group, and Tag names (ADR 0044, ADR 0045): the preview, Move, Put back, the separate yes,
 /// and a change that stopped part-way.
 /// </summary>
 /// <remarks>
@@ -48,6 +48,7 @@ public sealed class DesktopMoveService(
     IClock clock)
 {
     public const string FindGroupsFirst = "Find groups first, then DeskAI can put each group into its own folder.";
+    public const string FindGroupsFirstToTag = "Find groups first, then DeskAI can add each group's name to its folders.";
     public const string PermissionNeeded = "DeskAI needs your permission before it moves anything on your Desktop.";
     public const string PutBackPermissionNeeded = "Putting things back moves them too, so DeskAI needs your permission to move things on your Desktop again.";
     public const string TidyAnsweredOnOrganize = "This tidy was made on Organize, so answer it there.";
@@ -93,12 +94,12 @@ public sealed class DesktopMoveService(
         }
 
         DesktopGroupBoard? board = null;
-        if (card == DesktopMoveCard.FolderByGroup)
+        if (card is DesktopMoveCard.FolderByGroup or DesktopMoveCard.TagNames)
         {
             board = await boards.LoadAsync(rootId, cancellationToken).ConfigureAwait(false);
             if (board is null || board.Groups.All(group => group.Items.Count == 0))
             {
-                return new(null, FindGroupsFirst);
+                return new(null, card == DesktopMoveCard.TagNames ? FindGroupsFirstToTag : FindGroupsFirst);
             }
         }
 
@@ -109,14 +110,21 @@ public sealed class DesktopMoveService(
         }
 
         bool IsProtected(string path) => safety.IsProtected(root, path);
-        var preview = card == DesktopMoveCard.ClearOldStuff
-            ? DesktopMovePlanner.ClearOldStuff(root, seen, clock.UtcNow, safety.PolicyVersion, IsProtected)
-            : DesktopMovePlanner.FolderByGroup(root, seen, board!, clock.UtcNow, safety.PolicyVersion, IsProtected);
+        var preview = card switch
+        {
+            DesktopMoveCard.ClearOldStuff => DesktopMovePlanner.ClearOldStuff(root, seen, clock.UtcNow, safety.PolicyVersion, IsProtected),
+            DesktopMoveCard.FolderByGroup => DesktopMovePlanner.FolderByGroup(root, seen, board!, clock.UtcNow, safety.PolicyVersion, IsProtected),
+            DesktopMoveCard.TagNames => DesktopMovePlanner.TagNames(root, seen, board!, clock.UtcNow, safety.PolicyVersion, IsProtected),
+            _ => throw new ArgumentOutOfRangeException(nameof(card)),
+        };
         var message = preview.Items.Count > 0
             ? string.Empty
-            : card == DesktopMoveCard.ClearOldStuff
-                ? "Nothing on your Desktop has been left unchanged for 6 months."
-                : "Nothing in your groups can go into folders right now.";
+            : card switch
+            {
+                DesktopMoveCard.ClearOldStuff => "Nothing on your Desktop has been left unchanged for 6 months.",
+                DesktopMoveCard.TagNames => "None of the folders in your groups can get a new name right now.",
+                _ => "Nothing in your groups can go into folders right now.",
+            };
         return new(preview, message);
     }
 
@@ -160,13 +168,19 @@ public sealed class DesktopMoveService(
         var into = preview.Card == DesktopMoveCard.ClearOldStuff
             ? DesktopMovePlanner.OldStuffFolder
             : destinations.Count == 1 ? $"the {destinations.Single()} folder" : $"{destinations.Count} folders";
-        var summary = notMoved.Count == 0
-            ? $"Done. {DesktopMoveText.Things(moved)} moved into {into}."
-            : moved == 0
-                ? "Nothing was moved."
-                : $"{moved} of {items.Count} things moved. The rest stayed where they were.";
+        var summary = preview.Card == DesktopMoveCard.TagNames
+            ? notMoved.Count == 0
+                ? $"Done. {Folders(moved)} renamed."
+                : moved == 0 ? "Nothing was renamed." : $"{moved} of {items.Count} folders renamed. The rest kept their names."
+            : notMoved.Count == 0
+                ? $"Done. {DesktopMoveText.Things(moved)} moved into {into}."
+                : moved == 0
+                    ? "Nothing was moved."
+                    : $"{moved} of {items.Count} things moved. The rest stayed where they were.";
         return new(false, moved, items.Count, notMoved, summary);
     }
+
+    private static string Folders(int count) => count == 1 ? "1 folder" : $"{count} folders";
 
     /// <summary>The card's own latest change, only if it is the latest change on the Desktop and not undone.</summary>
     public async Task<DesktopLastChange?> FindLastAsync(Guid rootId, DesktopMoveCard card, CancellationToken cancellationToken = default)
@@ -301,6 +315,7 @@ public sealed class DesktopMoveService(
     {
         DesktopMoveCard.ClearOldStuff => PlanPurpose.ClearOldStuff,
         DesktopMoveCard.FolderByGroup => PlanPurpose.FolderByGroup,
+        DesktopMoveCard.TagNames => PlanPurpose.TagNames,
         _ => throw new ArgumentOutOfRangeException(nameof(card)),
     };
 
