@@ -644,7 +644,8 @@ public sealed class FolderTidyExecutorTests
         await plans.SaveAsync(plan, TestContext.Current.CancellationToken);
         OperationJournalEntry Intent(int sequence, MoveFolderOperation move, DateTimeOffset madeAt) =>
             new(sequence, move.Id, PlanOperationKind.MoveFolder, move.SourceRelativePath, move.DestinationRelativePath,
-                null, DateTimeOffset.UnixEpoch, JournalOperationState.InProgress, null) { BeforeCreatedAtUtc = madeAt };
+                null, DateTimeOffset.UnixEpoch, JournalOperationState.InProgress, null)
+            { BeforeCreatedAtUtc = madeAt };
         var record = new ExecutionJournalEntry(
             Guid.NewGuid(), plan.Id, 1, Guid.NewGuid(), ExecutionTransactionKind.Execute, null,
             ExecutionTransactionState.Executing, DateTimeOffset.UtcNow, null,
@@ -652,7 +653,8 @@ public sealed class FolderTidyExecutorTests
                 Intent(0, moveA, Directory.GetCreationTimeUtc(moved)),
                 Intent(1, moveB, Directory.GetCreationTimeUtc(stayed)),
                 Intent(2, moveC, DateTimeOffset.UnixEpoch),
-            ]) { Purpose = PlanPurpose.ClearOldStuff };
+            ])
+        { Purpose = PlanPurpose.ClearOldStuff };
         await journal.CreateAsync(record, TestContext.Current.CancellationToken);
         var executor = new FolderTidyExecutor(
             new DisconnectingRootRepository(root, int.MaxValue), new FixedFolderService(null),
