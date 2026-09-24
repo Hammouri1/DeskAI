@@ -16,3 +16,14 @@
 | Protected or link folders renamed | Inventory leaves them out; path policy re-checked on both names | ADR 0044 tests |
 
 No new executor action, Windows setting, network, or AI capability.
+
+## Whole-change review (2026-09-24)
+
+No critical findings. Fixed, each with a test that failed first:
+
+| Finding | Fix | Test |
+|---|---|---|
+| After a rename the board kept the old names: a second press said the folders were gone, and reopening moved them to Not sure | The board follows completed renames and their Put back | `DesktopStudioMovePageTests.Renamed_folders_stay_in_their_group_and_a_second_press_leaves_them_alone` |
+| A hidden file's name was not known, so it could be offered as a new name (the runner still refused it) | Hidden top-level files are named as left out | `DesktopInventoryServiceTests.A_hidden_file_on_the_Desktop_is_named_as_left_out` |
+
+Deferred small points are listed in `docs/HANDOFF.md`.

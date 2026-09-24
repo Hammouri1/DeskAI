@@ -1,54 +1,41 @@
 # DeskAI — Coding Handoff
 
-## Start here (updated 2026-09-24, after Desktop Studio step 3, the page-order and tray-logo fixes, and the Tag names plan)
+## Start here (updated 2026-09-24, after Desktop Studio step 4, Tag names)
 
-**State:** Desktop Studio steps 1 (**Find groups**) and 3 (**Clear old stuff**, **Folder by
-group**) are built on the branch `desktop-studio-find-groups` (from `2153fdd` on `main`), one
-commit per plan task plus the review fixes. Step 2 (icon positions) was dropped after the probe
-(ADR 0043). Nothing is merged, pushed, tagged, or released: the owner decided to push only once
-the whole Desktop Studio feature is done. After step 3's whole-change review and its fixes, the
-Release build had 0 warnings, all 1,606 tests passed, and formatting verification passed. The
-owner chose to build step 3 "one by one" (inline) with one fresh review at the end.
+**State:** Desktop Studio steps 1 (**Find groups**), 3 (**Clear old stuff**, **Put each group in
+its own folder**), and 4 (**Tag names**) are built on the branch `desktop-studio-find-groups`
+(from `2153fdd` on `main`), one commit per plan task plus the review fixes. Step 2 (icon
+positions) was dropped after the probe (ADR 0043). Nothing is merged, pushed, tagged, or
+released: the owner decided to push only once the whole Desktop Studio feature is done. After Tag
+names' whole-change review and its fixes, every project built in Release with 0 warnings (the App
+into a scratch folder, because the owner's DeskAI was open and locks its normal output), all
+1,624 tests passed, and formatting verification passed. The owner chose to build Tag names "one
+by one" (inline) with one fresh review at the end, as for step 3.
 
-**What step 3 built** (ADR 0044, review `docs/security/2026-09-24-desktop-moves-review.md`,
-plan `docs/superpowers/plans/2026-09-24-desktop-studio-moves.md`): two cards below the Find
-groups board. Clear old stuff moves folders and files unchanged for 6 months into one "Old
-stuff" folder on the Desktop; Folder by group moves each group into its own folder. Both show a
-tick-box list first, move only what is ticked after Move, and offer Put back for the latest
-change, also after reopening. Moving things on the Desktop needs **its own yes**, separate from
-"Allow tidying". Details in the dated section below.
+**What step 4 built** (ADR 0045, review `docs/security/2026-09-24-tag-names-review.md`, plan
+`docs/superpowers/plans/2026-09-24-desktop-studio-tag-names.md`): a card right under **2. Happy
+with these groups?**, titled "Or keep them where they are, and add the group's name", with the
+button **Add the group's name to each folder's name**. Each folder in a group gets the group's
+name in front ("Coding – Python stuff"); files and Not sure keep their names. Same tick-box list,
+**Rename N folders**, and **Put back** as the other cards, under the same separate yes; its dialog
+now reads "Allow DeskAI to move or rename things on your Desktop?". Details in the dated section
+below.
 
-**Icon-position probe (2026-09-24): no-go.** ADR 0043 is Rejected: icons could be placed, but a
-Desktop refresh or an Explorer restart put them back on the grid. Keep together, Make zones, and
-Name the zones are dropped. The probe stays in `tools/IconPositionProbe` as a record; it refuses
-to run outside Windows Sandbox.
+**Owner's manual checks for Tag names** (and step 3's, not yet done): on Desktop Studio press
+**Find groups**, then **Add the group's name to each folder's name** and read the list (each
+folder says what it becomes; no files); press **Rename** and accept the dialog; check the folder
+names on the Desktop and that the board still shows them in their groups; press the button again
+(everything should say its name already starts with the group's name); press **Put back**, and
+check the old names return; Rename again, close and reopen DeskAI, and check Put back is still
+offered. Step 3's checks: **Show what would move** on Clear old stuff, Move, look at the Old stuff
+folder, Put back; **Put each group in its own folder**, Move, Put back; **Stop DeskAI moving
+things on my Desktop**; check Organize's tidy permission for the Desktop did not change. Please
+close DeskAI and run the three verification commands once to get the launchable exe.
 
-**Owner's manual checks for step 3:** on Desktop Studio press **Show what would move** on Clear
-old stuff and read the list; press **Move** and accept the dialog; look at the Old stuff folder;
-press **Put back**; Move again, close and reopen DeskAI, and check Put back is still offered;
-Find groups, then under the board **Put each group in its own folder**, Move, Put back; press **Stop DeskAI moving things on my
-Desktop**; check that Organize's tidy permission for the Desktop did not change. The owner
-checked Find groups' move, rename, and merge by hand on 2026-09-24 and said they work well.
-
-**Since then (2026-09-24, same session):**
-- **Page order (owner-found):** the Desktop Studio page now reads as steps — **1. Find groups**,
-  the board, **2. Happy with these groups?** with **Put each group in its own folder** (the old
-  "Folder by group"), then **Other tidy-ups** with Clear old stuff. `DesktopStudioLayoutTests`
-  keeps the order. The owner said "ok better now".
-- **Tray logo (owner-found):** the icon near the clock showed Windows' generic program icon (it
-  asked for icon number 1, which .NET does not use). `TrayPresence` now loads `Assets\DeskAI.ico`
-  at the small tray size and destroys it on close; `ShellLayoutTests` pins it.
-- After both, the Release build (full rebuild) had 0 warnings, all 1,608 tests passed, and
-  formatting verification passed. Everything is committed on the branch; nothing is pushed.
-
-**Next task:** carry out `docs/superpowers/plans/2026-09-24-desktop-studio-tag-names.md`
-(**Tag names**, ADR 0045 to be written as its Task 1). It reuses ADR 0044's folder move for a
-rename in place, adds `PlanPurpose.TagNames`, and puts the card right under step 2 with the button
-**Add the group's name to each folder's name**; the permission dialog becomes "move or rename".
-The owner has seen the plan summary; **ask them to confirm the build method** — "one by one"
-(inline, one fresh review at the end) was recommended, as used for step 3. After Tag names:
-**Color groups**, which starts with its own probe and is dropped if the colour cannot be removed
-cleanly. Then ask the owner about pushing the whole Desktop Studio feature.
+**Next task:** **Color groups**, the last Desktop Studio step. It starts with its own probe, like
+the icon-position probe (ADR 0043), in Windows Sandbox only, and is dropped if the colour cannot be
+removed cleanly. Ask the owner before writing its plan. After it (or after it is dropped), ask the
+owner about pushing the whole Desktop Studio feature.
 
 **Decisions the owner made that are not yet in code** (also in
 `docs/superpowers/specs/2026-09-24-desktop-studio-design.md`):
@@ -61,13 +48,17 @@ cleanly. Then ask the owner about pushing the whole Desktop Studio feature.
 - 2026-09-24: the owner chose to **skip the full hand check of Find groups** and look at Desktop
   Studio as a whole later (they did check that move, rename, and merge work well).
 - 2026-09-24: the owner approved **a separate yes for moving things on the Desktop** (ADR 0044)
-  rather than reusing "Allow tidying", and chose to build step 3 "one by one" with one review.
+  rather than reusing "Allow tidying", and chose to build steps 3 and 4 "one by one" with one
+  review each.
 - 2026-09-24: the owner chose the page order **1. Find groups → board → 2. Happy with these
   groups? (Put each group in its own folder) → Other tidy-ups (Clear old stuff)**, because the
   first layout left them unsure what to do after finding groups. Later cards follow the same idea:
-  a step that builds on the groups goes under the board; independent jobs go under Other tidy-ups.
+  a step that builds on the groups goes under the board (Tag names does); independent jobs go
+  under Other tidy-ups.
 
 **Open with the owner:**
+- The deferred small points from Tag names' review (listed in the dated section below): the
+  owner decides whether any are worth doing.
 - Merge and push: the owner decided (2026-09-24) to keep committing each task locally on this
   branch and push to GitHub only once the whole Desktop Studio feature is finished. Ask again
   then; do not push before.
@@ -80,6 +71,44 @@ cleanly. Then ask the owner about pushing the whole Desktop Studio feature.
 - Other improvement ideas not yet picked, in the suggested order: code signing, an opt-in
   "newer version?" button, re-enabling picture search after a fresh review, Recycle Bin for
   proven copies, a first-run guide, architecture guard tests.
+
+## 2026-09-24 Desktop Studio step 4: Tag names
+
+Built from `docs/superpowers/plans/2026-09-24-desktop-studio-tag-names.md` in 5 tasks, then one
+fresh whole-change review and its fixes.
+
+- **Data flow.** `DesktopMovePlanner.TagNames` reads the saved board and a fresh look at the
+  Desktop and, for each folder in a group, plans ADR 0044's `MoveFolderOperation` to
+  "Group – name" in the same place, in a plan with `PlanPurpose.TagNames` (= 3). No new executor
+  action and no schema change: the rename gets every folder-move check, the journal, the check
+  after a stop, and Put back by made-at time. `DesktopMoveService` offers it like the other cards
+  and, after a Rename or its Put back, rewrites the board's paths for the folders that were
+  actually renamed, so they stay in their groups.
+- **Left alone, with the reason:** a folder already starting with "Group – " (so pressing twice
+  never doubles it); a new name that fails `FolderNameCheck` (over 64 characters, reserved, or
+  forbidden characters); a new name already used by anything on the Desktop, including hidden
+  files and folders and things the look left out; a protected old or new name. Project and
+  program folders start unticked ("Moving or renaming it can break…").
+- **Rulings made while building** (the owner may overrule): the dialog says "may move folders and
+  files into folders on your Desktop, and rename folders there" rather than the plan's "move or
+  rename folders and files", because files are never renamed; before Find groups the card says
+  "Find groups first, then DeskAI can add each group's name to its folders."; the list of folders
+  it will not rename is headed "Left with their names".
+- **Whole-change review** (fresh reviewer): no critical findings. Fixed, each with a test that
+  failed first: (1) after a rename the board kept the old names, so a second press said the
+  folders were "no longer on your Desktop" and reopening moved them to Not sure — the board now
+  follows the renames and their Put back; (2) a hidden file's name was not known, so it could be
+  offered as a new name (the rename was still refused safely at the last step) — hidden files are
+  now counted as names in use, as ADR 0045 promises.
+- **Deferred small points from the review** (the owner decides): some texts the card can show
+  still say "move" (the permission message, "Nothing was ticked, so nothing moved.", the Put back
+  summary "things are where they were", the part-way text, "Stop DeskAI moving things on my
+  Desktop"); adding "Group – " can push deep files past 260 characters, which some older programs
+  cannot open (Folder by group has the same limit, and Put back reverses it); no planner test for
+  a hand-changed board whose group name has a forbidden character (`FolderNameCheck` covers it);
+  no runner-level test for a same-place rename whose new name appears between the list and Rename
+  (ADR 0044's collision tests cover the path); choosing "Keep them where they are" after a Tag
+  names change stopped part-way leaves the board with the old names.
 
 ## 2026-09-24 Desktop Studio step 3: Clear old stuff and Folder by group
 
@@ -474,10 +503,11 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 
 > Continue DeskAI in the repository checkout. Read `AGENTS.md`, `docs/HANDOFF.md` ("Start
 > here" first), and especially `docs/SECURITY.md`; inspect Git status and the
-> `desktop-studio-find-groups` branch (Desktop Studio steps 1 and 3, ADR 0042 and ADR 0044; step 2
-> dropped, ADR 0043). Nothing on it is pushed yet. Next is Desktop Studio step 4, **Tag names**:
-> its plan is `docs/superpowers/plans/2026-09-24-desktop-studio-tag-names.md`. Ask me how to build
-> it (one by one was recommended), then build it. Do not open or scan my personal folders or use my API key. Test with generated
+> `desktop-studio-find-groups` branch (Desktop Studio steps 1, 3, and 4, ADR 0042, ADR 0044, and
+> ADR 0045; step 2 dropped, ADR 0043). Nothing on it is pushed yet. Next is the last Desktop
+> Studio step, **Color groups**, which starts with its own probe in Windows Sandbox and is dropped
+> if the colour cannot be removed cleanly. Ask me before planning it, and ask how to build it.
+> Do not open or scan my personal folders or use my API key. Test with generated
 > files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
 
 ## How to update this file
