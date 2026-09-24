@@ -18,8 +18,8 @@ public sealed record FreshStartOutcome(int FoldersForgotten, int RulesRemoved, i
 /// Folders are disconnected through the same service the Search page uses, which erases each
 /// folder's index, permissions, plans, and tidy history in one transaction. Every rule and saved
 /// search is removed, the AI choice goes back to off and every catalog service's key is removed
-/// from Windows, the check history and settings and the look are reset, and the remembered
-/// wallpaper is forgotten.
+/// from Windows, the check history and settings and the look are reset, the remembered
+/// wallpaper is forgotten, and the first-run welcome will greet the person again.
 /// </para>
 /// <para>
 /// It holds repositories, the folder service, and the credential vault, and nothing that can
@@ -101,6 +101,7 @@ public sealed class FreshStartService(
         await _appSettings.RemoveAsync(WallpaperService.PreviousKey, cancellationToken).ConfigureAwait(false);
         await _appSettings.RemoveAsync(WallpaperService.SetKey, cancellationToken).ConfigureAwait(false);
         await _appSettings.RemoveAsync(Ai.AskDeskAiService.AgreedKey, cancellationToken).ConfigureAwait(false);
+        await _appSettings.RemoveAsync(Welcome.WelcomeService.ShownKey, cancellationToken).ConfigureAwait(false);
 
         return new FreshStartOutcome(foldersForgotten, rulesRemoved, searchesRemoved, keysRemoved);
     }

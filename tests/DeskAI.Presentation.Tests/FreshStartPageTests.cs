@@ -5,6 +5,7 @@ using DeskAI.Core.Ai;
 using DeskAI.Core.Appearance;
 using DeskAI.Core.Desktop;
 using DeskAI.Core.Rules;
+using DeskAI.Core.Welcome;
 
 namespace DeskAI.Presentation.Tests;
 
@@ -83,5 +84,19 @@ public sealed class FreshStartPageTests
     public void The_version_line_names_DeskAI_and_a_number()
     {
         Assert.Matches(@"^DeskAI \d+\.\d+\.\d+$", SettingsViewModel.Version);
+    }
+
+    [Fact]
+    public async Task Start_fresh_brings_the_welcome_back_for_the_next_start()
+    {
+        await using var app = await TestApp.StartAsync();
+        var welcome = app.Get<WelcomeService>();
+        Assert.True(await welcome.ClaimFirstShowAsync(TestContext.Current.CancellationToken));
+        var settings = app.Get<SettingsViewModel>();
+        await settings.InitializeAsync();
+
+        await settings.StartFreshAsync();
+
+        Assert.True(await welcome.ClaimFirstShowAsync(TestContext.Current.CancellationToken));
     }
 }

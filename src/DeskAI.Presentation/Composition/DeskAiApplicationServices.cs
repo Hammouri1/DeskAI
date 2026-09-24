@@ -11,6 +11,7 @@ using DeskAI.Core.Search;
 using DeskAI.Core.Studio;
 using DeskAI.Core.Templates;
 using DeskAI.Core.Tidy;
+using DeskAI.Core.Welcome;
 using DeskAI.Core.Workspace;
 using DeskAI.Infrastructure.Content;
 using DeskAI.Infrastructure.DependencyInjection;
@@ -121,6 +122,9 @@ public static class DeskAiApplicationServices
         // file on disk beyond the one backup file the person chose; a test asserts it.
         services.AddSingleton<BackupService>();
         services.AddSingleton<FreshStartService>();
+        // The first-run welcome (2026-09-24): one remembered value and the folder list; nothing
+        // that can reach a file.
+        services.AddSingleton<WelcomeService>();
         // A DeskAI with no notification area is a legitimate DeskAI: it simply never offers
         // to keep running with no window. The Windows one is registered by the app.
         services.AddSingleton<IBackgroundPresence, NoBackgroundPresence>();
