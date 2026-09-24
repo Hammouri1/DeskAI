@@ -12,7 +12,7 @@ and from **Privacy and AI → Show the welcome again**, and on a folder button a
 "Connect your …?" question before connecting. Start fresh removes the key. Tests: `WelcomePageTests`,
 `WelcomeLayoutTests`, `WelcomeServiceTests`, one in `FreshStartPageTests`; all 1,686 tests passed and
 formatting passed. The full Release solution build passed with 0 warnings on 2026-09-25, after the owner
-had it open from `bin\x64\Release`; the app alone built to a scratch folder with 0 warnings).
+closed DeskAI (the exe and its runtime settings are in place).
 Review: no critical findings; the docs promised an X button a pop-up does not have — fixed. Deferred
 small points (the owner decides): the welcome is marked shown before it is on screen, so a very
 unlikely failure to open (another pop-up opened in the same instant) means it is never shown; the
