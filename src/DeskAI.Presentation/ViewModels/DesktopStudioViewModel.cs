@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
+using DeskAI.Core.Plans;
 using DeskAI.Core.Roots;
 using DeskAI.Core.Search;
 using DeskAI.Core.Studio;
@@ -264,7 +265,10 @@ public sealed class DesktopStudioViewModel(
 
     public bool HasInterrupted => _interrupted is not null;
 
-    public bool CanPutBackInterrupted => _interrupted?.CanUndo == true;
+    /// <summary>A change made here is answered here; a tidy made on Organize is answered there, with its own permission.</summary>
+    public bool CanKeepInterrupted => _interrupted is { Purpose: not PlanPurpose.Tidy };
+
+    public bool CanPutBackInterrupted => _interrupted is { CanUndo: true, Purpose: not PlanPurpose.Tidy };
 
     public string InterruptedText
     {
@@ -273,6 +277,11 @@ public sealed class DesktopStudioViewModel(
             if (_interrupted is not { } stopped)
             {
                 return string.Empty;
+            }
+
+            if (stopped.Purpose == PlanPurpose.Tidy)
+            {
+                return "Your last tidy of the Desktop on Organize stopped part-way. Answer it on Organize; until then DeskAI won't move anything here.";
             }
 
             var text = stopped.IsUndo
@@ -393,6 +402,7 @@ public sealed class DesktopStudioViewModel(
         OnPropertyChanged(nameof(HasInterrupted));
         OnPropertyChanged(nameof(InterruptedText));
         OnPropertyChanged(nameof(CanPutBackInterrupted));
+        OnPropertyChanged(nameof(CanKeepInterrupted));
         OldStuff.ShowLast(_interrupted is null ? await _moves.FindLastAsync(id, DesktopMoveCard.ClearOldStuff).ConfigureAwait(true) : null);
         FolderByGroup.ShowLast(_interrupted is null ? await _moves.FindLastAsync(id, DesktopMoveCard.FolderByGroup).ConfigureAwait(true) : null);
     }

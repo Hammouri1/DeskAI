@@ -72,6 +72,12 @@ public sealed record InterruptedTidy(
 
     /// <summary>Only a tidy that moved something, or a folder run that made something, offers undo.</summary>
     public bool CanUndo => !IsUndo && (IsFolders ? MadeFolders.Count > 0 : Moved > 0);
+
+    /// <summary>
+    /// Which feature made the change (ADR 0044). The question is answered only on that feature's
+    /// page, which asks for that feature's own permission; the other page only points there.
+    /// </summary>
+    public PlanPurpose Purpose { get; init; }
 }
 
 /// <summary>
@@ -183,7 +189,10 @@ public sealed class TidyRunService(
             .Where(operation => operation.State == JournalOperationState.Completed)
             .ToDictionary(operation => operation.OperationId, operation => operation.DestinationRelativePath);
         return new InterruptedTidy(
-            record.Id, isUndo, CompletedMoves(record).Count, moves.Length, review, CompletedMoves(record), made, folders.Length);
+            record.Id, isUndo, CompletedMoves(record).Count, moves.Length, review, CompletedMoves(record), made, folders.Length)
+        {
+            Purpose = record.Purpose,
+        };
     }
 
     /// <summary>"Keep them": the interrupted record becomes an ordinary tidy of what moved.</summary>
@@ -211,6 +220,11 @@ public sealed class TidyRunService(
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(interrupted);
+        if (interrupted.Purpose != PlanPurpose.Tidy)
+        {
+            return new(false, false, 0, [], "This change was made in Desktop Studio, so answer it there.");
+        }
+
         var root = await roots.FindAsync(rootId, cancellationToken).ConfigureAwait(false);
         if (root is null)
         {

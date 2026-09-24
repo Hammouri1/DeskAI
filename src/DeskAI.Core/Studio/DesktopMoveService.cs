@@ -50,6 +50,7 @@ public sealed class DesktopMoveService(
     public const string FindGroupsFirst = "Find groups first, then DeskAI can put each group into its own folder.";
     public const string PermissionNeeded = "DeskAI needs your permission before it moves anything on your Desktop.";
     public const string PutBackPermissionNeeded = "Putting things back moves them too, so DeskAI needs your permission to move things on your Desktop again.";
+    public const string TidyAnsweredOnOrganize = "This tidy was made on Organize, so answer it there.";
 
     public async Task<bool> CanMoveAsync(Guid rootId, CancellationToken cancellationToken = default) =>
         await DesktopAsync(rootId, cancellationToken).ConfigureAwait(false) is { } root && RootCapabilities.CanMoveFolders(root);
@@ -228,6 +229,11 @@ public sealed class DesktopMoveService(
     public Task<string?> KeepInterruptedAsync(Guid rootId, InterruptedTidy interrupted, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(interrupted);
+        if (interrupted.Purpose == PlanPurpose.Tidy)
+        {
+            return Task.FromResult<string?>(TidyAnsweredOnOrganize);
+        }
+
         return runs.KeepInterruptedAsync(rootId, interrupted.TransactionId, cancellationToken);
     }
 
@@ -236,6 +242,13 @@ public sealed class DesktopMoveService(
         Guid rootId, InterruptedTidy interrupted, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(interrupted);
+        // A tidy is answered on Organize with the tidy permission; asking for the broader yes to
+        // move things here, just to undo a tidy, would be asking for the wrong thing.
+        if (interrupted.Purpose == PlanPurpose.Tidy)
+        {
+            return new(false, 0, 0, [], TidyAnsweredOnOrganize);
+        }
+
         if (await DesktopAsync(rootId, cancellationToken).ConfigureAwait(false) is not { } root)
         {
             return new(false, 0, 0, [], DesktopGroupingService.NotConnected);

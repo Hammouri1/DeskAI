@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DeskAI.Core.Plans;
 using DeskAI.Core.Search;
 using DeskAI.Core.Tidy;
 
@@ -238,7 +239,7 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         StopTidyingCommand = new AsyncRelayCommand(StopTidyingAsync, () => SelectedFolder?.CanTidy == true && !IsBusy);
         RefreshCommand = new AsyncRelayCommand(() => _pending = LoadAsync(), () => SelectedFolder is not null && !IsBusy);
         StopAiCommand = new RelayCommand(() => _aiCancellation?.Cancel(), () => IsAskingAi);
-        KeepInterruptedCommand = new AsyncRelayCommand(KeepInterruptedAsync, () => HasInterrupted && !IsTidying);
+        KeepInterruptedCommand = new AsyncRelayCommand(KeepInterruptedAsync, () => CanAnswerInterrupted && !IsTidying);
     }
 
     /// <summary>"Keep them", or "OK" when there is nothing to put back.</summary>
@@ -403,6 +404,7 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     public string InterruptedTitle => _interrupted switch
     {
         null => string.Empty,
+        { Purpose: not PlanPurpose.Tidy } => "A Desktop Studio change on this folder stopped part-way.",
         { IsFolders: true, IsUndo: true } undo => $"Your last undo was interrupted: {undo.MadeFolders.Count} of {FolderCount(undo.TotalFolders)} removed.",
         { IsFolders: true } folders => $"DeskAI stopped while making folders: {folders.MadeFolders.Count} of {FolderCount(folders.TotalFolders)} made.",
         { IsUndo: true } undo => $"Your last undo was interrupted: {undo.Moved} of {Files(undo.Total)} went back.",
@@ -413,6 +415,7 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     public string InterruptedNote => _interrupted switch
     {
         null => string.Empty,
+        { Purpose: not PlanPurpose.Tidy } => "Answer it in Desktop Studio. Until then, DeskAI won't tidy this folder.",
         { IsFolders: true, IsUndo: true } => "DeskAI checked each folder. A folder that is still there was left in place.",
         { IsFolders: true, CanUndo: false } => "DeskAI checked each folder. Nothing needs removing.",
         { IsFolders: true } => "DeskAI checked each folder. You can remove the empty folders it made, or keep them.",
@@ -422,7 +425,10 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         _ => "DeskAI checked each file. You can put back the ones that moved, or keep them where they are now.",
     };
 
-    public bool CanUndoInterrupted => _interrupted?.CanUndo == true;
+    public bool CanUndoInterrupted => _interrupted is { CanUndo: true, Purpose: PlanPurpose.Tidy };
+
+    /// <summary>Only a tidy is answered here; a Desktop Studio change is answered there, with its own permission (ADR 0044).</summary>
+    public bool CanAnswerInterrupted => _interrupted is { Purpose: PlanPurpose.Tidy };
 
     public string UndoInterruptedText => _interrupted switch
     {
@@ -1082,7 +1088,7 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     /// </summary>
     public async Task<TidyUndoResult?> UndoInterruptedAsync()
     {
-        if (_interrupted is not { CanUndo: true } interrupted || SelectedFolder is not { } folder || IsTidying)
+        if (_interrupted is not { CanUndo: true, Purpose: PlanPurpose.Tidy } interrupted || SelectedFolder is not { } folder || IsTidying)
         {
             return null;
         }
@@ -1128,7 +1134,7 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
     /// <summary>"Keep them" or "OK": what moved stays, and becomes the folder's last tidy.</summary>
     private async Task KeepInterruptedAsync()
     {
-        if (_interrupted is not { } interrupted || SelectedFolder is not { } folder)
+        if (_interrupted is not { Purpose: PlanPurpose.Tidy } interrupted || SelectedFolder is not { } folder)
         {
             return;
         }
@@ -1212,6 +1218,7 @@ public sealed class TidyViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(InterruptedTitle));
         OnPropertyChanged(nameof(InterruptedNote));
         OnPropertyChanged(nameof(CanUndoInterrupted));
+        OnPropertyChanged(nameof(CanAnswerInterrupted));
         OnPropertyChanged(nameof(UndoInterruptedText));
         OnPropertyChanged(nameof(KeepInterruptedText));
         OnPropertyChanged(nameof(TidyNote));

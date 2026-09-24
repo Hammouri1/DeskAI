@@ -180,7 +180,8 @@
                     <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Your last change stopped part-way" />
                     <TextBlock TextWrapping="Wrap" Text="{x:Bind ViewModel.InterruptedText, Mode=OneWay}" />
                     <StackPanel Orientation="Horizontal" Spacing="10">
-                        <Button Content="Keep them where they are" Click="OnKeepInterruptedClick" />
+                        <Button Content="Keep them where they are" Visibility="{x:Bind ViewModel.CanKeepInterrupted, Mode=OneWay}"
+                                Click="OnKeepInterruptedClick" />
                         <Button Content="Put them back" Visibility="{x:Bind ViewModel.CanPutBackInterrupted, Mode=OneWay}"
                                 Click="OnPutBackInterruptedClick" />
                     </StackPanel>

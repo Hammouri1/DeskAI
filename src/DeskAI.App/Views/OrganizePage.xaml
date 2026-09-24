@@ -162,6 +162,7 @@
                                 Visibility="{x:Bind ViewModel.CanUndoInterrupted, Mode=OneWay}"
                                 Click="OnUndoInterruptedClick" />
                         <Button Content="{x:Bind ViewModel.KeepInterruptedText, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.CanAnswerInterrupted, Mode=OneWay}"
                                 Command="{x:Bind ViewModel.KeepInterruptedCommand}" />
                         <ProgressRing Width="18" Height="18" IsActive="{x:Bind ViewModel.IsTidying, Mode=OneWay}" />
                     </StackPanel>

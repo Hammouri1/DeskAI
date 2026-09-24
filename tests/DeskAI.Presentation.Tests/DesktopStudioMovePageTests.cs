@@ -1,6 +1,7 @@
 using DeskAI.App.ViewModels;
 using DeskAI.Core.Execution;
 using DeskAI.Core.Studio;
+using DeskAI.Core.Tidy;
 
 namespace DeskAI.Presentation.Tests;
 
@@ -281,6 +282,78 @@ public sealed class DesktopStudioMovePageTests
         Assert.True(File.Exists(Path.Combine(app.ProgramFolderPath, "DeskAI.App.exe")));
         Assert.True(File.Exists(hidden));
         Assert.True(File.Exists(Path.Combine(app.DesktopPath, "Old stuff", "old notes.txt")));
+    }
+
+    /// <summary>
+    /// Found in review 2026-09-24: a Desktop Studio change that stopped part-way was also offered
+    /// on Organize, which checked the tidy permission, closed the question, and then could not put
+    /// anything back. Each question is now answered only where its change was made.
+    /// </summary>
+    [Fact]
+    public async Task A_stopped_Desktop_Studio_change_is_answered_in_Desktop_Studio_not_on_Organize()
+    {
+        await using var first = await TestApp.StartStoppableAsync();
+        DesktopMoveServiceTests.MakeOldDesktop(first);
+        var studio = await OpenAllowedAsync(first);
+        await studio.PreviewAsync(studio.OldStuff);
+        first.Stopping.StopBefore(studio.OldStuff.Items.Single(item => item.Name == "Old project").Item.OperationId, JournalOperationState.Completed);
+        await Assert.ThrowsAsync<SimulatedStop>(() => studio.ApplyAsync(studio.OldStuff));
+        await using var app = await first.ReopenAsync();
+        var desktop = (await app.Get<DesktopGroupingService>().FindDesktopAsync(TestContext.Current.CancellationToken))!;
+        await app.Get<TidyPermissionService>().AllowAsync(desktop.Id, TestContext.Current.CancellationToken);
+        await app.Get<DesktopMoveService>().StopAsync(desktop.Id, TestContext.Current.CancellationToken);
+
+        var organize = app.Get<TidyViewModel>();
+        await organize.InitializeAsync();
+        await organize.ConnectAndSelectAsync(app.DesktopPath);
+
+        Assert.True(organize.HasInterrupted);
+        Assert.Contains("Desktop Studio", organize.InterruptedTitle, StringComparison.Ordinal);
+        Assert.False(organize.CanUndoInterrupted);
+        Assert.False(organize.CanAnswerInterrupted);
+        var stopped = (await app.Get<TidyRunService>().FindInterruptedAsync(desktop.Id, TestContext.Current.CancellationToken))!;
+        var refused = await app.Get<TidyRunService>().UndoInterruptedAsync(desktop.Id, stopped, TestContext.Current.CancellationToken);
+        Assert.Contains("Desktop Studio", refused.Summary, StringComparison.Ordinal);
+
+        // The question is still open, and Desktop Studio can answer it.
+        var again = app.Get<DesktopStudioViewModel>();
+        await again.InitializeAsync();
+        Assert.True(again.HasInterrupted);
+        Assert.True(again.CanPutBackInterrupted);
+    }
+
+    /// <summary>
+    /// Found in review 2026-09-24: an Organize tidy that stopped part-way on the Desktop was also
+    /// offered here, and Put them back asked for the broader yes to move things on the Desktop.
+    /// </summary>
+    [Fact]
+    public async Task A_stopped_Organize_tidy_is_answered_on_Organize_not_here()
+    {
+        await using var first = await TestApp.StartStoppableAsync();
+        first.MakeFile("Desktop", "invoice.pdf");
+        first.MakeFile("Desktop", "notes.pdf");
+        var desktop = await DesktopMoveServiceTests.ConnectDesktopAsync(first);
+        await first.Get<TidyPermissionService>().AllowAsync(desktop.Id, TestContext.Current.CancellationToken);
+        var preview = (await first.Get<TidySuggestionService>().PreviewAsync(
+            desktop.Id, Guid.NewGuid(), 1, new Dictionary<Guid, SameNameChoice>(),
+            TidySuggestionMode.TypesAndRules, new Dictionary<Guid, TidyAiAdvice>(), TestContext.Current.CancellationToken))!;
+        first.Stopping.StopBefore(
+            preview.Suggestions.Single(item => item.FileName == "notes.pdf").MoveOperationId!.Value,
+            JournalOperationState.Completed);
+        await Assert.ThrowsAsync<SimulatedStop>(() => first.Get<TidyRunService>().TidyAsync(
+            preview, [.. preview.Suggestions.Select(item => item.MoveOperationId!.Value)], TestContext.Current.CancellationToken));
+        await using var app = await first.ReopenAsync();
+
+        var studio = app.Get<DesktopStudioViewModel>();
+        await studio.InitializeAsync();
+
+        Assert.True(studio.HasInterrupted);
+        Assert.Contains("Organize", studio.InterruptedText, StringComparison.Ordinal);
+        Assert.False(studio.CanPutBackInterrupted);
+        Assert.False(studio.CanKeepInterrupted);
+        var refused = await studio.PutBackInterruptedAsync();
+        Assert.False(refused!.NeedsPermission);
+        Assert.True(studio.HasInterrupted);
     }
 
     private static async Task<DesktopStudioViewModel> OpenAsync(TestApp app)
