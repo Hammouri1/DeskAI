@@ -45,6 +45,11 @@ Search (or **Choose inside your folders** on Organize) and pick it in the Window
 cannot move, rename, delete, or open a file until you allow more, and you can disconnect at any
 time on Search, which makes DeskAI forget everything about that folder.
 
+DeskAI looks up to 8 folders deep and at up to 20,000 items in each connected folder. If a
+folder is bigger or deeper than that, a note under it on Search says so, and some files may not
+show up. When you open Search, DeskAI looks again at any folder it has not checked in the last
+10 minutes, so new files show up without pressing **Refresh**. **Refresh** still works any time.
+
 If a choice is refused, read the line below the folder controls. A whole drive, Program Files,
 another account's folder, a phone, and a cloud-only place are not valid choices. On a redirected
 or OneDrive-backed account, use the Desktop, Downloads, Documents, or Pictures location Windows

@@ -325,6 +325,10 @@
                                                        Text="{x:Bind Path}" />
                                             <TextBlock Style="{StaticResource CaptionStyle}"
                                                        Text="{x:Bind Remembered}" />
+                                            <TextBlock Style="{StaticResource CaptionStyle}"
+                                                       TextWrapping="Wrap"
+                                                       Visibility="{x:Bind HasLookNote}"
+                                                       Text="{x:Bind LookNote}" />
                                             <!--
                                                 The permission is written on the row, not left
                                                 implicit in a button label. A permission a

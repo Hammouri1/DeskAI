@@ -125,6 +125,8 @@ These are properties of the code, each covered by tests:
 - **OCR is approximate.** Scanned-PDF search can miss or misread stylized, small, rotated, or
   unsupported-language text; verify important results in the original document.
 - **No image-subject search in this release.** AI picture reading and uploads are disabled.
+- **Very large folders are only partly searched.** Search looks up to 8 folders deep and at up to
+  20,000 items per connected folder, and says so under the folder when it had to stop.
 - **Windows only.** Filesystem semantics, known folders, and shell integration differ too much per
   platform for a shared implementation to be honest about its guarantees.
 - **Not built:** renaming files, smart collections, semantic search, plugins, localization, and
@@ -134,7 +136,7 @@ These are properties of the code, each covered by tests:
 
 - C# on .NET 10, WinUI 3 / Windows App SDK, XAML — unpackaged, self-contained, x64
 - MVVM presentation, dependency injection at the composition root, async and cancellable I/O
-- SQLite (schema version 14) for settings, rules, saved searches, plans, the metadata index, and
+- SQLite (schema version 15) for settings, rules, saved searches, plans, the metadata index, and
   the operation journal
 - xUnit — more than 1,400 tests across five projects, including page tests that use each feature the way a
   person does

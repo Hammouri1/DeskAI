@@ -70,6 +70,7 @@ public static class DeskAiApplicationServices
         services.AddSingleton<AwayTidyService>();
         services.AddSingleton<IAwayTidyRunner>(provider => provider.GetRequiredService<AwayTidyService>());
         services.AddSingleton<FileSearchService>();
+        services.AddSingleton(SearchScanBounds.Default);
         services.AddSingleton<ConnectedFolderService>();
         // The only service that opens a file. It refuses any folder that was not
         // connected for reading inside, so registering it grants nothing on its own.

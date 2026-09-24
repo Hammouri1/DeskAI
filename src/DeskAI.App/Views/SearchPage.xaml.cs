@@ -20,6 +20,7 @@ public sealed partial class SearchPage : Page
         _folderPicker = folderPicker;
         DataContext = viewModel;
         Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
     }
 
     public SearchViewModel ViewModel { get; }
@@ -28,6 +29,13 @@ public sealed partial class SearchPage : Page
     {
         Loaded -= OnLoaded;
         await ViewModel.InitializeAsync();
+    }
+
+    /// <summary>Leaving Search stops a look at the folders that is still going.</summary>
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        Unloaded -= OnUnloaded;
+        ViewModel.Dispose();
     }
 
     /// <summary>Enter searches, because reaching for the mouse to run a search is friction.</summary>

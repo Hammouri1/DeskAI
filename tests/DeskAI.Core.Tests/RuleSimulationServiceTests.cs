@@ -239,6 +239,7 @@ public sealed class RuleSimulationServiceTests
         public Task<FileIndexSyncResult> SynchronizeRootAsync(
             Guid rootId,
             IReadOnlyList<IndexedFile> files,
+            FileIndexLook look,
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 

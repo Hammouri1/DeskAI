@@ -25,9 +25,12 @@ public sealed class SqliteFileIndex(IOptions<DatabaseOptions> options) : IFileIn
     public async Task<FileIndexSyncResult> SynchronizeRootAsync(
         Guid rootId,
         IReadOnlyList<IndexedFile> files,
+        FileIndexLook look,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(files);
+        ArgumentNullException.ThrowIfNull(look);
+        ArgumentOutOfRangeException.ThrowIfNegative(look.DeepFoldersSkipped);
         if (rootId == Guid.Empty)
         {
             throw new ArgumentException("Index changes must name an authorized root.", nameof(rootId));
@@ -77,8 +80,11 @@ public sealed class SqliteFileIndex(IOptions<DatabaseOptions> options) : IFileIn
             }
         }
 
+        // A look that stopped early did not reach every file, so an unseen row is not evidence
+        // that its file is gone. Forgetting it would make Search lose files it had found before.
         var removed = 0;
-        foreach (var missing in existing.Keys.Where(id => !seen.Contains(id)))
+        var forgettable = look.StoppedEarly ? [] : existing.Keys.Where(id => !seen.Contains(id));
+        foreach (var missing in forgettable)
         {
             cancellationToken.ThrowIfCancellationRequested();
             await using var delete = connection.CreateCommand();
@@ -87,6 +93,24 @@ public sealed class SqliteFileIndex(IOptions<DatabaseOptions> options) : IFileIn
             delete.Parameters.AddWithValue("$rootId", rootKey);
             delete.Parameters.AddWithValue("$fileId", missing.ToString("D"));
             removed += await delete.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        }
+
+        await using (var record = connection.CreateCommand())
+        {
+            record.Transaction = sqliteTransaction;
+            record.CommandText = """
+                INSERT INTO index_looks(root_id, looked_at_utc, stopped_early, deep_folders_skipped)
+                VALUES ($rootId, $lookedAtUtc, $stoppedEarly, $deepFoldersSkipped)
+                ON CONFLICT(root_id) DO UPDATE SET
+                    looked_at_utc = excluded.looked_at_utc,
+                    stopped_early = excluded.stopped_early,
+                    deep_folders_skipped = excluded.deep_folders_skipped;
+                """;
+            record.Parameters.AddWithValue("$rootId", rootKey);
+            record.Parameters.AddWithValue("$lookedAtUtc", look.LookedAtUtc.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture));
+            record.Parameters.AddWithValue("$stoppedEarly", look.StoppedEarly ? 1 : 0);
+            record.Parameters.AddWithValue("$deepFoldersSkipped", look.DeepFoldersSkipped);
+            await record.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
 
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
@@ -216,7 +240,10 @@ public sealed class SqliteFileIndex(IOptions<DatabaseOptions> options) : IFileIn
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT COUNT(*), COALESCE(SUM(size_bytes), 0), MAX(indexed_at_utc)
+            SELECT COUNT(*), COALESCE(SUM(size_bytes), 0), MAX(indexed_at_utc),
+                   (SELECT looked_at_utc FROM index_looks WHERE root_id = $rootId),
+                   (SELECT stopped_early FROM index_looks WHERE root_id = $rootId),
+                   (SELECT deep_folders_skipped FROM index_looks WHERE root_id = $rootId)
             FROM indexed_files WHERE root_id = $rootId;
             """;
         command.Parameters.AddWithValue("$rootId", rootId.ToString("D"));
@@ -226,10 +253,19 @@ public sealed class SqliteFileIndex(IOptions<DatabaseOptions> options) : IFileIn
             return FileIndexStatistics.Empty;
         }
 
+        // The look is reported even when it found no files, so an empty folder still reads as
+        // "checked just now" rather than "never checked".
         var count = reader.GetInt32(0);
-        return count == 0
-            ? FileIndexStatistics.Empty
-            : new FileIndexStatistics(count, reader.GetInt64(1), ParseTimestamp(reader.GetString(2)));
+        DateTimeOffset? lookedAt = reader.IsDBNull(3) ? null : ParseTimestamp(reader.GetString(3));
+        var stoppedEarly = !reader.IsDBNull(4) && reader.GetInt64(4) != 0;
+        var deepFoldersSkipped = reader.IsDBNull(5) ? 0 : reader.GetInt32(5);
+        return new FileIndexStatistics(
+            count,
+            count == 0 ? 0 : reader.GetInt64(1),
+            count == 0 ? null : ParseTimestamp(reader.GetString(2)),
+            lookedAt,
+            stoppedEarly,
+            deepFoldersSkipped);
     }
 
     public async Task<IReadOnlyList<SizeGroup>> GetSizeCountsAsync(
@@ -351,7 +387,10 @@ public sealed class SqliteFileIndex(IOptions<DatabaseOptions> options) : IFileIn
     {
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
         await using var command = connection.CreateCommand();
-        command.CommandText = "DELETE FROM indexed_files WHERE root_id = $rootId;";
+        command.CommandText = """
+            DELETE FROM indexed_files WHERE root_id = $rootId;
+            DELETE FROM index_looks WHERE root_id = $rootId;
+            """;
         command.Parameters.AddWithValue("$rootId", rootId.ToString("D"));
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
     }

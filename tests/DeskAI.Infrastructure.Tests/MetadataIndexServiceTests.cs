@@ -37,6 +37,44 @@ public sealed class MetadataIndexServiceTests
     }
 
     [Fact]
+    public async Task RefreshAsync_ReportsALookThatStoppedAtTheItemLimit()
+    {
+        using var sandbox = new TemporaryDirectory();
+        foreach (var name in new[] { "a.txt", "b.txt", "c.txt", "d.txt", "e.txt" })
+        {
+            sandbox.CreateDummyFile(name);
+        }
+
+        var index = new InMemoryFileIndex();
+        var service = CreateService(index, new WindowsPathPolicy());
+
+        var result = await service.RefreshAsync(
+            Root(sandbox.Path), new MetadataScanOptions(maxDepth: 3, maxEntries: 2), TestContext.Current.CancellationToken);
+
+        Assert.True(result.StoppedEarly);
+        Assert.True(index.LastLook?.StoppedEarly);
+        Assert.Equal(0, index.LastLook?.DeepFoldersSkipped);
+    }
+
+    [Fact]
+    public async Task RefreshAsync_CountsFoldersTooDeepToEnterAndCallsTheLookComplete()
+    {
+        using var sandbox = new TemporaryDirectory();
+        sandbox.CreateDummyFile(@"One\Two\deep.txt");
+        sandbox.CreateDummyFile(@"Uno\Dos\deep.txt");
+        var index = new InMemoryFileIndex();
+        var service = CreateService(index, new WindowsPathPolicy());
+
+        var result = await service.RefreshAsync(
+            Root(sandbox.Path), new MetadataScanOptions(maxDepth: 1, maxEntries: 50), TestContext.Current.CancellationToken);
+
+        Assert.False(result.StoppedEarly);
+        Assert.Equal(2, result.DeepFoldersSkipped);
+        Assert.Equal(2, index.LastLook?.DeepFoldersSkipped);
+        Assert.False(index.LastLook?.StoppedEarly);
+    }
+
+    [Fact]
     public async Task RefreshAsync_RefusesAProtectedRootWithoutTouchingTheIndex()
     {
         using var sandbox = new TemporaryDirectory();
@@ -200,6 +238,8 @@ public sealed class MetadataIndexServiceTests
 
         public int SynchronizeCalls { get; private set; }
 
+        public FileIndexLook? LastLook { get; private set; }
+
         /// <summary>
         /// Deliberately unsupported. This fake exists to observe synchronization, and
         /// re-implementing the filter rules here would create a second copy that could
@@ -215,9 +255,11 @@ public sealed class MetadataIndexServiceTests
         public Task<FileIndexSyncResult> SynchronizeRootAsync(
             Guid rootId,
             IReadOnlyList<IndexedFile> files,
+            FileIndexLook look,
             CancellationToken cancellationToken = default)
         {
             SynchronizeCalls++;
+            LastLook = look;
             var existing = _entries.TryGetValue(rootId, out var stored) ? stored : [];
             var added = 0;
             var updated = 0;

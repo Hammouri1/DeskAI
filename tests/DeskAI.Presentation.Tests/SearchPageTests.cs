@@ -589,6 +589,104 @@ public sealed class SearchPageTests
     }
 
     [Fact]
+    public async Task A_photo_six_folders_down_is_found()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Archive");
+        app.MakeFile("Archive", Path.Combine("2019", "Trips", "Summer", "Italy", "Rome", "Day 3", "fountain.jpg"));
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+
+        search.Phrase = "photos";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Equal("fountain.jpg", Assert.Single(search.Results).Name);
+        Assert.False(Assert.Single(search.Folders).HasLookNote);
+    }
+
+    [Fact]
+    public async Task A_look_that_stops_early_says_so_and_keeps_files_found_before()
+    {
+        await using var app = await TestApp.StartWithSearchBoundsAsync(maxDepth: 8, maxEntries: 5);
+        var folder = app.MakeFolder("Coursework", "zebra-photo.jpg");
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        // Named to be listed first, so the next look stops before it reaches the photo.
+        foreach (var name in new[] { "a1.txt", "a2.txt", "a3.txt", "a4.txt", "a5.txt", "a6.txt" })
+        {
+            app.MakeFile("Coursework", name);
+        }
+
+        await search.RefreshFolderCommand.ExecuteAsync(Assert.Single(search.Folders).Id);
+        search.Phrase = "photos";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Equal("zebra-photo.jpg", Assert.Single(search.Results).Name);
+        Assert.Contains("looked at the first 5 items", search.FolderMessage, StringComparison.Ordinal);
+        var row = Assert.Single(search.Folders);
+        Assert.True(row.HasLookNote);
+        Assert.Contains("some files may not show up", row.LookNote, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Nothing_found_in_a_partly_checked_folder_says_a_file_may_be_missing()
+    {
+        await using var app = await TestApp.StartWithSearchBoundsAsync(maxDepth: 1, maxEntries: 50);
+        var folder = app.MakeFolder("Coursework", "notes.txt");
+        app.MakeFile("Coursework", Path.Combine("Year 1", "Term 2", "hidden-away.jpg"));
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+
+        search.Phrase = "photos";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Empty(search.Results);
+        Assert.Contains("One folder was too deep to look inside.", Assert.Single(search.Folders).LookNote, StringComparison.Ordinal);
+        Assert.Contains("a file may be missing", search.StatusMessage, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Opening_search_later_finds_a_new_file_without_pressing_refresh()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Coursework", "notes.txt");
+        var firstVisit = app.Get<SearchViewModel>();
+        await firstVisit.InitializeAsync();
+        await firstVisit.ConnectFolderAsync(folder);
+        app.MakeFile("Coursework", "beach.jpg");
+
+        app.Clock.Ahead = SearchViewModel.LookAgainAfter + TimeSpan.FromMinutes(1);
+        var later = app.Get<SearchViewModel>();
+        await later.InitializeAsync();
+        later.Phrase = "photos";
+        await later.SearchCommand.ExecuteAsync(null);
+
+        Assert.Equal("beach.jpg", Assert.Single(later.Results).Name);
+        Assert.Equal("2 files remembered", Assert.Single(later.Folders).Remembered);
+        Assert.Equal("Your folders are up to date.", later.FolderMessage);
+    }
+
+    [Fact]
+    public async Task Opening_search_again_soon_does_not_look_at_the_folders_again()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("Coursework", "notes.txt");
+        var firstVisit = app.Get<SearchViewModel>();
+        await firstVisit.InitializeAsync();
+        await firstVisit.ConnectFolderAsync(folder);
+        app.MakeFile("Coursework", "beach.jpg");
+
+        var soon = app.Get<SearchViewModel>();
+        await soon.InitializeAsync();
+
+        Assert.Equal("1 file remembered", Assert.Single(soon.Folders).Remembered);
+        Assert.Equal("1 folder connected.", soon.FolderMessage);
+    }
+
+    [Fact]
     public async Task Disconnecting_forgets_the_folder_and_clears_results_but_leaves_files_alone()
     {
         await using var app = await TestApp.StartAsync();

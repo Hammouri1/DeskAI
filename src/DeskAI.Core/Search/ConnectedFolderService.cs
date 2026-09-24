@@ -20,7 +20,21 @@ public sealed record ConnectedFolder(
     bool CanTidy = false,
     bool CanReadDocuments = false,
     bool CanReadPdf = false,
-    bool CanReadSlides = false);
+    bool CanReadSlides = false,
+    bool StoppedEarly = false,
+    int DeepFoldersSkipped = 0);
+
+/// <summary>How far Search looks into a connected folder (ADR 0041).</summary>
+/// <remarks>
+/// Wide enough for an ordinary Documents folder, still finite so a huge one cannot keep DeskAI
+/// busy indefinitely. A look that reaches either bound says so, and keeps what it remembered
+/// before rather than forgetting the part it did not reach. Registered once in the container,
+/// so tests can substitute small bounds instead of generating twenty thousand files.
+/// </remarks>
+public sealed record SearchScanBounds(MetadataScanOptions Options)
+{
+    public static SearchScanBounds Default { get; } = new(new MetadataScanOptions(maxDepth: 8, maxEntries: 20_000));
+}
 
 /// <summary>
 /// The outcome of connecting or refreshing a folder, including a refusal reason.
@@ -54,13 +68,11 @@ public sealed record ConnectFolderResult(bool IsAllowed, string Explanation, Con
 public sealed class ConnectedFolderService(
     IReadOnlyFolderService folders,
     IMetadataIndexService index,
-    IAuthorizedRootRepository roots)
+    IAuthorizedRootRepository roots,
+    SearchScanBounds? bounds = null)
 {
-    /// <summary>
-    /// Bounds for the scan a connect performs. Deliberately modest: connecting should feel
-    /// immediate and predictable, and a person can refresh again once they see it worked.
-    /// </summary>
-    public static MetadataScanOptions ScanBounds { get; } = new(maxDepth: 4, maxEntries: 2000);
+    /// <summary>How far a look at a connected folder goes; see <see cref="SearchScanBounds"/>.</summary>
+    public MetadataScanOptions ScanBounds { get; } = (bounds ?? SearchScanBounds.Default).Options;
 
     private readonly IReadOnlyFolderService _folders = folders;
     private readonly IMetadataIndexService _index = index;
@@ -92,13 +104,15 @@ public sealed class ConnectedFolderService(
         }
 
         var folder = await DescribeAsync(authorization.Root.Id, cancellationToken).ConfigureAwait(false);
-        var skipped = update.Issues.Count == 0
+        var skippedCount = update.Issues.Count(issue =>
+            issue.Code is not (ScanIssueCode.EntryLimitReached or ScanIssueCode.DepthLimitReached));
+        var skipped = skippedCount == 0
             ? string.Empty
-            : $" {update.Issues.Count} item(s) were skipped safely.";
+            : $" {skippedCount} item(s) were skipped safely.";
 
         return new ConnectFolderResult(
             true,
-            $"Remembered {update.Changes.TotalSeen} file(s): names, sizes, and dates only.{skipped}",
+            $"Remembered {update.Changes.TotalSeen} file(s): names, sizes, and dates only.{skipped}{DescribeLimits(update)}",
             folder);
     }
 
@@ -120,8 +134,29 @@ public sealed class ConnectedFolderService(
         }
 
         var folder = await DescribeAsync(rootId, cancellationToken).ConfigureAwait(false);
-        return new ConnectFolderResult(true, update.Explanation, folder);
+        return new ConnectFolderResult(true, update.Explanation + DescribeLimits(update), folder);
     }
+
+    /// <summary>
+    /// Says, in plain words, when a look could not cover the whole folder. Empty when it did.
+    /// </summary>
+    public string DescribeLimits(bool stoppedEarly, int deepFoldersSkipped)
+    {
+        var text = stoppedEarly
+            ? $" DeskAI looked at the first {ScanBounds.MaxEntries:N0} items here and stopped, so some files may not show up in Search."
+            : string.Empty;
+        if (deepFoldersSkipped > 0)
+        {
+            text += deepFoldersSkipped == 1
+                ? " One folder was too deep to look inside."
+                : $" {deepFoldersSkipped:N0} folders were too deep to look inside.";
+        }
+
+        return text;
+    }
+
+    private string DescribeLimits(IndexUpdateResult update) =>
+        DescribeLimits(update.StoppedEarly, update.DeepFoldersSkipped);
 
     /// <summary>Lists the folders search is allowed to look in.</summary>
     public async Task<IReadOnlyList<ConnectedFolder>> ListAsync(CancellationToken cancellationToken = default)
@@ -136,12 +171,14 @@ public sealed class ConnectedFolderService(
                 root.DisplayName,
                 root.CanonicalPath,
                 statistics.FileCount,
-                statistics.LastIndexedAtUtc,
+                statistics.LastLookedAtUtc ?? statistics.LastIndexedAtUtc,
                 RootCapabilities.CanReadContent(root),
                 RootCapabilities.CanTidy(root),
                 RootCapabilities.CanReadDocuments(root),
                 RootCapabilities.CanReadPdf(root),
-                RootCapabilities.CanReadSlides(root)));
+                RootCapabilities.CanReadSlides(root),
+                statistics.StoppedEarly,
+                statistics.DeepFoldersSkipped));
         }
 
         return described.AsReadOnly();
@@ -327,11 +364,13 @@ public sealed class ConnectedFolderService(
             root.DisplayName,
             root.CanonicalPath,
             statistics.FileCount,
-            statistics.LastIndexedAtUtc,
+            statistics.LastLookedAtUtc ?? statistics.LastIndexedAtUtc,
             RootCapabilities.CanReadContent(root),
             RootCapabilities.CanTidy(root),
             RootCapabilities.CanReadDocuments(root),
             RootCapabilities.CanReadPdf(root),
-            RootCapabilities.CanReadSlides(root));
+            RootCapabilities.CanReadSlides(root),
+            statistics.StoppedEarly,
+            statistics.DeepFoldersSkipped);
     }
 }

@@ -33,7 +33,7 @@ public sealed class SqliteDatabaseInitializerTests
 
         // Every migration must record its own number so the upgrade path stays auditable.
         command.CommandText = "SELECT group_concat(version, ',') FROM (SELECT version FROM schema_migrations ORDER BY version);";
-        Assert.Equal("1,2,3,4,5,6,7,8,9,10,11,12,13,14", await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("1,2,3,4,5,6,7,8,9,10,11,12,13,14,15", await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -176,7 +176,7 @@ public sealed class SqliteDatabaseInitializerTests
         await upgraded.OpenAsync(TestContext.Current.CancellationToken);
         await using var verify = upgraded.CreateCommand();
         verify.CommandText = "SELECT MAX(version) FROM schema_migrations;";
-        Assert.Equal(14L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal((long)SqliteDatabaseInitializer.CurrentSchemaVersion, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
         verify.CommandText = "SELECT is_pinned FROM saved_searches WHERE name = 'Photos';";
         Assert.Equal(0L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
     }
@@ -211,5 +211,46 @@ public sealed class SqliteDatabaseInitializerTests
 
         command.CommandText = "SELECT COUNT(*) FROM indexed_files;";
         Assert.Equal(0L, await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task InitializeAsync_AddsTheLastLookTableToAnOlderDatabaseAndErasesItWithTheFolder()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var databasePath = System.IO.Path.Combine(sandbox.Path, "deskai.db");
+        var initializer = new SqliteDatabaseInitializer(
+            Options.Create(new DatabaseOptions { DatabasePath = databasePath }),
+            new SystemClock(),
+            NullLogger<SqliteDatabaseInitializer>.Instance);
+        await initializer.InitializeAsync(TestContext.Current.CancellationToken);
+
+        // Roll back to the shape a version-14 install would have.
+        await using (var downgrade = new SqliteConnection($"Data Source={databasePath};Pooling=False"))
+        {
+            await downgrade.OpenAsync(TestContext.Current.CancellationToken);
+            await using var command = downgrade.CreateCommand();
+            command.CommandText = "DROP TABLE index_looks; DELETE FROM schema_migrations WHERE version = 15;";
+            await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        }
+
+        await initializer.InitializeAsync(TestContext.Current.CancellationToken);
+
+        await using var connection = new SqliteConnection($"Data Source={databasePath};Pooling=False");
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        await using var verify = connection.CreateCommand();
+        verify.CommandText = """
+            PRAGMA foreign_keys = ON;
+            INSERT INTO authorized_roots(id, canonical_path, display_name, permission, created_at_utc, authorization_scope)
+            VALUES ('99999999-9999-9999-9999-999999999999', 'C:\Sandbox\Practice', 'Practice', 0, '2026-09-08T00:00:00Z', 0);
+            INSERT INTO index_looks(root_id, looked_at_utc, stopped_early, deep_folders_skipped)
+            VALUES ('99999999-9999-9999-9999-999999999999', '2026-09-08T00:00:00Z', 1, 2);
+            DELETE FROM authorized_roots WHERE id = '99999999-9999-9999-9999-999999999999';
+            """;
+        await verify.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+
+        verify.CommandText = "SELECT MAX(version) FROM schema_migrations;";
+        Assert.Equal(15L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        verify.CommandText = "SELECT COUNT(*) FROM index_looks;";
+        Assert.Equal(0L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
     }
 }

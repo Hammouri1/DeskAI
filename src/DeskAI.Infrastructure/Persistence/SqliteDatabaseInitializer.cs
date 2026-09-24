@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 14;
+    public const int CurrentSchemaVersion = 15;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -47,6 +47,7 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplyTidyPermissionMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplySavedSearchPinMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyAwayTidyMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplyIndexLookMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
     }
@@ -77,6 +78,36 @@ public sealed partial class SqliteDatabaseInitializer(
                 ALTER TABLE saved_searches ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0;
                 INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (13, $appliedAtUtc);
                 """;
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Records how the last look at each connected folder went (ADR 0041).
+    /// </summary>
+    /// <remarks>
+    /// One row per folder, cascading with it like the index itself, so disconnecting or Start
+    /// fresh forgets it. It holds a time, a yes/no, and a count: no name or path.
+    /// </remarks>
+    private static async Task ApplyIndexLookMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = """
+            CREATE TABLE IF NOT EXISTS index_looks (
+                root_id               TEXT NOT NULL PRIMARY KEY REFERENCES authorized_roots(id) ON DELETE CASCADE,
+                looked_at_utc         TEXT NOT NULL,
+                stopped_early         INTEGER NOT NULL CHECK (stopped_early IN (0, 1)),
+                deep_folders_skipped  INTEGER NOT NULL CHECK (deep_folders_skipped >= 0)
+            );
+
+            INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (15, $appliedAtUtc);
+            """;
         command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);

@@ -34,4 +34,10 @@ public sealed record IndexUpdateResult(
 {
     public static IndexUpdateResult Refused(string explanation) =>
         new(false, explanation, FileIndexSyncResult.Empty, []);
+
+    /// <summary>True when the look hit its item limit, so part of the folder was not seen.</summary>
+    public bool StoppedEarly => Issues.Any(issue => issue.Code == ScanIssueCode.EntryLimitReached);
+
+    /// <summary>How many folders were too deep to enter.</summary>
+    public int DeepFoldersSkipped => Issues.Count(issue => issue.Code == ScanIssueCode.DepthLimitReached);
 }

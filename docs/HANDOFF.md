@@ -1,5 +1,24 @@
 # DeskAI — Coding Handoff
 
+## 2026-09-24 Search finds more of your files
+
+The owner asked for improvement ideas and chose this one first (the other ideas, in order:
+code signing, an opt-in "newer version?" button, re-enabling picture search after a fresh review,
+Recycle Bin for proven copies, a first-run guide, and architecture guard tests). Three problems were
+fixed together (ADR 0041). The look at a connected folder was 4 levels and 2,000 items and is now 8
+and 20,000. A look that stopped at the item limit used to make the index forget every file it had
+not reached; it now forgets nothing, and only a complete look removes files that are gone. Schema
+15 adds `index_looks` (last look time, stopped early, folders too deep), cascading with the folder,
+and the Search folder row, the Connect/Refresh message, and "Nothing matched" say when a folder
+was only partly checked. Opening Search looks again at folders not checked in the last 10 minutes,
+through the same Refresh path; leaving the page stops it.
+
+Page tests (generated data only) cover a photo six folders down, an early stop that keeps an
+earlier file (confirmed failing with the fix switched off), the too-deep note, and looking again
+on open (a movable test clock). The performance probe now accepts `DESKAI_PERF_FILES`: 20,000
+generated files connect in about 1 s and refresh in about 0.3 s. The Release build had 0 warnings,
+all 1,439 tests passed, and formatting verification passed. Not pushed, tagged, or released.
+
 ## 2026-09-22 folder connection and first-download follow-up
 
 A first-time user could not connect the folders they tried and could not quickly tell how to
@@ -98,7 +117,7 @@ images on the first 20 PDF pages. Results identify page/slide where known and sh
 AI evidence. Selected picture bytes are sent only after the appropriate choice; no
 derived image index is persisted, and no file name or path is sent to the model.
 Limits are 30 files, 12 pictures, 4 MB total, 30 seconds preparation, and the existing
-scanner depth-4 / 2,000-entry cap. An unsupported or text-only vision model may refuse;
+scanner depth-8 / 20,000-entry cap (raised 2026-09-24, ADR 0041). An unsupported or text-only vision model may refuse;
 there is no provider fallback or model download. See ADR 0038 and its security review.
 Generated-data page tests use fake transport and keys. The full preview configuration
 build passed with 0 warnings/errors, all 1,416 tests passed, and `dotnet format` reported
@@ -137,9 +156,9 @@ generated-data tests, a beginner-friendly explanation, and a commit for each com
 ## What Search does now
 
 - A person selects all connected folders or one folder under **Look in**. Search first uses
-  remembered names, sizes, dates, and other metadata. A newly added file needs **Refresh**
-  on its connected folder before it appears in that index. The scanner enters subfolders
-  within its depth and entry limits (currently depth 4, 2,000 entries).
+  remembered names, sizes, dates, and other metadata. A newly added file appears after
+  **Refresh**, or on its own when Search is opened more than 10 minutes after the last look (ADR 0041). The scanner enters subfolders
+  within its depth and entry limits (depth 8, 20,000 entries since ADR 0041).
 - Separate grants permit bounded local plain-text reading, modern `.docx`/`.xlsx` reading,
   PDF text reading, and modern `.pptx` slide-text reading. Old grants were not broadened.
   PDF and slide grants have their own confirmations and Stop actions. Search never moves or

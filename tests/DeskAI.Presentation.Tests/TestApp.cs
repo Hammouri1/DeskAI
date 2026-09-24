@@ -3,6 +3,8 @@ using DeskAI.App.Composition;
 using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Content;
+using DeskAI.Core.Files;
+using DeskAI.Core.Search;
 using DeskAI.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -59,6 +61,9 @@ internal sealed class TestApp : IAsyncDisposable
 
     public SandboxKnownFolders KnownFolders => (SandboxKnownFolders)_services.GetRequiredService<IKnownFolders>();
 
+    /// <summary>The real time unless a test moves it forward to act as if time had passed.</summary>
+    public MovableClock Clock => (MovableClock)_services.GetRequiredService<IClock>();
+
     public RecordingPdfOcrReader PdfOcr =>
         (RecordingPdfOcrReader)_services.GetRequiredService<IPdfOcrReader>();
 
@@ -71,6 +76,13 @@ internal sealed class TestApp : IAsyncDisposable
     public T Get<T>() where T : notnull => _services.GetRequiredService<T>();
 
     public static Task<TestApp> StartAsync() => StartAsync(new TemporaryDirectory(), stoppable: false);
+
+    /// <summary>
+    /// A DeskAI whose look at a connected folder stops sooner, so a test can reach the limits
+    /// with a handful of generated files instead of twenty thousand.
+    /// </summary>
+    public static Task<TestApp> StartWithSearchBoundsAsync(int maxDepth, int maxEntries) =>
+        StartAsync(new TemporaryDirectory(), stoppable: false, new SearchScanBounds(new MetadataScanOptions(maxDepth, maxEntries)));
 
     /// <summary>
     /// A DeskAI whose journal can stop it part-way through a run, as a crash would. Everything
@@ -89,7 +101,10 @@ internal sealed class TestApp : IAsyncDisposable
         return await StartAsync(Directory, stoppable: false);
     }
 
-    private static async Task<TestApp> StartAsync(TemporaryDirectory directory, bool stoppable)
+    private static async Task<TestApp> StartAsync(
+        TemporaryDirectory directory,
+        bool stoppable,
+        SearchScanBounds? searchBounds = null)
     {
         var services = new ServiceCollection();
         var database = System.IO.Path.Combine(directory.Path, "deskai.db");
@@ -112,6 +127,11 @@ internal sealed class TestApp : IAsyncDisposable
         Replace<IBackgroundPresence>(services, new RecordingPresence());
         Replace<IAppearanceApplier>(services, new RecordingAppearanceApplier());
         Replace<IPdfOcrReader>(services, new RecordingPdfOcrReader());
+        Replace<IClock>(services, new MovableClock());
+        if (searchBounds is not null)
+        {
+            Replace(services, searchBounds);
+        }
 
         // The real wallpaper and the real Desktop must be unreachable from any test. Both
         // are replaced, and the Desktop is asserted to be inside this test's own folder.
@@ -199,4 +219,12 @@ internal sealed class RecordingPdfOcrReader : IPdfOcrReader
         Calls++;
         return Task.FromResult(Result);
     }
+}
+
+/// <summary>The real clock, moved forward by <see cref="Ahead"/> when a test needs time to pass.</summary>
+internal sealed class MovableClock : IClock
+{
+    public TimeSpan Ahead { get; set; }
+
+    public DateTimeOffset UtcNow => DateTimeOffset.UtcNow + Ahead;
 }

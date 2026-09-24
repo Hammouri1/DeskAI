@@ -98,8 +98,13 @@ public sealed record ConnectedFolderViewModel(
     bool CanReadContent,
     bool CanReadDocuments = false,
     bool CanReadPdf = false,
-    bool CanReadSlides = false)
+    bool CanReadSlides = false,
+    string LookNote = "",
+    DateTimeOffset? LastLookedAtUtc = null)
 {
+    /// <summary>Shown only when the last look could not cover the whole folder.</summary>
+    public bool HasLookNote => !string.IsNullOrEmpty(LookNote);
+
     public string ContentState => CanReadContent
         ? CanReadPdf
             ? CanReadSlides
@@ -121,7 +126,7 @@ public sealed record ConnectedFolderViewModel(
     /// <summary>The inverse of <see cref="CanReadContent"/>, so the row can show the plain pill without a converter.</summary>
     public bool IsNamesOnly => !CanReadContent;
 
-    public static ConnectedFolderViewModel From(ConnectedFolder folder)
+    public static ConnectedFolderViewModel From(ConnectedFolder folder, string lookNote = "")
     {
         ArgumentNullException.ThrowIfNull(folder);
         var remembered = folder.FileCount switch
@@ -139,7 +144,9 @@ public sealed record ConnectedFolderViewModel(
             folder.CanReadContent,
             folder.CanReadDocuments,
             folder.CanReadPdf,
-            folder.CanReadSlides);
+            folder.CanReadSlides,
+            lookNote.Trim(),
+            folder.LastCheckedUtc);
     }
 }
 
@@ -159,7 +166,7 @@ public sealed record ConnectedFolderViewModel(
 /// and matched. Only the last one shows results.
 /// </para>
 /// </remarks>
-public sealed class SearchViewModel : ObservableObject
+public sealed class SearchViewModel : ObservableObject, IDisposable
 {
     private readonly FileSearchService _search;
     private readonly ConnectedFolderService _folders;
@@ -185,6 +192,13 @@ public sealed class SearchViewModel : ObservableObject
     private bool _isBusy;
     private bool _hasSearched;
     private SearchFolderChoiceViewModel _selectedFolder = SearchFolderChoiceViewModel.All;
+    private CancellationTokenSource? _lookAgainStop;
+
+    /// <summary>
+    /// How long a folder's last look stays fresh. Opening Search looks again at any connected
+    /// folder checked longer ago than this, so a newly saved file shows up without Refresh.
+    /// </summary>
+    public static TimeSpan LookAgainAfter { get; } = TimeSpan.FromMinutes(10);
 
     public SearchViewModel(
         FileSearchService search,
@@ -480,6 +494,9 @@ public sealed class SearchViewModel : ObservableObject
         OnPropertyChanged(nameof(CanSearchPictures));
         OnPropertyChanged(nameof(VisualAiName));
 
+        // Before any requested search runs, so its results include files saved since last time.
+        await LookAgainAtStaleFoldersAsync().ConfigureAwait(true);
+
         if (_request.TakePhrase() is { } typed)
         {
             Phrase = typed.Length > MaxPhraseLength ? typed[..MaxPhraseLength] : typed;
@@ -502,6 +519,75 @@ public sealed class SearchViewModel : ObservableObject
 
         Phrase = requested.Phrase;
         await RunAsync().ConfigureAwait(true);
+    }
+
+    /// <summary>
+    /// Looks again at every connected folder whose last look is older than
+    /// <see cref="LookAgainAfter"/>, exactly as pressing Refresh on each would.
+    /// </summary>
+    /// <remarks>
+    /// It reaches nothing Refresh does not: the same service, the same connected folders, names,
+    /// sizes, and dates only. Searching stays available meanwhile; only the folder buttons wait.
+    /// Leaving the page stops it, and a stopped look changes nothing already remembered.
+    /// </remarks>
+    private async Task LookAgainAtStaleFoldersAsync()
+    {
+        var now = _clock.UtcNow;
+        var stale = Folders
+            .Where(folder => folder.LastLookedAtUtc is not { } looked || now - looked > LookAgainAfter)
+            .Select(folder => folder.Id)
+            .ToArray();
+        if (stale.Length == 0 || IsFolderBusy)
+        {
+            return;
+        }
+
+        var stop = new CancellationTokenSource();
+        _lookAgainStop = stop;
+        IsFolderBusy = true;
+        FolderMessage = "Checking your folders for new files…";
+        var notes = new List<string>();
+        try
+        {
+            foreach (var rootId in stale)
+            {
+                var result = await _folders.RefreshAsync(rootId, stop.Token).ConfigureAwait(true);
+                if (result.Folder is { } folder
+                    && _folders.DescribeLimits(folder.StoppedEarly, folder.DeepFoldersSkipped) is { Length: > 0 } limits)
+                {
+                    notes.Add($"{folder.Name}:{limits}");
+                }
+            }
+
+            await ReloadFoldersAsync().ConfigureAwait(true);
+            FolderMessage = notes.Count == 0
+                ? "Your folders are up to date."
+                : string.Join(" ", notes);
+        }
+        catch (OperationCanceledException) when (stop.IsCancellationRequested)
+        {
+            // The person left the page. Whatever was already remembered stays as it was.
+        }
+        catch (Exception exception) when (IsExpectedFolderFailure(exception))
+        {
+            FolderMessage = $"DeskAI stopped safely: {exception.Message}";
+        }
+        finally
+        {
+            stop.Dispose();
+            if (ReferenceEquals(_lookAgainStop, stop))
+            {
+                _lookAgainStop = null;
+            }
+
+            IsFolderBusy = false;
+        }
+    }
+
+    /// <summary>Leaving the page stops a look that is still going.</summary>
+    public void Dispose()
+    {
+        _lookAgainStop?.Cancel();
     }
 
     /// <summary>
@@ -746,7 +832,9 @@ public sealed class SearchViewModel : ObservableObject
         SearchFolders.Add(SearchFolderChoiceViewModel.All);
         foreach (var folder in connected)
         {
-            Folders.Add(ConnectedFolderViewModel.From(folder));
+            Folders.Add(ConnectedFolderViewModel.From(
+                folder,
+                _folders.DescribeLimits(folder.StoppedEarly, folder.DeepFoldersSkipped)));
             SearchFolders.Add(new SearchFolderChoiceViewModel(folder.Id, folder.Name));
         }
 
@@ -938,6 +1026,8 @@ public sealed class SearchViewModel : ObservableObject
 
             StatusMessage = outcome.ReachedLimit
                 ? "Showing the first matches only. Narrow the search to see fewer, more useful results."
+                : Results.Count == 0 && SearchedFolderWasOnlyPartlyChecked()
+                ? "DeskAI could not check all of a folder you searched, so a file may be missing here. See the note under that folder."
                 : "These matches came from the file names and details DeskAI remembered. Nothing was changed.";
 
             ScopeMessage = outcome.FoldersSearched == 1
@@ -1026,6 +1116,9 @@ public sealed class SearchViewModel : ObservableObject
         OnPropertyChanged(nameof(ShowsNothingFound));
         OnPropertyChanged(nameof(HasCheckedFiles));
     }
+
+    private bool SearchedFolderWasOnlyPartlyChecked() => Folders.Any(folder => folder.HasLookNote
+        && (SelectedFolder.Id == Guid.Empty || folder.Id == SelectedFolder.Id));
 
     private void Reset()
     {

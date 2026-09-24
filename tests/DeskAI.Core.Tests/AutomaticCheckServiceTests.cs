@@ -627,6 +627,7 @@ public sealed class AutomaticCheckServiceTests
         public Task<FileIndexSyncResult> SynchronizeRootAsync(
             Guid rootId,
             IReadOnlyList<IndexedFile> files,
+            FileIndexLook look,
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 

@@ -15,11 +15,17 @@ public interface IFileIndex
 {
     /// <summary>
     /// Makes the stored entries for one root match <paramref name="files"/>, writing only
-    /// the difference and forgetting rows whose files were not seen this time.
+    /// the difference, and records <paramref name="look"/> in the same transaction.
     /// </summary>
+    /// <remarks>
+    /// Rows whose files were not seen are forgotten only after a complete look. A look that
+    /// stopped early adds and updates but removes nothing: not reaching a file says nothing
+    /// about whether it is still there.
+    /// </remarks>
     Task<FileIndexSyncResult> SynchronizeRootAsync(
         Guid rootId,
         IReadOnlyList<IndexedFile> files,
+        FileIndexLook look,
         CancellationToken cancellationToken = default);
 
     Task<IReadOnlyList<IndexedFile>> ListForRootAsync(Guid rootId, CancellationToken cancellationToken = default);

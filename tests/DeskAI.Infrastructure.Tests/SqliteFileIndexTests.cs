@@ -24,7 +24,7 @@ public sealed class SqliteFileIndexTests
         var result = await fixture.Index.SynchronizeRootAsync(
             rootId,
             [Entry(rootId, 1, @"Study\notes.txt"), Entry(rootId, 2, "budget.xlsx")],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         Assert.Equal(new FileIndexSyncResult(Added: 2, Updated: 0, Unchanged: 0, Removed: 0), result);
         var stored = await fixture.Index.ListForRootAsync(rootId, TestContext.Current.CancellationToken);
@@ -37,9 +37,9 @@ public sealed class SqliteFileIndexTests
         await using var fixture = await IndexFixture.CreateAsync();
         var rootId = await fixture.AddRootAsync("Practice");
         IndexedFile[] pass = [Entry(rootId, 1, @"Study\notes.txt"), Entry(rootId, 2, "budget.xlsx")];
-        await fixture.Index.SynchronizeRootAsync(rootId, pass, TestContext.Current.CancellationToken);
+        await fixture.Index.SynchronizeRootAsync(rootId, pass, FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
-        var result = await fixture.Index.SynchronizeRootAsync(rootId, pass, TestContext.Current.CancellationToken);
+        var result = await fixture.Index.SynchronizeRootAsync(rootId, pass, FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         Assert.Equal(new FileIndexSyncResult(Added: 0, Updated: 0, Unchanged: 2, Removed: 0), result);
         Assert.False(result.ChangedAnything);
@@ -53,12 +53,12 @@ public sealed class SqliteFileIndexTests
         await fixture.Index.SynchronizeRootAsync(
             rootId,
             [Entry(rootId, 1, @"Study\notes.txt"), Entry(rootId, 2, "budget.xlsx")],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var result = await fixture.Index.SynchronizeRootAsync(
             rootId,
             [Entry(rootId, 1, @"Study\notes.txt", sizeBytes: 4096)],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         Assert.Equal(new FileIndexSyncResult(Added: 0, Updated: 1, Unchanged: 0, Removed: 1), result);
         var stored = await fixture.Index.ListForRootAsync(rootId, TestContext.Current.CancellationToken);
@@ -73,9 +73,9 @@ public sealed class SqliteFileIndexTests
         var second = await fixture.AddRootAsync("Second");
 
         await fixture.Index.SynchronizeRootAsync(
-            first, [Entry(first, 1, "shared-name.txt")], TestContext.Current.CancellationToken);
+            first, [Entry(first, 1, "shared-name.txt")], FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
         await fixture.Index.SynchronizeRootAsync(
-            second, [Entry(second, 1, "shared-name.txt")], TestContext.Current.CancellationToken);
+            second, [Entry(second, 1, "shared-name.txt")], FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         Assert.Single(await fixture.Index.ListForRootAsync(first, TestContext.Current.CancellationToken));
         Assert.Single(await fixture.Index.ListForRootAsync(second, TestContext.Current.CancellationToken));
@@ -94,7 +94,7 @@ public sealed class SqliteFileIndexTests
         await Assert.ThrowsAsync<ArgumentException>(() => fixture.Index.SynchronizeRootAsync(
             first,
             [Entry(second, 1, "elsewhere.txt")],
-            TestContext.Current.CancellationToken));
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -106,7 +106,7 @@ public sealed class SqliteFileIndexTests
         await Assert.ThrowsAsync<ArgumentException>(() => fixture.Index.SynchronizeRootAsync(
             rootId,
             [Entry(rootId, 1, "one.txt"), Entry(rootId, 1, "two.txt")],
-            TestContext.Current.CancellationToken));
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -115,7 +115,7 @@ public sealed class SqliteFileIndexTests
         await using var fixture = await IndexFixture.CreateAsync();
         var rootId = await fixture.AddRootAsync("Practice");
         await fixture.Index.SynchronizeRootAsync(
-            rootId, [Entry(rootId, 1, "notes.txt")], TestContext.Current.CancellationToken);
+            rootId, [Entry(rootId, 1, "notes.txt")], FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         await fixture.Roots.RemoveAsync(rootId, TestContext.Current.CancellationToken);
 
@@ -134,7 +134,7 @@ public sealed class SqliteFileIndexTests
         await using var fixture = await IndexFixture.CreateAsync();
         var rootId = await fixture.AddRootAsync("Reading", RootAuthorizationScope.MetadataAndContent);
         await fixture.Index.SynchronizeRootAsync(
-            rootId, [Entry(rootId, 1, "notes.txt")], TestContext.Current.CancellationToken);
+            rootId, [Entry(rootId, 1, "notes.txt")], FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         await fixture.Roots.RemoveAsync(rootId, TestContext.Current.CancellationToken);
 
@@ -158,15 +158,78 @@ public sealed class SqliteFileIndexTests
     }
 
     [Fact]
+    public async Task SynchronizeRootAsync_KeepsUnseenFilesWhenTheLookStoppedEarly()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [Entry(rootId, 1, "seen.txt"), Entry(rootId, 2, @"Later\not-reached.txt")],
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
+
+        var result = await fixture.Index.SynchronizeRootAsync(
+            rootId,
+            [Entry(rootId, 1, "seen.txt"), Entry(rootId, 3, "new.txt")],
+            new FileIndexLook(Moment.AddHours(1), StoppedEarly: true, DeepFoldersSkipped: 0),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(new FileIndexSyncResult(Added: 1, Updated: 0, Unchanged: 1, Removed: 0), result);
+        var stored = await fixture.Index.ListForRootAsync(rootId, TestContext.Current.CancellationToken);
+        Assert.Equal([@"Later\not-reached.txt", "new.txt", "seen.txt"], stored.Select(file => file.RelativePath));
+        var statistics = await fixture.Index.GetStatisticsAsync(rootId, TestContext.Current.CancellationToken);
+        Assert.True(statistics.StoppedEarly);
+        Assert.Equal(Moment.AddHours(1), statistics.LastLookedAtUtc);
+    }
+
+    [Fact]
+    public async Task GetStatisticsAsync_ReportsTheLastLookEvenWhenNothingChangedOrNothingWasFound()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        IndexedFile[] files = [Entry(rootId, 1, "one.txt")];
+        await fixture.Index.SynchronizeRootAsync(rootId, files, FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
+
+        await fixture.Index.SynchronizeRootAsync(
+            rootId, files, new FileIndexLook(Moment.AddDays(1), false, DeepFoldersSkipped: 3), TestContext.Current.CancellationToken);
+        var unchanged = await fixture.Index.GetStatisticsAsync(rootId, TestContext.Current.CancellationToken);
+        await fixture.Index.SynchronizeRootAsync(
+            rootId, [], FileIndexLook.Complete(Moment.AddDays(2)), TestContext.Current.CancellationToken);
+        var empty = await fixture.Index.GetStatisticsAsync(rootId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(Moment, unchanged.LastIndexedAtUtc);
+        Assert.Equal(Moment.AddDays(1), unchanged.LastLookedAtUtc);
+        Assert.Equal(3, unchanged.DeepFoldersSkipped);
+        Assert.False(unchanged.StoppedEarly);
+        Assert.Equal(0, empty.FileCount);
+        Assert.Equal(Moment.AddDays(2), empty.LastLookedAtUtc);
+        Assert.Equal(0, empty.DeepFoldersSkipped);
+    }
+
+    [Fact]
+    public async Task ClearRootAsync_AlsoForgetsTheLastLook()
+    {
+        await using var fixture = await IndexFixture.CreateAsync();
+        var rootId = await fixture.AddRootAsync("Practice");
+        await fixture.Index.SynchronizeRootAsync(
+            rootId, [Entry(rootId, 1, "one.txt")], new FileIndexLook(Moment, true, 1), TestContext.Current.CancellationToken);
+
+        await fixture.Index.ClearRootAsync(rootId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(
+            FileIndexStatistics.Empty,
+            await fixture.Index.GetStatisticsAsync(rootId, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
     public async Task ClearRootAsync_ForgetsOnlyTheNamedRoot()
     {
         await using var fixture = await IndexFixture.CreateAsync();
         var first = await fixture.AddRootAsync("First");
         var second = await fixture.AddRootAsync("Second");
         await fixture.Index.SynchronizeRootAsync(
-            first, [Entry(first, 1, "one.txt")], TestContext.Current.CancellationToken);
+            first, [Entry(first, 1, "one.txt")], FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
         await fixture.Index.SynchronizeRootAsync(
-            second, [Entry(second, 1, "two.txt")], TestContext.Current.CancellationToken);
+            second, [Entry(second, 1, "two.txt")], FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         await fixture.Index.ClearRootAsync(first, TestContext.Current.CancellationToken);
 
@@ -182,7 +245,7 @@ public sealed class SqliteFileIndexTests
         await fixture.Index.SynchronizeRootAsync(
             rootId,
             [Entry(rootId, 1, "one.txt", sizeBytes: 100), Entry(rootId, 2, "two.txt", sizeBytes: 250)],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var statistics = await fixture.Index.GetStatisticsAsync(rootId, TestContext.Current.CancellationToken);
 
@@ -210,7 +273,7 @@ public sealed class SqliteFileIndexTests
         await Assert.ThrowsAsync<SqliteException>(() => fixture.Index.SynchronizeRootAsync(
             strangerId,
             [Entry(strangerId, 1, "notes.txt")],
-            TestContext.Current.CancellationToken));
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -219,7 +282,7 @@ public sealed class SqliteFileIndexTests
         await using var fixture = await IndexFixture.CreateAsync();
         var rootId = await fixture.AddRootAsync("Practice");
         await fixture.Index.SynchronizeRootAsync(
-            rootId, [Entry(rootId, 1, @"Study\notes.txt")], TestContext.Current.CancellationToken);
+            rootId, [Entry(rootId, 1, @"Study\notes.txt")], FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         await using var connection = new SqliteConnection($"Data Source={fixture.DatabasePath};Mode=ReadOnly;Pooling=False");
         await connection.OpenAsync(TestContext.Current.CancellationToken);
@@ -246,7 +309,7 @@ public sealed class SqliteFileIndexTests
                 Entry(rootId, 2, @"Budget\summary.txt"),
                 Entry(rootId, 3, "holiday.txt"),
             ],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var results = await fixture.Index.SearchRootAsync(
             rootId,
@@ -271,11 +334,11 @@ public sealed class SqliteFileIndexTests
         await fixture.Index.SynchronizeRootAsync(
             mine,
             [Entry(mine, 1, "budget.txt")],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
         await fixture.Index.SynchronizeRootAsync(
             theirs,
             [Entry(theirs, 2, "budget.txt")],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var results = await fixture.Index.SearchRootAsync(
             mine,
@@ -298,7 +361,7 @@ public sealed class SqliteFileIndexTests
         await fixture.Index.SynchronizeRootAsync(
             rootId,
             [Entry(rootId, 1, "report_final.txt"), Entry(rootId, 2, "reportXfinal.txt")],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var results = await fixture.Index.SearchRootAsync(
             rootId,
@@ -320,7 +383,7 @@ public sealed class SqliteFileIndexTests
                 Entry(rootId, 2, "photo.PNG"),
                 Entry(rootId, 3, "sheet.xlsx"),
             ],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var results = await fixture.Index.SearchRootAsync(
             rootId,
@@ -342,7 +405,7 @@ public sealed class SqliteFileIndexTests
                 Entry(rootId, 2, "photo.png", kind: FileKind.Image, category: FileCategory.Images),
                 Entry(rootId, 3, "clip.mp4", kind: FileKind.Video, category: FileCategory.Videos),
             ],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var byCategory = await fixture.Index.SearchRootAsync(
             rootId,
@@ -369,7 +432,7 @@ public sealed class SqliteFileIndexTests
                 Entry(rootId, 2, "medium.txt", sizeBytes: 500),
                 Entry(rootId, 3, "large.txt", sizeBytes: 900),
             ],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var results = await fixture.Index.SearchRootAsync(
             rootId,
@@ -397,7 +460,7 @@ public sealed class SqliteFileIndexTests
                 Entry(rootId, 1, "early.txt", modifiedAtUtc: earlyInUtcButLaterOnTheClock),
                 Entry(rootId, 2, "late.txt", modifiedAtUtc: lateInUtc),
             ],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var results = await fixture.Index.SearchRootAsync(
             rootId,
@@ -416,7 +479,7 @@ public sealed class SqliteFileIndexTests
             .Range(1, 10)
             .Select(index => Entry(rootId, index, $"file{index:D2}.txt"))
             .ToArray();
-        await fixture.Index.SynchronizeRootAsync(rootId, entries, TestContext.Current.CancellationToken);
+        await fixture.Index.SynchronizeRootAsync(rootId, entries, FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var results = await fixture.Index.SearchRootAsync(
             rootId,
@@ -435,7 +498,7 @@ public sealed class SqliteFileIndexTests
         await fixture.Index.SynchronizeRootAsync(
             rootId,
             [Entry(rootId, 1, "a.txt"), Entry(rootId, 2, "b.txt")],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var results = await fixture.Index.SearchRootAsync(
             rootId,
@@ -453,7 +516,7 @@ public sealed class SqliteFileIndexTests
         await fixture.Index.SynchronizeRootAsync(
             rootId,
             [Entry(rootId, 1, "budget.txt")],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         await fixture.Index.ClearRootAsync(rootId, TestContext.Current.CancellationToken);
         var results = await fixture.Index.SearchRootAsync(
@@ -476,7 +539,7 @@ public sealed class SqliteFileIndexTests
                 Entry(rootId, 2, "b.txt", sizeBytes: 50_000),
                 Entry(rootId, 3, "c.txt", sizeBytes: 90_000),
             ],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var groups = await fixture.Index.GetSizeCountsAsync(
             rootId, minimumSizeBytes: 4096, TestContext.Current.CancellationToken);
@@ -497,7 +560,7 @@ public sealed class SqliteFileIndexTests
         await fixture.Index.SynchronizeRootAsync(
             rootId,
             [Entry(rootId, 1, "only.txt", sizeBytes: 60_000)],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var groups = await fixture.Index.GetSizeCountsAsync(
             rootId, minimumSizeBytes: 4096, TestContext.Current.CancellationToken);
@@ -517,7 +580,7 @@ public sealed class SqliteFileIndexTests
                 Entry(rootId, 2, "tiny-b.txt", sizeBytes: 10),
                 Entry(rootId, 3, "big.txt", sizeBytes: 80_000),
             ],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var groups = await fixture.Index.GetSizeCountsAsync(
             rootId, minimumSizeBytes: 4096, TestContext.Current.CancellationToken);
@@ -532,9 +595,9 @@ public sealed class SqliteFileIndexTests
         var mine = await fixture.AddRootAsync("Mine");
         var theirs = await fixture.AddRootAsync("Theirs");
         await fixture.Index.SynchronizeRootAsync(
-            mine, [Entry(mine, 1, "mine.txt", sizeBytes: 70_000)], TestContext.Current.CancellationToken);
+            mine, [Entry(mine, 1, "mine.txt", sizeBytes: 70_000)], FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
         await fixture.Index.SynchronizeRootAsync(
-            theirs, [Entry(theirs, 2, "theirs.txt", sizeBytes: 70_000)], TestContext.Current.CancellationToken);
+            theirs, [Entry(theirs, 2, "theirs.txt", sizeBytes: 70_000)], FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var groups = await fixture.Index.GetSizeCountsAsync(
             mine, minimumSizeBytes: 4096, TestContext.Current.CancellationToken);
@@ -554,7 +617,7 @@ public sealed class SqliteFileIndexTests
                 Entry(rootId, 2, "photo.png", sizeBytes: 900, kind: FileKind.Image, category: FileCategory.Images),
                 Entry(rootId, 3, "shot.png", sizeBytes: 300, kind: FileKind.Image, category: FileCategory.Images),
             ],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var summary = await fixture.Index.SummarizeRootAsync(
             rootId,
@@ -582,7 +645,7 @@ public sealed class SqliteFileIndexTests
                 Entry(rootId, 2, "huge.txt", sizeBytes: 5000),
                 Entry(rootId, 3, "medium.txt", sizeBytes: 500),
             ],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var summary = await fixture.Index.SummarizeRootAsync(
             rootId,
@@ -608,7 +671,7 @@ public sealed class SqliteFileIndexTests
                 Entry(rootId, 1, "old.txt", sizeBytes: 700, modifiedAtUtc: Moment.AddYears(-2)),
                 Entry(rootId, 2, "recent.txt", sizeBytes: 200, modifiedAtUtc: Moment),
             ],
-            TestContext.Current.CancellationToken);
+            FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var summary = await fixture.Index.SummarizeRootAsync(
             rootId,
@@ -644,9 +707,9 @@ public sealed class SqliteFileIndexTests
         var mine = await fixture.AddRootAsync("Mine");
         var theirs = await fixture.AddRootAsync("Theirs");
         await fixture.Index.SynchronizeRootAsync(
-            mine, [Entry(mine, 1, "mine.txt", sizeBytes: 100)], TestContext.Current.CancellationToken);
+            mine, [Entry(mine, 1, "mine.txt", sizeBytes: 100)], FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
         await fixture.Index.SynchronizeRootAsync(
-            theirs, [Entry(theirs, 2, "theirs.txt", sizeBytes: 900)], TestContext.Current.CancellationToken);
+            theirs, [Entry(theirs, 2, "theirs.txt", sizeBytes: 900)], FileIndexLook.Complete(Moment), TestContext.Current.CancellationToken);
 
         var summary = await fixture.Index.SummarizeRootAsync(
             mine,

@@ -277,6 +277,7 @@ public sealed class FileSearchServiceTests
         public Task<FileIndexSyncResult> SynchronizeRootAsync(
             Guid rootId,
             IReadOnlyList<IndexedFile> files,
+            FileIndexLook look,
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 

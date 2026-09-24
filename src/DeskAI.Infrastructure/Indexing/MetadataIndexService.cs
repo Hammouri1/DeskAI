@@ -70,8 +70,12 @@ public sealed class MetadataIndexService(
             }
         }
 
+        var look = new FileIndexLook(
+            indexedAtUtc,
+            issues.Any(issue => issue.Code == ScanIssueCode.EntryLimitReached),
+            issues.Count(issue => issue.Code == ScanIssueCode.DepthLimitReached));
         var changes = await index
-            .SynchronizeRootAsync(root.Id, files, cancellationToken)
+            .SynchronizeRootAsync(root.Id, files, look, cancellationToken)
             .ConfigureAwait(false);
 
         return new IndexUpdateResult(true, Describe(changes, files.Count), changes, issues.AsReadOnly());

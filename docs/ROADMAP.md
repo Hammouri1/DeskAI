@@ -537,6 +537,10 @@ first Actions run, are the next things (`HANDOFF.md`).
   dialog when online AI is selected. JPEG/PNG/WebP, referenced slide pictures, and
   extractable PDF images can be judged by a vision-capable model with page/slide evidence.
   No model download or stored image index (ADR 0038 and its security review).
+- ✅ 2026-09-24: **Search finds more of your files** (ADR 0041). A look goes 8 folders deep and
+  up to 20,000 items (was 4 and 2,000); a look that stops early keeps what was remembered
+  before instead of forgetting it, and the page says the folder was only partly checked; opening
+  Search looks again at folders not checked in the last 10 minutes. Schema 15 records the last look.
 - Remaining Search work: rasterized whole-page OCR, broader image formats, more complete
   coverage than the first 30 files / 12 images, and ranking across many connected roots.
 
@@ -547,7 +551,7 @@ only pixels, visual AI may read it but there is no dedicated OCR guarantee. “P
 picture of a dog smelling a flower” now has a visual path for extractable embedded images;
 unsupported PDF image encodings or whole-page graphics may still be missed. Results name
 the file, page or slide where known, and the AI's short reason. The current pass is limited
-to 30 files and 12 pictures per action, on top of the scanner's depth-4 / 2,000-entry cap.
+to 30 files and 12 pictures per action, on top of the scanner's depth-8 / 20,000-entry cap.
 No model is downloaded by DeskAI. Expand coverage only with honest limits and a fresh
 security review.
 

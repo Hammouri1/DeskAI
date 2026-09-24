@@ -15,7 +15,9 @@ namespace DeskAI.Presentation.Tests;
 /// </remarks>
 public sealed class PerformanceProbe
 {
-    public const int FileCount = 3000;
+    /// <summary>3,000 by default; <c>DESKAI_PERF_FILES</c> measures a bigger folder, such as one at the scan bound.</summary>
+    public static int FileCount { get; } =
+        int.TryParse(Environment.GetEnvironmentVariable("DESKAI_PERF_FILES"), out var files) && files > 0 ? files : 3000;
 
     [Fact]
     public async Task Connect_refresh_search_and_preview_a_tidy_on_a_few_thousand_files()
