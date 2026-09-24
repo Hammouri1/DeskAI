@@ -34,7 +34,9 @@ icon cache), is unknown on the owner's Windows (build 26200).
     of its colour (within 40 per colour channel).
   - `put back`: every folder's attributes, `desktop.ini` presence, bytes, and attributes equal the
     snapshot, and the shell reports the original icon.
-  - `put back after refresh`: each folder's icon area shows fewer than 20 pixels of its colour.
+  - `put back after refresh`: each folder's icon area shows at most 20 pixels of its colour and,
+    at the same place as at the start, looks like the start (mean difference at most 20 of 255),
+    because a window over the icons also has no colour.
 - **Recorded, not required:** whether the colour shows before a refresh (if not, the app must
   refresh the Desktop itself), and what a coloured folder shows after its icon file is deleted
   (what a person would see after removing DeskAI).

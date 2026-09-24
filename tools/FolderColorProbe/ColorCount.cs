@@ -29,6 +29,38 @@ internal static class ColorCount
     }
 
     /// <summary>
+    /// How different two same-size areas look: the mean of each pixel's average channel
+    /// difference (0 = identical, 255 = opposite). "No colour left" is not enough on its own: a
+    /// window over the icon also has no colour (ADR 0046 review), so Put back must also look like
+    /// the start.
+    /// </summary>
+    internal static double MeanDifference(
+        ReadOnlySpan<byte> first, Point firstAt, ReadOnlySpan<byte> second, Point secondAt, int width, int height, Point size)
+    {
+        double total = 0;
+        var pixels = 0;
+        for (var dy = 0; dy < size.Y; dy++)
+        {
+            for (var dx = 0; dx < size.X; dx++)
+            {
+                if (Index(firstAt.X + dx, firstAt.Y + dy, width, height) is not { } i
+                    || Index(secondAt.X + dx, secondAt.Y + dy, width, height) is not { } j)
+                {
+                    continue;
+                }
+
+                total += (Math.Abs(first[i] - second[j]) + Math.Abs(first[i + 1] - second[j + 1]) + Math.Abs(first[i + 2] - second[j + 2])) / 3.0;
+                pixels++;
+            }
+        }
+
+        return pixels == 0 ? 255 : total / pixels;
+    }
+
+    private static int? Index(int x, int y, int width, int height) =>
+        x >= 0 && y >= 0 && x < width && y < height ? ((y * width) + x) * 4 : null;
+
+    /// <summary>
     /// False when every pixel is the same colour: a black capture from a minimized Sandbox would
     /// otherwise pass "no colour left" (ADR 0046 review).
     /// </summary>

@@ -1,9 +1,23 @@
+using System.Text;
+
 namespace DeskAI.FolderColorProbe;
 
 /// <summary>Just enough <c>desktop.ini</c> reading for the probe's checks.</summary>
 internal static class DesktopIni
 {
     private static readonly string[] IconKeys = ["IconResource", "IconFile", "IconIndex"];
+
+    /// <summary>
+    /// desktop.ini is UTF-16 or UTF-8 when it starts with a byte-order mark, otherwise the ANSI
+    /// code page; the probe's own paths are plain ASCII either way.
+    /// </summary>
+    internal static string Text(byte[] bytes) =>
+        bytes switch
+        {
+            [0xFF, 0xFE, ..] => Encoding.Unicode.GetString(bytes, 2, bytes.Length - 2),
+            [0xEF, 0xBB, 0xBF, ..] => Encoding.UTF8.GetString(bytes, 3, bytes.Length - 3),
+            _ => Encoding.Latin1.GetString(bytes),
+        };
 
     internal static string? Value(string text, string section, string key)
     {

@@ -83,7 +83,9 @@ with one row per review-focus item and the test that pins it. Commit.
   colour (within 40 per channel).
 - `put back`: every folder's attributes, `desktop.ini` presence, bytes, and attributes equal the
   snapshot, and the shell reports the original icon.
-- `put back after refresh`: each folder's icon area shows fewer than 20 pixels of its colour.
+- `put back after refresh`: each folder's icon area shows at most 20 pixels of its colour and,
+  at the same place as at the start, looks like the start (mean difference at most 20 of 255),
+  because a window over the icons also has no colour.
 
 Recorded only: `color seen before refresh`, and `icon file missing` (what a coloured folder shows
 after its icon file is deleted). If the screen cannot be read, the pixel stages are Skipped, the
@@ -106,7 +108,7 @@ tests. Write tests first, see them fail, then the code:
   the same key in another section, null when absent.
 - `ColorCountTests`: counts only pixels within tolerance and inside the rectangle; a rectangle
   partly off-screen is clipped.
-- `ColorProbeReportTests`: reliable only when the four required stages passed; a Skipped pixel
+- `ColorProbeReportTests`: reliable only when the five required stages passed; a Skipped pixel
   stage is not reliable; notes appear.
 
 Run all three verification commands. Commit.
@@ -135,3 +137,17 @@ report appears. Read the report and pictures, record the result in ADR 0046, the
 groups" section, and `docs/HANDOFF.md`, and tell the owner go or no-go. Commit.
 
 Then the one fresh review of the whole probe change, and its fixes.
+
+## Review fixes (before the Sandbox run)
+
+The fresh review ran before the owner's Sandbox run, so the run uses the fixed probe. No critical
+findings. Fixed: (1) "no colour left" also passed for an icon hidden behind a window, so Put back
+now also compares each icon with the start picture, and after the Explorer restart the probe
+starts `explorer.exe` only if Windows did not bring it back (a second one opens a window over the
+icons); (2) the custom folder's own icon had green in it and was scored against green, so it now
+uses the plain folder icon (`shell32.dll,3`); (3) icon paths are compared after expanding
+`%LOCALAPPDATA%` and similar; (4) a failure while Explorer is starting now means "not ready yet"
+instead of ending the run before Put back, and a refused icon is recorded and the run goes on.
+Smaller: a UTF-8 `desktop.ini` is read, the shell's icon answer after Put back is asked once more
+before it counts as wrong, a screen-capture handle is always released, and the thresholds in the
+ADR match the code.

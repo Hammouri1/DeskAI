@@ -23,7 +23,7 @@ internal sealed record ScreenCapture(int Width, int Height, byte[] Bgra)
                 throw new InvalidOperationException("Windows did not copy the screen.");
             }
 
-            SelectObject(memory, old);
+            SelectObject(memory, old); // GetDIBits needs the bitmap not selected
             var header = new BitmapInfoHeader
             {
                 Size = (uint)Marshal.SizeOf<BitmapInfoHeader>(),
@@ -42,6 +42,7 @@ internal sealed record ScreenCapture(int Width, int Height, byte[] Bgra)
         }
         finally
         {
+            SelectObject(memory, old); // a bitmap still selected cannot be deleted
             DeleteObject(bitmap);
             DeleteDC(memory);
             _ = ReleaseDC(IntPtr.Zero, screen);

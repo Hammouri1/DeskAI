@@ -72,6 +72,30 @@ public sealed class FolderStateTests
     }
 
     [Fact]
+    public void Keeps_a_folder_read_only_that_was_read_only_before()
+    {
+        var folder = Directory.CreateTempSubdirectory("deskai-color-probe-test-").FullName;
+        try
+        {
+            File.SetAttributes(folder, File.GetAttributes(folder) | FileAttributes.ReadOnly);
+            var before = FolderState.Read(folder);
+            var ini = Path.Combine(folder, "desktop.ini");
+            File.WriteAllText(ini, "[.ShellClassInfo]\r\nIconResource=x.ico,0\r\n");
+            File.SetAttributes(ini, FileAttributes.Hidden | FileAttributes.System);
+
+            FolderState.Restore(folder, before);
+
+            Assert.Empty(FolderState.Differences(before, FolderState.Read(folder)));
+            Assert.True(File.GetAttributes(folder).HasFlag(FileAttributes.ReadOnly));
+            Assert.False(File.Exists(ini));
+        }
+        finally
+        {
+            Remove(folder);
+        }
+    }
+
+    [Fact]
     public void Restores_an_earlier_desktop_ini_exactly()
     {
         var folder = Directory.CreateTempSubdirectory("deskai-color-probe-test-").FullName;

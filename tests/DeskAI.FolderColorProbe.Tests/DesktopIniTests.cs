@@ -23,6 +23,18 @@ public sealed class DesktopIniTests
         Assert.Null(DesktopIni.Value("", ".ShellClassInfo", "IconResource"));
 
     [Fact]
+    public void Reads_utf16_text_with_its_byte_order_mark() =>
+        Assert.Equal("[a]", DesktopIni.Text([0xFF, 0xFE, (byte)'[', 0, (byte)'a', 0, (byte)']', 0]));
+
+    [Fact]
+    public void Reads_utf8_text_with_its_byte_order_mark() =>
+        Assert.Equal("[a]", DesktopIni.Text([0xEF, 0xBB, 0xBF, (byte)'[', (byte)'a', (byte)']']));
+
+    [Fact]
+    public void Reads_text_without_a_byte_order_mark() =>
+        Assert.Equal("[a]", DesktopIni.Text([(byte)'[', (byte)'a', (byte)']']));
+
+    [Fact]
     public void Lists_the_lines_other_than_the_icon_lines() =>
         Assert.Equal(
             ["[.ShellClassInfo]", "InfoTip=b", "[ViewState]", "Mode="],

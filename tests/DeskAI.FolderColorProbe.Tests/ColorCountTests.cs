@@ -53,6 +53,40 @@ public sealed class ColorCountTests
         Assert.True(ColorCount.IsReadable(screen.Bgra));
     }
 
+    [Fact]
+    public void The_same_area_has_no_difference()
+    {
+        var screen = new Screen(2, 2);
+        screen.Set(0, 0, Magenta);
+
+        Assert.Equal(0, ColorCount.MeanDifference(screen.Bgra, new Point(0, 0), screen.Bgra, new Point(0, 0), 2, 2, new Point(2, 2)));
+    }
+
+    [Fact]
+    public void A_covered_icon_differs_from_the_start()
+    {
+        var start = new Screen(2, 1);
+        start.Set(0, 0, new Rgb(255, 200, 80));
+        start.Set(1, 0, new Rgb(255, 200, 80));
+        var covered = new Screen(2, 1);
+        covered.Set(0, 0, new Rgb(255, 255, 255));
+        covered.Set(1, 0, new Rgb(255, 255, 255));
+
+        // Per pixel: (0 + 55 + 175) / 3; the same for both pixels.
+        Assert.Equal(230 / 3.0, ColorCount.MeanDifference(start.Bgra, new Point(0, 0), covered.Bgra, new Point(0, 0), 2, 1, new Point(2, 1)), 3);
+    }
+
+    [Fact]
+    public void Compares_each_area_at_its_own_position()
+    {
+        var start = new Screen(3, 1);
+        start.Set(0, 0, Magenta);
+        var later = new Screen(3, 1);
+        later.Set(2, 0, Magenta);
+
+        Assert.Equal(0, ColorCount.MeanDifference(start.Bgra, new Point(0, 0), later.Bgra, new Point(2, 0), 3, 1, new Point(1, 1)));
+    }
+
     private sealed class Screen(int width, int height)
     {
         internal byte[] Bgra { get; } = new byte[width * height * 4];
