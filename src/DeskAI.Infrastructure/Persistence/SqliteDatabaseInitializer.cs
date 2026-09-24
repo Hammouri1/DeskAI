@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 15;
+    public const int CurrentSchemaVersion = 16;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -48,6 +48,7 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplySavedSearchPinMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyAwayTidyMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyIndexLookMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplyDesktopGroupMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
     }
@@ -78,6 +79,36 @@ public sealed partial class SqliteDatabaseInitializer(
                 ALTER TABLE saved_searches ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0;
                 INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (13, $appliedAtUtc);
                 """;
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Keeps the Find groups board for each connected folder (ADR 0042).
+    /// </summary>
+    /// <remarks>
+    /// One row per folder, cascading with it, so disconnecting or Start fresh forgets it. The
+    /// board is size-limited JSON of names and relative paths; nothing reads it to change a file.
+    /// </remarks>
+    private static async Task ApplyDesktopGroupMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = """
+            CREATE TABLE IF NOT EXISTS desktop_group_boards (
+                root_id      TEXT NOT NULL PRIMARY KEY REFERENCES authorized_roots(id) ON DELETE CASCADE,
+                source       INTEGER NOT NULL CHECK (source IN (0, 1)),
+                made_at_utc  TEXT NOT NULL,
+                board_json   TEXT NOT NULL CHECK (length(board_json) <= 262144)
+            );
+
+            INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (16, $appliedAtUtc);
+            """;
         command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);

@@ -8,6 +8,7 @@ using DeskAI.Core.Backup;
 using DeskAI.Core.Desktop;
 using DeskAI.Core.Rules;
 using DeskAI.Core.Search;
+using DeskAI.Core.Studio;
 using DeskAI.Core.Templates;
 using DeskAI.Core.Tidy;
 using DeskAI.Core.Workspace;
@@ -64,6 +65,11 @@ public static class DeskAiApplicationServices
         // Ask DeskAI on Home (ADR 0035): sends a question through the sentence service and answers
         // it from the local index. It holds nothing that can open or change a file; a test asserts it.
         services.AddSingleton<AskDeskAiService>();
+        // Find groups on Desktop Studio (ADR 0042): looks at the Desktop read-only and holds the AI
+        // connection, but nothing that can move, rename, or change a file or a Windows setting.
+        services.AddSingleton<DesktopLookService>();
+        services.AddSingleton<LocalDesktopGrouper>();
+        services.AddSingleton<DesktopGroupingService>();
         services.AddSingleton<TidyRunService>();
         // Tidy while I'm away (V0.9, ADR 0031): the one type reachable from an automatic check that
         // can move a file, under a standing approval with a hard ceiling. A test names it as such.

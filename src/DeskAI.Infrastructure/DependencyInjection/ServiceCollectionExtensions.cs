@@ -46,6 +46,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IAppearanceSettingsRepository, SqliteAppearanceSettingsRepository>();
         services.AddSingleton<IAppSettingsStore, SqliteAppSettingsStore>();
         services.AddSingleton<IAwayTidyRepository, SqliteAwayTidyRepository>();
+        services.AddSingleton<IDesktopGroupRepository, SqliteDesktopGroupRepository>();
         // Reads and writes one text file at a path the person chose in a Windows dialog: the backup file.
         services.AddSingleton<IUserFileStore, UserFileStore>();
         // The one Windows setting DeskAI can change, and the person's Desktop folder, asked from

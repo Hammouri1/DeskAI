@@ -13,7 +13,12 @@ public sealed record DesktopItem(
     public string Name => Path.GetFileName(RelativePath);
 }
 
-public sealed record DesktopLook(IReadOnlyList<DesktopItem> Items, int FoldersLeftOut, int FilesLeftOut, string? Problem);
+/// <summary>What sits on the Desktop, within the bounds, and what the bounds left out (never sent to AI).</summary>
+public sealed record DesktopLook(
+    IReadOnlyList<DesktopItem> Items, int FoldersLeftOut, int FilesLeftOut, string? Problem, IReadOnlyList<DesktopItem> LeftOutItems)
+{
+    public IEnumerable<DesktopItem> Everything => Items.Concat(LeftOutItems);
+}
 
 /// <summary>
 /// A fresh, read-only look at what sits directly on a connected Desktop (ADR 0042). Folders are
@@ -46,7 +51,7 @@ public sealed class DesktopLookService(IFileScanner scanner)
             switch (scanEvent)
             {
                 case ScanIssue { RelativePath: "." }:
-                    return new DesktopLook([], 0, 0, RootProblem);
+                    return new DesktopLook([], 0, 0, RootProblem, []);
                 case ScanIssue { Code: ScanIssueCode.ProtectedEntrySkipped or ScanIssueCode.ReparsePointSkipped } issue:
                     excluded.Add(TopSegment(issue.RelativePath));
                     break;
@@ -88,7 +93,11 @@ public sealed class DesktopLookService(IFileScanner scanner)
         var items = keptFolders.Take(MaxFolders).Select(f => Summarize(f, filesByFolder.GetValueOrDefault(f) ?? []))
             .Concat(keptFiles.Take(MaxFiles).Select(f => new DesktopItem(f, false, [], [])))
             .ToList();
-        return new DesktopLook(items, Math.Max(0, keptFolders.Count - MaxFolders), Math.Max(0, keptFiles.Count - MaxFiles), null);
+        var leftOut = keptFolders.Skip(MaxFolders).Select(f => Summarize(f, filesByFolder.GetValueOrDefault(f) ?? []))
+            .Concat(keptFiles.Skip(MaxFiles).Select(f => new DesktopItem(f, false, [], [])))
+            .ToList();
+        return new DesktopLook(
+            items, Math.Max(0, keptFolders.Count - MaxFolders), Math.Max(0, keptFiles.Count - MaxFiles), null, leftOut);
     }
 
     private static DesktopItem Summarize(string folder, List<string> files)

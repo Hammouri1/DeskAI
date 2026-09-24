@@ -56,6 +56,7 @@ public sealed class DesktopLookServiceTests
         Assert.Equal(200, look.Items.Count(i => !i.IsFolder));
         Assert.Equal(5, look.FoldersLeftOut);
         Assert.Equal(5, look.FilesLeftOut);
+        Assert.Equal(["F60", "F61", "F62", "F63", "F64", "f200.txt", "f201.txt", "f202.txt", "f203.txt", "f204.txt"], look.LeftOutItems.Select(i => i.Name));
     }
 
     [Fact]
