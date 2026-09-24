@@ -149,7 +149,10 @@ things on my Desktop** takes it back. **Put back** returns your latest change on
 even after you close DeskAI. Folders that look like projects or
 hold programs start unticked, because moving them can break shortcuts. Anything DeskAI leaves
 where it is — a name already taken, something that changed after you looked, something open in
-another program — is listed with the reason. Nothing is ever deleted.
+another program — is listed with the reason. Nothing is ever deleted. Your groups stay on the
+board: after **Put each group in its own folder**, each group shows the folder that now holds its
+things, and **Put back** returns each thing to its group. When one card moves things, the other
+cards' lists are cleared; press their button again for an up-to-date list.
 
 If you'd rather keep your folders where they are, **Add the group's name to each folder's name**
 (right under your groups) puts each group's name in front of its folders' names, so "Python

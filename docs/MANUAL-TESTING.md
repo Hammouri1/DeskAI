@@ -1213,3 +1213,18 @@ folder connected. Never press a folder button in your everyday DeskAI during thi
    **Skip** and Esc on separate openings; each closes it at once. (A pop-up in DeskAI has no X button.)
 5. In your everyday DeskAI (folders already connected), start it: no welcome appears. **Show the
    welcome again** opens it; press **Skip**.
+
+# 2026-09-25 Desktop Studio cards working together
+
+Use the Desktop you used for the earlier Desktop Studio checks, with a few folders and files on
+it, and DeskAI allowed to move things there.
+
+1. On Desktop Studio press **Find groups** (or **Use DeskAI's guess**), and rename one group.
+2. Press **Show what would move** on **Clear old stuff**, then **Put each group in its own folder**
+   and **Move**. The board keeps your groups, with their new names, and each group shows its new
+   folder. Nothing new sits under Not sure. The Clear old stuff list is gone and says "Your
+   Desktop changed, so this list was cleared…".
+3. Close and reopen DeskAI: the board is the same, with no "no longer on your Desktop" note.
+4. Press **Put back** on Put each group in its own folder. Each thing is back on the Desktop and in
+   its group on the board, and the group folders DeskAI made are gone from the board and the
+   Desktop.

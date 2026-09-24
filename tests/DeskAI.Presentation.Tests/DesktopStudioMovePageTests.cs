@@ -435,6 +435,142 @@ public sealed class DesktopStudioMovePageTests
         Assert.Contains(again.Groups.Single(group => group.Name == "Coding").Items, item => item.Name == "Python stuff");
     }
 
+    /// <summary>Found in the end-to-end check 2026-09-25: the next look emptied every group and put the new folders under Not sure.</summary>
+    [Fact]
+    public async Task Folder_by_group_keeps_the_groups_with_their_new_folders_even_after_reopening()
+    {
+        await using var first = await TestApp.StartAsync();
+        MakeGroupDesktop(first);
+        var studio = await OpenAllowedAsync(first);
+        await studio.GuessAsync();
+        await studio.RenameGroupAsync("Documents", "Writing");
+        await studio.PreviewAsync(studio.FolderByGroup);
+
+        await studio.ApplyAsync(studio.FolderByGroup);
+
+        AssertGroups(studio, ("Coding", ["Coding"]), ("Writing", ["Writing"]));
+        Assert.True(Directory.Exists(Path.Combine(first.DesktopPath, "Writing", "Essays")));
+        await using var app = await first.ReopenAsync();
+        var again = app.Get<DesktopStudioViewModel>();
+        await again.InitializeAsync();
+        AssertGroups(again, ("Coding", ["Coding"]), ("Writing", ["Writing"]));
+        Assert.False(again.HasMessage);
+    }
+
+    /// <summary>Found in the end-to-end check 2026-09-25: the board kept showing folders Put back had removed.</summary>
+    [Fact]
+    public async Task Put_back_of_Folder_by_group_returns_each_thing_to_its_group_on_the_board()
+    {
+        await using var first = await TestApp.StartAsync();
+        MakeGroupDesktop(first);
+        var studio = await OpenAllowedAsync(first);
+        await studio.GuessAsync();
+        await studio.RenameGroupAsync("Documents", "Writing");
+        await studio.PreviewAsync(studio.FolderByGroup);
+        await studio.ApplyAsync(studio.FolderByGroup);
+
+        await studio.PutBackAsync(studio.FolderByGroup);
+
+        AssertGroups(studio, ("Coding", ["Python stuff"]), ("Writing", ["Essays", "report.docx"]));
+        await using var app = await first.ReopenAsync();
+        var again = app.Get<DesktopStudioViewModel>();
+        await again.InitializeAsync();
+        AssertGroups(again, ("Coding", ["Python stuff"]), ("Writing", ["Essays", "report.docx"]));
+        Assert.False(again.HasMessage);
+    }
+
+    [Fact]
+    public async Task Tag_names_after_Folder_by_group_leaves_the_group_folder_its_own_name()
+    {
+        await using var app = await TestApp.StartAsync();
+        MakeGroupDesktop(app);
+        var studio = await OpenAllowedAsync(app);
+        await studio.GuessAsync();
+        await studio.PreviewAsync(studio.FolderByGroup);
+        await studio.ApplyAsync(studio.FolderByGroup);
+
+        await studio.PreviewAsync(studio.TagNames);
+
+        Assert.False(studio.TagNames.HasPreview);
+        Assert.Contains("Coding: This is the Coding folder itself, so it keeps its name.", studio.TagNames.LeftAlone);
+    }
+
+    /// <summary>Found in the end-to-end check 2026-09-25: the other cards kept lists of things that had moved.</summary>
+    [Fact]
+    public async Task After_one_card_moves_things_the_other_cards_lists_are_cleared()
+    {
+        await using var app = await TestApp.StartAsync();
+        DesktopMoveServiceTests.MakeOldDesktop(app);
+        MakeGroupDesktop(app);
+        var studio = await OpenAllowedAsync(app);
+        await studio.GuessAsync();
+        await studio.PreviewAsync(studio.OldStuff);
+        await studio.PreviewAsync(studio.TagNames);
+        await studio.PreviewAsync(studio.FolderByGroup);
+        Assert.True(studio.OldStuff.HasPreview);
+        Assert.True(studio.TagNames.HasPreview);
+
+        await studio.ApplyAsync(studio.FolderByGroup);
+
+        Assert.False(studio.OldStuff.HasPreview);
+        Assert.False(studio.TagNames.HasPreview);
+        Assert.Equal(DesktopStudioViewModel.ListOutOfDate, studio.OldStuff.Message);
+        Assert.Equal(DesktopStudioViewModel.ListOutOfDate, studio.TagNames.Message);
+    }
+
+    [Fact]
+    public async Task After_Put_back_the_other_cards_lists_are_cleared()
+    {
+        await using var app = await TestApp.StartAsync();
+        DesktopMoveServiceTests.MakeOldDesktop(app);
+        var studio = await OpenAllowedAsync(app);
+        await studio.PreviewAsync(studio.OldStuff);
+        await studio.ApplyAsync(studio.OldStuff);
+        await studio.GuessAsync();
+        await studio.PreviewAsync(studio.FolderByGroup);
+        Assert.True(studio.FolderByGroup.HasPreview);
+
+        await studio.PutBackAsync(studio.OldStuff);
+
+        Assert.False(studio.FolderByGroup.HasPreview);
+        Assert.Equal(DesktopStudioViewModel.ListOutOfDate, studio.FolderByGroup.Message);
+    }
+
+    /// <summary>Found in the end-to-end check 2026-09-25: a stale list left an empty Old stuff folder that Put back did not offer to remove.</summary>
+    [Fact]
+    public async Task When_nothing_on_the_list_is_still_there_no_empty_folder_is_left_behind()
+    {
+        await using var app = await TestApp.StartAsync();
+        DesktopMoveServiceTests.MakeOldDesktop(app);
+        var studio = await OpenAllowedAsync(app);
+        await studio.PreviewAsync(studio.OldStuff);
+        Directory.Delete(Path.Combine(app.DesktopPath, "Old project"), recursive: true);
+        File.Delete(Path.Combine(app.DesktopPath, "old notes.txt"));
+        var before = Snapshot(app);
+
+        var result = await studio.ApplyAsync(studio.OldStuff);
+
+        Assert.Equal("Nothing was moved.", result!.Summary);
+        Assert.Equal(before, Snapshot(app));
+        Assert.False(Directory.Exists(Path.Combine(app.DesktopPath, "Old stuff")));
+        Assert.False(studio.OldStuff.CanPutBack);
+    }
+
+    private static void AssertGroups(DesktopStudioViewModel studio, params (string Name, string[] Items)[] expected)
+    {
+        Assert.Equal(
+            expected.Select(group => group.Name).Order(StringComparer.OrdinalIgnoreCase),
+            studio.Groups.Select(group => group.Name).Order(StringComparer.OrdinalIgnoreCase));
+        foreach (var (name, items) in expected)
+        {
+            Assert.Equal(
+                items.Order(StringComparer.OrdinalIgnoreCase),
+                studio.Groups.Single(group => group.Name == name).Items.Select(item => item.Name).Order(StringComparer.OrdinalIgnoreCase));
+        }
+
+        Assert.Empty(studio.NotSure);
+    }
+
     private static void MakeGroupDesktop(TestApp app)
     {
         app.MakeFile("Desktop", Path.Combine("Python stuff", "main.py"));

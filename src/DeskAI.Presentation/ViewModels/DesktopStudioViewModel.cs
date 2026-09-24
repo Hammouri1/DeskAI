@@ -227,6 +227,9 @@ public sealed class DesktopStudioViewModel(
         OnPropertyChanged(nameof(GroupNames));
     }
 
+    /// <summary>Shown on a card whose list was cleared because another change moved things on the Desktop.</summary>
+    public const string ListOutOfDate = "Your Desktop changed, so this list was cleared. Press the button again for an up-to-date list.";
+
     private InterruptedTidy? _interrupted;
     private bool _canMoveThings;
     private string _movesMessage = string.Empty;
@@ -323,7 +326,7 @@ public sealed class DesktopStudioViewModel(
             }
 
             card.ShowOutcome(result.Summary, result.NotMoved);
-            await ShowRenamedBoardAsync(card, id).ConfigureAwait(true);
+            await AfterDesktopChangedAsync(id, card).ConfigureAwait(true);
             await RefreshMovesAsync(id).ConfigureAwait(true);
         }).ConfigureAwait(true);
         return result;
@@ -348,18 +351,27 @@ public sealed class DesktopStudioViewModel(
             }
 
             card.ShowOutcome(result.Summary, result.NotMoved);
-            await ShowRenamedBoardAsync(card, id).ConfigureAwait(true);
+            await AfterDesktopChangedAsync(id, card).ConfigureAwait(true);
             await RefreshMovesAsync(id).ConfigureAwait(true);
         }).ConfigureAwait(true);
         return result;
     }
 
-    /// <summary>Tag names renames folders on the board too, so the board shows their names as they are now.</summary>
-    private async Task ShowRenamedBoardAsync(DesktopMoveCardViewModel card, Guid id)
+    /// <summary>
+    /// After something moved on the Desktop: the board shows it as it is now, and every other
+    /// card's list is cleared, because pressing it would act on things that may have moved
+    /// (found in the end-to-end check 2026-09-25).
+    /// </summary>
+    /// <param name="changedBy">The card that made the change and already shows its outcome, or null.</param>
+    private async Task AfterDesktopChangedAsync(Guid id, DesktopMoveCardViewModel? changedBy)
     {
-        if (card.Card == DesktopMoveCard.TagNames)
+        Show((await _grouping.LoadBoardAsync(id).ConfigureAwait(true)).Board);
+        foreach (var card in new[] { OldStuff, FolderByGroup, TagNames })
         {
-            Show((await _grouping.LoadBoardAsync(id).ConfigureAwait(true)).Board);
+            if (card != changedBy && card.HasPreview)
+            {
+                card.ShowOutcome(ListOutOfDate, []);
+            }
         }
     }
 
@@ -401,6 +413,7 @@ public sealed class DesktopStudioViewModel(
             MovesMessage = result.Summary;
             if (!result.NeedsPermission)
             {
+                await AfterDesktopChangedAsync(id, null).ConfigureAwait(true);
                 await RefreshMovesAsync(id).ConfigureAwait(true);
             }
         }).ConfigureAwait(true);

@@ -21,6 +21,9 @@ public sealed record DesktopLastChange(
 {
     /// <summary>Where each moved thing went, by operation ID, so Put back can keep the board in step.</summary>
     public IReadOnlyDictionary<Guid, string> MovedTo { get; init; } = new Dictionary<Guid, string>();
+
+    /// <summary>Folders this change made (not ones already there), by operation ID, so the board can drop one Put back removed.</summary>
+    public IReadOnlyDictionary<Guid, string> MadeFolders { get; init; } = new Dictionary<Guid, string>();
 }
 
 /// <summary>
@@ -157,7 +160,8 @@ public sealed class DesktopMoveService(
         var creates = preview.Plan.Operations
             .OfType<CreateDirectoryOperation>()
             .Where(create => destinations.Contains(create.DestinationRelativePath))
-            .Select(create => create.Id);
+            .Select(create => create.Id)
+            .ToHashSet();
         var approval = Approval.Create(Guid.NewGuid(), preview.Plan, creates.Concat(items.Select(item => item.OperationId)), clock.UtcNow);
         var expected = items.ToDictionary(item => item.OperationId, item => preview.Facts[item.OperationId]);
 
@@ -169,12 +173,35 @@ public sealed class DesktopMoveService(
             .Select(item => new DesktopLeftAlone(item.Name, outcomes.GetValueOrDefault(item.OperationId)?.Error ?? "It was not moved."))
             .ToList();
         var moved = items.Count - notMoved.Count;
+        var done = items
+            .Where(item => outcomes.TryGetValue(item.OperationId, out var outcome) && outcome.Outcome == ExecutionOutcome.Completed)
+            .ToList();
         if (preview.Card == DesktopMoveCard.TagNames)
         {
-            var renamed = items
-                .Where(item => outcomes.TryGetValue(item.OperationId, out var outcome) && outcome.Outcome == ExecutionOutcome.Completed)
-                .ToDictionary(item => item.RelativePath, item => item.Destination, StringComparer.OrdinalIgnoreCase);
-            await RenameOnBoardAsync(root.Id, renamed, cancellationToken).ConfigureAwait(false);
+            var renamed = done.ToDictionary(item => item.RelativePath, item => item.Destination, StringComparer.OrdinalIgnoreCase);
+            await ChangeBoardAsync(root.Id, board => DesktopBoardFollow.Renamed(board, renamed), cancellationToken).ConfigureAwait(false);
+        }
+        else if (preview.Card == DesktopMoveCard.FolderByGroup)
+        {
+            await ChangeBoardAsync(
+                root.Id,
+                board => DesktopBoardFollow.PutInGroupFolders(board, done.Select(item => (item.RelativePath, item.Destination)).ToList()),
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        // A folder made for things that all failed to move would stay on the Desktop, empty, with
+        // no Put back offered (a change that moved nothing is not one). Take it away again now;
+        // Undo removes only a folder this run made, and only while it is still empty.
+        if (moved == 0 && result.Operations.Any(outcome => creates.Contains(outcome.OperationId) && outcome.Outcome == ExecutionOutcome.Completed))
+        {
+            try
+            {
+                await executor.UndoAsync(result.TransactionId, cancellationToken).ConfigureAwait(false);
+            }
+            catch (InvalidOperationException)
+            {
+                // Left as it is: nothing was moved, and an empty folder is harmless.
+            }
         }
 
         var into = preview.Card == DesktopMoveCard.ClearOldStuff
@@ -229,6 +256,9 @@ public sealed class DesktopMoveService(
                     MovedTo = record.Operations
                         .Where(operation => moved.ContainsKey(operation.OperationId))
                         .ToDictionary(operation => operation.OperationId, operation => operation.DestinationRelativePath),
+                    MadeFolders = record.Operations
+                        .Where(operation => operation.Kind == PlanOperationKind.CreateDirectory && operation.State == JournalOperationState.Completed)
+                        .ToDictionary(operation => operation.OperationId, operation => operation.DestinationRelativePath),
                 };
         }
 
@@ -253,37 +283,33 @@ public sealed class DesktopMoveService(
         }
 
         var (result, back) = await UndoAsync(last.TransactionId, last.Moved, cancellationToken).ConfigureAwait(false);
+        var returned = back.Where(last.MovedTo.ContainsKey).Select(id => (From: last.MovedTo[id], To: last.Moved[id])).ToList();
         if (card == DesktopMoveCard.TagNames)
         {
-            var renamed = back
-                .Where(last.MovedTo.ContainsKey)
-                .ToDictionary(id => last.MovedTo[id], id => last.Moved[id], StringComparer.OrdinalIgnoreCase);
-            await RenameOnBoardAsync(rootId, renamed, cancellationToken).ConfigureAwait(false);
+            var renamed = returned.ToDictionary(move => move.From, move => move.To, StringComparer.OrdinalIgnoreCase);
+            await ChangeBoardAsync(rootId, board => DesktopBoardFollow.Renamed(board, renamed), cancellationToken).ConfigureAwait(false);
+        }
+        else if (card == DesktopMoveCard.FolderByGroup)
+        {
+            var removed = back.Where(last.MadeFolders.ContainsKey).Select(id => last.MadeFolders[id]).ToList();
+            await ChangeBoardAsync(rootId, board => DesktopBoardFollow.TakenOutOfGroupFolders(board, returned, removed), cancellationToken)
+                .ConfigureAwait(false);
         }
 
         return result;
     }
 
     /// <summary>
-    /// Keeps the Find groups board in step with Tag names' own renames, so a renamed folder stays in
-    /// its group instead of looking gone (found in review 2026-09-24). Only completed renames count.
+    /// Keeps the Find groups board in step with a card's own change, so what it moved or renamed
+    /// stays in its group instead of looking gone (found in review 2026-09-24 and the end-to-end
+    /// check 2026-09-25). Callers pass only what actually happened.
     /// </summary>
-    private async Task RenameOnBoardAsync(Guid rootId, Dictionary<string, string> renamed, CancellationToken cancellationToken)
+    private async Task ChangeBoardAsync(Guid rootId, Func<DesktopGroupBoard, DesktopGroupBoard> change, CancellationToken cancellationToken)
     {
-        if (renamed.Count == 0 || await boards.LoadAsync(rootId, cancellationToken).ConfigureAwait(false) is not { } board)
+        if (await boards.LoadAsync(rootId, cancellationToken).ConfigureAwait(false) is { } board)
         {
-            return;
+            await boards.SaveAsync(change(board), cancellationToken).ConfigureAwait(false);
         }
-
-        string Rename(string path) => renamed.TryGetValue(path, out var now) ? now : path;
-        await boards.SaveAsync(
-            board with
-            {
-                Groups = board.Groups.Select(group => group with { Items = group.Items.Select(Rename).ToList() }).ToList(),
-                NotSure = board.NotSure.Select(Rename).ToList(),
-                Folders = board.Folders.Select(Rename).ToHashSet(StringComparer.OrdinalIgnoreCase),
-            },
-            cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>A change on the Desktop that stopped part-way, checked against the disk; asked about first.</summary>
@@ -338,7 +364,7 @@ public sealed class DesktopMoveService(
         return (await UndoAsync(interrupted.TransactionId, interrupted.MovedFiles, cancellationToken).ConfigureAwait(false)).Result;
     }
 
-    /// <returns>What Put back did, and the operations it put back.</returns>
+    /// <returns>What Put back did, and every operation it undid.</returns>
     private async Task<(DesktopMoveResult Result, IReadOnlyList<Guid> Back)> UndoAsync(
         Guid transactionId, IReadOnlyDictionary<Guid, string> moved, CancellationToken cancellationToken)
     {
@@ -361,7 +387,8 @@ public sealed class DesktopMoveService(
         var summary = notBack.Count == 0
             ? $"Put back. {DesktopMoveText.Things(back)} {(back == 1 ? "is where it was" : "are where they were")}."
             : $"{back} of {named.Count} things went back. The rest stayed where they are now.";
-        var putBack = named.Where(outcome => outcome.Outcome == ExecutionOutcome.Completed).Select(outcome => outcome.OperationId).ToList();
+        // Every operation undone, including folders removed, so the board can follow both.
+        var putBack = result.Operations.Where(outcome => outcome.Outcome == ExecutionOutcome.Completed).Select(outcome => outcome.OperationId).ToList();
         return (new(false, back, named.Count, notBack, summary), putBack);
     }
 

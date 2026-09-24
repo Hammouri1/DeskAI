@@ -25,7 +25,9 @@ also mention an X button that WinUI pop-ups do not have (older text, not changed
 `docs/MANUAL-TESTING.md` "2026-09-24 First-run welcome" (use the UI preview build).
 
 **Next (owner's request, 2026-09-24):** check that Desktop Studio works well end to end, and bring
-the owner suggestions for Desktop Studio additions to choose from. Pushing both branches is still
+the owner suggestions for Desktop Studio additions to choose from. The check is done and its
+problems 1, 2, 3, and 5 are fixed (2026-09-25, below); problem 4 and the list of suggested
+additions are still to come. Pushing both branches is still
 to be asked; do not push before.
 
 **Desktop Studio state (unchanged since 2026-09-24):** Desktop Studio steps 1 (**Find groups**), 3 (**Clear old stuff**, **Put each group in
@@ -91,8 +93,10 @@ stays as the record.
   under Other tidy-ups.
 
 **Desktop Studio end-to-end check (2026-09-25), found by a throwaway page-level walk-through on a
-generated Desktop (not committed): all three cards used one after another, then reopening.** Waiting
-for the owner to choose what to fix:
+generated Desktop (not committed): all three cards used one after another, then reopening.** The
+owner chose to fix 1, 2 and 5 first; **those are fixed** (2026-09-25, each with a page test that failed
+first; see "Desktop Studio cards working together" below). 3 was fixed with them, because fixing 1
+made it appear straight after Folder by group. **4 is still open.**
 1. After **Put each group in its own folder**, the board is not updated: the next look empties
    every group and puts the new group folders under Not sure, so the person's groups (and any
    renames or merges) are lost.
@@ -105,6 +109,21 @@ for the owner to choose what to fix:
    group folders; the page does not suggest doing Clear old stuff first.
 5. Put back of Folder by group leaves the board showing folders that are gone until DeskAI reopens.
 Everything stayed safe: nothing was lost, and each Put back restored exactly what it moved.
+
+**Desktop Studio cards working together (2026-09-25, fixes for 1, 2, 3, 5).** `DesktopBoardFollow`
+(Core, pure) keeps the board in step with a card's own change: after Folder by group, what moved
+leaves the board and the group's folder stands in its group (a folder the person placed in another
+group stays there); after its Put back, each thing rejoins the group whose folder it was in (Not
+sure when that group is gone), and a folder Put back removed leaves the board. `DesktopLastChange`
+now carries `MadeFolders` (only folders the change made). Tag names' board following moved into
+the same class. `DesktopMoveService.ApplyAsync` undoes a run at once when nothing moved but it made
+a folder, so no empty Old stuff or group folder is left without a Put back. The page, after any
+Move, Put back, or Put them back, reloads the board and clears every other card's list with
+`DesktopStudioViewModel.ListOutOfDate`. Tag names leaves a folder named exactly like its group
+alone ("This is the Coding folder itself, so it keeps its name."). Manual check:
+`docs/MANUAL-TESTING.md` "2026-09-25 Desktop Studio cards working together". Not changed: problem
+4, and a Put them back after a stopped Folder by group still lets the next look sort the board (as
+before).
 
 **Open with the owner:**
 - The deferred small points from Tag names' review (listed in the dated section below): the
@@ -191,12 +210,12 @@ fresh whole-change review and its fixes.
 - **Deferred small points from the review** (the owner decides): the "open in another program"
   wording is also used for other refusals Windows gives; Put back's same-folder check uses the
   made-at time only (Windows can give a same-name folder made within ~15 s the old time); a file
-  copied onto the Desktop today keeps its old date and counts as old; the other card's list is not
-  refreshed after a Move or Put back; if every ticked move fails, an empty Old stuff or group
-  folder can remain without a Put back; the executor itself does not check that Studio plans only
+  copied onto the Desktop today keeps its old date and counts as old; (fixed 2026-09-25: the other
+  cards' lists are now cleared after a Move or Put back, and a run that moved nothing takes its
+  new folder away again); the executor itself does not check that Studio plans only
   move top-level items into top-level folders (the planner does).
-- **Known limits:** after Folder by group, the Find groups board shows the moved items as gone and
-  the new group folders under Not sure the next time it opens; cloud placeholder folders seen as
+- **Known limits:** (fixed 2026-09-25: after Folder by group the board now keeps the groups, each
+  showing its new folder); cloud placeholder folders seen as
   links are never listed; an empty folder the look had not reached before its item limit is left
   alone.
 

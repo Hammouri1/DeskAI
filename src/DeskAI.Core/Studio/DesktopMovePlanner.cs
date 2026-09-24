@@ -179,7 +179,12 @@ public static class DesktopMovePlanner
                 }
 
                 var newName = prefix + thing.Name;
-                if (thing.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                if (string.Equals(thing.Name, group.Name, StringComparison.OrdinalIgnoreCase))
+                {
+                    // The group's own folder, made by Folder by group; "Coding – Coding" helps no one.
+                    builder.LeaveAlone(thing.Name, $"This is the {group.Name} folder itself, so it keeps its name.");
+                }
+                else if (thing.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                 {
                     builder.LeaveAlone(thing.Name, "Its name already starts with the group's name.");
                 }
