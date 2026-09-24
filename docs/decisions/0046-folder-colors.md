@@ -60,3 +60,21 @@ If the answer is go, a later plan still has to decide, with its own security rev
   (Put back leaves it alone and says so);
 - the journal record for a colour change and its separate yes (ADR 0044's moving permission does
   not cover writing inside folders).
+
+## Probe results
+
+**Run 1 (2026-09-24), Windows Sandbox build 26100, dpi 96, spacing 76 x 106.** Verdict "not
+reliable", but only because the probe's own check could not compare:
+
+| Stage | Result |
+|---|---|
+| color | Passed: every `desktop.ini` and the shell named the probe icon; the custom folder kept its info tip and `[ViewState]` lines |
+| color seen before refresh | Passed: 1,247 coloured pixels per folder (no refresh needed) |
+| refresh, explorer restart | Passed: 1,247 per folder |
+| put back | Passed: every folder's attributes and `desktop.ini` (bytes, attributes, or absence) equal the snapshot; the shell names the original icon |
+| put back before / after refresh | Failed: 0 coloured pixels, but every folder had moved up one place, so it was not compared with the start picture |
+| icon file missing | The folder shows the ordinary yellow folder icon (shell: `imageres.dll,-3`), not a blank icon |
+
+The Explorer restart had re-sorted the Desktop: Microsoft Edge moved from above the probe folders
+to below them. The stage pictures show clean yellow folders after Put back. Fix for run 2: the
+probe restarts Explorer once before the start picture, so the re-sort happens first.

@@ -70,7 +70,12 @@ try
         File.WriteAllBytes(file, FolderIcon.Create(color));
     }
 
+    // Restart Explorer once before the start picture. The first restart re-sorts the Desktop's
+    // icons (run 1: Microsoft Edge moved below the folders, so every folder moved up one place
+    // and could not be compared with the start); later restarts keep that order.
     var view = await OpenViewAsync();
+    view?.Dispose();
+    view = view is null ? null : await RestartExplorerAsync();
     if (view is null)
     {
         report.Add(new Stage("find desktop view", StageOutcome.Failed, "Explorer did not show the probe's folders within 60 seconds"));
@@ -147,24 +152,9 @@ try
     await Task.Delay(settle);
     Pixels("refresh", view, "2-refresh.png", Expect.Colour, start: null);
 
-    // Explorer restart. Windows may bring the shell back by itself; starting a second
-    // explorer.exe then opens a File Explorer window over the icons (ADR 0046 review).
+    // Explorer restart.
     view.Dispose();
-    foreach (var explorer in Process.GetProcessesByName("explorer"))
-    {
-        explorer.Kill();
-        await explorer.WaitForExitAsync();
-    }
-
-    var cameBack = await Waiting.ForAsync(
-        () => Process.GetProcessesByName("explorer").FirstOrDefault(), TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(500), clock);
-    report.Note($"explorer came back by itself: {cameBack is not null}");
-    if (cameBack is null)
-    {
-        Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
-    }
-
-    view = await OpenViewAsync();
+    view = await RestartExplorerAsync();
     if (view is null)
     {
         report.Add(new Stage("explorer restart", StageOutcome.Failed, "Explorer did not come back within 60 seconds"));
@@ -241,6 +231,27 @@ catch (Exception ex)
 {
     report.Note($"stopped: {ex.GetType().Name}: {ex.Message}");
     return Finish(1);
+}
+
+// Windows may bring the shell back by itself; starting a second explorer.exe then opens a
+// File Explorer window over the icons (ADR 0046 review).
+async Task<DesktopShellView?> RestartExplorerAsync()
+{
+    foreach (var explorer in Process.GetProcessesByName("explorer"))
+    {
+        explorer.Kill();
+        await explorer.WaitForExitAsync();
+    }
+
+    var cameBack = await Waiting.ForAsync(
+        () => Process.GetProcessesByName("explorer").FirstOrDefault(), TimeSpan.FromSeconds(10), TimeSpan.FromMilliseconds(500), clock);
+    report.Note($"explorer came back by itself: {cameBack is not null}");
+    if (cameBack is null)
+    {
+        Process.Start(new ProcessStartInfo("explorer.exe") { UseShellExecute = true });
+    }
+
+    return await OpenViewAsync();
 }
 
 async Task<DesktopShellView?> OpenViewAsync() =>
