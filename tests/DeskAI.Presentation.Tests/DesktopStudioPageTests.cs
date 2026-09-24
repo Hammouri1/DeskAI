@@ -3,6 +3,7 @@ using System.Text.Json;
 using DeskAI.AI.Transport;
 using DeskAI.App.ViewModels;
 using DeskAI.Core.Roots;
+using DeskAI.Core.Studio;
 
 namespace DeskAI.Presentation.Tests;
 
@@ -171,6 +172,34 @@ public sealed class DesktopStudioPageTests
 
         Assert.DoesNotContain(again.Groups.SelectMany(g => g.Items).Concat(again.NotSure), i => i.Name == "Essays");
         Assert.Contains("no longer on your Desktop", again.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Found in review 2026-09-24: one big folder (a code project) made the whole card fail with
+    /// a wrong safety message. The top level is still known, so the card works and says the look
+    /// inside was partial.
+    /// </summary>
+    [Fact]
+    public async Task A_folder_too_big_to_look_inside_fully_still_lets_the_Desktop_be_sorted()
+    {
+        await using var app = await TestApp.StartAsync();
+        await TidyAiTests.TurnOnOpenRouterAsync(app, shareNames: true, shareFolderNames: true);
+        MakeDesktop(app);
+        var big = app.Directory.CreateDummyDirectory(Path.Combine("folders", "Desktop", "Big project"));
+        for (var index = 0; index < DesktopLookService.Bounds.MaxEntries + 10; index++)
+        {
+            File.WriteAllText(Path.Combine(big, $"part{index:D5}.cs"), string.Empty);
+        }
+
+        var studio = await OpenWithDesktopAsync(app);
+
+        var question = await studio.PrepareAsync();
+        Assert.NotNull(question);
+        Assert.Contains(question.Lines, line => line.StartsWith("Folder \"Big project\"", StringComparison.Ordinal));
+        await studio.GuessAsync();
+        Assert.True(studio.HasBoard);
+        Assert.Contains("too full to look all the way inside", studio.Message, StringComparison.Ordinal);
+        Assert.Empty(app.Internet.Requests);
     }
 
     [Fact]

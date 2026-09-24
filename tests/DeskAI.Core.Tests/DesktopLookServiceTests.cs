@@ -60,6 +60,61 @@ public sealed class DesktopLookServiceTests
     }
 
     [Fact]
+    public async Task Stopping_at_the_entry_limit_inside_folders_keeps_the_whole_top_level_and_says_so()
+    {
+        // The scanner lists the Desktop itself completely before it goes into any folder, so a
+        // limit reached inside a big folder still leaves every top-level item known.
+        var events = new ScanEvent[]
+        {
+            new FolderDiscovered("Big project", FileTraits.None),
+            new FolderDiscovered("Essays", FileTraits.None),
+            StudioFakes.File("notes.txt"),
+            StudioFakes.File(@"Big project\main.py"),
+            new ScanIssue(".", ScanIssueCode.EntryLimitReached, "x"),
+        };
+        var look = await new DesktopLookService(new ReplayScanner(events)).LookAsync(StudioFakes.Root(), TestContext.Current.CancellationToken);
+
+        Assert.Null(look.Problem);
+        Assert.True(look.StoppedEarly);
+        Assert.Equal(["Big project", "Essays", "notes.txt"], look.Items.Select(i => i.Name));
+    }
+
+    [Fact]
+    public async Task Stopping_at_the_entry_limit_on_the_Desktop_itself_says_there_is_too_much()
+    {
+        var events = new ScanEvent[]
+        {
+            StudioFakes.File("a.txt"),
+            new ScanIssue(".", ScanIssueCode.EntryLimitReached, "x"),
+        };
+        var look = await new DesktopLookService(new ReplayScanner(events)).LookAsync(StudioFakes.Root(), TestContext.Current.CancellationToken);
+
+        Assert.Empty(look.Items);
+        Assert.Equal(DesktopLookService.TooManyProblem, look.Problem);
+    }
+
+    [Fact]
+    public async Task Hidden_and_system_files_inside_folders_are_neither_counted_nor_named()
+    {
+        var events = new ScanEvent[]
+        {
+            new FolderDiscovered("Project", FileTraits.None),
+            new FolderDiscovered(@"Project\.git", FileTraits.Hidden),
+            StudioFakes.File(@"Project\.git\HEAD"),
+            new FolderDiscovered(@"Project\.git\hooks", FileTraits.None),
+            StudioFakes.File(@"Project\.git\hooks\pre-commit.sample"),
+            StudioFakes.File(@"Project\desktop.ini", FileTraits.Hidden | FileTraits.System),
+            StudioFakes.File(@"Project\.env", FileTraits.Hidden),
+            StudioFakes.File(@"Project\main.py"),
+        };
+        var look = await new DesktopLookService(new ReplayScanner(events)).LookAsync(StudioFakes.Root(), TestContext.Current.CancellationToken);
+
+        var project = Assert.Single(look.Items);
+        Assert.Equal([new DesktopTypeCount(".py", 1)], project.Types);
+        Assert.Equal(["main.py"], project.SampleNames);
+    }
+
+    [Fact]
     public async Task A_root_problem_is_reported_and_nothing_is_listed()
     {
         var events = new ScanEvent[] { new ScanIssue(".", ScanIssueCode.RootUnavailable, "x") };

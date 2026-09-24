@@ -23,6 +23,9 @@ public sealed record DesktopGroupQuestion(
     IReadOnlyList<DesktopItem> LeftOutItems)
 {
     public int LeftOut => LeftOutItems.Count;
+
+    /// <summary>True when some folders were too full to look all the way inside.</summary>
+    public bool StoppedEarly { get; init; }
 }
 
 /// <summary>A prepared question, or the plain reason there is none.</summary>
@@ -61,6 +64,7 @@ public sealed class DesktopGroupingService(
     public const string GuessMessage = "Sorted by DeskAI's own simpler guess from the kinds of files. You can change any group.";
     public const string SharingNeeded = "To let AI sort your Desktop, allow sharing file types, file names, and folder names in Privacy and AI.";
     public const string AiNeeded = "Turn on AI in Privacy and AI first, or press Use DeskAI's guess.";
+    public const string PartlyLooked = "Some folders were too full to look all the way inside, so they are sorted by what DeskAI saw first.";
 
     /// <summary>Which AI the person set up, if any, for the page's button and labels.</summary>
     public async Task<AiTarget> GetAiAsync(CancellationToken cancellationToken = default) =>
@@ -177,6 +181,11 @@ public sealed class DesktopGroupingService(
             AiGroupingRequest.DefaultLimits with { Timeout = TimeSpan.FromSeconds(Math.Clamp(settings.TimeoutSeconds, 5, 120)) });
         var leftOut = seen.LeftOutItems;
         var explanation = $"{target.Name} at {target.Destination} will see only this list: names and kinds of files. Not what is inside them, and not where they are.";
+        if (seen.StoppedEarly)
+        {
+            explanation += $" {PartlyLooked}";
+        }
+
         if (leftOut.Count > 0)
         {
             explanation += $" {leftOut.Count} more will be sorted by DeskAI's own guess and not sent.";
@@ -192,7 +201,10 @@ public sealed class DesktopGroupingService(
                 seen.Items.Select(Line).ToList(),
                 request,
                 seen.Items.Select(item => item.RelativePath).ToList(),
-                leftOut),
+                leftOut)
+            {
+                StoppedEarly = seen.StoppedEarly,
+            },
             explanation);
     }
 
@@ -239,6 +251,11 @@ public sealed class DesktopGroupingService(
         var notSure = question.PathsByNumber.Where((_, index) => !mentioned.Contains(index + 1)).ToList();
 
         var message = $"Grouped by {question.ServiceName}. You can change any group.";
+        if (question.StoppedEarly)
+        {
+            message += $" {PartlyLooked}";
+        }
+
         if (question.LeftOut > 0)
         {
             var guessedGroups = localGrouper.Group(question.LeftOutItems, out var guessedUnsure);
@@ -302,7 +319,7 @@ public sealed class DesktopGroupingService(
         var groups = localGrouper.Group(everything, out var notSure);
         var board = new DesktopGroupBoard(rootId, groups, notSure, DesktopGroupSource.LocalGuess, clock.UtcNow) { Folders = FoldersIn(everything) };
         await boards.SaveAsync(board, cancellationToken).ConfigureAwait(false);
-        return new(true, board, GuessMessage);
+        return new(true, board, seen.StoppedEarly ? $"{GuessMessage} {PartlyLooked}" : GuessMessage);
     }
 
     public Task<DesktopGroupResult> RenameAsync(Guid rootId, string group, string newName, CancellationToken cancellationToken = default) =>

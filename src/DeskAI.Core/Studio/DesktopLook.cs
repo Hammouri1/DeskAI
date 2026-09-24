@@ -18,6 +18,9 @@ public sealed record DesktopLook(
     IReadOnlyList<DesktopItem> Items, int FoldersLeftOut, int FilesLeftOut, string? Problem, IReadOnlyList<DesktopItem> LeftOutItems)
 {
     public IEnumerable<DesktopItem> Everything => Items.Concat(LeftOutItems);
+
+    /// <summary>True when the look stopped at its item limit inside a folder: every Desktop item is listed, but some folders were not looked all the way inside.</summary>
+    public bool StoppedEarly { get; init; }
 }
 
 /// <summary>
@@ -36,6 +39,7 @@ public sealed class DesktopLookService(IFileScanner scanner)
     public const int MaxSampleNames = 5;
     public const int MaxTypesPerFolder = 8;
     public const string RootProblem = "DeskAI could not look at your Desktop safely. It may have moved or become a link.";
+    public const string TooManyProblem = "There are too many things directly on your Desktop for DeskAI to sort at once.";
 
     public static MetadataScanOptions Bounds { get; } = new(maxDepth: 4, maxEntries: 5000);
 
@@ -46,34 +50,40 @@ public sealed class DesktopLookService(IFileScanner scanner)
         var looseFiles = new List<string>();
         var filesByFolder = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
         var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var hiddenFolders = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var sawInsideAFolder = false;
+        var stoppedEarly = false;
         await foreach (var scanEvent in scanner.ScanAsync(root, Bounds, cancellationToken).ConfigureAwait(false))
         {
+            sawInsideAFolder |= PathOf(scanEvent) is { } path && path.Contains(Path.DirectorySeparatorChar);
             switch (scanEvent)
             {
+                // The scanner lists the Desktop itself completely before going into any folder, so
+                // a limit reached once it is inside a folder still leaves every top-level item known.
+                case ScanIssue { RelativePath: ".", Code: ScanIssueCode.EntryLimitReached }:
+                    if (!sawInsideAFolder)
+                    {
+                        return new DesktopLook([], 0, 0, TooManyProblem, []);
+                    }
+
+                    stoppedEarly = true;
+                    break;
                 case ScanIssue { RelativePath: "." }:
                     return new DesktopLook([], 0, 0, RootProblem, []);
                 case ScanIssue { Code: ScanIssueCode.ProtectedEntrySkipped or ScanIssueCode.ReparsePointSkipped } issue:
                     excluded.Add(TopSegment(issue.RelativePath));
                     break;
-                case FolderDiscovered folder when !folder.RelativePath.Contains(Path.DirectorySeparatorChar):
-                    if ((folder.Traits & (FileTraits.Hidden | FileTraits.System)) != 0)
-                    {
-                        excluded.Add(folder.RelativePath);
-                    }
-                    else
-                    {
-                        folders.Add(folder.RelativePath);
-                    }
-
+                case FolderDiscovered folder when IsHiddenOrSystem(folder.Traits):
+                    (folder.RelativePath.Contains(Path.DirectorySeparatorChar) ? hiddenFolders : excluded).Add(folder.RelativePath);
                     break;
-                case FileDiscovered { File: var file }:
+                case FolderDiscovered folder when !folder.RelativePath.Contains(Path.DirectorySeparatorChar):
+                    folders.Add(folder.RelativePath);
+                    break;
+                case FileDiscovered { File: var file } when !IsHiddenOrSystem(file.Traits) && !IsUnder(file.RelativePath, hiddenFolders):
                     var top = TopSegment(file.RelativePath);
                     if (top == file.RelativePath)
                     {
-                        if ((file.Traits & (FileTraits.Hidden | FileTraits.System)) == 0)
-                        {
-                            looseFiles.Add(file.RelativePath);
-                        }
+                        looseFiles.Add(file.RelativePath);
                     }
                     else if (filesByFolder.TryGetValue(top, out var list))
                     {
@@ -97,7 +107,10 @@ public sealed class DesktopLookService(IFileScanner scanner)
             .Concat(keptFiles.Skip(MaxFiles).Select(f => new DesktopItem(f, false, [], [])))
             .ToList();
         return new DesktopLook(
-            items, Math.Max(0, keptFolders.Count - MaxFolders), Math.Max(0, keptFiles.Count - MaxFiles), null, leftOut);
+            items, Math.Max(0, keptFolders.Count - MaxFolders), Math.Max(0, keptFiles.Count - MaxFiles), null, leftOut)
+        {
+            StoppedEarly = stoppedEarly,
+        };
     }
 
     private static DesktopItem Summarize(string folder, List<string> files)
@@ -113,6 +126,31 @@ public sealed class DesktopLookService(IFileScanner scanner)
             .Order(StringComparer.OrdinalIgnoreCase).Take(MaxSampleNames).ToList();
         return new DesktopItem(folder, true, types, samples);
     }
+
+    private static bool IsHiddenOrSystem(FileTraits traits) => (traits & (FileTraits.Hidden | FileTraits.System)) != 0;
+
+    /// <summary>True when the path sits anywhere inside one of these folders.</summary>
+    private static bool IsUnder(string relativePath, HashSet<string> folders)
+    {
+        for (var index = relativePath.LastIndexOf(Path.DirectorySeparatorChar); index > 0;
+             index = relativePath.LastIndexOf(Path.DirectorySeparatorChar, index - 1))
+        {
+            if (folders.Contains(relativePath[..index]))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static string? PathOf(ScanEvent scanEvent) => scanEvent switch
+    {
+        FileDiscovered found => found.File.RelativePath,
+        FolderDiscovered folder => folder.RelativePath,
+        ScanIssue issue => issue.RelativePath,
+        _ => null,
+    };
 
     private static string TopSegment(string relativePath)
     {
