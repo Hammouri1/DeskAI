@@ -43,9 +43,11 @@ Studio is "super cool designs on the desktop" while DeskAI rearranges folders an
 0043 showed Windows does not keep icons where a program places them. `tools/FolderColorProbe`
 stays as the record.
 
-**Next task:** ask the owner. Desktop Studio has no build steps left: steps 1, 3, and 4 are built
-and hand-checked. The open choice is whether to push the whole feature now, or first look for
-another route to the Desktop designs they wanted (not yet designed or approved).
+**Next task (owner's choice, 2026-09-24): the first-run welcome**, on branch `first-run-welcome`
+(stacked on `desktop-studio-find-groups`). Design: `docs/superpowers/specs/2026-09-24-first-run-welcome-design.md`
+(a three-page pop-up, only for brand-new people, reopened from Privacy and AI). **After it**, the
+owner asked to check that Desktop Studio works well end to end and to bring them suggestions for
+Desktop Studio additions. Pushing both branches is still to be asked; do not push before.
 
 **Decisions the owner made that are not yet in code** (also in
 `docs/superpowers/specs/2026-09-24-desktop-studio-design.md`):
