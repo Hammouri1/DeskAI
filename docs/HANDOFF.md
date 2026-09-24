@@ -36,10 +36,14 @@ things on my Desktop**; check Organize's tidy permission for the Desktop did not
 report did not mention the last part (Organize's permission). The launchable exe is
 `src\DeskAI.App\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`.
 
-**Next task:** **Color groups**, the last Desktop Studio step. It starts with its own probe, like
-the icon-position probe (ADR 0043), in Windows Sandbox only, and is dropped if the colour cannot be
-removed cleanly. Ask the owner before writing its plan. After it (or after it is dropped), ask the
-owner about pushing the whole Desktop Studio feature.
+**Next task:** **Color groups**, the last Desktop Studio step. Its probe is built and reviewed
+(ADR 0046, Proposed; plan `docs/superpowers/plans/2026-09-24-folder-color-probe.md`, including
+the review fixes; `tools/FolderColorProbe`), built "one by one" as the owner chose on 2026-09-24.
+**Waiting for the owner's Sandbox run:** they run `tools/FolderColorProbe/Run-InSandbox.ps1`, keep
+the Sandbox window in front until `artifacts/color-probe/results/report.txt` appears, and say so.
+Then read the report and the stage pictures, record go or no-go in ADR 0046, the design's "Color
+groups" section, and here, and tell the owner. If go, ask before planning the card itself. After
+it (or after it is dropped), ask the owner about pushing the whole Desktop Studio feature.
 
 **Decisions the owner made that are not yet in code** (also in
 `docs/superpowers/specs/2026-09-24-desktop-studio-design.md`):
