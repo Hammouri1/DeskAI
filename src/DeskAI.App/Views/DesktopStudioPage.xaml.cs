@@ -187,6 +187,7 @@ public sealed partial class DesktopStudioPage : Page
     {
         "OldStuff" => ViewModel.OldStuff,
         "FolderByGroup" => ViewModel.FolderByGroup,
+        "TagNames" => ViewModel.TagNames,
         _ => null,
     };
 
@@ -264,11 +265,11 @@ public sealed partial class DesktopStudioPage : Page
         var dialog = new ContentDialog
         {
             XamlRoot = XamlRoot,
-            Title = "Allow DeskAI to move things on your Desktop?",
-            Content = "DeskAI may move folders and files on your Desktop into folders on your Desktop: only the ones you tick, and only when you press Move.\n"
+            Title = "Allow DeskAI to move or rename things on your Desktop?",
+            Content = "DeskAI may move folders and files into folders on your Desktop, and rename folders there: only the ones you tick, and only when you press Move or Rename.\n"
                 + "It never deletes anything and never moves anything off your Desktop.\n"
                 + "Put back returns your latest change.\n\nYou can take this back at any time.",
-            PrimaryButtonText = "Allow moving",
+            PrimaryButtonText = "Allow",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,
         };

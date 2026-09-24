@@ -235,6 +235,8 @@ public sealed class DesktopStudioViewModel(
 
     public DesktopMoveCardViewModel FolderByGroup { get; } = new(DesktopMoveCard.FolderByGroup);
 
+    public DesktopMoveCardViewModel TagNames { get; } = new(DesktopMoveCard.TagNames);
+
     public bool CanMoveThings
     {
         get => _canMoveThings;
@@ -405,6 +407,7 @@ public sealed class DesktopStudioViewModel(
         OnPropertyChanged(nameof(CanKeepInterrupted));
         OldStuff.ShowLast(_interrupted is null ? await _moves.FindLastAsync(id, DesktopMoveCard.ClearOldStuff).ConfigureAwait(true) : null);
         FolderByGroup.ShowLast(_interrupted is null ? await _moves.FindLastAsync(id, DesktopMoveCard.FolderByGroup).ConfigureAwait(true) : null);
+        TagNames.ShowLast(_interrupted is null ? await _moves.FindLastAsync(id, DesktopMoveCard.TagNames).ConfigureAwait(true) : null);
     }
 
     private Task WithDesktopDoAsync(Func<Guid, Task> action)

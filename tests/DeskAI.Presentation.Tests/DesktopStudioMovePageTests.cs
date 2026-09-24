@@ -356,6 +356,68 @@ public sealed class DesktopStudioMovePageTests
         Assert.True(studio.HasInterrupted);
     }
 
+    [Fact]
+    public async Task Tag_names_shows_the_new_name_for_each_folder_and_never_renames_files()
+    {
+        await using var app = await TestApp.StartAsync();
+        MakeGroupDesktop(app);
+        var before = Snapshot(app);
+        var studio = await OpenAsync(app);
+        await studio.GuessAsync();
+
+        await studio.PreviewAsync(studio.TagNames);
+
+        Assert.Equal(["Essays", "Python stuff"], studio.TagNames.Items.Select(item => item.Name).Order(StringComparer.Ordinal));
+        Assert.Contains("becomes \"Coding – Python stuff\"", studio.TagNames.Items.Single(item => item.Name == "Python stuff").Detail, StringComparison.Ordinal);
+        Assert.Equal("Rename 2 folders", studio.TagNames.ApplyButtonText);
+        Assert.Equal(before, Snapshot(app));
+    }
+
+    [Fact]
+    public async Task Rename_then_Put_back_restores_the_old_names()
+    {
+        await using var first = await TestApp.StartAsync();
+        MakeGroupDesktop(first);
+        var before = Snapshot(first);
+        var studio = await OpenAllowedAsync(first);
+        await studio.GuessAsync();
+        await studio.PreviewAsync(studio.TagNames);
+
+        var done = await studio.ApplyAsync(studio.TagNames);
+
+        Assert.Equal("Done. 2 folders renamed.", done!.Summary);
+        Assert.True(Directory.Exists(Path.Combine(first.DesktopPath, "Coding – Python stuff")));
+        Assert.True(Directory.Exists(Path.Combine(first.DesktopPath, "Documents – Essays")));
+        Assert.True(File.Exists(Path.Combine(first.DesktopPath, "report.docx")));
+        await using var app = await first.ReopenAsync();
+        var again = app.Get<DesktopStudioViewModel>();
+        await again.InitializeAsync();
+        Assert.True(again.TagNames.CanPutBack);
+        await again.PutBackAsync(again.TagNames);
+        Assert.Equal(before, Snapshot(app));
+    }
+
+    [Fact]
+    public async Task A_folder_already_named_with_its_group_is_left_alone()
+    {
+        await using var app = await TestApp.StartAsync();
+        app.MakeFile("Desktop", Path.Combine("Coding – Tools", "tool.py"));
+        var studio = await OpenAllowedAsync(app);
+        await studio.GuessAsync();
+
+        await studio.PreviewAsync(studio.TagNames);
+
+        Assert.False(studio.TagNames.HasPreview);
+        Assert.Contains(studio.TagNames.LeftAlone, line => line == "Coding – Tools: Its name already starts with the group's name.");
+    }
+
+    private static void MakeGroupDesktop(TestApp app)
+    {
+        app.MakeFile("Desktop", Path.Combine("Python stuff", "main.py"));
+        app.MakeFile("Desktop", Path.Combine("Essays", "essay.docx"));
+        app.MakeFile("Desktop", "report.docx");
+    }
+
     private static async Task<DesktopStudioViewModel> OpenAsync(TestApp app)
     {
         await DesktopMoveServiceTests.ConnectDesktopAsync(app);

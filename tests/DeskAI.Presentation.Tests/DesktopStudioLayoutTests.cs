@@ -99,6 +99,22 @@ public sealed class DesktopStudioLayoutTests
         Assert.DoesNotContain("Folder by group", page, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Tag_names_sits_with_the_group_steps_before_the_other_tidy_ups()
+    {
+        var page = Page();
+        var groupFolders = page.IndexOf("Topic=\"studio.folderByGroup\"", StringComparison.Ordinal);
+        var tagNames = page.IndexOf("Topic=\"studio.tagNames\"", StringComparison.Ordinal);
+        var other = page.IndexOf("Text=\"Other tidy-ups\"", StringComparison.Ordinal);
+
+        Assert.True(groupFolders > 0 && tagNames > groupFolders && other > tagNames,
+            $"Order was: group folders {groupFolders}, tag names {tagNames}, other {other}");
+        var card = Section(page, "Topic=\"studio.tagNames\"", "</Border>");
+        Assert.Contains("Content=\"Add the group's name to each folder's name\"", card, StringComparison.Ordinal);
+        Assert.Contains("ViewModel.TagNames.Items", card, StringComparison.Ordinal);
+        Assert.Contains("Content=\"Put back\"", card, StringComparison.Ordinal);
+    }
+
     private static string Page() =>
         File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "DeskAI.App", "Views", "DesktopStudioPage.xaml")).ReplaceLineEndings("\n");
 

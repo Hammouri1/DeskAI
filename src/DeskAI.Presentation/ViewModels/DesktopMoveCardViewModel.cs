@@ -17,9 +17,12 @@ public sealed class DesktopMoveItemViewModel(DesktopMoveItem item, DesktopMoveCa
     /// <summary>Folder or page glyph from Segoe Fluent Icons.</summary>
     public string Glyph => Item.IsFolder ? "" : "";
 
-    public string Detail => card == DesktopMoveCard.ClearOldStuff
-        ? $"{Kind()} · last changed {Item.LastChangedUtc.ToLocalTime():d}"
-        : $"{Kind()} · goes into {Item.Destination}";
+    public string Detail => card switch
+    {
+        DesktopMoveCard.ClearOldStuff => $"{Kind()} · last changed {Item.LastChangedUtc.ToLocalTime():d}",
+        DesktopMoveCard.TagNames => $"{Kind()} · becomes \"{Item.Destination}\"",
+        _ => $"{Kind()} · goes into {Item.Destination}",
+    };
 
     public string Warning => Item.Warning ?? string.Empty;
 
@@ -70,7 +73,9 @@ public sealed class DesktopMoveCardViewModel(DesktopMoveCard card) : ObservableO
 
     public bool CanApply => Items.Any(item => item.IsTicked);
 
-    public string ApplyButtonText => $"Move {DesktopMoveText.Things(Items.Count(item => item.IsTicked))}";
+    public string ApplyButtonText => Items.Count(item => item.IsTicked) is var count && Card == DesktopMoveCard.TagNames
+        ? count == 1 ? "Rename 1 folder" : $"Rename {count} folders"
+        : $"Move {DesktopMoveText.Things(count)}";
 
     public string TotalText => HasPreview
         ? $"Ticked: {DesktopMoveText.Total(Items.Where(item => item.IsTicked).Select(item => item.Item))}"

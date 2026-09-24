@@ -191,7 +191,7 @@
             <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.IsDesktopConnected, Mode=OneWay}">
                 <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
                            Visibility="{x:Bind ViewModel.CannotMoveThings, Mode=OneWay}"
-                           Text="The cards below move things on your Desktop. DeskAI asks before the first move, and Put back returns your latest change." />
+                           Text="The cards below move or rename things on your Desktop. DeskAI asks before the first change, and Put back returns your latest change." />
                 <HyperlinkButton Content="Stop DeskAI moving things on my Desktop" Padding="0"
                                  Visibility="{x:Bind ViewModel.CanMoveThings, Mode=OneWay}" Click="OnStopMovingClick" />
                 <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
@@ -231,6 +231,44 @@
                     <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.FolderByGroup.HasLeftAlone, Mode=OneWay}">
                         <TextBlock Style="{StaticResource CaptionStyle}" FontWeight="SemiBold" Text="Left where they are" />
                         <ItemsControl ItemsSource="{x:Bind ViewModel.FolderByGroup.LeftAlone}" AutomationProperties.Name="Group things left where they are"
+                                      ItemTemplate="{StaticResource LeftAloneTemplate}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasBoard, Mode=OneWay}">
+                <StackPanel Spacing="14">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Or keep them where they are, and add the group's name" />
+                            <controls:HelpButton Topic="studio.tagNames" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                   Text="Each folder in a group gets the group's name in front, like &quot;Coding – Python stuff&quot;. Files and Not sure keep their names. You see the list first." />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Add the group's name to each folder's name" Tag="TagNames" Click="OnPreviewClick" />
+                        <Button Style="{StaticResource AccentButtonStyle}" Tag="TagNames" Click="OnApplyClick"
+                                Content="{x:Bind ViewModel.TagNames.ApplyButtonText, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.TagNames.HasPreview, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.TagNames.CanApply, Mode=OneWay}" />
+                        <Button Content="Put back" Tag="TagNames" Click="OnPutBackClick"
+                                Visibility="{x:Bind ViewModel.TagNames.CanPutBack, Mode=OneWay}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                               Text="{x:Bind ViewModel.TagNames.LastText, Mode=OneWay}" Visibility="{x:Bind ViewModel.TagNames.CanPutBack, Mode=OneWay}" />
+                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                               Text="{x:Bind ViewModel.TagNames.Message, Mode=OneWay}" Visibility="{x:Bind ViewModel.TagNames.HasMessage, Mode=OneWay}" />
+                    <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.TagNames.HasPreview, Mode=OneWay}">
+                        <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.TagNames.TotalText, Mode=OneWay}" />
+                        <ScrollViewer MaxHeight="{StaticResource MoveListMaxHeight}" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.TagNames.Items}" AutomationProperties.Name="Folders that would be renamed"
+                                          ItemTemplate="{StaticResource MoveItemTemplate}" />
+                        </ScrollViewer>
+                    </StackPanel>
+                    <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.TagNames.HasLeftAlone, Mode=OneWay}">
+                        <TextBlock Style="{StaticResource CaptionStyle}" FontWeight="SemiBold" Text="Left with their names" />
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.TagNames.LeftAlone}" AutomationProperties.Name="Folders left with their names"
                                       ItemTemplate="{StaticResource LeftAloneTemplate}" />
                     </StackPanel>
                 </StackPanel>
