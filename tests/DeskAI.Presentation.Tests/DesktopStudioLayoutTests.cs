@@ -38,6 +38,23 @@ public sealed class DesktopStudioLayoutTests
         Assert.Contains("Text=\"{x:Bind ViewModel.NotSureCountText, Mode=OneWay}\"", notSure, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Each_moving_card_has_its_help_its_tick_boxes_its_total_and_Put_back()
+    {
+        var page = Page();
+        foreach (var (topic, card) in new[] { ("studio.oldStuff", "OldStuff"), ("studio.folderByGroup", "FolderByGroup") })
+        {
+            var section = Section(page, $"Topic=\"{topic}\"", "</Border>");
+            Assert.Contains($"ViewModel.{card}.Items", section, StringComparison.Ordinal);
+            Assert.Contains($"ViewModel.{card}.TotalText", section, StringComparison.Ordinal);
+            Assert.Contains("Content=\"Put back\"", section, StringComparison.Ordinal);
+        }
+
+        var row = Section(page, "<DataTemplate x:Key=\"MoveItemTemplate\"", "</DataTemplate>");
+        Assert.Contains("IsChecked=\"{x:Bind IsTicked, Mode=TwoWay}\"", row, StringComparison.Ordinal);
+        Assert.Contains("Text=\"{x:Bind Warning}\"", row, StringComparison.Ordinal);
+    }
+
     private static string Page() =>
         File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "DeskAI.App", "Views", "DesktopStudioPage.xaml")).ReplaceLineEndings("\n");
 

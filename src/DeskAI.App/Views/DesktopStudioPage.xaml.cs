@@ -6,8 +6,9 @@ using Microsoft.UI.Xaml.Controls;
 namespace DeskAI.App.Views;
 
 /// <summary>
-/// Desktop Studio (ADR 0042). Its dialogs are the only places a person says yes: Connect, and
-/// Send, which shows the exact list the AI would see. Everything else is the view model's.
+/// Desktop Studio (ADR 0042, ADR 0044). Its dialogs are the only places a person says yes: Connect;
+/// Send, which shows the exact list the AI would see; and the one-time yes to move things on the
+/// Desktop. Everything else is the view model's.
 /// </summary>
 public sealed partial class DesktopStudioPage : Page
 {
@@ -180,6 +181,98 @@ public sealed partial class DesktopStudioPage : Page
         notSure.Click += async (_, _) => await ViewModel.MoveItemAsync(path, null);
         menu.Items.Add(notSure);
         menu.ShowAt(element);
+    }
+
+    private DesktopMoveCardViewModel? CardOf(object sender) => (sender as FrameworkElement)?.Tag switch
+    {
+        "OldStuff" => ViewModel.OldStuff,
+        "FolderByGroup" => ViewModel.FolderByGroup,
+        _ => null,
+    };
+
+    private async void OnPreviewClick(object sender, RoutedEventArgs e)
+    {
+        if (!ViewModel.IsBusy && CardOf(sender) is { } card)
+        {
+            await ViewModel.PreviewAsync(card);
+        }
+    }
+
+    /// <summary>The first Move asks for the yes, then tries once more with the same ticked list.</summary>
+    private async void OnApplyClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.IsBusy || CardOf(sender) is not { } card)
+        {
+            return;
+        }
+
+        if (await ViewModel.ApplyAsync(card) is { NeedsPermission: true } && await ConfirmMovingAsync())
+        {
+            await ViewModel.AllowMovingAsync();
+            await ViewModel.ApplyAsync(card);
+        }
+    }
+
+    /// <summary>Put back moves things too, so after the yes was taken back it asks again first.</summary>
+    private async void OnPutBackClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.IsBusy || CardOf(sender) is not { } card)
+        {
+            return;
+        }
+
+        if (await ViewModel.PutBackAsync(card) is { NeedsPermission: true } && await ConfirmMovingAsync())
+        {
+            await ViewModel.AllowMovingAsync();
+            await ViewModel.PutBackAsync(card);
+        }
+    }
+
+    private async void OnPutBackInterruptedClick(object sender, RoutedEventArgs e)
+    {
+        if (ViewModel.IsBusy)
+        {
+            return;
+        }
+
+        if (await ViewModel.PutBackInterruptedAsync() is { NeedsPermission: true } && await ConfirmMovingAsync())
+        {
+            await ViewModel.AllowMovingAsync();
+            await ViewModel.PutBackInterruptedAsync();
+        }
+    }
+
+    private async void OnKeepInterruptedClick(object sender, RoutedEventArgs e)
+    {
+        if (!ViewModel.IsBusy)
+        {
+            await ViewModel.KeepInterruptedAsync();
+        }
+    }
+
+    /// <summary>Taking the yes back needs no dialog; that is never the dangerous direction.</summary>
+    private async void OnStopMovingClick(object sender, RoutedEventArgs e)
+    {
+        if (!ViewModel.IsBusy)
+        {
+            await ViewModel.StopMovingAsync();
+        }
+    }
+
+    private async Task<bool> ConfirmMovingAsync()
+    {
+        var dialog = new ContentDialog
+        {
+            XamlRoot = XamlRoot,
+            Title = "Allow DeskAI to move things on your Desktop?",
+            Content = "DeskAI may move folders and files on your Desktop into folders on your Desktop: only the ones you tick, and only when you press Move.\n"
+                + "It never deletes anything and never moves anything off your Desktop.\n"
+                + "Put back returns them.\n\nYou can take this back at any time.",
+            PrimaryButtonText = "Allow moving",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close,
+        };
+        return await dialog.ShowAsync() == ContentDialogResult.Primary;
     }
 
     private const int FolderNameMaxLength = DeskAI.Core.Templates.FolderNameCheck.MaxNameLength;

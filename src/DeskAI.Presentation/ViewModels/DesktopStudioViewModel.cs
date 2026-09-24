@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using DeskAI.Core.Roots;
 using DeskAI.Core.Search;
 using DeskAI.Core.Studio;
+using DeskAI.Core.Tidy;
 
 namespace DeskAI.App.ViewModels;
 
@@ -28,17 +29,20 @@ public sealed class DesktopGroupViewModel(string name, IEnumerable<DesktopItemVi
 /// </summary>
 /// <remarks>
 /// Thin on purpose: every rule — which folder is the Desktop, what may be sent, how an answer is
-/// read, which names are allowed — lives in <see cref="DesktopGroupingService"/>. Nothing here
-/// can move, rename, or open a file, or change Windows.
+/// read, which names are allowed — lives in <see cref="DesktopGroupingService"/>. Find groups changes
+/// nothing on the PC; the moving cards change the Desktop only through <see cref="DesktopMoveService"/>,
+/// after the person ticks and presses Move.
 /// </remarks>
 public sealed class DesktopStudioViewModel(
     DesktopGroupingService grouping,
     ConnectedFolderService folders,
-    PersonalFolderPolicy personalFolders) : ObservableObject
+    PersonalFolderPolicy personalFolders,
+    DesktopMoveService moves) : ObservableObject
 {
     private readonly DesktopGroupingService _grouping = grouping;
     private readonly ConnectedFolderService _folders = folders;
     private readonly PersonalFolderPolicy _personalFolders = personalFolders;
+    private readonly DesktopMoveService _moves = moves;
     private Guid? _desktopId;
     private string _serviceName = "AI";
     private bool _hasAi;
@@ -110,6 +114,7 @@ public sealed class DesktopStudioViewModel(
             var loaded = await _grouping.LoadBoardAsync(id).ConfigureAwait(true);
             Show(loaded.Board);
             Message = loaded.Message;
+            await RefreshMovesAsync(id).ConfigureAwait(true);
         }
         else
         {
@@ -219,6 +224,188 @@ public sealed class DesktopStudioViewModel(
         OnPropertyChanged(nameof(HasNotSure));
         OnPropertyChanged(nameof(NotSureCountText));
         OnPropertyChanged(nameof(GroupNames));
+    }
+
+    private InterruptedTidy? _interrupted;
+    private bool _canMoveThings;
+    private string _movesMessage = string.Empty;
+
+    public DesktopMoveCardViewModel OldStuff { get; } = new(DesktopMoveCard.ClearOldStuff);
+
+    public DesktopMoveCardViewModel FolderByGroup { get; } = new(DesktopMoveCard.FolderByGroup);
+
+    public bool CanMoveThings
+    {
+        get => _canMoveThings;
+        private set
+        {
+            if (SetProperty(ref _canMoveThings, value))
+            {
+                OnPropertyChanged(nameof(CannotMoveThings));
+            }
+        }
+    }
+
+    public bool CannotMoveThings => !CanMoveThings;
+
+    public string MovesMessage
+    {
+        get => _movesMessage;
+        private set
+        {
+            if (SetProperty(ref _movesMessage, value))
+            {
+                OnPropertyChanged(nameof(HasMovesMessage));
+            }
+        }
+    }
+
+    public bool HasMovesMessage => MovesMessage.Length > 0;
+
+    public bool HasInterrupted => _interrupted is not null;
+
+    public bool CanPutBackInterrupted => _interrupted?.CanUndo == true;
+
+    public string InterruptedText
+    {
+        get
+        {
+            if (_interrupted is not { } stopped)
+            {
+                return string.Empty;
+            }
+
+            var text = stopped.IsUndo
+                ? $"DeskAI stopped while putting things back. {stopped.Moved} of {DesktopMoveText.Things(stopped.Total)} had gone back."
+                : $"DeskAI stopped part-way through your last change. {stopped.Moved} of {DesktopMoveText.Things(stopped.Total)} had moved.";
+            return stopped.NeedsReview.Count == 0
+                ? text
+                : $"{text} DeskAI couldn't tell about {string.Join(", ", stopped.NeedsReview.Select(item => item.FileName))}, so it left them alone. Please check them.";
+        }
+    }
+
+    public Task PreviewAsync(DesktopMoveCardViewModel card) => WithDesktopDoAsync(async id =>
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        var result = await _moves.PreviewAsync(id, card.Card).ConfigureAwait(true);
+        card.ShowPreview(result.Preview);
+        card.Message = result.Message;
+    });
+
+    /// <returns>What happened, or null when nothing was tried. When it needs the yes, the page asks and calls again.</returns>
+    public async Task<DesktopMoveResult?> ApplyAsync(DesktopMoveCardViewModel card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        if (_desktopId is not { } id || card.Preview is not { } preview)
+        {
+            return null;
+        }
+
+        DesktopMoveResult? result = null;
+        await RunAsync(async () =>
+        {
+            result = await _moves.ApplyAsync(preview, card.Ticked).ConfigureAwait(true);
+            if (result.NeedsPermission)
+            {
+                card.Message = result.Summary;
+                return;
+            }
+
+            card.ShowOutcome(result.Summary, result.NotMoved);
+            await RefreshMovesAsync(id).ConfigureAwait(true);
+        }).ConfigureAwait(true);
+        return result;
+    }
+
+    public async Task<DesktopMoveResult?> PutBackAsync(DesktopMoveCardViewModel card)
+    {
+        ArgumentNullException.ThrowIfNull(card);
+        if (_desktopId is not { } id)
+        {
+            return null;
+        }
+
+        DesktopMoveResult? result = null;
+        await RunAsync(async () =>
+        {
+            result = await _moves.PutBackAsync(id, card.Card).ConfigureAwait(true);
+            if (result.NeedsPermission)
+            {
+                card.Message = result.Summary;
+                return;
+            }
+
+            card.ShowOutcome(result.Summary, result.NotMoved);
+            await RefreshMovesAsync(id).ConfigureAwait(true);
+        }).ConfigureAwait(true);
+        return result;
+    }
+
+    /// <summary>Called only after the page's permission dialog was accepted.</summary>
+    public Task AllowMovingAsync() => WithDesktopDoAsync(async id =>
+    {
+        var message = await _moves.AllowAsync(id).ConfigureAwait(true);
+        await RefreshMovesAsync(id).ConfigureAwait(true);
+        MovesMessage = CanMoveThings ? string.Empty : message;
+    });
+
+    public Task StopMovingAsync() => WithDesktopDoAsync(async id =>
+    {
+        MovesMessage = await _moves.StopAsync(id).ConfigureAwait(true);
+        await RefreshMovesAsync(id).ConfigureAwait(true);
+    });
+
+    public Task KeepInterruptedAsync() => WithDesktopDoAsync(async id =>
+    {
+        if (_interrupted is { } stopped)
+        {
+            MovesMessage = await _moves.KeepInterruptedAsync(id, stopped).ConfigureAwait(true) ?? "Kept. Everything stays where it is now.";
+        }
+
+        await RefreshMovesAsync(id).ConfigureAwait(true);
+    });
+
+    public async Task<DesktopMoveResult?> PutBackInterruptedAsync()
+    {
+        if (_desktopId is not { } id || _interrupted is not { } stopped)
+        {
+            return null;
+        }
+
+        DesktopMoveResult? result = null;
+        await RunAsync(async () =>
+        {
+            result = await _moves.PutBackInterruptedAsync(id, stopped).ConfigureAwait(true);
+            MovesMessage = result.Summary;
+            if (!result.NeedsPermission)
+            {
+                await RefreshMovesAsync(id).ConfigureAwait(true);
+            }
+        }).ConfigureAwait(true);
+        return result;
+    }
+
+    /// <summary>The yes, a change that stopped part-way (asked about before anything else), and each card's Put back.</summary>
+    private async Task RefreshMovesAsync(Guid id)
+    {
+        CanMoveThings = await _moves.CanMoveAsync(id).ConfigureAwait(true);
+        _interrupted = await _moves.FindInterruptedAsync(id).ConfigureAwait(true);
+        OnPropertyChanged(nameof(HasInterrupted));
+        OnPropertyChanged(nameof(InterruptedText));
+        OnPropertyChanged(nameof(CanPutBackInterrupted));
+        OldStuff.ShowLast(_interrupted is null ? await _moves.FindLastAsync(id, DesktopMoveCard.ClearOldStuff).ConfigureAwait(true) : null);
+        FolderByGroup.ShowLast(_interrupted is null ? await _moves.FindLastAsync(id, DesktopMoveCard.FolderByGroup).ConfigureAwait(true) : null);
+    }
+
+    private Task WithDesktopDoAsync(Func<Guid, Task> action)
+    {
+        if (_desktopId is not { } id)
+        {
+            Message = DesktopGroupingService.NotConnected;
+            return Task.CompletedTask;
+        }
+
+        return RunAsync(() => action(id));
     }
 
     internal static string Count(int items) => items == 1 ? "1 item" : $"{items} items";

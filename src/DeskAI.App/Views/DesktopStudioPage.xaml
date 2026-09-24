@@ -39,6 +39,27 @@
                         Tag="{x:Bind Path}" Click="OnMoveClick" />
             </Grid>
         </DataTemplate>
+
+        <x:Double x:Key="MoveListMaxHeight">320</x:Double>
+
+        <DataTemplate x:Key="MoveItemTemplate" x:DataType="viewmodels:DesktopMoveItemViewModel">
+            <Grid ColumnDefinitions="Auto,Auto,*" ColumnSpacing="8" Padding="0,2">
+                <CheckBox IsChecked="{x:Bind IsTicked, Mode=TwoWay}" MinWidth="0" VerticalAlignment="Top"
+                          AutomationProperties.Name="{x:Bind Name}" />
+                <FontIcon Grid.Column="1" Glyph="{x:Bind Glyph}" FontSize="14" Margin="0,8,0,0" VerticalAlignment="Top"
+                          Foreground="{ThemeResource DeskTextSecondaryBrush}" />
+                <StackPanel Grid.Column="2" Margin="0,5,0,0">
+                    <TextBlock Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind Name}" />
+                    <TextBlock Style="{StaticResource CaptionStyle}" Text="{x:Bind Detail}" TextWrapping="Wrap" />
+                    <TextBlock Style="{StaticResource CaptionStyle}" Text="{x:Bind Warning}" TextWrapping="Wrap"
+                               Visibility="{x:Bind HasWarning}" />
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="LeftAloneTemplate">
+            <TextBlock Style="{StaticResource CaptionStyle}" Text="{Binding}" TextWrapping="Wrap" />
+        </DataTemplate>
     </Page.Resources>
 
     <ScrollViewer HorizontalScrollBarVisibility="Disabled" HorizontalContentAlignment="Stretch">
@@ -152,6 +173,105 @@
                     </StackPanel>
                 </Border>
             </StackPanel>
+
+            <!-- A change that stopped part-way is asked about before anything else moves. -->
+            <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.HasInterrupted, Mode=OneWay}">
+                <StackPanel Spacing="10">
+                    <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Your last change stopped part-way" />
+                    <TextBlock TextWrapping="Wrap" Text="{x:Bind ViewModel.InterruptedText, Mode=OneWay}" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Keep them where they are" Click="OnKeepInterruptedClick" />
+                        <Button Content="Put them back" Visibility="{x:Bind ViewModel.CanPutBackInterrupted, Mode=OneWay}"
+                                Click="OnPutBackInterruptedClick" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.IsDesktopConnected, Mode=OneWay}">
+                <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                           Visibility="{x:Bind ViewModel.CannotMoveThings, Mode=OneWay}"
+                           Text="The cards below move things on your Desktop. DeskAI asks before the first move, and Put back returns everything." />
+                <HyperlinkButton Content="Stop DeskAI moving things on my Desktop" Padding="0"
+                                 Visibility="{x:Bind ViewModel.CanMoveThings, Mode=OneWay}" Click="OnStopMovingClick" />
+                <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                           Text="{x:Bind ViewModel.MovesMessage, Mode=OneWay}" Visibility="{x:Bind ViewModel.HasMovesMessage, Mode=OneWay}" />
+            </StackPanel>
+
+            <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.IsDesktopConnected, Mode=OneWay}">
+                <StackPanel Spacing="14">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Clear old stuff" />
+                            <controls:HelpButton Topic="studio.oldStuff" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                   Text="Folders and files you haven't changed in 6 months go into one Old stuff folder on your Desktop. Nothing is deleted." />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Show what would move" Tag="OldStuff" Click="OnPreviewClick" />
+                        <Button Style="{StaticResource AccentButtonStyle}" Tag="OldStuff" Click="OnApplyClick"
+                                Content="{x:Bind ViewModel.OldStuff.ApplyButtonText, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.OldStuff.HasPreview, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.OldStuff.CanApply, Mode=OneWay}" />
+                        <Button Content="Put back" Tag="OldStuff" Click="OnPutBackClick"
+                                Visibility="{x:Bind ViewModel.OldStuff.CanPutBack, Mode=OneWay}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                               Text="{x:Bind ViewModel.OldStuff.LastText, Mode=OneWay}" Visibility="{x:Bind ViewModel.OldStuff.CanPutBack, Mode=OneWay}" />
+                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                               Text="{x:Bind ViewModel.OldStuff.Message, Mode=OneWay}" Visibility="{x:Bind ViewModel.OldStuff.HasMessage, Mode=OneWay}" />
+                    <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.OldStuff.HasPreview, Mode=OneWay}">
+                        <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.OldStuff.TotalText, Mode=OneWay}" />
+                        <ScrollViewer MaxHeight="{StaticResource MoveListMaxHeight}" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.OldStuff.Items}" AutomationProperties.Name="Old things that would move"
+                                          ItemTemplate="{StaticResource MoveItemTemplate}" />
+                        </ScrollViewer>
+                    </StackPanel>
+                    <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.OldStuff.HasLeftAlone, Mode=OneWay}">
+                        <TextBlock Style="{StaticResource CaptionStyle}" FontWeight="SemiBold" Text="Left where they are" />
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.OldStuff.LeftAlone}" AutomationProperties.Name="Old things left where they are"
+                                      ItemTemplate="{StaticResource LeftAloneTemplate}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Border Style="{StaticResource CardStyle}" Visibility="{x:Bind ViewModel.IsDesktopConnected, Mode=OneWay}">
+                <StackPanel Spacing="14">
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Folder by group" />
+                            <controls:HelpButton Topic="studio.folderByGroup" VerticalAlignment="Center" />
+                        </StackPanel>
+                        <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
+                                   Text="Each group from Find groups goes into its own folder on your Desktop. Not sure stays where it is." />
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <Button Content="Show what would move" Tag="FolderByGroup" Click="OnPreviewClick" />
+                        <Button Style="{StaticResource AccentButtonStyle}" Tag="FolderByGroup" Click="OnApplyClick"
+                                Content="{x:Bind ViewModel.FolderByGroup.ApplyButtonText, Mode=OneWay}"
+                                Visibility="{x:Bind ViewModel.FolderByGroup.HasPreview, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.FolderByGroup.CanApply, Mode=OneWay}" />
+                        <Button Content="Put back" Tag="FolderByGroup" Click="OnPutBackClick"
+                                Visibility="{x:Bind ViewModel.FolderByGroup.CanPutBack, Mode=OneWay}" />
+                    </StackPanel>
+                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                               Text="{x:Bind ViewModel.FolderByGroup.LastText, Mode=OneWay}" Visibility="{x:Bind ViewModel.FolderByGroup.CanPutBack, Mode=OneWay}" />
+                    <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                               Text="{x:Bind ViewModel.FolderByGroup.Message, Mode=OneWay}" Visibility="{x:Bind ViewModel.FolderByGroup.HasMessage, Mode=OneWay}" />
+                    <StackPanel Spacing="8" Visibility="{x:Bind ViewModel.FolderByGroup.HasPreview, Mode=OneWay}">
+                        <TextBlock FontWeight="SemiBold" Text="{x:Bind ViewModel.FolderByGroup.TotalText, Mode=OneWay}" />
+                        <ScrollViewer MaxHeight="{StaticResource MoveListMaxHeight}" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{x:Bind ViewModel.FolderByGroup.Items}" AutomationProperties.Name="Group things that would move"
+                                          ItemTemplate="{StaticResource MoveItemTemplate}" />
+                        </ScrollViewer>
+                    </StackPanel>
+                    <StackPanel Spacing="4" Visibility="{x:Bind ViewModel.FolderByGroup.HasLeftAlone, Mode=OneWay}">
+                        <TextBlock Style="{StaticResource CaptionStyle}" FontWeight="SemiBold" Text="Left where they are" />
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.FolderByGroup.LeftAlone}" AutomationProperties.Name="Group things left where they are"
+                                      ItemTemplate="{StaticResource LeftAloneTemplate}" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </Page>
