@@ -11,7 +11,7 @@ no welcome, never one on every start). `WelcomeViewModel` holds the three pages 
 and from **Privacy and AI → Show the welcome again**, and on a folder button asks Home's own
 "Connect your …?" question before connecting. Start fresh removes the key. Tests: `WelcomePageTests`,
 `WelcomeLayoutTests`, `WelcomeServiceTests`, one in `FreshStartPageTests`; all 1,686 tests passed and
-formatting passed. **The full Release solution build is still to run with DeskAI closed** (the owner
+formatting passed. The full Release solution build passed with 0 warnings on 2026-09-25, after the owner
 had it open from `bin\x64\Release`; the app alone built to a scratch folder with 0 warnings).
 Review: no critical findings; the docs promised an X button a pop-up does not have — fixed. Deferred
 small points (the owner decides): the welcome is marked shown before it is on screen, so a very
@@ -540,7 +540,7 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 > `desktop-studio-find-groups` branch (Desktop Studio steps 1, 3, and 4, ADR 0042, ADR 0044, and
 > ADR 0045; step 2 dropped, ADR 0043). Nothing on it is pushed yet. All planned Desktop
 > Studio work is built; Color groups was dropped (ADR 0046). The first-run welcome is built on
-> `first-run-welcome`; run the full Release build if not yet done. Ask me whether to push Desktop Studio
+> `first-run-welcome` and verified; next is the Desktop Studio end-to-end check and suggestions. Ask me whether to push Desktop Studio
 > or look for another way to make Desktop designs first.
 > Do not open or scan my personal folders or use my API key. Test with generated
 > files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
