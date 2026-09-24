@@ -1,43 +1,74 @@
 # DeskAI — Coding Handoff
 
-## Start here (updated 2026-09-24)
+## Start here (updated 2026-09-24, after Desktop Studio step 1)
 
-**State of `main`:** clean and committed, not pushed, tagged, or released. The last commits are
-`1de04d5` (Search finds more of your files, ADR 0041), `661c0e6` (Desktop Studio design),
-and `6cb3309` (the plan for Desktop Studio step 1). The full suite was 1,439 passing tests with
-0 warnings after `1de04d5`; the two later commits are documents only.
+**State:** Desktop Studio step 1, **Find groups**, is built on the branch
+`desktop-studio-find-groups` (from `2153fdd` on `main`), one commit per plan task. Not merged,
+pushed, tagged, or released until the owner says so. The Release build had 0 warnings, all
+1,507 tests passed, and formatting verification passed. The owner chose to build it in one
+session (Native) with one review of the whole branch at the end.
 
-**Next task: build Desktop Studio step 1, "Find groups".**
-- Design (owner-approved in conversation): `docs/superpowers/specs/2026-09-24-desktop-studio-design.md`.
-- Plan (7 tasks, written and committed): `docs/superpowers/plans/2026-09-24-desktop-studio-find-groups.md`.
-- The owner said "let's start building" but has **not yet chosen how**: Native (the
-  recommendation — one session builds all 7 tasks, then one reviewer checks the branch) or
-  Subagent-driven. Ask that one question, then execute with `superpowers:executing-plans`
-  (Native) or `superpowers:subagent-driven-development`.
-- Task 1 (ADR 0042 and the security review) comes before any code. Build step 1 only; steps
-  2–5 (Keep together / Make zones / Name the zones, Clear old stuff / Folder by group, Tag
-  names, Color groups) each need their own plan later.
+**What was built** (ADR 0042, review `docs/security/2026-09-24-desktop-grouping-review.md`):
+a **Desktop Studio** page in the menu after Automatic tasks. Its one card, Find groups, sorts
+the connected Desktop's folders and loose files into at most 8 groups plus Not sure, either by
+AI after a Send window listing exactly what goes (per folder: name, kinds of files, up to 5 file
+names; per file: its name) or by DeskAI's own guess from the kinds of files. The person can
+rename, merge, and move. The board is stored per folder (schema 16) and erased with it. Nothing
+changes on disk or in Windows. Details in the dated section below.
 
-**Decisions the owner made on 2026-09-24 that are not yet in code** (all also recorded in the spec):
-- DeskAI's core idea: connect the Desktop and make it sorted *and* good-looking — folders and
-  files. "Put everything in big folders" is only one design among several.
-- Every Desktop Studio feature is chosen on its own; one never turns on another. Page name
-  **Desktop Studio**; naming style "short and friendly": Find groups, Keep together, Make zones,
-  Name the zones, Clear old stuff, Folder by group, Tag names, Color groups.
-- AI decides the groups (at most 8, AI-named, person can rename/merge/move); without AI,
-  DeskAI's simpler guess.
-- AI may see per folder its name, kinds of files inside, and up to 5 file names, only after the
-  exact list is shown and Send is pressed.
-- Build order: Find groups → screen designs (icon positions + labelled wallpaper, after a
-  feasibility probe) → Clear old stuff and Folder by group → Tag names → Color groups (after a probe).
+**Next task:** the owner checks step 1 by hand (see the dated section), then step 2 of the
+design, which starts with the **icon-position feasibility probe** for Keep together / Make zones
+/ Name the zones. It needs its own plan (`superpowers:writing-plans`), ADR, and security review
+before any code. Ask the owner first; do not start it unasked.
+
+**Decisions the owner made that are not yet in code** (also in
+`docs/superpowers/specs/2026-09-24-desktop-studio-design.md`):
+- Every Desktop Studio card is chosen on its own; one never turns on another. Naming style
+  "short and friendly": Keep together, Make zones, Name the zones, Clear old stuff, Folder by
+  group, Tag names, Color groups.
+- Build order after step 1: screen designs (icon positions + labelled wallpaper, after a probe)
+  → Clear old stuff and Folder by group → Tag names → Color groups (after a probe). Each step is
+  released and checked by the owner before the next.
 
 **Open with the owner:**
-- They tested the new Search and shared two screenshots **as paths in their real Pictures
-  folder**. Per CLAUDE.md they were not opened; they were asked to paste the images into the
-  chat instead. Ask for them, and act on what they show before or alongside step 1.
-- Other improvement ideas they have not picked yet, in the suggested order: code signing, an
-  opt-in "newer version?" button, re-enabling picture search after a fresh review, Recycle Bin
-  for proven copies, a first-run guide, architecture guard tests.
+- Merge the branch into `main`? (Asked at the end of step 1.)
+- The GSD skill was installed on 2026-09-24. It is **not set up** in this repository (no
+  `.planning/`). The recommendation given: keep `docs/ROADMAP.md`, this file, and
+  `docs/superpowers/plans/` as the only plan, and use GSD only for reviews, debugging, and small
+  fixes, so there are never two roadmaps. The owner has not answered yet.
+- Their Search screenshots were shared as paths in their real Pictures folder and were not
+  opened (CLAUDE.md). Ask them to paste the images into the chat.
+- Other improvement ideas not yet picked, in the suggested order: code signing, an opt-in
+  "newer version?" button, re-enabling picture search after a fresh review, Recycle Bin for
+  proven copies, a first-run guide, architecture guard tests.
+
+## 2026-09-24 Desktop Studio step 1: Find groups
+
+Built from `docs/superpowers/plans/2026-09-24-desktop-studio-find-groups.md` in 7 tasks
+(ADR and review first, then scanner, reader, AI connection, storage and service, page, docs).
+
+- **Data flow.** The scanner now also reports each folder it passes (`FolderDiscovered`).
+  `DesktopLookService` makes one bounded, read-only look at the connected Desktop (4 levels,
+  5,000 entries; at most 60 folders and 200 files kept, the rest guessed locally and never
+  sent). `DesktopGroupingService.PrepareAsync` numbers the items and builds the exact lines the
+  Send window shows; `SendAsync` re-checks the Desktop, the AI choice, and the sharing choices,
+  then calls `IOrganizationSuggestionProvider.GroupItemsAsync`, the one AI connection's third
+  method, which returns text only. `DesktopGroupReading` accepts one exact JSON shape or refuses
+  the whole answer. `desktop_group_boards` (schema 16) keeps the board, cascading with the
+  folder. `DesktopStudioViewModel` and `DesktopStudioPage` show it.
+- **Safety.** Online AI is used only if the sharing choices allow file types, file names, and
+  folder names (checked when preparing, at Send, and in the AI connection). Names travel as data
+  between markers. Hidden, system, link, and protected items, and any top-level folder holding
+  one (DeskAI's own program folder), never appear. The service holds no executor, journal,
+  writer, or setting changer (a test checks). The page reads no disk: the board records which
+  items are folders.
+- **Owner's manual checks:** open Desktop Studio; connect the Desktop if asked; press **Use
+  DeskAI's guess** and check the groups; if AI is on, press **Find groups with …** and check the
+  window lists only names and kinds of files, then Send or Cancel; rename, merge, and move;
+  close and reopen DeskAI and check the board is kept; check that nothing on the Desktop moved.
+- **Known limits:** an AI board's "Grouped by …" note names the AI set up now, not necessarily
+  the one that made it. A Desktop with more than 60 folders or 200 loose files is only partly
+  sorted by AI.
 
 ## 2026-09-24 Search finds more of your files
 
@@ -344,12 +375,13 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 ## Copy-paste starter prompt
 
 > Continue DeskAI in the repository checkout. Read `AGENTS.md`, `docs/HANDOFF.md` ("Start
-> here" first), and especially `docs/SECURITY.md`; confirm `6cb3309` is in the checkout and
-> inspect Git status. Next is Desktop Studio step 1, "Find groups", from
-> `docs/superpowers/plans/2026-09-24-desktop-studio-find-groups.md`. Ask me whether to build it
-> Native or Subagent-driven, then build step 1 only. I will paste my Search screenshots into
-> the chat. Do not open or scan my personal folders or use my API key. Test with generated
-> files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
+> here" first), and especially `docs/SECURITY.md`; inspect Git status and whether the
+> `desktop-studio-find-groups` branch (Desktop Studio step 1, Find groups, ADR 0042) is merged.
+> Next, after my manual check of step 1, is Desktop Studio step 2, starting with the
+> icon-position feasibility probe: write its plan first and ask me before building. I will
+> paste my Search screenshots into the chat. Do not open or scan my personal folders or use my
+> API key. Test with generated files, update docs, and commit each task. Ask before pushing,
+> tagging, or releasing.
 
 ## How to update this file
 

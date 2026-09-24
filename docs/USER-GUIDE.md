@@ -24,6 +24,9 @@ happens, and every move is written down so it can be undone.
   connected folder or search all of them.
 - **Automatic tasks** — write rules ("move invoices to Documents"), try them as a practice run,
   and let DeskAI check your folders every so often and tell you when something matches.
+- **Desktop Studio** — make your Desktop easier to find your way around. So far it has one
+  card, **Find groups**, which sorts what sits on your Desktop into groups. It changes nothing
+  on your PC.
 - **My workspace** — starter packs, pinned searches, folder templates, DeskAI's look, and
   your wallpaper.
 - **Privacy and AI** — what AI (if any) DeskAI uses and what it may see, your backup, and
@@ -102,6 +105,29 @@ back. Choosing a different AI service asks again. Only the question is sent. The
 AI says what kind of question it is; DeskAI then looks in what it remembers and answers itself,
 with one button to open Search or Organize or to connect a folder. It never sends anything about
 your files and never moves anything.
+
+## Desktop Studio
+
+Open **Desktop Studio** from the menu. If your Desktop is not connected yet, press **Connect
+Desktop**; DeskAI then knows the names of what sits there, reads nothing inside, and moves
+nothing.
+
+**Find groups** puts the folders and files on your Desktop into up to 8 groups, plus **Not
+sure** for anything that fits nowhere.
+
+- **Use DeskAI's guess** works without AI. DeskAI looks at the kinds of files, for example a
+  folder full of `.py` files goes to "Coding", and says the groups are its own simpler guess.
+- **Find groups with …** appears when AI is on. First you see the exact list the AI would get:
+  each folder's name, the kinds of files inside, and up to 5 file names, and each loose file's
+  name. Never what is inside the files, and never where they are. Nothing goes until you press
+  **Send**. With online AI, your sharing choices in Privacy and AI must allow file types, file
+  names, and folder names; the page tells you if they don't.
+- **Rename** a group, **Merge into…** another, or **Move to…** any item. The board is kept when
+  you close DeskAI. Something you deleted or renamed on your Desktop drops off the board next
+  time, and something new shows up under Not sure.
+
+DeskAI's own program folder is never on the board. Disconnecting the Desktop or Start fresh
+forgets the board. Nothing on this page moves, renames, or opens your files, or changes Windows.
 
 ## Backups, moving computers, and leaving
 

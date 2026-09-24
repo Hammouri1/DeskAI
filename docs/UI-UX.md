@@ -14,7 +14,7 @@ Primary navigation:
 - **Automation** — deterministic rules, simulations, approval scope, schedules/watchers, and run history.
 - **Settings** — AI mode/provider, privacy/disclosure, authorized and protected locations, appearance, data/history, diagnostics, and About.
 
-Storage insights may begin on Dashboard and later gain a dedicated view. Workspace Profiles/Design appear only when implemented, not as misleading active navigation. Since V0.7's first slice (2026-09-14) the side menu reads Home, Organize, Search, Automatic tasks, **My workspace**, Privacy and AI; My workspace holds only what is built — pinned searches and starter packs — and later V0.7 pieces join it when they exist. On 2026-09-16 the owner was offered simpler names ("Tidy up", "Checks that run for you", "Privacy") and chose to keep these; the menu is grouped under "Your files", "DeskAI for you", and "Settings" instead (see the command-center shell below).
+Storage insights may begin on Dashboard and later gain a dedicated view. Workspace Profiles/Design appear only when implemented, not as misleading active navigation. Since V0.7's first slice (2026-09-14) the side menu reads Home, Organize, Search, Automatic tasks, **My workspace**, Privacy and AI (Desktop Studio joined after Automatic tasks on 2026-09-24, ADR 0042); My workspace holds only what is built — pinned searches and starter packs — and later V0.7 pieces join it when they exist. On 2026-09-16 the owner was offered simpler names ("Tidy up", "Checks that run for you", "Privacy") and chose to keep these; the menu is grouped under "Your files", "DeskAI for you", and "Settings" instead (see the command-center shell below).
 
 ## First-Run Experience
 
@@ -357,7 +357,7 @@ The window uses a Mica backdrop, pages paint `DeskGroundBrush`, and the navigati
 
 **The command-center shell (2026-09-16, design `docs/superpowers/specs/2026-09-16-command-center-redesign-design.md`).** The owner asked for a professional dashboard feel from a reference screenshot and chose to keep the menu names. What every page now has:
 
-- **A grouped menu.** Small grey labels ("Your files": Home, Organize, Search; "DeskAI for you": Automatic tasks, My workspace; "Settings": Privacy and AI) above the same six items, the DeskAI mark and name at the top, and the pane painted with the surface colour so it reads as one panel in every look. The selected item sits on a neutral raised pill, never the accent. `ShellViewModel.Pages` holds the six routes and names for the top bar, and `ShellLayoutTests` reads `MainWindow.xaml` to keep the two lists identical, in order.
+- **A grouped menu.** Small grey labels ("Your files": Home, Organize, Search; "DeskAI for you": Automatic tasks, Desktop Studio, My workspace; "Settings": Privacy and AI) above the items (seven since Desktop Studio joined on 2026-09-24), the DeskAI mark and name at the top, and the pane painted with the surface colour so it reads as one panel in every look. The selected item sits on a neutral raised pill, never the accent. `ShellViewModel.Pages` holds the routes and names for the top bar, and `ShellLayoutTests` reads `MainWindow.xaml` to keep the two lists identical, in order.
 - **A top bar** above the page: the page name on the left; on the right a search box ("Find a file…") and the **AI pill**. Enter in the box leaves the phrase in the same one-shot `SearchRequest` that "Open in Search" uses and opens Search with it already run, so it grants nothing a person could not type on Search. The pill reads "AI off", "AI on this computer", or "AI: OpenRouter", from the saved AI choice on every refresh — only a service that is actually ready (consent given, key reference saved, a catalog service) is named, so the pill can never claim a service that cannot be asked. Pressing it only opens Privacy and AI.
 - **A dark-mode switch** in the pane footer, above the scope reminder. It saves the same light/dark choice My workspace offers (an explicit Light or Dark; "Follow Windows" stays available there), repaints the DeskAI window at once, and touches nothing in Windows. While following Windows it shows the theme the window is actually painting, reported by the window because the view model cannot see WinUI.
 - **Rounder surfaces**: 12px cards and soft cards, 10px row cards, the hero's free corners at 14px; the accent rail is unchanged. New shared styles: `TileStyle` (a soft-tinted stat tile), `PillStyle` / `AccentPillStyle` / `CautionPillStyle` with `PillTextStyle` (an icon and a word, never colour alone; accent only for a permission or a confirmed state, caution for paused or needs-a-look), `GroupLabelStyle`, and `TopBarStyle`.
@@ -467,3 +467,16 @@ whether <service> answers." — never "ready", which DeskAI had not checked. A r
 "Not saved." followed by a sentence a person can act on, and also opens a dialog headed
 **DeskAI did not save that yet**: the status line alone sat below the fold in small grey text,
 and the owner read a filled-in form and an unchanged page as a broken app (2026-09-17).
+
+**Desktop Studio (2026-09-24, ADR 0042).** A page in the menu after Automatic tasks, titled
+"Desktop Studio" with the line "Make your Desktop easier to find your way around. Each card does
+one job, and nothing changes until you choose." Until the Desktop is connected it shows only a
+**Connect Desktop** card, using the same dialog as the Your folders card. The **Find groups** card
+says "DeskAI sorts the folders and files on your Desktop into groups. Nothing on your PC
+changes." and offers **Find groups with <service>** (only when AI is set up) and **Use DeskAI's
+guess**. The AI button opens a Send window listing every line the AI would see, with the service
+and its address, "names and kinds of files. Not what is inside them, and not where they are.",
+and **Send** / **Cancel** (Cancel is the default). The board shows who made it ("Grouped by
+OpenRouter." or "Grouped by DeskAI's own simpler guess."), one card per group with **Rename** and
+**Merge into…**, each item with a folder or file icon and **Move to…**, and a **Not sure** card
+last. Later cards (Keep together, Make zones, and so on) join this page one at a time.

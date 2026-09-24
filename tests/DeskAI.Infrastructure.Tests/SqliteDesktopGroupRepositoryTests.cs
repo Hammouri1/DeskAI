@@ -21,7 +21,8 @@ public sealed class SqliteDesktopGroupRepositoryTests
             [new DesktopGroup("School", ["Essays", "report.docx"]), new DesktopGroup("Coding", ["Python stuff"])],
             ["holiday.jpg"],
             DesktopGroupSource.Ai,
-            MadeAt) { Folders = new HashSet<string> { "Essays", "Python stuff" } };
+            MadeAt)
+        { Folders = new HashSet<string> { "Essays", "Python stuff" } };
 
         await world.Repository.SaveAsync(board, TestContext.Current.CancellationToken);
         var loaded = await world.Repository.LoadAsync(world.RootId, TestContext.Current.CancellationToken);

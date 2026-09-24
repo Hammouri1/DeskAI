@@ -558,6 +558,23 @@ security review.
 The older **Let AI read this** button interprets only the typed sentence. The separate
 picture action reads a bounded batch after an explicit choice and asks AI about its pixels.
 
+## Desktop Studio — 2026-09-24
+
+The owner's core idea: connect the Desktop and make it sorted *and* good-looking, folders and
+files. One page, **Desktop Studio**, with one card per feature; each is chosen on its own and
+previews first. Design: `docs/superpowers/specs/2026-09-24-desktop-studio-design.md`. Each step
+is released and checked by the owner before the next.
+
+- ✅ 2026-09-24: **Step 1 — Find groups** (ADR 0042). AI (after an exact Send window) or DeskAI's
+  own guess sorts the Desktop's folders and loose files into at most 8 groups plus Not sure; the
+  person renames, merges, and moves. Stored per folder (schema 16), erased with it. Changes
+  nothing on disk or in Windows.
+- Step 2 — icon-position feasibility probe, then **Keep together**, **Make zones**, and
+  **Name the zones** (labelled wallpaper). Planned; needs its own plan, ADR, and review.
+- Step 3 — **Clear old stuff** and **Folder by group** (move a folder). Planned.
+- Step 4 — **Tag names** (rename a folder). Planned.
+- Step 5 — color-icon probe, then **Color groups**. Planned.
+
 ## Explicitly Deferred Beyond V1 Unless Reprioritized
 
 Cross-platform clients, team/cloud sync, hosted accounts, model training on user data, broad Windows control, widgets, rich desktop-shell replacement, marketplace-scale plugins, and automatic permanent deletion.

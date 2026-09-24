@@ -72,6 +72,12 @@ optionally let DeskAI keep checking after you close its window, from an icon nea
 In a folder where you have separately said yes, it can tidy while you are away — at most 25
 rule-matched files per run, stopping on anything unexpected, always undoable.
 
+**Desktop Studio.** Connect your Desktop and press **Find groups**: DeskAI sorts the folders
+and files sitting on it into up to 8 groups, such as "Coding" or "School", that you can rename,
+merge, and rearrange. With AI, you first see the exact list of names and kinds of files the AI
+would get; without AI, DeskAI makes a simpler guess from the kinds of files. Nothing on your PC
+changes. Arranging the Desktop by those groups comes in later steps.
+
 **Making it yours.** Folder templates, starter packs, themes, dark mode, wallpaper, and a backup
 and restore of your rules and saved searches.
 
@@ -136,7 +142,7 @@ These are properties of the code, each covered by tests:
 
 - C# on .NET 10, WinUI 3 / Windows App SDK, XAML — unpackaged, self-contained, x64
 - MVVM presentation, dependency injection at the composition root, async and cancellable I/O
-- SQLite (schema version 15) for settings, rules, saved searches, plans, the metadata index, and
+- SQLite (schema version 16) for settings, rules, saved searches, plans, the metadata index, the Desktop groups board, and
   the operation journal
 - xUnit — more than 1,400 tests across five projects, including page tests that use each feature the way a
   person does
