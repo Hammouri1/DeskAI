@@ -12,6 +12,7 @@ public sealed class NavigationService(IServiceProvider serviceProvider) : INavig
         ["organize"] = typeof(OrganizePage),
         ["search"] = typeof(SearchPage),
         ["automation"] = typeof(AutomationPage),
+        ["studio"] = typeof(DesktopStudioPage),
         ["workspace"] = typeof(WorkspacePage),
         ["settings"] = typeof(SettingsPage),
     };

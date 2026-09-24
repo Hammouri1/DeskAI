@@ -126,6 +126,7 @@ public sealed class DesktopGroupingServiceTests
         Assert.Equal(["Python stuff"], board.Groups[0].Items);
         Assert.Equal(["report.docx"], board.NotSure);
         Assert.Equal(DesktopGroupSource.Ai, board.Source);
+        Assert.Equal(["Python stuff"], board.Folders);
     }
 
     [Fact]
@@ -176,6 +177,7 @@ public sealed class DesktopGroupingServiceTests
         Assert.Equal(["Coding", "Pictures"], result.Board!.Groups.Select(g => g.Name));
         Assert.Equal(["mystery"], result.Board.NotSure);
         Assert.Equal(DesktopGroupSource.LocalGuess, result.Board.Source);
+        Assert.Equal(["Python stuff"], result.Board.Folders);
         Assert.Equal(0, world.Ai.Calls);
     }
 

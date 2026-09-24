@@ -30,6 +30,9 @@ public sealed record DesktopGroupBoard(
     public const int MaxGroups = 8;
     public const string NotSureName = "Not sure";
 
+    /// <summary>Which items were folders when last looked at, so the page never has to look at the disk.</summary>
+    public IReadOnlySet<string> Folders { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
     /// <summary>Why a group name cannot be used on this board, or null when it can.</summary>
     public static string? CheckName(string name, IEnumerable<string> otherNames)
     {

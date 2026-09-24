@@ -19,7 +19,7 @@ public sealed class SqliteDesktopGroupRepository(IOptions<DatabaseOptions> optio
 {
     private sealed record StoredGroup(string Name, string[] Items);
 
-    private sealed record StoredBoard(StoredGroup[] Groups, string[] NotSure);
+    private sealed record StoredBoard(StoredGroup[] Groups, string[] NotSure, string[]? Folders);
 
     private static readonly JsonSerializerOptions Json = new() { MaxDepth = 4, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     private readonly string _databasePath = options.Value.DatabasePath;
@@ -49,7 +49,10 @@ public sealed class SqliteDesktopGroupRepository(IOptions<DatabaseOptions> optio
                 stored.Groups.Select(g => new DesktopGroup(g.Name, g.Items)).ToList(),
                 stored.NotSure,
                 reader.GetInt32(0) == 1 ? DesktopGroupSource.LocalGuess : DesktopGroupSource.Ai,
-                DateTimeOffset.Parse(reader.GetString(1), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind));
+                DateTimeOffset.Parse(reader.GetString(1), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind))
+            {
+                Folders = (stored.Folders ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase),
+            };
         }
         catch (Exception exception) when (exception is JsonException or FormatException)
         {
@@ -61,7 +64,8 @@ public sealed class SqliteDesktopGroupRepository(IOptions<DatabaseOptions> optio
     {
         ArgumentNullException.ThrowIfNull(board);
         var json = JsonSerializer.Serialize(
-            new StoredBoard(board.Groups.Select(g => new StoredGroup(g.Name, g.Items.ToArray())).ToArray(), board.NotSure.ToArray()),
+            new StoredBoard(
+                board.Groups.Select(g => new StoredGroup(g.Name, g.Items.ToArray())).ToArray(), board.NotSure.ToArray(), board.Folders.ToArray()),
             Json);
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
         await using var command = connection.CreateCommand();

@@ -83,8 +83,10 @@ public sealed class ShellPageTests
         Assert.Equal("Automatic tasks", shell.PageTitle);
         shell.ShowPage("no-such-page");
         Assert.Equal("Automatic tasks", shell.PageTitle);
+        shell.ShowPage("studio");
+        Assert.Equal("Desktop Studio", shell.PageTitle);
         Assert.Equal(
-            ["Home", "Organize", "Search", "Automatic tasks", "My workspace", "Privacy and AI"],
+            ["Home", "Organize", "Search", "Automatic tasks", "Desktop Studio", "My workspace", "Privacy and AI"],
             ShellViewModel.Pages.Select(page => page.Title));
         shell.Dispose();
     }

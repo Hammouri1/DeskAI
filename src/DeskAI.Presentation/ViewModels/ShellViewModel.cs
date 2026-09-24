@@ -124,6 +124,7 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
         ("organize", "Organize"),
         ("search", "Search"),
         ("automation", "Automatic tasks"),
+        ("studio", "Desktop Studio"),
         ("workspace", "My workspace"),
         ("settings", "Privacy and AI"),
     ];

@@ -62,6 +62,10 @@ public sealed class DesktopGroupingService(
     public const string SharingNeeded = "To let AI sort your Desktop, allow sharing file types, file names, and folder names in Privacy and AI.";
     public const string AiNeeded = "Turn on AI in Privacy and AI first, or press Use DeskAI's guess.";
 
+    /// <summary>Which AI the person set up, if any, for the page's button and labels.</summary>
+    public async Task<AiTarget> GetAiAsync(CancellationToken cancellationToken = default) =>
+        AiTarget.Of(await aiSettings.LoadAsync(cancellationToken).ConfigureAwait(false));
+
     /// <summary>The connected folder that is the person's Desktop, or null.</summary>
     public async Task<AuthorizedRoot?> FindDesktopAsync(CancellationToken cancellationToken = default)
     {
@@ -110,6 +114,7 @@ public sealed class DesktopGroupingService(
         {
             Groups = board.Groups.Select(g => g with { Items = g.Items.Where(present.Contains).ToList() }).ToList(),
             NotSure = board.NotSure.Where(present.Contains).Concat(added).ToList(),
+            Folders = FoldersIn(seen.Everything),
         };
         await boards.SaveAsync(updated, cancellationToken).ConfigureAwait(false);
         var notes = new List<string>();
@@ -263,7 +268,12 @@ public sealed class DesktopGroupingService(
             groups.Select(g => new DesktopGroup(g.Name, g.Items)).ToList(),
             notSure,
             DesktopGroupSource.Ai,
-            clock.UtcNow);
+            clock.UtcNow)
+        {
+            Folders = question.Request.Items.Where(item => item.Kind == "folder").Select(item => question.PathsByNumber[item.Number - 1])
+                .Concat(question.LeftOutItems.Where(item => item.IsFolder).Select(item => item.RelativePath))
+                .ToHashSet(StringComparer.OrdinalIgnoreCase),
+        };
         await boards.SaveAsync(board, cancellationToken).ConfigureAwait(false);
         return new(true, board, message);
     }
@@ -290,7 +300,7 @@ public sealed class DesktopGroupingService(
         }
 
         var groups = localGrouper.Group(everything, out var notSure);
-        var board = new DesktopGroupBoard(rootId, groups, notSure, DesktopGroupSource.LocalGuess, clock.UtcNow);
+        var board = new DesktopGroupBoard(rootId, groups, notSure, DesktopGroupSource.LocalGuess, clock.UtcNow) { Folders = FoldersIn(everything) };
         await boards.SaveAsync(board, cancellationToken).ConfigureAwait(false);
         return new(true, board, GuessMessage);
     }
@@ -427,6 +437,9 @@ public sealed class DesktopGroupingService(
         };
         return $"Folder \"{item.Name}\": {details}";
     }
+
+    private static HashSet<string> FoldersIn(IEnumerable<DesktopItem> items) =>
+        items.Where(item => item.IsFolder).Select(item => item.RelativePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     private static bool SamePath(string first, string second) =>
         string.Equals(

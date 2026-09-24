@@ -54,6 +54,9 @@
             <NavigationViewItem Content="Automatic tasks" Tag="automation">
                 <NavigationViewItem.Icon><FontIcon Glyph="&#xE945;" /></NavigationViewItem.Icon>
             </NavigationViewItem>
+            <NavigationViewItem Content="Desktop Studio" Tag="studio">
+                <NavigationViewItem.Icon><FontIcon Glyph="&#xE7F4;" /></NavigationViewItem.Icon>
+            </NavigationViewItem>
             <NavigationViewItem Content="My workspace" Tag="workspace">
                 <NavigationViewItem.Icon><FontIcon Glyph="&#xE840;" /></NavigationViewItem.Icon>
             </NavigationViewItem>

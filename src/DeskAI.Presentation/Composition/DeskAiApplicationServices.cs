@@ -136,6 +136,7 @@ public static class DeskAiApplicationServices
         // the folder picker uses and grants nothing beyond that.
         services.AddTransient<PersonalFoldersViewModel>();
         services.AddTransient<AskDeskAiViewModel>();
+        services.AddTransient<DesktopStudioViewModel>();
         return services;
     }
 }
