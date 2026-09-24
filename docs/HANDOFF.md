@@ -21,7 +21,10 @@ name in front ("Coding – Python stuff"); files and Not sure keep their names. 
 now reads "Allow DeskAI to move or rename things on your Desktop?". Details in the dated section
 below.
 
-**Owner's manual checks for Tag names** (and step 3's, not yet done): on Desktop Studio press
+**Owner's manual checks: done, 2026-09-24.** The owner reported that every check below worked:
+Tag names (Rename, second press, Put back, Put back after reopening), Clear old stuff and Put each
+group in its own folder (Move, Put back), and Stop DeskAI moving things on my Desktop. The checks
+were: on Desktop Studio press
 **Find groups**, then **Add the group's name to each folder's name** and read the list (each
 folder says what it becomes; no files); press **Rename** and accept the dialog; check the folder
 names on the Desktop and that the board still shows them in their groups; press the button again
@@ -29,7 +32,8 @@ names on the Desktop and that the board still shows them in their groups; press 
 check the old names return; Rename again, close and reopen DeskAI, and check Put back is still
 offered. Step 3's checks: **Show what would move** on Clear old stuff, Move, look at the Old stuff
 folder, Put back; **Put each group in its own folder**, Move, Put back; **Stop DeskAI moving
-things on my Desktop**; check Organize's tidy permission for the Desktop did not change. The launchable exe is
+things on my Desktop**; check Organize's tidy permission for the Desktop did not change. The owner's
+report did not mention the last part (Organize's permission). The launchable exe is
 `src\DeskAI.App\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`.
 
 **Next task:** **Color groups**, the last Desktop Studio step. It starts with its own probe, like
