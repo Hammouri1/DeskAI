@@ -107,6 +107,16 @@ on "Windows Sandbox" in Windows Features (admin rights, one restart), run
 `tools/IconPositionProbe/Run-InSandbox.ps1`, and read `artifacts/icon-probe/results/report.txt`
 when it appears. Then close the Sandbox (it is thrown away). Never run the exe on your own PC.
 
+## Folder-Color Probe
+
+`tools/FolderColorProbe` is a development probe for ADR 0046, not part of the app. It gives four
+folders it makes a coloured icon and puts them back, so it runs only inside Windows Sandbox and
+refuses anywhere else. To run it: run `tools/FolderColorProbe/Run-InSandbox.ps1` and keep the
+Sandbox window open and in front (the probe reads its screen) until
+`artifacts/color-probe/results/report.txt` appears, about a minute. The same folder holds a
+picture of the Sandbox Desktop for each stage. Then close the Sandbox. Never run the exe on your
+own PC.
+
 ## Continuous Integration and Releases (V0.8)
 
 `.github/workflows/build.yml` runs on every push and pull request on a Windows runner: locked
