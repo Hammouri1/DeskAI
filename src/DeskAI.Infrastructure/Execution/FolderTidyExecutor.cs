@@ -69,6 +69,13 @@ public sealed class FolderTidyExecutor : IFolderTidyExecutor, IDisposable
         _lockPath = LockPathFor(database.Value.DatabasePath);
     }
 
+    /// <summary>
+    /// A tidy needs the tidy yes; a Desktop Studio run needs its own yes (ADR 0044). Neither one
+    /// stands in for the other.
+    /// </summary>
+    internal static bool MayRun(AuthorizedRoot root, PlanPurpose purpose) =>
+        purpose == PlanPurpose.Tidy ? RootCapabilities.CanTidy(root) : RootCapabilities.CanMoveFolders(root);
+
     /// <summary>How long a tidy or undo waits for another DeskAI window before refusing.</summary>
     public TimeSpan BusyWait { get; init; } = TimeSpan.FromSeconds(30);
 
@@ -95,11 +102,13 @@ public sealed class FolderTidyExecutor : IFolderTidyExecutor, IDisposable
         }
 
         var root = await _roots.FindAsync(plan.RootId, cancellationToken).ConfigureAwait(false);
-        if (root is null || !RootCapabilities.CanTidy(root))
+        if (root is null || !MayRun(root, plan.Purpose))
         {
             return Refuse(plan, approval, root is null
                 ? "That folder is no longer connected, so nothing was moved."
-                : "DeskAI may not tidy this folder, so nothing was moved.");
+                : plan.Purpose == PlanPurpose.Tidy
+                    ? "DeskAI may not tidy this folder, so nothing was moved."
+                    : "DeskAI may not move things here, so nothing was moved.");
         }
 
         if ((await FindUnfinishedAsync(root.Id, cancellationToken).ConfigureAwait(false)).Count > 0)
@@ -107,7 +116,7 @@ public sealed class FolderTidyExecutor : IFolderTidyExecutor, IDisposable
             return Refuse(plan, approval, OpenQuestionMessage);
         }
 
-        return await _runner.ExecuteAsync(new FolderTrust(root, _roots, _folders), plan, approval, expected, cancellationToken)
+        return await _runner.ExecuteAsync(new FolderTrust(root, _roots, _folders, plan.Purpose), plan, approval, expected, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -121,13 +130,16 @@ public sealed class FolderTidyExecutor : IFolderTidyExecutor, IDisposable
             ?? throw new InvalidOperationException("DeskAI could not find what that tidy did.");
         var root = await _roots.FindAsync(plan.RootId, cancellationToken).ConfigureAwait(false);
 
-        // Undo moves files too, so it needs the same permission as tidying (spec §1). The
-        // retired practice workspace never held it, so an old practice record cannot be undone.
-        if (root is null || !RootCapabilities.CanTidy(root))
+        // Undo moves files too, so it needs the same permission the run needed (spec §1, ADR
+        // 0044). The retired practice workspace never held one, so an old practice record cannot
+        // be undone.
+        if (root is null || !MayRun(root, plan.Purpose))
         {
             throw new InvalidOperationException(root is null
                 ? "That folder is no longer connected, so nothing was moved back."
-                : "Undo moves files too, so DeskAI needs your permission to tidy this folder again.");
+                : plan.Purpose == PlanPurpose.Tidy
+                    ? "Undo moves files too, so DeskAI needs your permission to tidy this folder again."
+                    : "Putting things back moves them too, so DeskAI needs your permission to move things on your Desktop again.");
         }
 
         if ((await FindUnfinishedAsync(root.Id, cancellationToken).ConfigureAwait(false)).Count > 0)
@@ -135,7 +147,7 @@ public sealed class FolderTidyExecutor : IFolderTidyExecutor, IDisposable
             throw new InvalidOperationException(OpenQuestionMessage);
         }
 
-        return await _runner.UndoAsync(new FolderTrust(root, _roots, _folders), transactionId, cancellationToken)
+        return await _runner.UndoAsync(new FolderTrust(root, _roots, _folders, plan.Purpose), transactionId, cancellationToken)
             .ConfigureAwait(false);
     }
 
@@ -334,7 +346,8 @@ public sealed class FolderTidyExecutor : IFolderTidyExecutor, IDisposable
     private sealed class FolderTrust(
         AuthorizedRoot root,
         IAuthorizedRootRepository roots,
-        IReadOnlyFolderService folders) : IRootTrust
+        IReadOnlyFolderService folders,
+        PlanPurpose purpose) : IRootTrust
     {
         public AuthorizedRoot Root => root;
 
@@ -346,9 +359,11 @@ public sealed class FolderTidyExecutor : IFolderTidyExecutor, IDisposable
                 throw new InvalidOperationException("That folder is no longer connected, so DeskAI stopped.");
             }
 
-            if (!RootCapabilities.CanTidy(current))
+            if (!MayRun(current, purpose))
             {
-                throw new InvalidOperationException("DeskAI may no longer tidy this folder, so it stopped.");
+                throw new InvalidOperationException(purpose == PlanPurpose.Tidy
+                    ? "DeskAI may no longer tidy this folder, so it stopped."
+                    : "DeskAI may no longer move things here, so it stopped.");
             }
 
             if (!string.Equals(

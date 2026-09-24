@@ -419,4 +419,288 @@ public sealed class FolderTidyExecutorTests
 
         public Task RevokeAsync(Guid rootId, CancellationToken cancellationToken = default) => throw new NotSupportedException();
     }
+
+    [Fact]
+    public async Task A_folder_moves_whole_and_undo_brings_it_back_with_what_was_added()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var desktop = sandbox.CreateDummyDirectory("Desktop");
+        sandbox.CreateDummyDirectory(@"Desktop\Old stuff");
+        sandbox.CreateDummyFile(@"Desktop\Old project\notes.txt");
+        var root = MovesAllowed(desktop);
+        var executor = Create(new DisconnectingRootRepository(root, int.MaxValue), new WindowsPathPolicy(), sandbox);
+        var move = FolderMove("Old project", @"Old stuff\Old project");
+        var plan = StudioPlan(root, move);
+
+        var result = await executor.ExecuteAsync(
+            plan, Approval.Create(Guid.NewGuid(), plan, [move.Id], DateTimeOffset.UtcNow),
+            new Dictionary<Guid, ExpectedFile> { [move.Id] = FolderFacts(Path.Combine(desktop, "Old project")) },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(ExecutionOutcome.Completed, Assert.Single(result.Operations).Outcome);
+        Assert.True(File.Exists(Path.Combine(desktop, "Old stuff", "Old project", "notes.txt")));
+        Assert.False(Directory.Exists(Path.Combine(desktop, "Old project")));
+
+        // Something added inside after the move goes back with the folder.
+        File.WriteAllText(Path.Combine(desktop, "Old stuff", "Old project", "added later.txt"), "Generated DeskAI test data");
+        var undo = await executor.UndoAsync(result.TransactionId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(ExecutionOutcome.Completed, Assert.Single(undo.Operations).Outcome);
+        Assert.True(File.Exists(Path.Combine(desktop, "Old project", "notes.txt")));
+        Assert.True(File.Exists(Path.Combine(desktop, "Old project", "added later.txt")));
+    }
+
+    [Fact]
+    public async Task A_folder_move_needs_its_own_yes_tidying_is_not_enough()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var desktop = sandbox.CreateDummyDirectory("Desktop");
+        sandbox.CreateDummyDirectory(@"Desktop\Old stuff");
+        sandbox.CreateDummyFile(@"Desktop\Old project\notes.txt");
+        var root = Allowed(desktop);
+        var executor = Create(new DisconnectingRootRepository(root, int.MaxValue), new WindowsPathPolicy(), sandbox);
+        var move = FolderMove("Old project", @"Old stuff\Old project");
+        var plan = StudioPlan(root, move);
+
+        var result = await executor.ExecuteAsync(
+            plan, Approval.Create(Guid.NewGuid(), plan, [move.Id], DateTimeOffset.UtcNow),
+            new Dictionary<Guid, ExpectedFile> { [move.Id] = FolderFacts(Path.Combine(desktop, "Old project")) },
+            TestContext.Current.CancellationToken);
+
+        var outcome = Assert.Single(result.Operations);
+        Assert.Equal(ExecutionOutcome.Failed, outcome.Outcome);
+        Assert.Equal("DeskAI may not move things here, so nothing was moved.", outcome.Error);
+        Assert.True(Directory.Exists(Path.Combine(desktop, "Old project")));
+    }
+
+    [Fact]
+    public async Task A_tidy_plan_on_a_folder_with_only_the_move_yes_moves_nothing()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var folder = sandbox.CreateDummyDirectory("Folder");
+        sandbox.CreateDummyDirectory(@"Folder\Documents");
+        var file = sandbox.CreateDummyFile(@"Folder\a.pdf");
+        var root = MovesAllowed(folder);
+        var executor = Create(new DisconnectingRootRepository(root, int.MaxValue), new WindowsPathPolicy(), sandbox);
+        var move = Move("a.pdf");
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion, [move]);
+
+        var result = await executor.ExecuteAsync(
+            plan, Approval.Create(Guid.NewGuid(), plan, [move.Id], DateTimeOffset.UtcNow),
+            new Dictionary<Guid, ExpectedFile> { [move.Id] = Facts(file) },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal("DeskAI may not tidy this folder, so nothing was moved.", Assert.Single(result.Operations).Error);
+        Assert.True(File.Exists(file));
+    }
+
+    [Fact]
+    public async Task Taking_back_the_yes_part_way_stops_the_remaining_folder_moves()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var desktop = sandbox.CreateDummyDirectory("Desktop");
+        sandbox.CreateDummyDirectory(@"Desktop\Old stuff");
+        sandbox.CreateDummyFile(@"Desktop\First\a.txt");
+        sandbox.CreateDummyFile(@"Desktop\Second\b.txt");
+        var root = MovesAllowed(desktop);
+        // Looked up at the start, before the run, and before each folder: the yes is gone before the second.
+        var roots = new ChangingRootRepository(root, root.WithFolderMovesAllowedSince(null), switchAfter: 3);
+        var executor = Create(roots, new WindowsPathPolicy(), sandbox);
+        var first = FolderMove("First", @"Old stuff\First");
+        var second = FolderMove("Second", @"Old stuff\Second");
+        var plan = StudioPlan(root, first, second);
+
+        var result = await executor.ExecuteAsync(
+            plan, Approval.Create(Guid.NewGuid(), plan, [first.Id, second.Id], DateTimeOffset.UtcNow),
+            new Dictionary<Guid, ExpectedFile>
+            {
+                [first.Id] = FolderFacts(Path.Combine(desktop, "First")),
+                [second.Id] = FolderFacts(Path.Combine(desktop, "Second")),
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(ExecutionOutcome.Completed, result.Operations[0].Outcome);
+        Assert.Equal("DeskAI may no longer move things here, so it stopped.", result.Operations[1].Error);
+        Assert.True(Directory.Exists(Path.Combine(desktop, "Second")));
+    }
+
+    [Fact]
+    public async Task A_folder_changed_since_the_list_is_left_where_it_is()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var desktop = sandbox.CreateDummyDirectory("Desktop");
+        sandbox.CreateDummyDirectory(@"Desktop\Old stuff");
+        var folder = Path.GetDirectoryName(sandbox.CreateDummyFile(@"Desktop\Old project\notes.txt"))!;
+        Directory.SetLastWriteTimeUtc(folder, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        var facts = FolderFacts(folder);
+        File.WriteAllText(Path.Combine(folder, "new.txt"), "Generated DeskAI test data");
+        var root = MovesAllowed(desktop);
+        var executor = Create(new DisconnectingRootRepository(root, int.MaxValue), new WindowsPathPolicy(), sandbox);
+        var move = FolderMove("Old project", @"Old stuff\Old project");
+        var plan = StudioPlan(root, move);
+
+        var result = await executor.ExecuteAsync(
+            plan, Approval.Create(Guid.NewGuid(), plan, [move.Id], DateTimeOffset.UtcNow),
+            new Dictionary<Guid, ExpectedFile> { [move.Id] = facts }, TestContext.Current.CancellationToken);
+
+        Assert.Contains("changed after the list", Assert.Single(result.Operations).Error, StringComparison.Ordinal);
+        Assert.True(Directory.Exists(folder));
+    }
+
+    [Fact]
+    public async Task A_folder_is_never_moved_onto_something_with_the_same_name()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var desktop = sandbox.CreateDummyDirectory("Desktop");
+        var already = sandbox.CreateDummyFile(@"Desktop\Old stuff\Old project\kept.txt");
+        sandbox.CreateDummyFile(@"Desktop\Old project\notes.txt");
+        var root = MovesAllowed(desktop);
+        var executor = Create(new DisconnectingRootRepository(root, int.MaxValue), new WindowsPathPolicy(), sandbox);
+        var move = FolderMove("Old project", @"Old stuff\Old project");
+        var plan = StudioPlan(root, move);
+
+        var result = await executor.ExecuteAsync(
+            plan, Approval.Create(Guid.NewGuid(), plan, [move.Id], DateTimeOffset.UtcNow),
+            new Dictionary<Guid, ExpectedFile> { [move.Id] = FolderFacts(Path.Combine(desktop, "Old project")) },
+            TestContext.Current.CancellationToken);
+
+        Assert.Contains("already there", Assert.Single(result.Operations).Error, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(desktop, "Old project", "notes.txt")));
+        Assert.True(File.Exists(already));
+        Assert.False(File.Exists(Path.Combine(desktop, "Old stuff", "Old project", "notes.txt")));
+    }
+
+    [Fact]
+    public async Task A_folder_replaced_after_the_move_is_not_moved_back()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var desktop = sandbox.CreateDummyDirectory("Desktop");
+        sandbox.CreateDummyDirectory(@"Desktop\Old stuff");
+        var folder = Path.GetDirectoryName(sandbox.CreateDummyFile(@"Desktop\Old project\notes.txt"))!;
+        Directory.SetCreationTimeUtc(folder, new DateTime(2020, 1, 1, 0, 0, 0, DateTimeKind.Utc));
+        var root = MovesAllowed(desktop);
+        var executor = Create(new DisconnectingRootRepository(root, int.MaxValue), new WindowsPathPolicy(), sandbox);
+        var move = FolderMove("Old project", @"Old stuff\Old project");
+        var plan = StudioPlan(root, move);
+        var result = await executor.ExecuteAsync(
+            plan, Approval.Create(Guid.NewGuid(), plan, [move.Id], DateTimeOffset.UtcNow),
+            new Dictionary<Guid, ExpectedFile> { [move.Id] = FolderFacts(folder) }, TestContext.Current.CancellationToken);
+        var moved = Path.Combine(desktop, "Old stuff", "Old project");
+        Directory.Delete(moved, recursive: true);
+        sandbox.CreateDummyFile(@"Desktop\Old stuff\Old project\someone else's.txt");
+
+        var undo = await executor.UndoAsync(result.TransactionId, TestContext.Current.CancellationToken);
+
+        Assert.Contains("can't find the folder it moved", Assert.Single(undo.Operations).Error, StringComparison.Ordinal);
+        Assert.True(File.Exists(Path.Combine(moved, "someone else's.txt")));
+        Assert.False(Directory.Exists(folder));
+    }
+
+    /// <summary>
+    /// Windows refuses to rename a folder while a file inside is held open without delete sharing.
+    /// If a future Windows allowed it, the move would still be whole and the program would keep its
+    /// open file; this test then needs a new decision, not a quiet change.
+    /// </summary>
+    [Fact]
+    public async Task A_folder_with_a_file_open_in_another_program_stays_where_it_is()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var desktop = sandbox.CreateDummyDirectory("Desktop");
+        sandbox.CreateDummyDirectory(@"Desktop\Old stuff");
+        var notes = sandbox.CreateDummyFile(@"Desktop\Old project\notes.txt");
+        var root = MovesAllowed(desktop);
+        var executor = Create(new DisconnectingRootRepository(root, int.MaxValue), new WindowsPathPolicy(), sandbox);
+        var move = FolderMove("Old project", @"Old stuff\Old project");
+        var plan = StudioPlan(root, move);
+        var facts = FolderFacts(Path.GetDirectoryName(notes)!);
+
+        ExecutionResult result;
+        using (new FileStream(notes, FileMode.Open, FileAccess.Read, FileShare.None))
+        {
+            result = await executor.ExecuteAsync(
+                plan, Approval.Create(Guid.NewGuid(), plan, [move.Id], DateTimeOffset.UtcNow),
+                new Dictionary<Guid, ExpectedFile> { [move.Id] = facts }, TestContext.Current.CancellationToken);
+        }
+
+        Assert.Contains("open in another program", Assert.Single(result.Operations).Error, StringComparison.Ordinal);
+        Assert.True(File.Exists(notes));
+    }
+
+    [Fact]
+    public async Task An_interrupted_folder_move_is_checked_against_the_disk()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var desktop = sandbox.CreateDummyDirectory("Desktop");
+        sandbox.CreateDummyDirectory(@"Desktop\Old stuff");
+        var moved = Path.GetDirectoryName(sandbox.CreateDummyFile(@"Desktop\Old stuff\Moved\a.txt"))!;
+        var stayed = Path.GetDirectoryName(sandbox.CreateDummyFile(@"Desktop\Stayed\b.txt"))!;
+        var root = MovesAllowed(desktop);
+        var plans = new InMemoryPlanRepository();
+        var journal = new InMemoryOperationJournal(plans);
+        var moveA = FolderMove("Moved", @"Old stuff\Moved");
+        var moveB = FolderMove("Stayed", @"Old stuff\Stayed");
+        var moveC = FolderMove("Gone", @"Old stuff\Gone");
+        var plan = StudioPlan(root, moveA, moveB, moveC);
+        await plans.SaveAsync(plan, TestContext.Current.CancellationToken);
+        OperationJournalEntry Intent(int sequence, MoveFolderOperation move, DateTimeOffset madeAt) =>
+            new(sequence, move.Id, PlanOperationKind.MoveFolder, move.SourceRelativePath, move.DestinationRelativePath,
+                null, DateTimeOffset.UnixEpoch, JournalOperationState.InProgress, null) { BeforeCreatedAtUtc = madeAt };
+        var record = new ExecutionJournalEntry(
+            Guid.NewGuid(), plan.Id, 1, Guid.NewGuid(), ExecutionTransactionKind.Execute, null,
+            ExecutionTransactionState.Executing, DateTimeOffset.UtcNow, null,
+            [
+                Intent(0, moveA, Directory.GetCreationTimeUtc(moved)),
+                Intent(1, moveB, Directory.GetCreationTimeUtc(stayed)),
+                Intent(2, moveC, DateTimeOffset.UnixEpoch),
+            ]) { Purpose = PlanPurpose.ClearOldStuff };
+        await journal.CreateAsync(record, TestContext.Current.CancellationToken);
+        var executor = new FolderTidyExecutor(
+            new DisconnectingRootRepository(root, int.MaxValue), new FixedFolderService(null),
+            new PlanValidator(new WindowsPathPolicy()), new WindowsPathPolicy(), new SystemClock(),
+            journal, plans, Database(sandbox));
+
+        var checkedRecord = Assert.Single(await executor.CheckInterruptedAsync(root.Id, TestContext.Current.CancellationToken));
+
+        Assert.Equal(JournalOperationState.Completed, checkedRecord.Operations[0].State);
+        Assert.Equal(JournalOperationState.Failed, checkedRecord.Operations[1].State);
+        Assert.Equal(JournalOperationState.NeedsReview, checkedRecord.Operations[2].State);
+    }
+
+    private static AuthorizedRoot MovesAllowed(string folder) =>
+        AuthorizedRoot.Create(Guid.NewGuid(), folder, "Desktop", RootAccessLevel.Allowed, RootAuthorizationScope.MetadataOnly)
+            .WithFolderMovesAllowedSince(DateTimeOffset.UnixEpoch);
+
+    private static MoveFolderOperation FolderMove(string from, string to) =>
+        new(Guid.NewGuid(), from, to, "Unchanged for 6 months", OperationProvenance.Heuristic);
+
+    private static OrganizationPlan StudioPlan(AuthorizedRoot root, params PlanOperation[] operations) =>
+        OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, PlanValidator.CurrentPolicyVersion,
+            operations, purpose: PlanPurpose.ClearOldStuff);
+
+    private static ExpectedFile FolderFacts(string path)
+    {
+        var info = new DirectoryInfo(path);
+        return new ExpectedFile(0, info.LastWriteTimeUtc) { CreatedAtUtc = info.CreationTimeUtc };
+    }
+
+    /// <summary>Answers with <paramref name="first"/> until it has been asked a set number of times, then with <paramref name="then"/>.</summary>
+    private sealed class ChangingRootRepository(AuthorizedRoot first, AuthorizedRoot then, int switchAfter) : IAuthorizedRootRepository
+    {
+        private int _finds;
+
+        public Task<AuthorizedRoot?> FindAsync(Guid rootId, CancellationToken cancellationToken = default) =>
+            Task.FromResult<AuthorizedRoot?>(rootId != first.Id ? null : ++_finds <= switchAfter ? first : then);
+
+        public Task<IReadOnlyList<AuthorizedRoot>> ListAsync(CancellationToken cancellationToken = default) =>
+            Task.FromResult<IReadOnlyList<AuthorizedRoot>>([first]);
+
+        public Task SaveAsync(AuthorizedRoot root, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task RemoveAsync(Guid rootId, CancellationToken cancellationToken = default) => Task.CompletedTask;
+
+        public Task AllowTidyAsync(Guid rootId, DateTimeOffset grantedAtUtc, CancellationToken cancellationToken = default) =>
+            Task.CompletedTask;
+
+        public Task StopTidyAsync(Guid rootId, CancellationToken cancellationToken = default) => Task.CompletedTask;
+    }
 }

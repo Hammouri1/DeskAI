@@ -107,7 +107,10 @@ internal sealed class FileOperationRunner(
             ExecutionTransactionState.Prepared,
             started,
             null,
-            intents), cancellationToken).ConfigureAwait(false);
+            intents)
+        {
+            Purpose = plan.Purpose,
+        }, cancellationToken).ConfigureAwait(false);
         await journal.UpdateTransactionAsync(
             transactionId, ExecutionTransactionState.Executing, null, cancellationToken).ConfigureAwait(false);
 
@@ -195,7 +198,10 @@ internal sealed class FileOperationRunner(
         await journal.CreateAsync(new ExecutionJournalEntry(
             undoId, original.PlanId, original.PlanRevision, Guid.Empty,
             ExecutionTransactionKind.Undo, transactionId,
-            ExecutionTransactionState.Prepared, started, null, reversible), cancellationToken).ConfigureAwait(false);
+            ExecutionTransactionState.Prepared, started, null, reversible)
+        {
+            Purpose = plan.Purpose,
+        }, cancellationToken).ConfigureAwait(false);
         await journal.UpdateTransactionAsync(
             undoId, ExecutionTransactionState.Executing, null, cancellationToken).ConfigureAwait(false);
 
@@ -277,6 +283,27 @@ internal sealed class FileOperationRunner(
                     : exists
                         ? (JournalOperationState.Failed, "The folder was left in place.")
                         : (JournalOperationState.Completed, "The folder had been removed.");
+            }
+
+            if (operation.Kind == PlanOperationKind.MoveFolder && operation.SourceRelativePath is not null)
+            {
+                var start = Resolve(root, operation.SourceRelativePath);
+                var end = Resolve(root, operation.DestinationRelativePath);
+                RejectLinks(root, start);
+                RejectLinks(root, end);
+                var (fromFolder, toFolder) = kind == ExecutionTransactionKind.Execute ? (start, end) : (end, start);
+                if (!File.Exists(fromFolder) && !Directory.Exists(fromFolder) && MatchesRecordedFolder(toFolder, operation, sameContents: false))
+                {
+                    return (JournalOperationState.Completed, kind == ExecutionTransactionKind.Execute
+                        ? "Checked after DeskAI stopped: it had moved."
+                        : "Checked after DeskAI stopped: it had gone back.");
+                }
+
+                return MatchesRecordedFolder(fromFolder, operation, sameContents: false)
+                    ? (JournalOperationState.Failed, kind == ExecutionTransactionKind.Execute
+                        ? "It had not moved yet, so it is where it was."
+                        : "It had not gone back yet, so it is where it was moved to.")
+                    : (JournalOperationState.NeedsReview, couldNotTell);
             }
 
             if (operation.SourceRelativePath is null)
@@ -377,21 +404,30 @@ internal sealed class FileOperationRunner(
             CreateDirectoryOperation create => ((string?)null, create.DestinationRelativePath),
             MoveFileOperation move => (move.SourceRelativePath, move.DestinationRelativePath),
             RenameFileOperation rename => (rename.SourceRelativePath, rename.DestinationRelativePath),
+            MoveFolderOperation folder => (folder.SourceRelativePath, folder.DestinationRelativePath),
             _ => throw new InvalidOperationException("DeskAI does not know how to do that."),
         };
 
         long? size = null;
         DateTimeOffset? modified = null;
+        DateTimeOffset? created = null;
         if (expected.TryGetValue(operation.Id, out var seen))
         {
             size = seen.SizeBytes;
             modified = seen.ModifiedAtUtc;
+            created = seen.CreatedAtUtc;
         }
         else if (source is not null)
         {
             var sourcePath = Resolve(root, source);
             RejectLinks(root, sourcePath);
-            if (File.Exists(sourcePath))
+            if (operation is MoveFolderOperation && Directory.Exists(sourcePath))
+            {
+                var folder = new DirectoryInfo(sourcePath);
+                modified = folder.LastWriteTimeUtc;
+                created = folder.CreationTimeUtc;
+            }
+            else if (File.Exists(sourcePath))
             {
                 var info = new FileInfo(sourcePath);
                 size = info.Length;
@@ -401,7 +437,10 @@ internal sealed class FileOperationRunner(
 
         return new OperationJournalEntry(
             sequence, operation.Id, operation.Kind, source, destination,
-            size, modified, JournalOperationState.Pending, null);
+            size, modified, JournalOperationState.Pending, null)
+        {
+            BeforeCreatedAtUtc = created,
+        };
     }
 
     private JournalOperationState ExecuteOperation(AuthorizedRoot root, PlanOperation operation, OperationJournalEntry intent)
@@ -420,6 +459,9 @@ internal sealed class FileOperationRunner(
                 return JournalOperationState.Completed;
             case RenameFileOperation rename:
                 MoveFile(root, rename.SourceRelativePath, rename.DestinationRelativePath, intent);
+                return JournalOperationState.Completed;
+            case MoveFolderOperation folder:
+                MoveFolder(root, folder.SourceRelativePath, folder.DestinationRelativePath, intent);
                 return JournalOperationState.Completed;
             default:
                 throw new InvalidOperationException("DeskAI does not know how to do that.");
@@ -443,6 +485,12 @@ internal sealed class FileOperationRunner(
             }
 
             Directory.Delete(directory, recursive: false);
+            return;
+        }
+
+        if (operation.Kind == PlanOperationKind.MoveFolder)
+        {
+            UndoFolderMove(root, operation);
             return;
         }
 
@@ -536,6 +584,121 @@ internal sealed class FileOperationRunner(
         }
 
         MoveWithoutOverwrite(source, destination);
+    }
+
+    /// <summary>
+    /// Moves a whole folder with one rename (ADR 0044). Each check the file move makes has a
+    /// folder twin; the folder must also not go inside itself.
+    /// </summary>
+    private void MoveFolder(AuthorizedRoot root, string sourceRelativePath, string destinationRelativePath, OperationJournalEntry intent)
+    {
+        var source = Resolve(root, sourceRelativePath);
+        var destination = Resolve(root, destinationRelativePath);
+        var parent = Path.GetDirectoryName(destination) ?? throw new InvalidOperationException("That location is outside the folder.");
+        RejectLinks(root, source);
+        RejectLinks(root, parent);
+
+        if (!Directory.Exists(source))
+        {
+            throw new FileOperationRefusal("It is no longer there.");
+        }
+
+        if (IsSameOrInside(destination, source))
+        {
+            throw new FileOperationRefusal("A folder cannot go inside itself.");
+        }
+
+        if ((File.GetAttributes(source) & (FileAttributes.Hidden | FileAttributes.System)) != 0)
+        {
+            throw new FileOperationRefusal("It is now a hidden or system folder.");
+        }
+
+        if (!MatchesRecordedFolder(source, intent, sameContents: true))
+        {
+            throw new FileOperationRefusal("It changed after the list was made, so it was left where it is.");
+        }
+
+        if (!Directory.Exists(parent))
+        {
+            throw new FileOperationRefusal("The folder it was going into is missing.");
+        }
+
+        if (File.Exists(destination) || Directory.Exists(destination))
+        {
+            throw new FileOperationRefusal("Something with that name is already there, so nothing was replaced.");
+        }
+
+        MoveFolderWithoutOverwrite(source, destination);
+    }
+
+    /// <summary>
+    /// Moves a folder back only when it is still the same folder (same made-at time) and its old
+    /// place is free. Things added inside since go back with it.
+    /// </summary>
+    private void UndoFolderMove(AuthorizedRoot root, OperationJournalEntry operation)
+    {
+        if (operation.SourceRelativePath is null)
+        {
+            throw new InvalidOperationException("The history is missing where this folder came from.");
+        }
+
+        var originalPlace = Resolve(root, operation.SourceRelativePath);
+        var current = Resolve(root, operation.DestinationRelativePath);
+        RejectLinks(root, current);
+        RejectLinks(root, Path.GetDirectoryName(originalPlace)
+            ?? throw new InvalidOperationException("The history is missing where this folder came from."));
+        if (File.Exists(originalPlace) || Directory.Exists(originalPlace))
+        {
+            throw new FileOperationRefusal("Something else is now where this folder was, so it was not moved back.");
+        }
+
+        if (!MatchesRecordedFolder(current, operation, sameContents: false))
+        {
+            throw new FileOperationRefusal("DeskAI can't find the folder it moved, so it was not moved back.");
+        }
+
+        MoveFolderWithoutOverwrite(current, originalPlace);
+    }
+
+    /// <summary>
+    /// A folder is the one recorded when its made-at time matches. With <paramref name="sameContents"/>,
+    /// its own last-changed time must match too: that moves whenever something directly inside is
+    /// added, removed, or renamed, so it tells a folder changed since the list was made.
+    /// </summary>
+    private static bool MatchesRecordedFolder(string path, OperationJournalEntry operation, bool sameContents)
+    {
+        if (!Directory.Exists(path) || operation.BeforeCreatedAtUtc is not { } created)
+        {
+            return false;
+        }
+
+        var info = new DirectoryInfo(path);
+        return info.CreationTimeUtc == created.UtcDateTime &&
+               (!sameContents || (operation.BeforeModifiedAtUtc is { } modified && info.LastWriteTimeUtc == modified.UtcDateTime));
+    }
+
+    /// <summary>One rename, never replacing. Windows refuses while something inside is open, and says so here in plain words.</summary>
+    private static void MoveFolderWithoutOverwrite(string source, string destination)
+    {
+        try
+        {
+            Directory.Move(source, destination);
+        }
+        catch (IOException exception) when (Directory.Exists(destination) || File.Exists(destination))
+        {
+            throw new FileOperationRefusal("Something with that name is already there, so nothing was replaced.", exception);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            throw new FileOperationRefusal("Something inside it is open in another program, so it was left where it is.", exception);
+        }
+    }
+
+    private static bool IsSameOrInside(string candidate, string folder)
+    {
+        var relative = Path.GetRelativePath(Normalize(folder), Normalize(candidate));
+        return relative == "." || (!Path.IsPathRooted(relative) && relative != ".." &&
+            !relative.StartsWith($"..{Path.DirectorySeparatorChar}", StringComparison.Ordinal));
     }
 
     /// <summary>
