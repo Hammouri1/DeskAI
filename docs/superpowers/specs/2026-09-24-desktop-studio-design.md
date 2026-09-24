@@ -99,10 +99,12 @@ and confirms the groups. **Put back** undoes only that card's own last change.
 
 ## Disk features: Clear old stuff, Folder by group, Tag names
 
-- They use the **existing Tidy flow**: the "Allow tidying" permission, a preview with one tick box
-  per item, approval, the one executor, the write-ahead journal, interrupted-run recovery, and
-  **Put back** (undo) that survives restarts. The preview states the total, for example
-  "3 folders holding 1,204 files".
+- They use the **existing Tidy flow** — a preview with one tick box per item, approval, the one
+  executor, the write-ahead journal, interrupted-run recovery, and **Put back** (undo) that
+  survives restarts — but under **their own yes**, not the "Allow tidying" permission, whose
+  dialog promises never to touch what is inside a folder (ADR 0044, agreed with the owner
+  2026-09-24). Put back is offered for the latest change on the Desktop only. The preview states
+  the total, for example "3 folders holding 1,204 files".
 - New executor actions, each with live re-checks just before acting: **move a folder**
   (within the same connected Desktop, which is a single rename in Windows, so a folder is never
   half-moved) and **rename a folder** (for Tag names).
@@ -147,7 +149,7 @@ arithmetic, snapshot/restore, and the new executor actions' refusal cases.
 
 1. Find groups (board, Send window, AI request, local fallback, storage).
 2. Icon-position probe → Keep together → Make zones → Name the zones.
-3. Clear old stuff and Folder by group (move a folder).
+3. Clear old stuff and Folder by group (move a folder). Built 2026-09-24 (ADR 0044).
 4. Tag names (rename a folder).
 5. Color-icon probe → Color groups.
 

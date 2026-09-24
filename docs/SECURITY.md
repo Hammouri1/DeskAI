@@ -239,6 +239,18 @@ holds no executor; `IAwayTidyRunner` is implemented by `AwayTidyService` alone, 
 reader, fingerprinter, credential, or file store. Every "nothing moves by itself" sentence in the
 app follows the mode.
 
+## Desktop Studio Moving Things (ADR 0044)
+
+Clear old stuff and Folder by group move folders and files on the connected Desktop only. They
+need their own yes, separate from tidying: the tidy dialog promises that DeskAI never touches
+what is inside a folder, so that yes can never be read as permission to move one, and this yes
+never grants tidying. A folder moves whole, with one rename, only after the person ticks it and
+presses Move; every check a file move makes has a folder twin, and Put back moves a folder back
+only if it is still the same folder. Project, program, and online-only folders start unticked
+with a warning. Nothing is deleted; the only folder ever removed is an empty one DeskAI made in
+that run, on Put back. No AI is asked when moving; Folder by group uses the groups the person saw
+and could change on the board. Review: `docs/security/2026-09-24-desktop-moves-review.md`.
+
 ## Backup Files and Start Fresh
 
 Since V0.8 (ADR 0030, review `docs/security/2026-09-16-v0.8-privacy-review.md`) DeskAI can write

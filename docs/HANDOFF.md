@@ -1,35 +1,38 @@
 # DeskAI — Coding Handoff
 
-## Start here (updated 2026-09-24, after Desktop Studio step 1)
+## Start here (updated 2026-09-24, after Desktop Studio step 3)
 
-**State:** Desktop Studio step 1, **Find groups**, is built on the branch
-`desktop-studio-find-groups` (from `2153fdd` on `main`), one commit per plan task. Not merged,
-pushed, tagged, or released until the owner says so. After the whole-branch review and its
-fixes, the Release build had 0 warnings, all
-1,513 tests passed, and formatting verification passed. The owner chose to build it in one
-session (Native) with one review of the whole branch at the end.
+**State:** Desktop Studio steps 1 (**Find groups**) and 3 (**Clear old stuff**, **Folder by
+group**) are built on the branch `desktop-studio-find-groups` (from `2153fdd` on `main`), one
+commit per plan task plus the review fixes. Step 2 (icon positions) was dropped after the probe
+(ADR 0043). Nothing is merged, pushed, tagged, or released: the owner decided to push only once
+the whole Desktop Studio feature is done. After step 3's whole-change review and its fixes, the
+Release build had 0 warnings, all 1,606 tests passed, and formatting verification passed. The
+owner chose to build step 3 "one by one" (inline) with one fresh review at the end.
 
-**What was built** (ADR 0042, review `docs/security/2026-09-24-desktop-grouping-review.md`):
-a **Desktop Studio** page in the menu after Automatic tasks. Its one card, Find groups, sorts
-the connected Desktop's folders and loose files into at most 8 groups plus Not sure, either by
-AI after a Send window listing exactly what goes (per folder: name, kinds of files, up to 5 file
-names; per file: its name) or by DeskAI's own guess from the kinds of files. The person can
-rename, merge, and move. The board is stored per folder (schema 16) and erased with it. Nothing
-changes on disk or in Windows. Details in the dated section below.
+**What step 3 built** (ADR 0044, review `docs/security/2026-09-24-desktop-moves-review.md`,
+plan `docs/superpowers/plans/2026-09-24-desktop-studio-moves.md`): two cards below the Find
+groups board. Clear old stuff moves folders and files unchanged for 6 months into one "Old
+stuff" folder on the Desktop; Folder by group moves each group into its own folder. Both show a
+tick-box list first, move only what is ticked after Move, and offer Put back for the latest
+change, also after reopening. Moving things on the Desktop needs **its own yes**, separate from
+"Allow tidying". Details in the dated section below.
 
-**Icon-position probe (2026-09-24): no-go.** ADR 0043 is Rejected. In two Windows Sandbox runs
-(`tools/IconPositionProbe`, plan `docs/superpowers/plans/2026-09-24-icon-position-probe.md`),
-icons could be placed, but a Desktop refresh (F5) or an Explorer restart put them back on the
-grid, even with the layout saved. So **Keep together, Make zones, and Name the zones are
-dropped**, as the design said. The other routes (Explorer's stored layout in the registry, or
-driving the Desktop's list control from another process) are outside what `docs/SECURITY.md`
-allows this feature and need a new decision by the owner. The probe stays in `tools/` as a
-record; it is not part of the app and refuses to run outside the Sandbox.
+**Icon-position probe (2026-09-24): no-go.** ADR 0043 is Rejected: icons could be placed, but a
+Desktop refresh or an Explorer restart put them back on the grid. Keep together, Make zones, and
+Name the zones are dropped. The probe stays in `tools/IconPositionProbe` as a record; it refuses
+to run outside Windows Sandbox.
 
-**Next task:** carry out `docs/superpowers/plans/2026-09-24-desktop-studio-moves.md` (Clear old
-stuff and Folder by group, ADR 0044) once the owner has reviewed the plan and chosen how it is run.
-The plan gives moving things on the Desktop **its own yes**, separate from "Allow tidying", because
-the tidy dialog promises DeskAI never touches what is inside a folder.
+**Owner's manual checks for step 3:** on Desktop Studio press **Show what would move** on Clear
+old stuff and read the list; press **Move** and accept the dialog; look at the Old stuff folder;
+press **Put back**; Move again, close and reopen DeskAI, and check Put back is still offered;
+Find groups, then Folder by group, Move, Put back; press **Stop DeskAI moving things on my
+Desktop**; check that Organize's tidy permission for the Desktop did not change. The owner
+checked Find groups' move, rename, and merge by hand on 2026-09-24 and said they work well.
+
+**Next task:** **Tag names** (design step 4: the group name in front of each folder's name, a
+new "rename a folder" action). It needs its own plan, ADR, and security review before any code.
+Ask the owner first; do not start it unasked.
 
 **Decisions the owner made that are not yet in code** (also in
 `docs/superpowers/specs/2026-09-24-desktop-studio-design.md`):
@@ -39,8 +42,10 @@ the tidy dialog promises DeskAI never touches what is inside a folder.
 - Build order after step 1: ~~screen designs (icon positions + labelled wallpaper)~~ — dropped
   after the probe (ADR 0043) → Clear old stuff and Folder by group → Tag names → Color groups
   (after a probe). Each step is released and checked by the owner before the next.
-- 2026-09-24: the owner chose to **skip the hand check of Find groups for now** and look at
-  Desktop Studio as a whole later, going straight on to Clear old stuff and Folder by group.
+- 2026-09-24: the owner chose to **skip the full hand check of Find groups** and look at Desktop
+  Studio as a whole later (they did check that move, rename, and merge work well).
+- 2026-09-24: the owner approved **a separate yes for moving things on the Desktop** (ADR 0044)
+  rather than reusing "Allow tidying", and chose to build step 3 "one by one" with one review.
 
 **Open with the owner:**
 - Merge and push: the owner decided (2026-09-24) to keep committing each task locally on this
@@ -55,6 +60,46 @@ the tidy dialog promises DeskAI never touches what is inside a folder.
 - Other improvement ideas not yet picked, in the suggested order: code signing, an opt-in
   "newer version?" button, re-enabling picture search after a fresh review, Recycle Bin for
   proven copies, a first-run guide, architecture guard tests.
+
+## 2026-09-24 Desktop Studio step 3: Clear old stuff and Folder by group
+
+Built from `docs/superpowers/plans/2026-09-24-desktop-studio-moves.md` in 8 tasks, then one
+fresh whole-change review and its fixes.
+
+- **Data flow.** `DesktopInventoryService` makes one read-only look at the Desktop (8 levels,
+  20,000 entries) with each top-level thing's newest date, file count, and warnings (project,
+  programs, online-only, not fully looked at). `DesktopMovePlanner` turns it (and for Folder by
+  group, the saved board) into an `OrganizationPlan` whose `Purpose` names the card.
+  `DesktopMoveService` approves exactly the ticked rows plus the folders they go into and hands
+  the plan to the one executor, which now also moves a whole folder (`MoveFolderOperation`, one
+  `Directory.Move`) and puts it back by its made-at time. Schema 17 adds the plan purpose, the
+  folder made-at time in the journal, and `folder_move_permissions`.
+- **Safety.** The separate yes (`RootCapabilities.CanMoveFolders`) is checked by purpose before
+  the run and before every action; a Tidy plan can never hold a folder move, so Organize, folder
+  templates, and Tidy while I'm away can't move folders. A folder moves only if it is still the
+  same folder with nothing added or removed directly inside since the list; never onto a name
+  already there; Windows' refusal while something inside is open is reported. Put back moves a
+  folder back only if its made-at time matches. Put back is offered only for the latest change on
+  the Desktop and only by the card that made it; Organize's Undo ignores Studio changes. Nothing is
+  deleted; only an empty folder DeskAI made in that run is removed on Put back.
+- **Whole-change review** (fresh reviewer): no critical findings. Fixed, each with a test that
+  failed first: (1) a part-way change was offered on both pages and could be answered with the
+  wrong permission, closing the question with nothing put back — now answered only on the page
+  that made it; (2) one big folder that stopped the look marked every folder unfinished, so Clear
+  old stuff offered none — now folders the look finished are still offered; (3) things could be
+  moved into a hidden or protected folder named like the destination — now left alone; (4) the
+  page, dialog, and help promised Put back "returns everything" — now "your latest change".
+- **Deferred small points from the review** (the owner decides): the "open in another program"
+  wording is also used for other refusals Windows gives; Put back's same-folder check uses the
+  made-at time only (Windows can give a same-name folder made within ~15 s the old time); a file
+  copied onto the Desktop today keeps its old date and counts as old; the other card's list is not
+  refreshed after a Move or Put back; if every ticked move fails, an empty Old stuff or group
+  folder can remain without a Put back; the executor itself does not check that Studio plans only
+  move top-level items into top-level folders (the planner does).
+- **Known limits:** after Folder by group, the Find groups board shows the moved items as gone and
+  the new group folders under Not sure the next time it opens; cloud placeholder folders seen as
+  links are never listed; an empty folder the look had not reached before its item limit is left
+  alone.
 
 ## 2026-09-24 Desktop Studio step 1: Find groups
 
@@ -408,13 +453,12 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 ## Copy-paste starter prompt
 
 > Continue DeskAI in the repository checkout. Read `AGENTS.md`, `docs/HANDOFF.md` ("Start
-> here" first), and especially `docs/SECURITY.md`; inspect Git status and whether the
-> `desktop-studio-find-groups` branch (Desktop Studio step 1, Find groups, ADR 0042) is merged.
-> Next, after my manual check of step 1, is Desktop Studio step 2, starting with the
-> icon-position feasibility probe: write its plan first and ask me before building. I will
-> paste my Search screenshots into the chat. Do not open or scan my personal folders or use my
-> API key. Test with generated files, update docs, and commit each task. Ask before pushing,
-> tagging, or releasing.
+> here" first), and especially `docs/SECURITY.md`; inspect Git status and the
+> `desktop-studio-find-groups` branch (Desktop Studio steps 1 and 3, ADR 0042 and ADR 0044; step 2
+> dropped, ADR 0043). Nothing on it is pushed yet. Next, after my manual check of step 3, is
+> Desktop Studio step 4, **Tag names**: write its plan, ADR, and security review first and ask me
+> before building. Do not open or scan my personal folders or use my API key. Test with generated
+> files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
 
 ## How to update this file
 

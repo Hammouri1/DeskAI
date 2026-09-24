@@ -572,7 +572,7 @@ is released and checked by the owner before the next.
 - Step 2 — icon-position feasibility probe: **done, no-go** (ADR 0043). Icons could be placed
   but a refresh or an Explorer restart undid it, so **Keep together**, **Make zones**, and
   **Name the zones** are dropped.
-- Step 3 — **Clear old stuff** and **Folder by group** (move a folder). Planned.
+- Step 3 — **Clear old stuff** and **Folder by group** (ADR 0044): built on the branch; moving things on the Desktop needs its own yes, and each card has Put back.
 - Step 4 — **Tag names** (rename a folder). Planned.
 - Step 5 — color-icon probe, then **Color groups**. Planned.
 

@@ -24,9 +24,10 @@ happens, and every move is written down so it can be undone.
   connected folder or search all of them.
 - **Automatic tasks** — write rules ("move invoices to Documents"), try them as a practice run,
   and let DeskAI check your folders every so often and tell you when something matches.
-- **Desktop Studio** — make your Desktop easier to find your way around. So far it has one
-  card, **Find groups**, which sorts what sits on your Desktop into groups. It changes nothing
-  on your PC.
+- **Desktop Studio** — make your Desktop easier to find your way around. It has three cards:
+  **Find groups** sorts what sits on your Desktop into groups and changes nothing on your PC;
+  **Clear old stuff** and **Folder by group** move the things you tick, and **Put back** returns
+  your latest change.
 - **My workspace** — starter packs, pinned searches, folder templates, DeskAI's look, and
   your wallpaper.
 - **Privacy and AI** — what AI (if any) DeskAI uses and what it may see, your backup, and
@@ -127,7 +128,18 @@ sure** for anything that fits nowhere.
   time, and something new shows up under Not sure.
 
 DeskAI's own program folder is never on the board. Disconnecting the Desktop or Start fresh
-forgets the board. Nothing on this page moves, renames, or opens your files, or changes Windows.
+forgets the board. Find groups never moves, renames, or opens your files, or changes Windows.
+
+**Clear old stuff** gathers folders and files you haven't changed in 6 months into one **Old
+stuff** folder on your Desktop. **Folder by group** puts each group from Find groups into its own
+folder; Not sure stays where it is. Press **Show what would move**, untick anything you want to
+keep where it is, and press **Move**. The first time, DeskAI asks for your permission to move
+things on your Desktop — this is separate from tidying on Organize, and **Stop DeskAI moving
+things on my Desktop** takes it back. **Put back** returns your latest change on the Desktop,
+even after you close DeskAI. Folders that look like projects or
+hold programs start unticked, because moving them can break shortcuts. Anything DeskAI leaves
+where it is — a name already taken, something that changed after you looked, something open in
+another program — is listed with the reason. Nothing is ever deleted.
 
 ## Backups, moving computers, and leaving
 

@@ -55,6 +55,8 @@ public sealed class DesktopStudioLayoutTests
         Assert.Contains("Text=\"{x:Bind Warning}\"", row, StringComparison.Ordinal);
     }
 
+    private static readonly string[] MovingCardTopics = ["studio.oldStuff", "studio.folderByGroup"];
+
     /// <summary>
     /// Found in review 2026-09-24: the page, the permission dialog, and the help promised that Put
     /// back "returns everything", but it is offered only for the latest change on the Desktop.
@@ -63,7 +65,7 @@ public sealed class DesktopStudioLayoutTests
     public void Put_back_is_never_promised_for_more_than_the_latest_change()
     {
         var dialog = File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "DeskAI.App", "Views", "DesktopStudioPage.xaml.cs"));
-        var help = string.Join(' ', new[] { "studio.oldStuff", "studio.folderByGroup" }
+        var help = string.Join(' ', MovingCardTopics
             .Select(id => DeskAI.App.Help.HelpCatalog.Find(id)!)
             .Select(topic => $"{topic.WhatItDoes} {topic.WhatItNeverDoes}"));
 
