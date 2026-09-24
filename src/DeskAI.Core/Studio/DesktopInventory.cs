@@ -35,7 +35,14 @@ public sealed record DesktopThing(
     public bool LookedAllTheWay => (Warnings & DesktopThingWarnings.NotFullyLooked) == 0;
 }
 
-public sealed record DesktopInventory(IReadOnlyList<DesktopThing> Things, string? Problem);
+public sealed record DesktopInventory(IReadOnlyList<DesktopThing> Things, string? Problem)
+{
+    /// <summary>
+    /// Top-level names the look left out (hidden, system, protected, link, or unreadable). Nothing is
+    /// moved into one: things put inside a hidden folder would seem to vanish.
+    /// </summary>
+    public IReadOnlySet<string> LeftOutNames { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+}
 
 /// <summary>
 /// A fresh, read-only look at what sits directly on a connected Desktop, for Clear old stuff and
@@ -65,10 +72,25 @@ public sealed class DesktopInventoryService(IFileScanner scanner)
         var excluded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var sawInsideAFolder = false;
         var stoppedEarly = false;
+        // The scanner finishes one top-level folder before it starts the next, so a folder is known
+        // to be finished once the look has moved on to another one.
+        string? current = null;
+        var finished = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         await foreach (var scanEvent in scanner.ScanAsync(root, Bounds, cancellationToken).ConfigureAwait(false))
         {
             var nested = PathOf(scanEvent)?.Contains(Path.DirectorySeparatorChar) == true;
             sawInsideAFolder |= nested;
+            if (nested)
+            {
+                var top = TopSegment(PathOf(scanEvent)!);
+                if (current is not null && !string.Equals(current, top, StringComparison.OrdinalIgnoreCase))
+                {
+                    finished.Add(current);
+                }
+
+                current = top;
+            }
+
             switch (scanEvent)
             {
                 // The scanner lists the Desktop itself completely before going into any folder.
@@ -134,8 +156,8 @@ public sealed class DesktopInventoryService(IFileScanner scanner)
         var things = new List<DesktopThing>();
         foreach (var (name, folder) in folders.Where(pair => !excluded.Contains(pair.Key)))
         {
-            // Stopped at the item limit: which folders were finished is not known, so none is vouched for.
-            var warnings = folder.Warnings | (stoppedEarly ? DesktopThingWarnings.NotFullyLooked : DesktopThingWarnings.None);
+            // Stopped at the item limit: only the folders the look had already finished are vouched for.
+            var warnings = folder.Warnings | (stoppedEarly && !finished.Contains(name) ? DesktopThingWarnings.NotFullyLooked : DesktopThingWarnings.None);
             things.Add(new DesktopThing(
                 name, true, folder.Newest, new ExpectedFile(0, folder.Modified) { CreatedAtUtc = folder.Created },
                 folder.FileCount, warnings, folder.Children));
@@ -148,7 +170,10 @@ public sealed class DesktopInventoryService(IFileScanner scanner)
                 file.RelativePath, false, file.ModifiedAtUtc, new ExpectedFile(file.SizeBytes, file.ModifiedAtUtc), 0, warnings, NoNames));
         }
 
-        return new(things.OrderBy(thing => thing.Name, StringComparer.OrdinalIgnoreCase).ToList(), null);
+        return new(things.OrderBy(thing => thing.Name, StringComparer.OrdinalIgnoreCase).ToList(), null)
+        {
+            LeftOutNames = excluded,
+        };
     }
 
     private static bool IsHiddenOrSystem(FileTraits traits) => (traits & (FileTraits.Hidden | FileTraits.System)) != 0;

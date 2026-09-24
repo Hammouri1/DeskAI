@@ -93,7 +93,7 @@ public static class DesktopMovePlanner
         ArgumentNullException.ThrowIfNull(inventory);
         var cutoff = nowUtc - StorageSummaryService.OldFileAge;
         var existing = inventory.Things.FirstOrDefault(thing => string.Equals(thing.Name, OldStuffFolder, StringComparison.OrdinalIgnoreCase));
-        var builder = new Builder(root, DesktopMoveCard.ClearOldStuff, nowUtc, policyVersion, isProtected);
+        var builder = new Builder(root, DesktopMoveCard.ClearOldStuff, nowUtc, policyVersion, isProtected, inventory.LeftOutNames);
         foreach (var thing in inventory.Things.Where(thing => !ReferenceEquals(thing, existing) && thing.LastChangedUtc <= cutoff))
         {
             if (thing.IsFolder && !thing.LookedAllTheWay)
@@ -116,7 +116,7 @@ public static class DesktopMovePlanner
         ArgumentNullException.ThrowIfNull(board);
         var byPath = inventory.Things.ToDictionary(thing => thing.RelativePath, StringComparer.OrdinalIgnoreCase);
         var groupNames = board.Groups.Select(group => group.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var builder = new Builder(root, DesktopMoveCard.FolderByGroup, nowUtc, policyVersion, isProtected);
+        var builder = new Builder(root, DesktopMoveCard.FolderByGroup, nowUtc, policyVersion, isProtected, inventory.LeftOutNames);
         foreach (var group in board.Groups)
         {
             byPath.TryGetValue(group.Name, out var existing);
@@ -145,7 +145,8 @@ public static class DesktopMovePlanner
     }
 
     private sealed class Builder(
-        AuthorizedRoot root, DesktopMoveCard card, DateTimeOffset nowUtc, string policyVersion, Func<string, bool> isProtected)
+        AuthorizedRoot root, DesktopMoveCard card, DateTimeOffset nowUtc, string policyVersion, Func<string, bool> isProtected,
+        IReadOnlySet<string> leftOut)
     {
         private readonly List<PlanOperation> _creates = [];
         private readonly List<PlanOperation> _moves = [];
@@ -160,6 +161,12 @@ public static class DesktopMovePlanner
         public void Move(DesktopThing thing, string destination, DesktopThing? existing, string reason, OperationProvenance provenance)
         {
             var target = Path.Combine(destination, thing.Name);
+            if (leftOut.Contains(destination))
+            {
+                LeaveAlone(thing.Name, $"Something called {destination} that DeskAI can't use is in the way, so nothing can go into it.");
+                return;
+            }
+
             if (existing is { IsFolder: false })
             {
                 LeaveAlone(thing.Name, $"A file called {destination} is in the way, so its folder can't be made.");

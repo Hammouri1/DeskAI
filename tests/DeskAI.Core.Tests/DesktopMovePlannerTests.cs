@@ -160,4 +160,19 @@ public sealed class DesktopMovePlannerTests
 
     private static DesktopThing File(string name, DateTimeOffset changed) =>
         new(name, false, changed, new ExpectedFile(10, changed), 0, DesktopThingWarnings.None, new HashSet<string>());
+
+    /// <summary>Found in review 2026-09-24: things could be moved into a hidden or protected Old stuff folder and seem to vanish.</summary>
+    [Fact]
+    public void A_destination_DeskAI_left_out_of_its_look_keeps_everything_where_it_is()
+    {
+        var seen = new DesktopInventory([File("a.txt", Old)], null)
+        {
+            LeftOutNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Old stuff" },
+        };
+
+        var preview = DesktopMovePlanner.ClearOldStuff(StudioFakes.Root(), seen, Now, "1", _ => false);
+
+        Assert.Empty(preview.Items);
+        Assert.Contains(new DesktopLeftAlone("a.txt", "Something called Old stuff that DeskAI can't use is in the way, so nothing can go into it."), preview.LeftAlone);
+    }
 }

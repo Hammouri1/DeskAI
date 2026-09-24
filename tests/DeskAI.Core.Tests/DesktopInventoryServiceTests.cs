@@ -103,4 +103,34 @@ public sealed class DesktopInventoryServiceTests
 
     private static FileDiscovered File(string path, DateTimeOffset changed, FileTraits traits = FileTraits.None) =>
         new(new FileItem(Guid.NewGuid(), path, FileKind.Unknown, 10, Made, changed, traits));
+
+    /// <summary>
+    /// Found in review 2026-09-24: one big folder that made the look stop at its item limit marked
+    /// every folder as unfinished, so Clear old stuff offered no folder at all. The scanner finishes
+    /// one top-level folder before starting the next, so folders it already finished are known.
+    /// </summary>
+    [Fact]
+    public async Task When_the_look_stops_early_only_the_folders_it_had_not_finished_are_marked()
+    {
+        var seen = await LookAsync(
+            Folder("Big", Day(2024, 1)),
+            Folder("Done", Day(2024, 1)),
+            Folder("Empty", Day(2024, 1)),
+            File(@"Done\a.txt", Day(2024, 1)),
+            File(@"Big\1.txt", Day(2024, 1)),
+            new ScanIssue(".", ScanIssueCode.EntryLimitReached, "x"));
+
+        Assert.True(seen.Things.Single(thing => thing.Name == "Done").LookedAllTheWay);
+        Assert.False(seen.Things.Single(thing => thing.Name == "Big").LookedAllTheWay);
+        Assert.False(seen.Things.Single(thing => thing.Name == "Empty").LookedAllTheWay);
+    }
+
+    [Fact]
+    public async Task Things_left_out_of_the_look_are_named_so_nothing_moves_into_them()
+    {
+        var seen = await LookAsync(Folder("Old stuff", Day(2024, 1), FileTraits.Hidden), Folder("Kept", Day(2024, 1)));
+
+        Assert.Contains("Old stuff", seen.LeftOutNames);
+        Assert.DoesNotContain("Kept", seen.LeftOutNames);
+    }
 }
