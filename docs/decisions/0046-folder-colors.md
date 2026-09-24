@@ -78,3 +78,7 @@ reliable", but only because the probe's own check could not compare:
 The Explorer restart had re-sorted the Desktop: Microsoft Edge moved from above the probe folders
 to below them. The stage pictures show clean yellow folders after Put back. Fix for run 2: the
 probe restarts Explorer once before the start picture, so the re-sort happens first.
+
+**Run 2 (2026-09-24).** Stopped at the first step: "Explorer did not show the probe's folders
+within 60 seconds", before anything was coloured. The probe did not say what it saw. It now waits
+up to 120 seconds, and the report says how long the first look took and what the last look saw.

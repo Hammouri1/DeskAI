@@ -24,6 +24,7 @@ var green = new Rgb(0, 180, 0);
 var report = new ColorProbeReport();
 var clock = TimeProvider.System;
 var settle = TimeSpan.FromSeconds(3);
+var lastSeen = "nothing yet";
 
 var desktop = Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory);
 var iconFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DeskAIColorProbe");
@@ -73,12 +74,14 @@ try
     // Restart Explorer once before the start picture. The first restart re-sorts the Desktop's
     // icons (run 1: Microsoft Edge moved below the folders, so every folder moved up one place
     // and could not be compared with the start); later restarts keep that order.
+    var waitStarted = clock.GetUtcNow();
     var view = await OpenViewAsync();
+    report.Note($"first look: {(view is null ? "no folders" : "folders shown")} after {(clock.GetUtcNow() - waitStarted).TotalSeconds:F0} s");
     view?.Dispose();
     view = view is null ? null : await RestartExplorerAsync();
     if (view is null)
     {
-        report.Add(new Stage("find desktop view", StageOutcome.Failed, "Explorer did not show the probe's folders within 60 seconds"));
+        report.Add(new Stage("find desktop view", StageOutcome.Failed, $"Explorer did not show the probe's folders within 120 seconds; last look: {lastSeen}"));
         return Finish(3);
     }
 
@@ -157,7 +160,7 @@ try
     view = await RestartExplorerAsync();
     if (view is null)
     {
-        report.Add(new Stage("explorer restart", StageOutcome.Failed, "Explorer did not come back within 60 seconds"));
+        report.Add(new Stage("explorer restart", StageOutcome.Failed, $"Explorer did not come back within 120 seconds; last look: {lastSeen}"));
     }
     else
     {
@@ -255,13 +258,15 @@ async Task<DesktopShellView?> RestartExplorerAsync()
 }
 
 async Task<DesktopShellView?> OpenViewAsync() =>
-    await Waiting.ForAsync(TryView, TimeSpan.FromSeconds(60), TimeSpan.FromMilliseconds(500), clock);
+    await Waiting.ForAsync(TryView, TimeSpan.FromSeconds(120), TimeSpan.FromMilliseconds(500), clock);
 
 // While Explorer is still starting, reading its view can fail; that means "not ready yet".
+// What the last try saw goes into the report if the wait runs out (run 2 stopped here silently).
 DesktopShellView? TryView()
 {
     if (DesktopShellView.TryOpen() is not { } view)
     {
+        lastSeen = "no Desktop view yet";
         return null;
     }
 
@@ -272,9 +277,12 @@ DesktopShellView? TryView()
         {
             return view;
         }
+
+        lastSeen = $"{positions.Count} items: {string.Join(", ", positions.Keys)}";
     }
     catch (Exception ex) when (ex is COMException or InvalidComObjectException)
     {
+        lastSeen = $"reading the view failed: {ex.GetType().Name}: {ex.Message}";
     }
 
     view.Dispose();
