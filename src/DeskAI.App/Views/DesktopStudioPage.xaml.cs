@@ -267,7 +267,7 @@ public sealed partial class DesktopStudioPage : Page
             Title = "Allow DeskAI to move things on your Desktop?",
             Content = "DeskAI may move folders and files on your Desktop into folders on your Desktop: only the ones you tick, and only when you press Move.\n"
                 + "It never deletes anything and never moves anything off your Desktop.\n"
-                + "Put back returns them.\n\nYou can take this back at any time.",
+                + "Put back returns your latest change.\n\nYou can take this back at any time.",
             PrimaryButtonText = "Allow moving",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Close,

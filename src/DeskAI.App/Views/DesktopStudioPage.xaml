@@ -191,7 +191,7 @@
             <StackPanel Spacing="6" Visibility="{x:Bind ViewModel.IsDesktopConnected, Mode=OneWay}">
                 <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
                            Visibility="{x:Bind ViewModel.CannotMoveThings, Mode=OneWay}"
-                           Text="The cards below move things on your Desktop. DeskAI asks before the first move, and Put back returns everything." />
+                           Text="The cards below move things on your Desktop. DeskAI asks before the first move, and Put back returns your latest change." />
                 <HyperlinkButton Content="Stop DeskAI moving things on my Desktop" Padding="0"
                                  Visibility="{x:Bind ViewModel.CanMoveThings, Mode=OneWay}" Click="OnStopMovingClick" />
                 <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
