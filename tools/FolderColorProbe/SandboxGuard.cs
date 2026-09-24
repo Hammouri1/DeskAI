@@ -1,0 +1,17 @@
+namespace DeskAI.FolderColorProbe;
+
+/// <summary>
+/// The probe writes <c>desktop.ini</c> files, changes folder attributes, and restarts Explorer, so
+/// it may run only on Windows Sandbox's throwaway Desktop. The Sandbox always signs in as this
+/// exact account.
+/// </summary>
+internal static class SandboxGuard
+{
+    internal const string SandboxUser = "WDAGUtilityAccount";
+
+    /// <returns>Null when the probe may run; otherwise why it refuses.</returns>
+    internal static string? Check(string userName) =>
+        string.Equals(userName, SandboxUser, StringComparison.Ordinal)
+            ? null
+            : "This probe runs only inside Windows Sandbox, because it changes folders on the Desktop. Nothing was changed.";
+}

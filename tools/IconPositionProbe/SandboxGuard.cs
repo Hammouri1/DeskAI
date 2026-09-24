@@ -1,9 +1,5 @@
 namespace DeskAI.IconProbe;
 
-internal readonly record struct Point(int X, int Y);
-
-internal readonly record struct Rect(int Left, int Top, int Right, int Bottom);
-
 /// <summary>
 /// The probe changes Explorer settings and icon positions, so it may run only on Windows
 /// Sandbox's throwaway Desktop. The Sandbox always signs in as this exact account.
