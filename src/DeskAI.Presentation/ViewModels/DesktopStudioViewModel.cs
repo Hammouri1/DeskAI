@@ -323,6 +323,7 @@ public sealed class DesktopStudioViewModel(
             }
 
             card.ShowOutcome(result.Summary, result.NotMoved);
+            await ShowRenamedBoardAsync(card, id).ConfigureAwait(true);
             await RefreshMovesAsync(id).ConfigureAwait(true);
         }).ConfigureAwait(true);
         return result;
@@ -347,9 +348,19 @@ public sealed class DesktopStudioViewModel(
             }
 
             card.ShowOutcome(result.Summary, result.NotMoved);
+            await ShowRenamedBoardAsync(card, id).ConfigureAwait(true);
             await RefreshMovesAsync(id).ConfigureAwait(true);
         }).ConfigureAwait(true);
         return result;
+    }
+
+    /// <summary>Tag names renames folders on the board too, so the board shows their names as they are now.</summary>
+    private async Task ShowRenamedBoardAsync(DesktopMoveCardViewModel card, Guid id)
+    {
+        if (card.Card == DesktopMoveCard.TagNames)
+        {
+            Show((await _grouping.LoadBoardAsync(id).ConfigureAwait(true)).Board);
+        }
     }
 
     /// <summary>Called only after the page's permission dialog was accepted.</summary>

@@ -133,4 +133,14 @@ public sealed class DesktopInventoryServiceTests
         Assert.Contains("Old stuff", seen.LeftOutNames);
         Assert.DoesNotContain("Kept", seen.LeftOutNames);
     }
+
+    /// <summary>Found in review 2026-09-24: a hidden file's name was not known, so Tag names offered it as a new name.</summary>
+    [Fact]
+    public async Task A_hidden_file_on_the_Desktop_is_named_as_left_out()
+    {
+        var seen = await LookAsync(File("Coding – Tools", Day(2024, 1), FileTraits.Hidden), Folder("Tools", Day(2024, 1)));
+
+        Assert.Contains("Coding – Tools", seen.LeftOutNames);
+        Assert.DoesNotContain(seen.Things, thing => thing.Name == "Coding – Tools");
+    }
 }

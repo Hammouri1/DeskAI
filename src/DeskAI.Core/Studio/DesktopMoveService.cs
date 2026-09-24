@@ -17,7 +17,11 @@ public sealed record DesktopMoveResult(
 /// <summary>The latest change a card made on the Desktop, which its Put back can undo.</summary>
 /// <param name="Moved">Each moved thing's original place by operation ID, so Put back can name it.</param>
 public sealed record DesktopLastChange(
-    DesktopMoveCard Card, Guid TransactionId, DateTimeOffset FinishedAtUtc, IReadOnlyDictionary<Guid, string> Moved);
+    DesktopMoveCard Card, Guid TransactionId, DateTimeOffset FinishedAtUtc, IReadOnlyDictionary<Guid, string> Moved)
+{
+    /// <summary>Where each moved thing went, by operation ID, so Put back can keep the board in step.</summary>
+    public IReadOnlyDictionary<Guid, string> MovedTo { get; init; } = new Dictionary<Guid, string>();
+}
 
 /// <summary>
 /// Clear old stuff, Folder by group, and Tag names (ADR 0044, ADR 0045): the preview, Move, Put back, the separate yes,
@@ -165,6 +169,14 @@ public sealed class DesktopMoveService(
             .Select(item => new DesktopLeftAlone(item.Name, outcomes.GetValueOrDefault(item.OperationId)?.Error ?? "It was not moved."))
             .ToList();
         var moved = items.Count - notMoved.Count;
+        if (preview.Card == DesktopMoveCard.TagNames)
+        {
+            var renamed = items
+                .Where(item => outcomes.TryGetValue(item.OperationId, out var outcome) && outcome.Outcome == ExecutionOutcome.Completed)
+                .ToDictionary(item => item.RelativePath, item => item.Destination, StringComparer.OrdinalIgnoreCase);
+            await RenameOnBoardAsync(root.Id, renamed, cancellationToken).ConfigureAwait(false);
+        }
+
         var into = preview.Card == DesktopMoveCard.ClearOldStuff
             ? DesktopMovePlanner.OldStuffFolder
             : destinations.Count == 1 ? $"the {destinations.Single()} folder" : $"{destinations.Count} folders";
@@ -212,7 +224,12 @@ public sealed class DesktopMoveService(
 
             return record.Purpose != PurposeOf(card) || record.State == ExecutionTransactionState.Undone || undone.Contains(record.Id)
                 ? null
-                : new DesktopLastChange(card, record.Id, record.FinishedAtUtc ?? record.StartedAtUtc, moved);
+                : new DesktopLastChange(card, record.Id, record.FinishedAtUtc ?? record.StartedAtUtc, moved)
+                {
+                    MovedTo = record.Operations
+                        .Where(operation => moved.ContainsKey(operation.OperationId))
+                        .ToDictionary(operation => operation.OperationId, operation => operation.DestinationRelativePath),
+                };
         }
 
         return null;
@@ -230,9 +247,43 @@ public sealed class DesktopMoveService(
             return new(true, 0, 0, [], PutBackPermissionNeeded);
         }
 
-        return await FindLastAsync(rootId, card, cancellationToken).ConfigureAwait(false) is { } last
-            ? await UndoAsync(last.TransactionId, last.Moved, cancellationToken).ConfigureAwait(false)
-            : new(false, 0, 0, [], "There is nothing to put back.");
+        if (await FindLastAsync(rootId, card, cancellationToken).ConfigureAwait(false) is not { } last)
+        {
+            return new(false, 0, 0, [], "There is nothing to put back.");
+        }
+
+        var (result, back) = await UndoAsync(last.TransactionId, last.Moved, cancellationToken).ConfigureAwait(false);
+        if (card == DesktopMoveCard.TagNames)
+        {
+            var renamed = back
+                .Where(last.MovedTo.ContainsKey)
+                .ToDictionary(id => last.MovedTo[id], id => last.Moved[id], StringComparer.OrdinalIgnoreCase);
+            await RenameOnBoardAsync(rootId, renamed, cancellationToken).ConfigureAwait(false);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Keeps the Find groups board in step with Tag names' own renames, so a renamed folder stays in
+    /// its group instead of looking gone (found in review 2026-09-24). Only completed renames count.
+    /// </summary>
+    private async Task RenameOnBoardAsync(Guid rootId, Dictionary<string, string> renamed, CancellationToken cancellationToken)
+    {
+        if (renamed.Count == 0 || await boards.LoadAsync(rootId, cancellationToken).ConfigureAwait(false) is not { } board)
+        {
+            return;
+        }
+
+        string Rename(string path) => renamed.TryGetValue(path, out var now) ? now : path;
+        await boards.SaveAsync(
+            board with
+            {
+                Groups = board.Groups.Select(group => group with { Items = group.Items.Select(Rename).ToList() }).ToList(),
+                NotSure = board.NotSure.Select(Rename).ToList(),
+                Folders = board.Folders.Select(Rename).ToHashSet(StringComparer.OrdinalIgnoreCase),
+            },
+            cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>A change on the Desktop that stopped part-way, checked against the disk; asked about first.</summary>
@@ -284,10 +335,12 @@ public sealed class DesktopMoveService(
             return new(false, 0, 0, [], problem);
         }
 
-        return await UndoAsync(interrupted.TransactionId, interrupted.MovedFiles, cancellationToken).ConfigureAwait(false);
+        return (await UndoAsync(interrupted.TransactionId, interrupted.MovedFiles, cancellationToken).ConfigureAwait(false)).Result;
     }
 
-    private async Task<DesktopMoveResult> UndoAsync(Guid transactionId, IReadOnlyDictionary<Guid, string> moved, CancellationToken cancellationToken)
+    /// <returns>What Put back did, and the operations it put back.</returns>
+    private async Task<(DesktopMoveResult Result, IReadOnlyList<Guid> Back)> UndoAsync(
+        Guid transactionId, IReadOnlyDictionary<Guid, string> moved, CancellationToken cancellationToken)
     {
         UndoResult result;
         try
@@ -296,7 +349,7 @@ public sealed class DesktopMoveService(
         }
         catch (InvalidOperationException exception)
         {
-            return new(false, 0, 0, [], exception.Message);
+            return (new(false, 0, 0, [], exception.Message), []);
         }
 
         var named = result.Operations.Where(outcome => moved.ContainsKey(outcome.OperationId)).ToList();
@@ -308,7 +361,8 @@ public sealed class DesktopMoveService(
         var summary = notBack.Count == 0
             ? $"Put back. {DesktopMoveText.Things(back)} {(back == 1 ? "is where it was" : "are where they were")}."
             : $"{back} of {named.Count} things went back. The rest stayed where they are now.";
-        return new(false, back, named.Count, notBack, summary);
+        var putBack = named.Where(outcome => outcome.Outcome == ExecutionOutcome.Completed).Select(outcome => outcome.OperationId).ToList();
+        return (new(false, back, named.Count, notBack, summary), putBack);
     }
 
     private static PlanPurpose PurposeOf(DesktopMoveCard card) => card switch

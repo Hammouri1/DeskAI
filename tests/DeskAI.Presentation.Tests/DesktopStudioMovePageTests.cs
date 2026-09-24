@@ -411,6 +411,30 @@ public sealed class DesktopStudioMovePageTests
         Assert.Contains(studio.TagNames.LeftAlone, line => line == "Coding – Tools: Its name already starts with the group's name.");
     }
 
+    /// <summary>Found in review 2026-09-24: the board kept the old names, so a second press said the folder was gone and reopening moved it to Not sure.</summary>
+    [Fact]
+    public async Task Renamed_folders_stay_in_their_group_and_a_second_press_leaves_them_alone()
+    {
+        await using var first = await TestApp.StartAsync();
+        MakeGroupDesktop(first);
+        var studio = await OpenAllowedAsync(first);
+        await studio.GuessAsync();
+        await studio.PreviewAsync(studio.TagNames);
+        await studio.ApplyAsync(studio.TagNames);
+
+        await studio.PreviewAsync(studio.TagNames);
+
+        Assert.Contains("Coding – Python stuff: Its name already starts with the group's name.", studio.TagNames.LeftAlone);
+        Assert.DoesNotContain(studio.TagNames.LeftAlone, line => line.Contains("no longer on your Desktop", StringComparison.Ordinal));
+        await using var app = await first.ReopenAsync();
+        var again = app.Get<DesktopStudioViewModel>();
+        await again.InitializeAsync();
+        Assert.Contains(again.Groups.Single(group => group.Name == "Coding").Items, item => item.Name == "Coding – Python stuff");
+        Assert.Empty(again.NotSure);
+        await again.PutBackAsync(again.TagNames);
+        Assert.Contains(again.Groups.Single(group => group.Name == "Coding").Items, item => item.Name == "Python stuff");
+    }
+
     private static void MakeGroupDesktop(TestApp app)
     {
         app.MakeFile("Desktop", Path.Combine("Python stuff", "main.py"));

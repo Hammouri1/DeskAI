@@ -137,7 +137,12 @@ public sealed class DesktopInventoryService(IFileScanner scanner)
 
                     break;
                 case FileDiscovered { File: var file } when !nested:
-                    if (!IsHiddenOrSystem(file.Traits))
+                    if (IsHiddenOrSystem(file.Traits))
+                    {
+                        // Named, though never shown, so no card takes its name for something else.
+                        excluded.Add(file.RelativePath);
+                    }
+                    else
                     {
                         files.Add(file);
                     }
