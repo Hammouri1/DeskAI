@@ -18,6 +18,8 @@ public sealed class DesktopGroupViewModel(string name, IEnumerable<DesktopItemVi
     public string Name { get; } = name;
 
     public ObservableCollection<DesktopItemViewModel> Items { get; } = new(items);
+
+    public string CountText => DesktopStudioViewModel.Count(Items.Count);
 }
 
 /// <summary>
@@ -63,6 +65,8 @@ public sealed class DesktopStudioViewModel(
     public bool HasBoard => Groups.Count > 0 || NotSure.Count > 0;
 
     public bool HasNotSure => NotSure.Count > 0;
+
+    public string NotSureCountText => Count(NotSure.Count);
 
     public IReadOnlyList<string> GroupNames => Groups.Select(g => g.Name).ToList();
 
@@ -213,8 +217,11 @@ public sealed class DesktopStudioViewModel(
         };
         OnPropertyChanged(nameof(HasBoard));
         OnPropertyChanged(nameof(HasNotSure));
+        OnPropertyChanged(nameof(NotSureCountText));
         OnPropertyChanged(nameof(GroupNames));
     }
+
+    internal static string Count(int items) => items == 1 ? "1 item" : $"{items} items";
 
     private async Task RunAsync(Func<Task> work)
     {

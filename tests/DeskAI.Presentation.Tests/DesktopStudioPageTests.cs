@@ -181,6 +181,26 @@ public sealed class DesktopStudioPageTests
     }
 
     [Fact]
+    public async Task Every_group_and_Not_sure_say_how_many_items_they_hold()
+    {
+        await using var app = await TestApp.StartAsync();
+        MakeDesktop(app);
+        var studio = await OpenWithDesktopAsync(app);
+        await studio.GuessAsync();
+
+        await studio.MoveItemAsync("holiday.jpg", null);
+
+        var coding = studio.Groups.Single(g => g.Name == "Coding");
+        Assert.Equal(Count(coding.Items.Count), coding.CountText);
+        Assert.True(studio.HasNotSure);
+        Assert.Equal(Count(studio.NotSure.Count), studio.NotSureCountText);
+        Assert.Equal("1 item", new DesktopGroupViewModel("One", [new("a.txt", "a.txt", false)]).CountText);
+        Assert.Equal("3 items", new DesktopGroupViewModel("Three", [new("a", "a", true), new("b", "b", true), new("c", "c", true)]).CountText);
+
+        static string Count(int n) => n == 1 ? "1 item" : $"{n} items";
+    }
+
+    [Fact]
     public async Task A_folder_deleted_since_is_gone_from_the_board_next_time()
     {
         await using var app = await TestApp.StartAsync();

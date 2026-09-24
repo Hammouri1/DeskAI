@@ -477,6 +477,11 @@ changes." and offers **Find groups with <service>** (only when AI is set up) and
 guess**. The AI button opens a Send window listing every line the AI would see, with the service
 and its address, "names and kinds of files. Not what is inside them, and not where they are.",
 and **Send** / **Cancel** (Cancel is the default). The board shows who made it ("Grouped by
-OpenRouter." or "Grouped by DeskAI's own simpler guess."), one card per group with **Rename** and
-**Merge into…**, each item with a folder or file icon and **Move to…**, and a **Not sure** card
-last. Later cards (Keep together, Make zones, and so on) join this page one at a time.
+OpenRouter." or "Grouped by DeskAI's own simpler guess."), then the groups as a grid of
+same-size cards. Each card shows the group name on its own line, how many items it holds ("8
+items"), and a small **⋯** button (named "Rename or merge") that opens **Rename…** and **Merge
+into** (left out when there is no other group); each item has a folder or file icon and a quiet
+**Move to…**, and a long group scrolls inside its card. **Not sure** comes last, across the full
+width, with its items in columns and its own scroll after about eight rows. The owner found on a
+real Desktop (2026-09-24) that Not sure ran down the page in one column and that the Rename and
+Merge buttons squeezed names into "Document s"; `DesktopStudioLayoutTests` keeps both fixed. Later cards (Keep together, Make zones, and so on) join this page one at a time.

@@ -106,9 +106,41 @@ public sealed partial class DesktopStudioPage : Page
         return await dialog.ShowAsync() == ContentDialogResult.Primary;
     }
 
-    private async void OnRenameClick(object sender, RoutedEventArgs e)
+    /// <summary>
+    /// Rename and Merge share one small menu so the group name keeps the width of its card.
+    /// Merge into is left out when there is no other group to merge into.
+    /// </summary>
+    private void OnGroupOptionsClick(object sender, RoutedEventArgs e)
     {
-        if (sender is not FrameworkElement { Tag: string group } || ViewModel.IsBusy)
+        if (sender is not FrameworkElement { Tag: string group } element || ViewModel.IsBusy)
+        {
+            return;
+        }
+
+        var menu = new MenuFlyout();
+        var rename = new MenuFlyoutItem { Text = "Rename…", Icon = new FontIcon { Glyph = "" } };
+        rename.Click += async (_, _) => await RenameAsync(group);
+        menu.Items.Add(rename);
+
+        var merge = new MenuFlyoutSubItem { Text = "Merge into", Icon = new FontIcon { Glyph = "" } };
+        foreach (var other in ViewModel.GroupNames.Where(name => name != group))
+        {
+            var item = new MenuFlyoutItem { Text = other };
+            item.Click += async (_, _) => await ViewModel.MergeGroupAsync(group, other);
+            merge.Items.Add(item);
+        }
+
+        if (merge.Items.Count > 0)
+        {
+            menu.Items.Add(merge);
+        }
+
+        menu.ShowAt(element);
+    }
+
+    private async Task RenameAsync(string group)
+    {
+        if (ViewModel.IsBusy)
         {
             return;
         }
@@ -126,27 +158,6 @@ public sealed partial class DesktopStudioPage : Page
         if (await dialog.ShowAsync() == ContentDialogResult.Primary)
         {
             await ViewModel.RenameGroupAsync(group, box.Text);
-        }
-    }
-
-    private void OnMergeClick(object sender, RoutedEventArgs e)
-    {
-        if (sender is not FrameworkElement { Tag: string group } element || ViewModel.IsBusy)
-        {
-            return;
-        }
-
-        var menu = new MenuFlyout();
-        foreach (var other in ViewModel.GroupNames.Where(name => name != group))
-        {
-            var item = new MenuFlyoutItem { Text = other };
-            item.Click += async (_, _) => await ViewModel.MergeGroupAsync(group, other);
-            menu.Items.Add(item);
-        }
-
-        if (menu.Items.Count > 0)
-        {
-            menu.ShowAt(element);
         }
     }
 

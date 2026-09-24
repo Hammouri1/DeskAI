@@ -77,10 +77,16 @@ Built from `docs/superpowers/plans/2026-09-24-desktop-studio-find-groups.md` in 
   who made it.
 - **Deferred small points from the review** (the owner decides): menu items in Move to… and
   Merge into… skip the busy check, and buttons look enabled while busy; Connect clears the busy
-  state early; Merge into… does nothing when there is one group; an AI group with no items is
+  state early; an AI group with no items is
   kept as an empty box; a very long board could hit the storage size check and show technical
   text; the hidden-only Desktop case is tested below the page level only; a rename that only
   changes letter case keeps the old casing on the board.
+- **Board layout fix (owner-found, 2026-09-24):** on a real Desktop, Not sure ran down the page in
+  one long column and the Rename and Merge buttons squeezed names ("Document s"). Group cards are
+  now one size with an item count and a **⋯** menu (Rename…, Merge into — left out when there is
+  no other group), long groups scroll inside their card, and Not sure spans the width in columns
+  with its own scroll. The owner pointed to two screenshots by their path in Pictures and they
+  were opened at the owner's request; next time, ask them to paste images into the chat.
 - **Known limit:** a Desktop with more than 60 folders or 200 loose files, or with very long
   names, is only partly sorted by AI; DeskAI's guess sorts the rest.
 
