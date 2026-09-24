@@ -79,6 +79,15 @@ public sealed partial class SettingsPage : Page
         }
     }
 
+    /// <summary>Opens the first-run welcome again. It never changes whether DeskAI remembers greeting.</summary>
+    private async void OnShowWelcomeClick(object sender, RoutedEventArgs e)
+    {
+        if (((App)Application.Current).MainAppWindow is MainWindow window)
+        {
+            await window.ShowWelcomeAsync();
+        }
+    }
+
     /// <summary>Asks in plain words what will be forgotten and what will not, then forgets.</summary>
     private async void OnStartFreshClick(object sender, RoutedEventArgs e)
     {

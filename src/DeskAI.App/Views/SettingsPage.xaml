@@ -23,6 +23,7 @@
                         <TextBlock MaxWidth="560" TextWrapping="Wrap"
                                    Foreground="{ThemeResource DeskTextSecondaryBrush}"
                                    Text="AI is optional. Choose what you use and what you share." />
+                        <Button Content="Show the welcome again" Click="OnShowWelcomeClick" />
                     </StackPanel>
                     <ItemsControl AutomationProperties.Name="At a glance"><ItemsControl.ItemsPanel><ItemsPanelTemplate><WrapGrid Orientation="Horizontal" /></ItemsPanelTemplate></ItemsControl.ItemsPanel><Border Style="{StaticResource SoftCardStyle}" Padding="12,10" Width="180" Margin="0,0,8,8">
                             <StackPanel Spacing="4">

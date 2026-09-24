@@ -14,6 +14,10 @@ public sealed partial class MainWindow : Window
     private readonly ShellViewModel? _shell;
     private readonly IFindingNotifier? _notifier;
     private readonly BackgroundPresenceController? _presence;
+    private readonly WelcomeViewModel? _welcome;
+
+    /// <summary>Only one pop-up can be open in a window, so a second request while it is open does nothing.</summary>
+    private bool _welcomeOpen;
 
     /// <summary>
     /// Whether the "DeskAI is still running" notice has already been shown this run.
@@ -34,8 +38,10 @@ public sealed partial class MainWindow : Window
         ShellViewModel viewModel,
         INavigationService navigationService,
         IFindingNotifier notifier,
-        BackgroundPresenceController presence)
+        BackgroundPresenceController presence,
+        WelcomeViewModel welcome)
     {
+        _welcome = welcome;
         InitializeComponent();
         Title = "DeskAI";
         ApplyWindowIcon();
@@ -52,7 +58,70 @@ public sealed partial class MainWindow : Window
         _shell.ShowPage("dashboard");
         RootNavigation.ActualThemeChanged += (_, _) => ReportTheme();
         AppWindow.Closing += OnClosing;
+        RootNavigation.Loaded += OnFirstLoaded;
         _ = RefreshScopeAsync();
+    }
+
+    /// <summary>
+    /// Greets a brand-new person once. The shell remembers the showing before the pop-up opens,
+    /// so skipping it, closing DeskAI, or a crash never brings it back.
+    /// </summary>
+    private async void OnFirstLoaded(object sender, RoutedEventArgs args)
+    {
+        RootNavigation.Loaded -= OnFirstLoaded;
+        if (_shell is not null && await _shell.ClaimFirstWelcomeAsync())
+        {
+            await ShowWelcomeAsync();
+        }
+    }
+
+    /// <summary>
+    /// Opens the welcome, at the first start or from Privacy and AI. A Connect press closes it and
+    /// asks Home's own "Connect your …?" question; only that question's yes connects, and then
+    /// Organize opens on the folder, exactly as from Home.
+    /// </summary>
+    internal async Task ShowWelcomeAsync()
+    {
+        if (_welcome is null || _welcomeOpen || Content?.XamlRoot is not { } root)
+        {
+            return;
+        }
+
+        _welcomeOpen = true;
+        try
+        {
+            await _welcome.OpenAsync();
+            if (!await Views.WelcomeDialog.ShowAsync(root, _welcome)
+                || _welcome.ChosenFolder is not { } kind
+                || _welcome.Folders.Find(kind) is not { } row)
+            {
+                return;
+            }
+
+            if (!row.IsConnected && !await Views.PersonalFolderDialogs.ConfirmConnectAsync(root, row.Name))
+            {
+                return;
+            }
+
+            if (await _welcome.ConnectChosenAsync() is not null)
+            {
+                GoTo("organize", fresh: true);
+            }
+            else if (_welcome.Folders.HasMessage)
+            {
+                await new ContentDialog
+                {
+                    XamlRoot = root,
+                    Title = $"DeskAI could not connect your {row.Name}",
+                    Content = new TextBlock { Text = _welcome.Folders.Message, TextWrapping = TextWrapping.Wrap, MaxWidth = 480 },
+                    CloseButtonText = "OK",
+                }.ShowAsync();
+            }
+        }
+        finally
+        {
+            _welcomeOpen = false;
+        }
     }
 
     /// <summary>
