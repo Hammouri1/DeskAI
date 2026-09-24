@@ -1,5 +1,13 @@
 # DeskAI — Coding Handoff
 
+## 2026-09-24 Desktop Studio agreed (design only, nothing built)
+
+The owner explained DeskAI's original idea: connect the Desktop and turn it into a sorted,
+good-looking one, covering folders and files, with features a person can pick one at a time. The agreed
+design, including every decision the owner made in conversation, is
+`docs/superpowers/specs/2026-09-24-desktop-studio-design.md`. It awaits the owner's review of
+that document; after approval, write the implementation plan for step 1 (Find groups) only.
+
 ## 2026-09-24 Search finds more of your files
 
 The owner asked for improvement ideas and chose this one first (the other ideas, in order:
