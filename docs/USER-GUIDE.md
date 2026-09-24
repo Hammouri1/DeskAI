@@ -37,6 +37,14 @@ happens, and every move is written down so it can be undone.
 The top bar on every page has **Find a file…** and a pill that says whether AI is on. The bottom
 of the menu always says which folders DeskAI can see.
 
+## The welcome
+
+The first time DeskAI opens, a short welcome appears: what DeskAI is, what it will never do, and a
+button for each of your folders. Press **Next** to read on, **Back** to go back, or **Skip** to
+close it. It does not come back by itself. A folder button asks the same "Connect your …?"
+question Home asks, and connects only if you say yes. To see it again, open **Privacy and AI** and
+press **Show the welcome again**.
+
 ## Connecting a folder
 
 DeskAI works only inside four of your own folders: **Desktop, Downloads, Documents, and

@@ -1194,3 +1194,22 @@ the normal app if they want to check a real vision-capable model.
    A text-only model should produce a refusal, not a silent switch to another provider.
 5. Add a fresh sample file and press the connected folder's **Refresh** before searching.
    Disconnect the folder and verify the old visual result disappears after the next search.
+
+# 2026-09-24 First-run welcome
+
+Use the isolated `DeskAiUiPreview=true` build, which starts with generated temporary data and no
+folder connected. Never press a folder button in your everyday DeskAI during this check.
+
+1. Launch the preview. The welcome opens over Home on **Welcome to DeskAI**, with three dots and
+   **Back** greyed out. Press **Next**: **You stay in charge** shows four ticked lines. Press
+   **Back**, then **Next** twice: **Let's start** shows one button per generated folder, "AI is
+   off. You can turn it on later in Privacy and AI.", and **Done** instead of Next.
+2. Press **Connect Downloads**. The welcome closes and "Connect your Downloads?" appears. Press
+   **Cancel**: Home still says nothing is connected.
+3. Open **Privacy and AI** and press **Show the welcome again**. It opens on page one. Go to the
+   last page, press **Connect Downloads**, then **Connect my Downloads**: Organize opens on
+   Downloads and asks permission before suggesting anything. Nothing moved.
+4. Open the welcome again from Privacy and AI: Downloads now says **Tidy Downloads**. Press
+   **Skip**, the X, and Esc on separate openings; each closes it at once.
+5. In your everyday DeskAI (folders already connected), start it: no welcome appears. **Show the
+   welcome again** opens it; press **Skip**.

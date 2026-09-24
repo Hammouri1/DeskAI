@@ -112,6 +112,7 @@ changes a feature.
 | Page | Feature | Page tests |
 |---|---|---|
 | Home | Totals, categories, largest files, last checked | `HomeAndShellTests` |
+| Home | First-run welcome: shown once to a brand-new DeskAI and remembered before it opens; not shown to someone with a folder already connected, nor when the memory cannot be read or written; Next, Back, and Done walk three pages; the last page lists only the folders Windows reports (or says none were found) and says whether AI is on; Connect connects only after Home's question and opens Organize; a refused connect says why; Start fresh brings it back; Privacy and AI reopens it on page one without changing what DeskAI remembers | `WelcomePageTests`, `WelcomeLayoutTests`, `FreshStartPageTests`, `WelcomeServiceTests` |
 | Home | Ask DeskAI, asked once (ADR 0035 amended): the first question asks and the yes survives reopening; later questions send with no dialog; a send without that yes sends nothing; a different AI service asks again; "Ask me each time" and Start fresh both take the yes back | `AskDeskAiPageTests` |
 | Home | Ask DeskAI (ADR 0035): off with AI off; the dialog's words and service; Send sends the question alone; a search question replies with matching names and Open in Search lands the phrase on Search; a space question is answered from the storage summary; a tidy question opens Organize on a connected folder, offers Connect for an unconnected personal folder, or says where DeskAI works; unsure says what can be asked; an off-shape answer is refused; cancel sends nothing | `AskDeskAiPageTests`, `AskDeskAiServiceTests` |
 | Home | Ask DeskAI is visibly and accessibly marked BETA beside its heading | `ShellLayoutTests` |
@@ -220,7 +221,7 @@ changes a feature.
 | Privacy and AI | Back up: the file holds rules and saved searches and no folder, path, key, or setting; the status says so | `BackupPageTests` |
 | Privacy and AI | Restore: preview adds nothing and names what is skipped and why; restore adds once with new IDs, rules Off, names already used skipped; a second restore adds nothing; pins kept only while there is room | `BackupPageTests` |
 | Privacy and AI | Restore refuses a file that is not a backup, a newer version, a non-.json file, and an oversized file in plain words; a hostile or unknown rule in the file is skipped with a reason and the rest restored | `BackupPageTests` |
-| Privacy and AI | Start fresh forgets every folder, rule, search, key, AI choice, check history and setting, look, and wallpaper memory, hides the icon, and touches no file; the backup and fresh-start services hold nothing that reaches a file | `FreshStartPageTests`, `BackupPageTests` |
+| Privacy and AI | Start fresh forgets every folder, rule, search, key, AI choice, check history and setting, look, wallpaper memory, and that the welcome was shown, hides the icon, and touches no file; the backup and fresh-start services hold nothing that reaches a file | `FreshStartPageTests`, `BackupPageTests` |
 | Privacy and AI | The version line | `FreshStartPageTests` |
 | Every page | Every button without visible text and every box, list, and switch carries a name for screen readers | `AccessibilityNameTests` |
 | Whole app | Performance probe on a few thousand generated files (opt-in, `DESKAI_PERF`), recorded in `docs/PERFORMANCE.md` | `PerformanceProbe` |

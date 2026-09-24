@@ -27,6 +27,25 @@ Storage insights may begin on Dashboard and later gain a dedicated view. Workspa
 
 Do not overwhelm the first run with every future feature or provider.
 
+**The welcome pop-up (built 2026-09-24,
+`docs/superpowers/specs/2026-09-24-first-run-welcome-design.md`).** The first time a brand-new
+DeskAI opens — never shown before and no folder remembered — a three-page pop-up appears over
+Home, with the logo, three page dots, and **Back**, **Next** (**Done** on the last page), and
+**Skip**:
+
+1. **Welcome to DeskAI** — "Find your files and keep them tidy."
+2. **You stay in charge** — four ticked lines: DeskAI sees nothing until you connect a folder; it
+   only works in your Desktop, Downloads, Documents, and Pictures; nothing moves until you see it
+   and say yes; you can put things back.
+3. **Let's start** — one button per personal folder Windows reports, and a line saying AI is off
+   (or which AI is on, when reopened later).
+
+It is remembered as shown the moment it opens, so Skip, the X, Esc, or closing DeskAI all count;
+people already using DeskAI are not greeted after an update. A folder button closes the pop-up and
+asks Home's usual "Connect your …?" question; only that question's yes connects, then Organize
+opens on the folder. **Privacy and AI → Show the welcome again** reopens it on page one. **Start
+fresh** makes DeskAI greet the person again at the next start.
+
 ## Dashboard
 
 Suggested hierarchy:

@@ -196,6 +196,10 @@ open anything. Tidying is a separate permission you give per folder on the Organ
 even then nothing moves until you press Tidy and approve the preview. Everything it does can be
 undone.
 
+The first time it opens, DeskAI shows a short three-page welcome that says what it will and will
+not do and offers to connect a folder. Skip it any time; you can see it again under **Privacy and
+AI → Show the welcome again**.
+
 To remove it completely: open **Privacy and AI**, press **Start fresh**, then delete the folder.
 
 - Install, update, and remove in detail: [docs/INSTALL.md](docs/INSTALL.md)
