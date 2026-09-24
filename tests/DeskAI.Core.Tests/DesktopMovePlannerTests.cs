@@ -142,6 +142,71 @@ public sealed class DesktopMovePlannerTests
         Assert.Equal("Nothing", DesktopMoveText.Total([]));
     }
 
+    [Fact]
+    public void Tag_names_puts_the_group_name_in_front_of_each_folder_and_leaves_files()
+    {
+        var board = Board([new("Coding", ["Python stuff", "app.py"])], notSure: ["Loose"]);
+
+        var preview = Tag(board, Folder("Python stuff", Recent), File("app.py", Recent), Folder("Loose", Recent));
+
+        var item = Assert.Single(preview.Items);
+        Assert.Equal("Python stuff", item.Name);
+        Assert.Equal("Coding – Python stuff", item.Destination);
+        var rename = Assert.IsType<MoveFolderOperation>(Assert.Single(preview.Plan.Operations));
+        Assert.Equal("Coding – Python stuff", rename.DestinationRelativePath);
+        Assert.Equal(PlanPurpose.TagNames, preview.Plan.Purpose);
+    }
+
+    [Fact]
+    public void Tag_names_never_takes_a_name_already_used()
+    {
+        var board = Board([new("Coding", ["Python stuff", "Tools"])]);
+        var seen = new DesktopInventory(
+            [Folder("Python stuff", Recent), Folder("Tools", Recent), File("Coding – Python stuff", Recent)], null)
+        {
+            LeftOutNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase) { "Coding – Tools" },
+        };
+
+        var preview = DesktopMovePlanner.TagNames(StudioFakes.Root(), seen, board, Now, "1", _ => false);
+
+        Assert.Empty(preview.Items);
+        Assert.Contains(new DesktopLeftAlone("Python stuff", "Something called Coding – Python stuff is already there, so nothing was replaced."), preview.LeftAlone);
+        Assert.Contains(new DesktopLeftAlone("Tools", "Something called Coding – Tools is already there, so nothing was replaced."), preview.LeftAlone);
+    }
+
+    [Fact]
+    public void Tag_names_leaves_a_folder_already_named_with_its_group()
+    {
+        var preview = Tag(Board([new("Coding", ["Coding – Tools"])]), Folder("Coding – Tools", Recent));
+
+        Assert.Empty(preview.Items);
+        Assert.Contains(new DesktopLeftAlone("Coding – Tools", "Its name already starts with the group's name."), preview.LeftAlone);
+    }
+
+    [Fact]
+    public void Tag_names_checks_the_new_name()
+    {
+        var longName = new string('a', 60);
+
+        var preview = Tag(Board([new("Coding", [longName])]), Folder(longName, Recent));
+
+        Assert.Empty(preview.Items);
+        Assert.StartsWith("The new name can't be used:", Assert.Single(preview.LeftAlone).Reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Tag_names_warns_before_renaming_a_project()
+    {
+        var preview = Tag(Board([new("Coding", ["Game mod"])]), Folder("Game mod", Recent, warnings: DesktopThingWarnings.ActiveProject));
+
+        var item = Assert.Single(preview.Items);
+        Assert.False(item.TickedByDefault);
+        Assert.Contains("renaming", item.Warning, StringComparison.Ordinal);
+    }
+
+    private static DesktopMovePreview Tag(DesktopGroupBoard board, params DesktopThing[] things) =>
+        DesktopMovePlanner.TagNames(StudioFakes.Root(), Seen(things), board, Now, "1", _ => false);
+
     private static DesktopMovePreview Clear(params DesktopThing[] things) =>
         DesktopMovePlanner.ClearOldStuff(StudioFakes.Root(), Seen(things), Now, "1", _ => false);
 

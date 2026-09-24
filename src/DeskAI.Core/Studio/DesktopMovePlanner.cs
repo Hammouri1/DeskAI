@@ -3,6 +3,7 @@ using DeskAI.Core.Execution;
 using DeskAI.Core.Plans;
 using DeskAI.Core.Roots;
 using DeskAI.Core.Search;
+using DeskAI.Core.Templates;
 
 namespace DeskAI.Core.Studio;
 
@@ -10,6 +11,7 @@ public enum DesktopMoveCard
 {
     ClearOldStuff,
     FolderByGroup,
+    TagNames,
 }
 
 /// <summary>One thing a card would move, and the folder on the Desktop it would go into.</summary>
@@ -68,8 +70,8 @@ public static class DesktopMoveText
 
     /// <summary>The most important warning first; null when there is none.</summary>
     public static string? WarningFor(DesktopThingWarnings warnings) =>
-        (warnings & DesktopThingWarnings.ActiveProject) != 0 ? "It looks like a project you're working on. Moving it can break programs that remember where it is."
-        : (warnings & DesktopThingWarnings.HasPrograms) != 0 ? "It has programs inside. Moving it can break shortcuts or games that remember where it is."
+        (warnings & DesktopThingWarnings.ActiveProject) != 0 ? "It looks like a project you're working on. Moving or renaming it can break programs that remember where it is."
+        : (warnings & DesktopThingWarnings.HasPrograms) != 0 ? "It has programs inside. Moving or renaming it can break shortcuts or games that remember where it is."
         : (warnings & DesktopThingWarnings.OnlineOnly) != 0 ? "Some of it is stored online only."
         : (warnings & DesktopThingWarnings.NotFullyLooked) != 0 ? "DeskAI couldn't look all the way inside."
         : null;
@@ -79,7 +81,7 @@ public static class DesktopMoveText
 }
 
 /// <summary>
-/// Works out what Clear old stuff and Folder by group would move (ADR 0044). Plain rules over a
+/// Works out what Clear old stuff, Folder by group, and Tag names would change (ADR 0044, ADR 0045). Plain rules over a
 /// fresh look; no AI and no disk access. Every move lands in a folder directly on the Desktop.
 /// </summary>
 public static class DesktopMovePlanner
@@ -144,6 +146,61 @@ public static class DesktopMovePlanner
         return builder.Build(PlanPurpose.FolderByGroup);
     }
 
+    /// <summary>Between the group's name and the folder's own name, as in the design's example.</summary>
+    public const string TagSeparator = " – ";
+
+    /// <summary>
+    /// Each folder in a group gets the group's name in front ("Coding – Python stuff"), with ADR
+    /// 0044's folder move to a new name in the same place (ADR 0045). Files and Not sure keep their
+    /// names. A new name that is already used, even by something the look left out, is never taken.
+    /// </summary>
+    public static DesktopMovePreview TagNames(
+        AuthorizedRoot root, DesktopInventory inventory, DesktopGroupBoard board, DateTimeOffset nowUtc, string policyVersion, Func<string, bool> isProtected)
+    {
+        ArgumentNullException.ThrowIfNull(inventory);
+        ArgumentNullException.ThrowIfNull(board);
+        var byPath = inventory.Things.ToDictionary(thing => thing.RelativePath, StringComparer.OrdinalIgnoreCase);
+        var taken = inventory.Things.Select(thing => thing.Name).Concat(inventory.LeftOutNames).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var builder = new Builder(root, DesktopMoveCard.TagNames, nowUtc, policyVersion, isProtected, inventory.LeftOutNames);
+        foreach (var group in board.Groups)
+        {
+            var prefix = group.Name + TagSeparator;
+            foreach (var path in group.Items)
+            {
+                if (!byPath.TryGetValue(path, out var thing))
+                {
+                    builder.LeaveAlone(Path.GetFileName(path), "It is no longer on your Desktop.");
+                    continue;
+                }
+
+                if (!thing.IsFolder)
+                {
+                    continue;
+                }
+
+                var newName = prefix + thing.Name;
+                if (thing.Name.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    builder.LeaveAlone(thing.Name, "Its name already starts with the group's name.");
+                }
+                else if (FolderNameCheck.Check(newName) is { } problem)
+                {
+                    builder.LeaveAlone(thing.Name, $"The new name can't be used: {problem}");
+                }
+                else if (!taken.Add(newName))
+                {
+                    builder.LeaveAlone(thing.Name, $"Something called {newName} is already there, so nothing was replaced.");
+                }
+                else
+                {
+                    builder.Rename(thing, newName, $"In your {group.Name} group");
+                }
+            }
+        }
+
+        return builder.Build(PlanPurpose.TagNames);
+    }
+
     private sealed class Builder(
         AuthorizedRoot root, DesktopMoveCard card, DateTimeOffset nowUtc, string policyVersion, Func<string, bool> isProtected,
         IReadOnlySet<string> leftOut)
@@ -196,6 +253,23 @@ public static class DesktopMovePlanner
                 : new MoveFileOperation(id, thing.RelativePath, target, reason, provenance));
             _items.Add(new DesktopMoveItem(
                 id, thing.RelativePath, thing.IsFolder, destination, thing.LastChangedUtc, thing.FileCount, thing.LookedAllTheWay,
+                DesktopMoveText.WarningFor(thing.Warnings)));
+            _facts[id] = thing.Facts;
+        }
+
+        /// <summary>A folder gets a new name in the same place: one rename (ADR 0045).</summary>
+        public void Rename(DesktopThing thing, string newName, string reason)
+        {
+            if (isProtected(thing.RelativePath) || isProtected(newName))
+            {
+                LeaveAlone(thing.Name, "DeskAI's safety rules keep it where it is.");
+                return;
+            }
+
+            var id = Guid.NewGuid();
+            _moves.Add(new MoveFolderOperation(id, thing.RelativePath, newName, reason, OperationProvenance.User));
+            _items.Add(new DesktopMoveItem(
+                id, thing.RelativePath, true, newName, thing.LastChangedUtc, thing.FileCount, thing.LookedAllTheWay,
                 DesktopMoveText.WarningFor(thing.Warnings)));
             _facts[id] = thing.Facts;
         }

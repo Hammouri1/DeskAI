@@ -10,4 +10,5 @@ public enum PlanPurpose
     Tidy,
     ClearOldStuff,
     FolderByGroup,
+    TagNames,
 }
