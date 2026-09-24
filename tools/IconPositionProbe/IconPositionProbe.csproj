@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RootNamespace>DeskAI.IconProbe</RootNamespace>
+    <!-- A development probe for ADR 0043. Never referenced by the app or shipped. -->
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="DeskAI.IconProbe.Tests" />
+  </ItemGroup>
+</Project>
