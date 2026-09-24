@@ -1,12 +1,43 @@
 # DeskAI — Coding Handoff
 
-## 2026-09-24 Desktop Studio agreed (design only, nothing built)
+## Start here (updated 2026-09-24)
 
-The owner explained DeskAI's original idea: connect the Desktop and turn it into a sorted,
-good-looking one, covering folders and files, with features a person can pick one at a time. The agreed
-design, including every decision the owner made in conversation, is
-`docs/superpowers/specs/2026-09-24-desktop-studio-design.md`. It awaits the owner's review of
-that document; after approval, write the implementation plan for step 1 (Find groups) only.
+**State of `main`:** clean and committed, not pushed, tagged, or released. The last commits are
+`1de04d5` (Search finds more of your files, ADR 0041), `661c0e6` (Desktop Studio design),
+and `6cb3309` (the plan for Desktop Studio step 1). The full suite was 1,439 passing tests with
+0 warnings after `1de04d5`; the two later commits are documents only.
+
+**Next task: build Desktop Studio step 1, "Find groups".**
+- Design (owner-approved in conversation): `docs/superpowers/specs/2026-09-24-desktop-studio-design.md`.
+- Plan (7 tasks, written and committed): `docs/superpowers/plans/2026-09-24-desktop-studio-find-groups.md`.
+- The owner said "let's start building" but has **not yet chosen how**: Native (the
+  recommendation — one session builds all 7 tasks, then one reviewer checks the branch) or
+  Subagent-driven. Ask that one question, then execute with `superpowers:executing-plans`
+  (Native) or `superpowers:subagent-driven-development`.
+- Task 1 (ADR 0042 and the security review) comes before any code. Build step 1 only; steps
+  2–5 (Keep together / Make zones / Name the zones, Clear old stuff / Folder by group, Tag
+  names, Color groups) each need their own plan later.
+
+**Decisions the owner made on 2026-09-24 that are not yet in code** (all also recorded in the spec):
+- DeskAI's core idea: connect the Desktop and make it sorted *and* good-looking — folders and
+  files. "Put everything in big folders" is only one design among several.
+- Every Desktop Studio feature is chosen on its own; one never turns on another. Page name
+  **Desktop Studio**; naming style "short and friendly": Find groups, Keep together, Make zones,
+  Name the zones, Clear old stuff, Folder by group, Tag names, Color groups.
+- AI decides the groups (at most 8, AI-named, person can rename/merge/move); without AI,
+  DeskAI's simpler guess.
+- AI may see per folder its name, kinds of files inside, and up to 5 file names, only after the
+  exact list is shown and Send is pressed.
+- Build order: Find groups → screen designs (icon positions + labelled wallpaper, after a
+  feasibility probe) → Clear old stuff and Folder by group → Tag names → Color groups (after a probe).
+
+**Open with the owner:**
+- They tested the new Search and shared two screenshots **as paths in their real Pictures
+  folder**. Per CLAUDE.md they were not opened; they were asked to paste the images into the
+  chat instead. Ask for them, and act on what they show before or alongside step 1.
+- Other improvement ideas they have not picked yet, in the suggested order: code signing, an
+  opt-in "newer version?" button, re-enabling picture search after a fresh review, Recycle Bin
+  for proven copies, a first-run guide, architecture guard tests.
 
 ## 2026-09-24 Search finds more of your files
 
@@ -312,11 +343,20 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 
 ## Copy-paste starter prompt
 
-> Continue DeskAI in the repository checkout. Read `AGENTS.md`,
-> `docs/HANDOFF.md`, and especially `docs/SECURITY.md`; confirm `66a8e3b` is in the
-> checkout and inspect Git status. PDF text search and its per-file **Files checked**
-> follow-up are implemented locally but not pushed or released. First help me verify the
-> updated Search page using only generated UI-preview files, or use the per-file outcome I
-> report to diagnose my other PDF. Do not open or scan my personal folders or use my API
-> key. Keep work to one agreed milestone, test with generated files, update docs, and
-> commit any code change. Ask before pushing, tagging, or releasing.
+> Continue DeskAI in the repository checkout. Read `AGENTS.md`, `docs/HANDOFF.md` ("Start
+> here" first), and especially `docs/SECURITY.md`; confirm `6cb3309` is in the checkout and
+> inspect Git status. Next is Desktop Studio step 1, "Find groups", from
+> `docs/superpowers/plans/2026-09-24-desktop-studio-find-groups.md`. Ask me whether to build it
+> Native or Subagent-driven, then build step 1 only. I will paste my Search screenshots into
+> the chat. Do not open or scan my personal folders or use my API key. Test with generated
+> files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
+
+## How to update this file
+
+- Rewrite **Start here** at the end of every roadmap version or whenever the chat is about to
+  be cleared: the commit `main` is on, what was verified, the exact next task, and the owner's
+  open questions.
+- Write down every decision the owner made in conversation that is not yet in code, an ADR, or
+  a design document. The chat is cleared after each version, so an unrecorded decision is lost.
+- Keep older dated sections below as history; correct them only where they are now wrong.
+- Update the starter prompt so it names the current commit and the next task.
