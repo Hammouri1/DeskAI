@@ -7,8 +7,8 @@ its own folder**), and 4 (**Tag names**) are built on the branch `desktop-studio
 (from `2153fdd` on `main`), one commit per plan task plus the review fixes. Step 2 (icon
 positions) was dropped after the probe (ADR 0043). Nothing is merged, pushed, tagged, or
 released: the owner decided to push only once the whole Desktop Studio feature is done. After Tag
-names' whole-change review and its fixes, every project built in Release with 0 warnings (the App
-into a scratch folder, because the owner's DeskAI was open and locks its normal output), all
+names' whole-change review and its fixes, the Release solution build had 0 warnings (after the owner closed DeskAI; a rebuild run while it was
+open had left the exe without its runtime settings, so it asked for .NET), all
 1,624 tests passed, and formatting verification passed. The owner chose to build Tag names "one
 by one" (inline) with one fresh review at the end, as for step 3.
 
@@ -29,8 +29,9 @@ names on the Desktop and that the board still shows them in their groups; press 
 check the old names return; Rename again, close and reopen DeskAI, and check Put back is still
 offered. Step 3's checks: **Show what would move** on Clear old stuff, Move, look at the Old stuff
 folder, Put back; **Put each group in its own folder**, Move, Put back; **Stop DeskAI moving
-things on my Desktop**; check Organize's tidy permission for the Desktop did not change. Please
-close DeskAI and run the three verification commands once to get the launchable exe.
+things on my Desktop**; check Organize's tidy permission for the Desktop did not change. The launchable exe is
+`src\DeskAI.App\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`.
+et10.0-windows10.0.26100.0win-x64DeskAI.App.exe`.
 
 **Next task:** **Color groups**, the last Desktop Studio step. It starts with its own probe, like
 the icon-position probe (ADR 0043), in Windows Sandbox only, and is dropped if the colour cannot be
