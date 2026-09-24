@@ -2,6 +2,8 @@ using System.Net;
 using System.Text.Json;
 using DeskAI.AI.Transport;
 using DeskAI.App.ViewModels;
+using DeskAI.Core.Abstractions;
+using DeskAI.Core.Ai;
 using DeskAI.Core.Roots;
 using DeskAI.Core.Studio;
 
@@ -95,6 +97,28 @@ public sealed class DesktopStudioPageTests
         Assert.Equal(["holiday.jpg", "report.docx"], studio.NotSure.Select(i => i.Name));
         Assert.Equal("Grouped by OpenRouter.", studio.SourceNote);
         AssertDesktopUnchanged(app, before);
+    }
+
+    /// <summary>
+    /// Found in review 2026-09-24: after switching AI services the note named the new one, a false
+    /// statement about who saw the Desktop list. The board now remembers who made it.
+    /// </summary>
+    [Fact]
+    public async Task The_board_keeps_naming_the_AI_that_made_it_after_AI_is_changed()
+    {
+        await using var app = await TestApp.StartAsync();
+        await TidyAiTests.TurnOnOpenRouterAsync(app, shareNames: true, shareFolderNames: true);
+        MakeDesktop(app);
+        var studio = await OpenWithDesktopAsync(app);
+        app.Internet.Reply = _ => Envelope("""{"schemaVersion":"1","groups":[{"name":"Coding","items":[2]}]}""");
+        await studio.SendAsync((await studio.PrepareAsync())!);
+
+        await app.Get<IAiSettingsRepository>().SaveAsync(AiSettings.Default, TestContext.Current.CancellationToken);
+        var again = app.Get<DesktopStudioViewModel>();
+        await again.InitializeAsync();
+
+        Assert.False(again.HasAi);
+        Assert.Equal("Grouped by OpenRouter.", again.SourceNote);
     }
 
     [Fact]

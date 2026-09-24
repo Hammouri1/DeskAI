@@ -23,3 +23,12 @@ The look opens no file: it reads names and attributes from the directory listing
 existing scanner, within the connected Desktop only. The daily AI limit, timeout, no-retry, and
 key handling are the existing ones. Nothing in this step can move, rename, delete, or change
 a file, an icon position, or the wallpaper; later Desktop Studio cards need their own reviews.
+
+**Branch review follow-up (2026-09-24).** Hidden and system files and folders are skipped at every
+depth, not only on the Desktop itself (`DesktopLookServiceTests.Hidden_and_system_files_inside_folders_are_neither_counted_nor_named`).
+A look that stops at its item limit inside a big folder keeps every top-level item and says the
+look was partial, instead of refusing with a safety message that was not true. Prepare keeps the
+list within the request's byte limit, measured the way the AI connection writes it, so Send never
+refuses a list the person approved; the rest get DeskAI's own guess and are never sent. A name
+may say anything, including a data marker such as `END_UNTRUSTED_ITEM_DATA`: it can only become a
+group label, because the reply is read strictly and nothing reads the board to act on disk.

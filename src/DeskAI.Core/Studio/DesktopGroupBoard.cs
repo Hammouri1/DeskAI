@@ -33,6 +33,9 @@ public sealed record DesktopGroupBoard(
     /// <summary>Which items were folders when last looked at, so the page never has to look at the disk.</summary>
     public IReadOnlySet<string> Folders { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>The AI service that made an AI board, so the page names who saw the list even after AI is changed.</summary>
+    public string? MadeBy { get; init; }
+
     /// <summary>Why a group name cannot be used on this board, or null when it can.</summary>
     public static string? CheckName(string name, IEnumerable<string> otherNames)
     {

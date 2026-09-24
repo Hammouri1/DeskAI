@@ -4,8 +4,9 @@
 
 **State:** Desktop Studio step 1, **Find groups**, is built on the branch
 `desktop-studio-find-groups` (from `2153fdd` on `main`), one commit per plan task. Not merged,
-pushed, tagged, or released until the owner says so. The Release build had 0 warnings, all
-1,507 tests passed, and formatting verification passed. The owner chose to build it in one
+pushed, tagged, or released until the owner says so. After the whole-branch review and its
+fixes, the Release build had 0 warnings, all
+1,513 tests passed, and formatting verification passed. The owner chose to build it in one
 session (Native) with one review of the whole branch at the end.
 
 **What was built** (ADR 0042, review `docs/security/2026-09-24-desktop-grouping-review.md`):
@@ -66,9 +67,22 @@ Built from `docs/superpowers/plans/2026-09-24-desktop-studio-find-groups.md` in 
   DeskAI's guess** and check the groups; if AI is on, press **Find groups with …** and check the
   window lists only names and kinds of files, then Send or Cancel; rename, merge, and move;
   close and reopen DeskAI and check the board is kept; check that nothing on the Desktop moved.
-- **Known limits:** an AI board's "Grouped by …" note names the AI set up now, not necessarily
-  the one that made it. A Desktop with more than 60 folders or 200 loose files is only partly
-  sorted by AI.
+- **Whole-branch review** (a fresh reviewer): 1 critical and 3 important findings, all fixed
+  with a test that failed first. (1) A big folder on the Desktop (over 5,000 items within 4
+  levels, such as a code project) made the whole card fail with a wrong safety message; now the
+  Desktop is still sorted and the page says some folders were too full to look all the way
+  inside. (2) Hidden files inside folders (`.git`, `desktop.ini`) were counted and named; now
+  skipped. (3) Long non-English names could make Send refuse an approved list; Prepare now keeps
+  the list within the size limit. (4) "Grouped by …" named today's AI; the board now remembers
+  who made it.
+- **Deferred small points from the review** (the owner decides): menu items in Move to… and
+  Merge into… skip the busy check, and buttons look enabled while busy; Connect clears the busy
+  state early; Merge into… does nothing when there is one group; an AI group with no items is
+  kept as an empty box; a very long board could hit the storage size check and show technical
+  text; the hidden-only Desktop case is tested below the page level only; a rename that only
+  changes letter case keeps the old casing on the board.
+- **Known limit:** a Desktop with more than 60 folders or 200 loose files, or with very long
+  names, is only partly sorted by AI; DeskAI's guess sorts the rest.
 
 ## 2026-09-24 Search finds more of your files
 

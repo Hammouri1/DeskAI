@@ -207,7 +207,7 @@ public sealed class DesktopStudioViewModel(
 
         SourceNote = board?.Source switch
         {
-            DesktopGroupSource.Ai => $"Grouped by {_serviceName}.",
+            DesktopGroupSource.Ai => $"Grouped by {board.MadeBy ?? "AI"}.",
             DesktopGroupSource.LocalGuess => "Grouped by DeskAI's own simpler guess.",
             _ => string.Empty,
         };

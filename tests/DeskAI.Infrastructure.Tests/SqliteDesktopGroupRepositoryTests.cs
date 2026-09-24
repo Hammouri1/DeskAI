@@ -22,7 +22,7 @@ public sealed class SqliteDesktopGroupRepositoryTests
             ["holiday.jpg"],
             DesktopGroupSource.Ai,
             MadeAt)
-        { Folders = new HashSet<string> { "Essays", "Python stuff" } };
+        { Folders = new HashSet<string> { "Essays", "Python stuff" }, MadeBy = "OpenRouter" };
 
         await world.Repository.SaveAsync(board, TestContext.Current.CancellationToken);
         var loaded = await world.Repository.LoadAsync(world.RootId, TestContext.Current.CancellationToken);
@@ -34,6 +34,7 @@ public sealed class SqliteDesktopGroupRepositoryTests
         Assert.Equal(DesktopGroupSource.Ai, loaded.Source);
         Assert.Equal(MadeAt, loaded.MadeAtUtc);
         Assert.True(loaded.Folders.SetEquals(["essays", "Python stuff"]));
+        Assert.Equal("OpenRouter", loaded.MadeBy);
     }
 
     [Fact]

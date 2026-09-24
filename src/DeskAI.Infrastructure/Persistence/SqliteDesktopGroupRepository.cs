@@ -19,7 +19,7 @@ public sealed class SqliteDesktopGroupRepository(IOptions<DatabaseOptions> optio
 {
     private sealed record StoredGroup(string Name, string[] Items);
 
-    private sealed record StoredBoard(StoredGroup[] Groups, string[] NotSure, string[]? Folders);
+    private sealed record StoredBoard(StoredGroup[] Groups, string[] NotSure, string[]? Folders, string? MadeBy);
 
     private static readonly JsonSerializerOptions Json = new() { MaxDepth = 4, PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
     private readonly string _databasePath = options.Value.DatabasePath;
@@ -52,6 +52,7 @@ public sealed class SqliteDesktopGroupRepository(IOptions<DatabaseOptions> optio
                 DateTimeOffset.Parse(reader.GetString(1), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind))
             {
                 Folders = (stored.Folders ?? []).ToHashSet(StringComparer.OrdinalIgnoreCase),
+                MadeBy = stored.MadeBy,
             };
         }
         catch (Exception exception) when (exception is JsonException or FormatException)
@@ -65,7 +66,7 @@ public sealed class SqliteDesktopGroupRepository(IOptions<DatabaseOptions> optio
         ArgumentNullException.ThrowIfNull(board);
         var json = JsonSerializer.Serialize(
             new StoredBoard(
-                board.Groups.Select(g => new StoredGroup(g.Name, g.Items.ToArray())).ToArray(), board.NotSure.ToArray(), board.Folders.ToArray()),
+                board.Groups.Select(g => new StoredGroup(g.Name, g.Items.ToArray())).ToArray(), board.NotSure.ToArray(), board.Folders.ToArray(), board.MadeBy),
             Json);
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
         await using var command = connection.CreateCommand();

@@ -282,6 +282,7 @@ public sealed class DesktopGroupingService(
             Folders = question.Request.Items.Where(item => item.Kind == "folder").Select(item => question.PathsByNumber[item.Number - 1])
                 .Concat(question.LeftOutItems.Where(item => item.IsFolder).Select(item => item.RelativePath))
                 .ToHashSet(StringComparer.OrdinalIgnoreCase),
+            MadeBy = question.ServiceName,
         };
         await boards.SaveAsync(board, cancellationToken).ConfigureAwait(false);
         return new(true, board, message);
