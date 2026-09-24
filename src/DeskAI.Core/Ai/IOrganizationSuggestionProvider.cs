@@ -3,8 +3,8 @@ using DeskAI.Core.Classification;
 namespace DeskAI.Core.Ai;
 
 /// <summary>
-/// The one AI connection DeskAI has. It answers two kinds of question — where files belong, and
-/// what a typed sentence means — and can do nothing else: it is handed a request and returns
+/// The one AI connection DeskAI has. It answers three kinds of question — where files belong,
+/// what a typed sentence means, and which Desktop items belong together — and can do nothing else: it is handed a request and returns
 /// advice, and holds no filesystem, executor, or credential-enumeration capability.
 /// </summary>
 public interface IOrganizationSuggestionProvider
@@ -16,6 +16,11 @@ public interface IOrganizationSuggestionProvider
     /// <summary>Reads one typed sentence into the small JSON shape for its task. Sends the sentence and nothing else.</summary>
     Task<AiSentenceResponse> ReadSentenceAsync(
         AiSentenceRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Sorts numbered Desktop items into groups. Sends the items it is given and nothing else (ADR 0042).</summary>
+    Task<AiGroupingResponse> GroupItemsAsync(
+        AiGroupingRequest request,
         CancellationToken cancellationToken = default);
 }
 

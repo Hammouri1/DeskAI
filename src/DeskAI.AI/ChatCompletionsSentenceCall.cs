@@ -7,13 +7,14 @@ using DeskAI.Core.Ai;
 namespace DeskAI.AI;
 
 /// <summary>
-/// The one HTTP round trip for reading a sentence, shared by the local and online adapters.
-/// It posts the prompt to the address it is given, pulls the answer text out of the
-/// chat-completions envelope, and hands that text back unread. Strict reading happens in Core.
+/// The one HTTP round trip for reading a sentence or sorting Desktop items, shared by the local
+/// and online adapters. It posts the prompt to the address it is given, pulls the answer text
+/// out of the chat-completions envelope, and hands that text back unread. Strict reading
+/// happens in Core.
 /// </summary>
 internal static class ChatCompletionsSentenceCall
 {
-    public static async Task<AiSentenceResponse> PostAsync(
+    public static Task<AiSentenceResponse> PostAsync(
         IAiHttpTransport transport,
         Uri endpoint,
         IReadOnlyDictionary<string, string> headers,
@@ -21,26 +22,41 @@ internal static class ChatCompletionsSentenceCall
         string displayName,
         AiSentenceRequest request,
         Func<AiHttpResponse, AiSentenceResponse> refusedBy,
+        CancellationToken cancellationToken) =>
+        PostPromptAsync(
+            transport, endpoint, headers, modelId, displayName, AiPromptFactory.CreateSentencePrompt(request),
+            request.Limits, $"{displayName} read the sentence.", refusedBy, cancellationToken);
+
+    public static async Task<AiSentenceResponse> PostPromptAsync(
+        IAiHttpTransport transport,
+        Uri endpoint,
+        IReadOnlyDictionary<string, string> headers,
+        string modelId,
+        string displayName,
+        string prompt,
+        AiRequestLimits limits,
+        string successMessage,
+        Func<AiHttpResponse, AiSentenceResponse> refusedBy,
         CancellationToken cancellationToken)
     {
         var body = JsonSerializer.Serialize(new
         {
             model = modelId,
-            messages = new[] { new { role = "user", content = AiPromptFactory.CreateSentencePrompt(request) } },
+            messages = new[] { new { role = "user", content = prompt } },
             response_format = new { type = "json_object" },
             temperature = 0,
         });
-        if (Encoding.UTF8.GetByteCount(body) > request.Limits.MaximumRequestBytes)
+        if (Encoding.UTF8.GetByteCount(body) > limits.MaximumRequestBytes)
         {
             return Failure(displayName, AiProviderStatus.CostLimitReached, "This request is larger than your safety limit.");
         }
 
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-        timeout.CancelAfter(request.Limits.Timeout);
+        timeout.CancelAfter(limits.Timeout);
         try
         {
             var response = await transport.PostJsonAsync(
-                endpoint, body, headers, request.Limits.MaximumResponseBytes, timeout.Token).ConfigureAwait(false);
+                endpoint, body, headers, limits.MaximumResponseBytes, timeout.Token).ConfigureAwait(false);
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 return refusedBy(response);
@@ -71,7 +87,7 @@ internal static class ChatCompletionsSentenceCall
                     AiProviderStatus.Success,
                     displayName,
                     answer,
-                    $"{displayName} read the sentence.",
+                    successMessage,
                     new AiUsage(inputTokens, outputTokens, null));
         }
         catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)

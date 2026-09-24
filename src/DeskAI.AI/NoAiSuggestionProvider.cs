@@ -30,4 +30,17 @@ public sealed class NoAiSuggestionProvider : IOrganizationSuggestionProvider
             null,
             "AI is off. Turn it on in Privacy and AI first."));
     }
+
+    public Task<AiGroupingResponse> GroupItemsAsync(
+        AiGroupingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+        return Task.FromResult(new AiGroupingResponse(
+            AiProviderStatus.Disabled,
+            "AI is off",
+            null,
+            "AI is off. Turn it on in Privacy and AI first."));
+    }
 }

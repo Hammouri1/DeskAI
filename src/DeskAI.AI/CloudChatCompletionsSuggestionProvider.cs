@@ -144,11 +144,31 @@ public sealed class CloudChatCompletionsSuggestionProvider(
 
     /// <inheritdoc />
     /// <remarks>The same key, address, and error words as asking about files; only the prompt differs.</remarks>
-    public async Task<AiSentenceResponse> ReadSentenceAsync(
+    public Task<AiSentenceResponse> ReadSentenceAsync(
         AiSentenceRequest request,
         CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
+        return PostWithKeyAsync(
+            AiPromptFactory.CreateSentencePrompt(request), request.Limits, $"{_provider.DisplayName} read the sentence.", cancellationToken);
+    }
+
+    public async Task<AiGroupingResponse> GroupItemsAsync(
+        AiGroupingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return AiGroupingResponse.From(await PostWithKeyAsync(
+            AiPromptFactory.CreateGroupingPrompt(request), request.Limits, $"{_provider.DisplayName} sorted your Desktop.", cancellationToken)
+            .ConfigureAwait(false));
+    }
+
+    private async Task<AiSentenceResponse> PostWithKeyAsync(
+        string prompt,
+        AiRequestLimits limits,
+        string successMessage,
+        CancellationToken cancellationToken)
+    {
         var name = _provider.DisplayName;
 
         string? key;
@@ -168,13 +188,15 @@ public sealed class CloudChatCompletionsSuggestionProvider(
             return ChatCompletionsSentenceCall.Failure(name, AiProviderStatus.AuthenticationFailed, $"Add your {name} key in Settings first.");
         }
 
-        return await ChatCompletionsSentenceCall.PostAsync(
+        return await ChatCompletionsSentenceCall.PostPromptAsync(
             transport,
             _provider.ChatCompletionsEndpoint,
             new Dictionary<string, string> { ["Authorization"] = $"Bearer {key}" },
             _modelId,
             name,
-            request,
+            prompt,
+            limits,
+            successMessage,
             response =>
             {
                 var said = ServiceReply.Explanation(response.Body, key);

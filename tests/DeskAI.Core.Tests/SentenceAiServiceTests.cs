@@ -205,5 +205,8 @@ public sealed class SentenceAiServiceTests
             Requests.Add(request);
             return Task.FromResult(new AiSentenceResponse(Status, "OpenRouter", Status == AiProviderStatus.Success ? Json : null, Message));
         }
+
+        public Task<AiGroupingResponse> GroupItemsAsync(AiGroupingRequest request, CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
     }
 }

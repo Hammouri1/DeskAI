@@ -69,6 +69,30 @@ public sealed class DeterministicFakeSuggestionProvider : IOrganizationSuggestio
             "Generated a test reading without network access."));
     }
 
+    /// <summary>A canned grouping: folders named with "py" or "code" go to "Coding"; the rest stay unsure.</summary>
+    public Task<AiGroupingResponse> GroupItemsAsync(
+        AiGroupingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        cancellationToken.ThrowIfCancellationRequested();
+        var coding = request.Items
+            .Where(item => item.Kind == "folder" &&
+                (item.Name.Contains("py", StringComparison.OrdinalIgnoreCase) || item.Name.Contains("code", StringComparison.OrdinalIgnoreCase)))
+            .Select(item => item.Number)
+            .ToArray();
+        var json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            schemaVersion = AiGroupingRequest.CurrentSchemaVersion,
+            groups = coding.Length == 0 ? [] : new[] { new { name = "Coding", items = coding } },
+        });
+        return Task.FromResult(new AiGroupingResponse(
+            AiProviderStatus.Success,
+            "Deterministic test provider",
+            json,
+            "Generated a test grouping without network access."));
+    }
+
     /// <summary>A canned plan: one plain folder per kind of file, always a name the checks accept.</summary>
     private static string FolderFor(string? extension) => extension?.ToLowerInvariant() switch
     {

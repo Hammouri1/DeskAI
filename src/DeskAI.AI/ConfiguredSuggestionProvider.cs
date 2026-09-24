@@ -77,13 +77,7 @@ public sealed class ConfiguredSuggestionProvider(
         ArgumentNullException.ThrowIfNull(request);
         var settings = await settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(false);
         var cloudProvider = CloudProviderCatalog.Find(settings.ProviderId);
-        if (settings.Mode == AiMode.Cloud && settings.CloudConsentGranted &&
-            cloudProvider is not null && settings.CredentialReference is not null &&
-            !await usageBudget.TryReserveRequestAsync(
-                cloudProvider.Id,
-                Math.Clamp(settings.DailyRequestLimit, 1, 1000),
-                DateOnly.FromDateTime(clock.UtcNow.UtcDateTime),
-                cancellationToken).ConfigureAwait(false))
+        if (!await ReserveOnlineRequestAsync(settings, cloudProvider, cancellationToken).ConfigureAwait(false))
         {
             return new AiSentenceResponse(
                 AiProviderStatus.CostLimitReached,
@@ -108,6 +102,67 @@ public sealed class ConfiguredSuggestionProvider(
             _ => RefusedSentence("AI is not set up yet. DeskAI did not send anything."),
         };
     }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// The same consent, catalog, and daily-cap rules as reading a sentence, plus the sharing
+    /// check: online AI is used only when the saved choices allow file types, file names, and
+    /// folder names (ADR 0042). The grouping service checks this too; this is the last gate.
+    /// </remarks>
+    public async Task<AiGroupingResponse> GroupItemsAsync(
+        AiGroupingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        var settings = await settingsRepository.LoadAsync(cancellationToken).ConfigureAwait(false);
+        if (settings.Mode == AiMode.Cloud && AiGroupingRequest.Discloses.Any(c => !settings.CloudDisclosures.Contains(c)))
+        {
+            return new AiGroupingResponse(
+                AiProviderStatus.SafetyRejected,
+                "AI unavailable",
+                null,
+                "Your sharing choices do not allow file types, file names, and folder names, so nothing was sent.");
+        }
+
+        var cloudProvider = CloudProviderCatalog.Find(settings.ProviderId);
+        if (!await ReserveOnlineRequestAsync(settings, cloudProvider, cancellationToken).ConfigureAwait(false))
+        {
+            return new AiGroupingResponse(
+                AiProviderStatus.CostLimitReached,
+                "AI unavailable",
+                null,
+                "You have reached today's online AI limit. Nothing was sent.");
+        }
+
+        return settings.Mode switch
+        {
+            AiMode.RuleEngineOnly => await new NoAiSuggestionProvider()
+                .GroupItemsAsync(request, cancellationToken).ConfigureAwait(false),
+            AiMode.Local when settings.Endpoint is not null => await new LocalOpenAiCompatibleSuggestionProvider(
+                    transport, settings.Endpoint, settings.ModelId)
+                .GroupItemsAsync(request, cancellationToken).ConfigureAwait(false),
+            AiMode.Cloud when !settings.CloudConsentGranted => AiGroupingResponse.From(RefusedSentence(
+                "Online AI is selected, but sharing has not been approved.")),
+            AiMode.Cloud when cloudProvider is not null && settings.CredentialReference is not null =>
+                await new CloudChatCompletionsSuggestionProvider(
+                        transport, credentialVault, cloudProvider, settings.ModelId)
+                    .GroupItemsAsync(request, cancellationToken).ConfigureAwait(false),
+            _ => AiGroupingResponse.From(RefusedSentence("AI is not set up yet. DeskAI did not send anything.")),
+        };
+    }
+
+    /// <summary>
+    /// Counts one online request against today's cap, per provider. True when nothing needs
+    /// counting (not online, or not set up) or the cap still has room.
+    /// </summary>
+    private async Task<bool> ReserveOnlineRequestAsync(AiSettings settings, CloudProvider? cloudProvider, CancellationToken cancellationToken) =>
+        !(settings.Mode == AiMode.Cloud && settings.CloudConsentGranted &&
+          cloudProvider is not null && settings.CredentialReference is not null) ||
+        await usageBudget.TryReserveRequestAsync(
+            cloudProvider.Id,
+            Math.Clamp(settings.DailyRequestLimit, 1, 1000),
+            DateOnly.FromDateTime(clock.UtcNow.UtcDateTime),
+            cancellationToken).ConfigureAwait(false);
 
     private static OrganizationSuggestionResponse Refused(string message) =>
         new(AiProviderStatus.Disabled, "AI unavailable", [], message);

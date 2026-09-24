@@ -42,4 +42,21 @@ public sealed class DeterministicFakeSuggestionProviderTests
         Assert.Equal(AiProviderStatus.Disabled, response.Status);
         Assert.Empty(response.Suggestions);
     }
+
+    [Fact]
+    public async Task FakeProvider_GroupsCodeFoldersIntoAShapeTheStrictReaderAccepts()
+    {
+        var request = new AiGroupingRequest(
+            AiGroupingRequest.CurrentSchemaVersion,
+            Guid.NewGuid(),
+            [new AiGroupingItem(1, "folder", "Python stuff", ["2 .py"], []), new AiGroupingItem(2, "file", "notes.txt", [], [])],
+            AiGroupingRequest.DefaultLimits);
+
+        var response = await new DeterministicFakeSuggestionProvider()
+            .GroupItemsAsync(request, TestContext.Current.CancellationToken);
+
+        var reading = DeskAI.Core.Studio.DesktopGroupReading.Read(response.Json!, 2, 32_768);
+        Assert.True(reading.IsValid);
+        Assert.Equal([1], Assert.Single(reading.Groups).Numbers);
+    }
 }

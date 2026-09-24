@@ -120,6 +120,24 @@ public sealed class LocalOpenAiCompatibleSuggestionProvider : IOrganizationSugge
             cancellationToken);
     }
 
+    public async Task<AiGroupingResponse> GroupItemsAsync(
+        AiGroupingRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+        return AiGroupingResponse.From(await ChatCompletionsSentenceCall.PostPromptAsync(
+            _transport,
+            _endpoint,
+            new Dictionary<string, string>(),
+            _modelId,
+            "Local AI",
+            AiPromptFactory.CreateGroupingPrompt(request),
+            request.Limits,
+            "Local AI sorted your Desktop.",
+            response => ChatCompletionsSentenceCall.Failure("Local AI", MapStatus(response.StatusCode), MessageFor(response.StatusCode)),
+            cancellationToken).ConfigureAwait(false));
+    }
+
     private static int? ReadInt(JsonElement parent, string name) =>
         parent.TryGetProperty(name, out var value) && value.TryGetInt32(out var number) ? number : null;
 
