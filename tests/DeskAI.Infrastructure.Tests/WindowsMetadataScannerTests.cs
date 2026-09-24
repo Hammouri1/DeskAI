@@ -9,6 +9,26 @@ namespace DeskAI.Infrastructure.Tests;
 public sealed class WindowsMetadataScannerTests
 {
     [Fact]
+    public async Task ScanAsync_ReportsEachFolderItEntersOrSkipsForDepth()
+    {
+        using var sandbox = new TemporaryDirectory();
+        sandbox.CreateDummyFile(@"Projects\App\main.py");
+        sandbox.CreateDummyDirectory("Empty");
+        var scanner = new WindowsMetadataScanner(new WindowsPathPolicy());
+
+        var folders = new List<string>();
+        await foreach (var scanEvent in scanner.ScanAsync(CreateRoot(sandbox.Path), new MetadataScanOptions(1, 100), TestContext.Current.CancellationToken))
+        {
+            if (scanEvent is FolderDiscovered folder)
+            {
+                folders.Add(folder.RelativePath);
+            }
+        }
+
+        Assert.Equal(["Empty", "Projects", @"Projects\App"], folders.Order(StringComparer.OrdinalIgnoreCase));
+    }
+
+    [Fact]
     public async Task ScanAndClassify_ComposesWithoutReadingContentsOrUsingAi()
     {
         using var sandbox = new TemporaryDirectory();

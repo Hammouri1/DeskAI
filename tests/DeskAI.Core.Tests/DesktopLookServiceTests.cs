@@ -1,0 +1,108 @@
+using DeskAI.Core.Abstractions;
+using DeskAI.Core.Files;
+using DeskAI.Core.Roots;
+using DeskAI.Core.Studio;
+
+namespace DeskAI.Core.Tests;
+
+public sealed class DesktopLookServiceTests
+{
+    [Fact]
+    public async Task Lists_top_level_folders_and_loose_files_with_types_and_five_sample_names()
+    {
+        var events = new ScanEvent[]
+        {
+            new FolderDiscovered("Python stuff", FileTraits.None),
+            StudioFakes.File(@"Python stuff\main.py"), StudioFakes.File(@"Python stuff\utils.py"), StudioFakes.File(@"Python stuff\a.py"),
+            StudioFakes.File(@"Python stuff\b.py"), StudioFakes.File(@"Python stuff\c.py"), StudioFakes.File(@"Python stuff\README.md"),
+            new FolderDiscovered("Empty", FileTraits.None),
+            StudioFakes.File("report.docx"),
+        };
+        var look = await new DesktopLookService(new ReplayScanner(events)).LookAsync(StudioFakes.Root(), TestContext.Current.CancellationToken);
+
+        var python = look.Items.Single(i => i.Name == "Python stuff");
+        Assert.True(python.IsFolder);
+        Assert.Equal([new DesktopTypeCount(".py", 5), new DesktopTypeCount(".md", 1)], python.Types);
+        Assert.Equal(5, python.SampleNames.Count);
+        Assert.Contains(look.Items, i => i.Name == "Empty" && i.IsFolder && i.Types.Count == 0);
+        Assert.Contains(look.Items, i => i.Name == "report.docx" && !i.IsFolder);
+    }
+
+    [Fact]
+    public async Task Leaves_out_hidden_system_and_any_folder_holding_a_protected_or_link_entry()
+    {
+        var events = new ScanEvent[]
+        {
+            new FolderDiscovered("DeskAI", FileTraits.None),
+            new ScanIssue(@"DeskAI\app", ScanIssueCode.ProtectedEntrySkipped, "x"),
+            new FolderDiscovered("Secret", FileTraits.Hidden),
+            new ScanIssue("Shortcut dir", ScanIssueCode.ReparsePointSkipped, "x"),
+            StudioFakes.File("desktop.ini", FileTraits.Hidden | FileTraits.System),
+            StudioFakes.File("notes.txt"),
+        };
+        var look = await new DesktopLookService(new ReplayScanner(events)).LookAsync(StudioFakes.Root(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(["notes.txt"], look.Items.Select(i => i.Name));
+    }
+
+    [Fact]
+    public async Task Keeps_at_most_60_folders_and_200_files_and_counts_the_rest()
+    {
+        var events = Enumerable.Range(0, 65).Select(i => (ScanEvent)new FolderDiscovered($"F{i:D2}", FileTraits.None))
+            .Concat(Enumerable.Range(0, 205).Select(i => StudioFakes.File($"f{i:D3}.txt"))).ToArray();
+        var look = await new DesktopLookService(new ReplayScanner(events)).LookAsync(StudioFakes.Root(), TestContext.Current.CancellationToken);
+
+        Assert.Equal(60, look.Items.Count(i => i.IsFolder));
+        Assert.Equal(200, look.Items.Count(i => !i.IsFolder));
+        Assert.Equal(5, look.FoldersLeftOut);
+        Assert.Equal(5, look.FilesLeftOut);
+    }
+
+    [Fact]
+    public async Task A_root_problem_is_reported_and_nothing_is_listed()
+    {
+        var events = new ScanEvent[] { new ScanIssue(".", ScanIssueCode.RootUnavailable, "x") };
+        var look = await new DesktopLookService(new ReplayScanner(events)).LookAsync(StudioFakes.Root(), TestContext.Current.CancellationToken);
+
+        Assert.Empty(look.Items);
+        Assert.Equal(DesktopLookService.RootProblem, look.Problem);
+    }
+}
+
+/// <summary>A scanner that replays a fixed list of events; it touches no disk.</summary>
+internal sealed class ReplayScanner(IReadOnlyList<ScanEvent> events) : IFileScanner
+{
+    public IReadOnlyList<ScanEvent> Events { get; set; } = events;
+
+    public async IAsyncEnumerable<ScanEvent> ScanAsync(
+        AuthorizedRoot root,
+        MetadataScanOptions options,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        foreach (var scanEvent in Events)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            yield return scanEvent;
+        }
+
+        await Task.CompletedTask;
+    }
+}
+
+internal static class StudioFakes
+{
+    public static readonly string DesktopPath = Path.Combine(Path.GetTempPath(), "deskai-tests", "Desktop");
+    public static readonly Guid DesktopId = Guid.Parse("7c0b6c55-5b1a-4a3e-9d4c-0f5f1f6a1d01");
+
+    public static FileDiscovered File(string relativePath, FileTraits traits = FileTraits.None) =>
+        new(new FileItem(StableId(relativePath), relativePath, FileKind.Unknown, 1, DateTimeOffset.UnixEpoch, DateTimeOffset.UnixEpoch, traits));
+
+    public static AuthorizedRoot Root() => AuthorizedRoot.Create(
+        DesktopId, DesktopPath, "Desktop", RootAccessLevel.Allowed, RootAuthorizationScope.MetadataOnly);
+
+    private static Guid StableId(string text)
+    {
+        var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(text));
+        return new Guid(bytes.AsSpan(0, 16));
+    }
+}
