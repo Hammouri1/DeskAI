@@ -202,6 +202,36 @@ public sealed class DesktopStudioPageTests
         Assert.Empty(app.Internet.Requests);
     }
 
+    /// <summary>
+    /// Found in review 2026-09-24: long non-English names could make the request bigger than its
+    /// safety limit, so Send refused after the person had approved the list. Prepare now keeps
+    /// the list within the limit and DeskAI's own guess sorts the rest, never sent.
+    /// </summary>
+    [Fact]
+    public async Task Long_names_in_any_language_never_make_Send_refuse_what_was_shown()
+    {
+        await using var app = await TestApp.StartAsync();
+        await TidyAiTests.TurnOnOpenRouterAsync(app, shareNames: true, shareFolderNames: true);
+        var longName = string.Concat(Enumerable.Repeat("ملف", 30));
+        for (var index = 0; index < DesktopLookService.MaxFiles; index++)
+        {
+            app.MakeFile("Desktop", $"{longName}{index:D3}.txt");
+        }
+
+        var studio = await OpenWithDesktopAsync(app);
+        app.Internet.Reply = _ => Envelope("""{"schemaVersion":"1","groups":[{"name":"Notes","items":[1]}]}""");
+
+        var question = await studio.PrepareAsync();
+        await studio.SendAsync(question!);
+
+        var sent = Assert.Single(app.Internet.Requests);
+        Assert.True(System.Text.Encoding.UTF8.GetByteCount(sent.Body) <= question!.Request.Limits.MaximumRequestBytes);
+        Assert.Equal(question.Request.Items.Count, question.Lines.Count);
+        Assert.True(question.LeftOut > 0);
+        Assert.DoesNotContain(question.LeftOutItems[0].Name, sent.Body.Replace("\\\\", "\\", StringComparison.Ordinal), StringComparison.Ordinal);
+        Assert.Contains("more were sorted by DeskAI's own guess", studio.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task An_empty_Desktop_says_there_is_nothing_to_sort()
     {

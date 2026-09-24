@@ -168,18 +168,10 @@ public sealed class DesktopGroupingService(
             return new(null, NothingToSort);
         }
 
-        var items = seen.Items.Select((item, index) => new AiGroupingItem(
-            index + 1,
-            item.IsFolder ? "folder" : "file",
-            item.Name,
-            item.Types.Select(t => $"{t.Count} {t.Ending}").ToList(),
-            item.SampleNames)).ToList();
-        var request = new AiGroupingRequest(
-            AiGroupingRequest.CurrentSchemaVersion,
-            Guid.NewGuid(),
-            items,
-            AiGroupingRequest.DefaultLimits with { Timeout = TimeSpan.FromSeconds(Math.Clamp(settings.TimeoutSeconds, 5, 120)) });
-        var leftOut = seen.LeftOutItems;
+        var limits = AiGroupingRequest.DefaultLimits with { Timeout = TimeSpan.FromSeconds(Math.Clamp(settings.TimeoutSeconds, 5, 120)) };
+        var (sent, items) = WithinSizeLimit(seen.Items, limits.MaximumRequestBytes);
+        var request = new AiGroupingRequest(AiGroupingRequest.CurrentSchemaVersion, Guid.NewGuid(), items, limits);
+        var leftOut = seen.Items.Skip(sent.Count).Concat(seen.LeftOutItems).ToList();
         var explanation = $"{target.Name} at {target.Destination} will see only this list: names and kinds of files. Not what is inside them, and not where they are.";
         if (seen.StoppedEarly)
         {
@@ -198,9 +190,9 @@ public sealed class DesktopGroupingService(
                 settings.ProviderId,
                 target.Name,
                 target.Destination,
-                seen.Items.Select(Line).ToList(),
+                sent.Select(Line).ToList(),
                 request,
-                seen.Items.Select(item => item.RelativePath).ToList(),
+                sent.Select(item => item.RelativePath).ToList(),
                 leftOut)
             {
                 StoppedEarly = seen.StoppedEarly,
@@ -453,6 +445,47 @@ public sealed class DesktopGroupingService(
             _ => "empty",
         };
         return $"Folder \"{item.Name}\": {details}";
+    }
+
+    /// <summary>Room kept for the fixed prompt words and the request wrapper around the item list.</summary>
+    private const int PromptAllowanceBytes = 4 * 1024;
+
+    private static readonly System.Text.Json.JsonSerializerOptions ItemJson = new()
+    {
+        PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+    };
+
+    /// <summary>
+    /// The items, in order, that fit the request's size limit once written the way the AI
+    /// connection writes them: the list goes into the prompt as JSON, and the prompt into the
+    /// request as a JSON string, so a non-English letter can take seven bytes. Checking here means
+    /// Send never refuses a list the person already approved; the rest get DeskAI's own guess.
+    /// </summary>
+    private static (List<DesktopItem> Sent, List<AiGroupingItem> Items) WithinSizeLimit(IReadOnlyList<DesktopItem> candidates, int maximumRequestBytes)
+    {
+        var sent = new List<DesktopItem>();
+        var items = new List<AiGroupingItem>();
+        var used = PromptAllowanceBytes;
+        foreach (var candidate in candidates)
+        {
+            var item = new AiGroupingItem(
+                items.Count + 1,
+                candidate.IsFolder ? "folder" : "file",
+                candidate.Name,
+                candidate.Types.Select(t => $"{t.Count} {t.Ending}").ToList(),
+                candidate.SampleNames);
+            var twiceWritten = System.Text.Json.JsonSerializer.Serialize(System.Text.Json.JsonSerializer.Serialize(item, ItemJson));
+            used += System.Text.Encoding.UTF8.GetByteCount(twiceWritten) + 1;
+            if (used > maximumRequestBytes)
+            {
+                break;
+            }
+
+            sent.Add(candidate);
+            items.Add(item);
+        }
+
+        return (sent, items);
     }
 
     private static HashSet<string> FoldersIn(IEnumerable<DesktopItem> items) =>
