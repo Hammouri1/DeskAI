@@ -1,6 +1,6 @@
-# ADR 0046: Coloured Folder Icons (Proposed, waiting for the probe)
+# ADR 0046: Coloured Folder Icons (Dropped by the owner)
 
-- Status: Proposed
+- Status: Rejected (owner, 2026-09-24)
 - Date: 2026-09-24
 - Review: `docs/security/2026-09-24-folder-color-probe-review.md`
 - Plan: `docs/superpowers/plans/2026-09-24-folder-color-probe.md`
@@ -82,3 +82,11 @@ probe restarts Explorer once before the start picture, so the re-sort happens fi
 **Run 2 (2026-09-24).** Stopped at the first step: "Explorer did not show the probe's folders
 within 60 seconds", before anything was coloured. The probe did not say what it saw. It now waits
 up to 120 seconds, and the report says how long the first look took and what the last look saw.
+
+## Outcome
+
+Dropped by the owner on 2026-09-24, before a third run. Run 1 showed that colouring and an exact
+Put back work, but the owner decided coloured folders do not look good enough and are not what
+they wanted from Desktop Studio: a designed Desktop where DeskAI places the icons, which ADR 0043
+showed Windows does not keep. Color groups is not built. `tools/FolderColorProbe` stays, like the
+icon-position probe, as the record of what was tried.

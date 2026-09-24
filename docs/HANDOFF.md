@@ -36,14 +36,16 @@ things on my Desktop**; check Organize's tidy permission for the Desktop did not
 report did not mention the last part (Organize's permission). The launchable exe is
 `src\DeskAI.App\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`.
 
-**Next task:** **Color groups**, the last Desktop Studio step. Its probe is built and reviewed
-(ADR 0046, Proposed; plan `docs/superpowers/plans/2026-09-24-folder-color-probe.md`, including
-the review fixes; `tools/FolderColorProbe`), built "one by one" as the owner chose on 2026-09-24.
-**Waiting for the owner's Sandbox run:** they run `tools/FolderColorProbe/Run-InSandbox.ps1`, keep
-the Sandbox window in front until `artifacts/color-probe/results/report.txt` appears, and say so.
-Then read the report and the stage pictures, record go or no-go in ADR 0046, the design's "Color
-groups" section, and here, and tell the owner. If go, ask before planning the card itself. After
-it (or after it is dropped), ask the owner about pushing the whole Desktop Studio feature.
+**Color groups: dropped by the owner (2026-09-24, ADR 0046).** Its Sandbox probe's first run
+showed colouring and an exact Put back work (the second run stopped before testing), but the owner
+said coloured folders do not look good and are not what they wanted. What they wanted from Desktop
+Studio is "super cool designs on the desktop" while DeskAI rearranges folders and files, and ADR
+0043 showed Windows does not keep icons where a program places them. `tools/FolderColorProbe`
+stays as the record.
+
+**Next task:** ask the owner. Desktop Studio has no build steps left: steps 1, 3, and 4 are built
+and hand-checked. The open choice is whether to push the whole feature now, or first look for
+another route to the Desktop designs they wanted (not yet designed or approved).
 
 **Decisions the owner made that are not yet in code** (also in
 `docs/superpowers/specs/2026-09-24-desktop-studio-design.md`):
@@ -512,9 +514,9 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 > Continue DeskAI in the repository checkout. Read `AGENTS.md`, `docs/HANDOFF.md` ("Start
 > here" first), and especially `docs/SECURITY.md`; inspect Git status and the
 > `desktop-studio-find-groups` branch (Desktop Studio steps 1, 3, and 4, ADR 0042, ADR 0044, and
-> ADR 0045; step 2 dropped, ADR 0043). Nothing on it is pushed yet. Next is the last Desktop
-> Studio step, **Color groups**, which starts with its own probe in Windows Sandbox and is dropped
-> if the colour cannot be removed cleanly. Ask me before planning it, and ask how to build it.
+> ADR 0045; step 2 dropped, ADR 0043). Nothing on it is pushed yet. All planned Desktop
+> Studio work is built; Color groups was dropped (ADR 0046). Ask me whether to push Desktop Studio
+> or look for another way to make Desktop designs first.
 > Do not open or scan my personal folders or use my API key. Test with generated
 > files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
 

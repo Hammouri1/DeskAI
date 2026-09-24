@@ -126,6 +126,8 @@ changes a file inside each folder and needs icon files that stay available even 
 removed. It starts with its own probe and review. If it cannot be undone cleanly (restoring or
 removing exactly the `desktop.ini` and attributes DeskAI changed), the card is dropped and the
 owner is told.
+**Outcome (2026-09-24): dropped by the owner.** The probe's first run showed colouring and
+an exact Put back work, but the owner decided coloured folders do not look good enough (ADR 0046).
 
 ## Safety summary
 
@@ -152,7 +154,7 @@ arithmetic, snapshot/restore, and the new executor actions' refusal cases.
 2. Icon-position probe → Keep together → Make zones → Name the zones.
 3. Clear old stuff and Folder by group (move a folder). Built 2026-09-24 (ADR 0044).
 4. Tag names (rename a folder). Built 2026-09-24 (ADR 0045).
-5. Color-icon probe → Color groups.
+5. Color-icon probe → Color groups. Dropped by the owner (2026-09-24, ADR 0046).
 
 ## Not in scope
 

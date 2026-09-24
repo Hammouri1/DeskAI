@@ -574,7 +574,7 @@ is released and checked by the owner before the next.
   **Name the zones** are dropped.
 - Step 3 — **Clear old stuff** and **Folder by group** (ADR 0044): built on the branch; moving things on the Desktop needs its own yes, and each card has Put back.
 - Step 4 — **Tag names** (ADR 0045): built on the branch; each folder in a group gets the group's name in front, as a same-place folder move under the same yes, with Put back.
-- Step 5 — color-icon probe, then **Color groups**. Planned.
+- Step 5 — color-icon probe, then **Color groups**. Dropped by the owner after the probe's first run (ADR 0046).
 
 ## Explicitly Deferred Beyond V1 Unless Reprioritized
 
