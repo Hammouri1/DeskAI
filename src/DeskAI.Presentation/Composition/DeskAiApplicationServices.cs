@@ -70,6 +70,8 @@ public static class DeskAiApplicationServices
         services.AddSingleton<DesktopLookService>();
         services.AddSingleton<LocalDesktopGrouper>();
         services.AddSingleton<DesktopGroupingService>();
+        services.AddSingleton<DesktopInventoryService>();
+        services.AddSingleton<DesktopMoveService>();
         services.AddSingleton<TidyRunService>();
         // Tidy while I'm away (V0.9, ADR 0031): the one type reachable from an automatic check that
         // can move a file, under a standing approval with a hard ceiling. A test names it as such.

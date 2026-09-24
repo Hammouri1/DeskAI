@@ -134,6 +134,13 @@ public sealed class TidyRunService(
                 continue;
             }
 
+            // Only the latest change in the folder can be undone, and Organize undoes only its own
+            // tidies; a Desktop Studio change is put back from Desktop Studio (ADR 0044).
+            if (record.Purpose != PlanPurpose.Tidy)
+            {
+                return null;
+            }
+
             if (record.State == ExecutionTransactionState.Undone || undone.Contains(record.Id))
             {
                 return null;
