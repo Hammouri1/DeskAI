@@ -32,7 +32,9 @@ before any code. Ask the owner first; do not start it unasked.
   released and checked by the owner before the next.
 
 **Open with the owner:**
-- Merge the branch into `main`? (Asked at the end of step 1.)
+- Merge and push: the owner decided (2026-09-24) to keep committing each task locally on this
+  branch and push to GitHub only once the whole Desktop Studio feature is finished. Ask again
+  then; do not push before.
 - The GSD skill was installed on 2026-09-24. It is **not set up** in this repository (no
   `.planning/`). The recommendation given: keep `docs/ROADMAP.md`, this file, and
   `docs/superpowers/plans/` as the only plan, and use GSD only for reviews, debugging, and small
