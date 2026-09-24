@@ -6,6 +6,7 @@ using DeskAI.Core.Ai;
 using DeskAI.Core.Appearance;
 using DeskAI.Core.Rules;
 using DeskAI.Core.Search;
+using DeskAI.Core.Welcome;
 
 namespace DeskAI.App.ViewModels;
 
@@ -35,6 +36,7 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
     private readonly IAiSettingsRepository _aiSettings;
     private readonly IAppearanceSettingsRepository _appearance;
     private readonly IAppearanceApplier _applier;
+    private readonly WelcomeService _welcome;
     private readonly SynchronizationContext? _uiContext;
     private string _scopeTitle = "Nothing connected yet";
     private string _scopeMessage = "No folders connected. DeskAI cannot see any of your files.";
@@ -56,8 +58,10 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
         SearchRequest search,
         IAiSettingsRepository aiSettings,
         IAppearanceSettingsRepository appearance,
-        IAppearanceApplier applier)
+        IAppearanceApplier applier,
+        WelcomeService welcome)
     {
+        _welcome = welcome;
         _folders = folders;
         _checks = checks;
         _checkSettings = checkSettings;
@@ -112,6 +116,12 @@ public sealed class ShellViewModel : ObservableObject, IDisposable
     }
 
     public RelayCommand DismissFindingCommand { get; }
+
+    /// <summary>
+    /// True once, at the first start of a brand-new DeskAI; the welcome is then already
+    /// remembered as shown, so skipping or closing it never brings it back.
+    /// </summary>
+    public Task<bool> ClaimFirstWelcomeAsync() => _welcome.ClaimFirstShowAsync();
 
     /// <summary>The menu's routes and the names a person sees for them, in menu order.</summary>
     /// <remarks>

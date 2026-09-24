@@ -141,6 +141,8 @@ public static class DeskAiApplicationServices
         // The "Your folders" card on Home and My workspace. It connects through the same service
         // the folder picker uses and grants nothing beyond that.
         services.AddTransient<PersonalFoldersViewModel>();
+        // The first-run welcome's pages. It connects only through the card above, after Home's question.
+        services.AddTransient<WelcomeViewModel>();
         services.AddTransient<AskDeskAiViewModel>();
         services.AddTransient<DesktopStudioViewModel>();
         return services;
