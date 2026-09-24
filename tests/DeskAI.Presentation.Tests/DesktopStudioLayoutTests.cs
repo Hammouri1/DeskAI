@@ -77,6 +77,28 @@ public sealed class DesktopStudioLayoutTests
         }
     }
 
+    /// <summary>
+    /// Owner-found 2026-09-24: after finding groups, the next step (putting each group in its own
+    /// folder) sat at the bottom, after an unrelated card, under a name that did not say what it
+    /// does. The page now reads as steps: find groups, then put them in folders, then other tidy-ups.
+    /// </summary>
+    [Fact]
+    public void Putting_groups_in_folders_comes_right_after_the_groups_and_other_tidy_ups_come_last()
+    {
+        var page = Page();
+        var findGroups = page.IndexOf("Text=\"1. Find groups\"", StringComparison.Ordinal);
+        var board = page.IndexOf("Visibility=\"{x:Bind ViewModel.HasBoard, Mode=OneWay}\"", StringComparison.Ordinal);
+        var groupFolders = page.IndexOf("Text=\"2. Happy with these groups?\"", StringComparison.Ordinal);
+        var other = page.IndexOf("Text=\"Other tidy-ups\"", StringComparison.Ordinal);
+        var oldStuff = page.IndexOf("Topic=\"studio.oldStuff\"", StringComparison.Ordinal);
+
+        Assert.True(findGroups > 0 && board > findGroups && groupFolders > board && other > groupFolders && oldStuff > other,
+            $"Order was: find {findGroups}, board {board}, group folders {groupFolders}, other {other}, old stuff {oldStuff}");
+        var step2 = Section(page, "Text=\"2. Happy with these groups?\"", "</Border>");
+        Assert.Contains("Content=\"Put each group in its own folder\"", step2, StringComparison.Ordinal);
+        Assert.DoesNotContain("Folder by group", page, StringComparison.Ordinal);
+    }
+
     private static string Page() =>
         File.ReadAllText(Path.Combine(RepositoryRoot(), "src", "DeskAI.App", "Views", "DesktopStudioPage.xaml")).ReplaceLineEndings("\n");
 

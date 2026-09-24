@@ -26,7 +26,7 @@ to run outside Windows Sandbox.
 **Owner's manual checks for step 3:** on Desktop Studio press **Show what would move** on Clear
 old stuff and read the list; press **Move** and accept the dialog; look at the Old stuff folder;
 press **Put back**; Move again, close and reopen DeskAI, and check Put back is still offered;
-Find groups, then Folder by group, Move, Put back; press **Stop DeskAI moving things on my
+Find groups, then under the board **Put each group in its own folder**, Move, Put back; press **Stop DeskAI moving things on my
 Desktop**; check that Organize's tidy permission for the Desktop did not change. The owner
 checked Find groups' move, rename, and merge by hand on 2026-09-24 and said they work well.
 
@@ -46,6 +46,10 @@ Ask the owner first; do not start it unasked.
   Studio as a whole later (they did check that move, rename, and merge work well).
 - 2026-09-24: the owner approved **a separate yes for moving things on the Desktop** (ADR 0044)
   rather than reusing "Allow tidying", and chose to build step 3 "one by one" with one review.
+- 2026-09-24: the owner chose the page order **1. Find groups → board → 2. Happy with these
+  groups? (Put each group in its own folder) → Other tidy-ups (Clear old stuff)**, because the
+  first layout left them unsure what to do after finding groups. Later cards follow the same idea:
+  a step that builds on the groups goes under the board; independent jobs go under Other tidy-ups.
 
 **Open with the owner:**
 - Merge and push: the owner decided (2026-09-24) to keep committing each task locally on this

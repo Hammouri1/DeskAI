@@ -26,7 +26,7 @@ happens, and every move is written down so it can be undone.
   and let DeskAI check your folders every so often and tell you when something matches.
 - **Desktop Studio** — make your Desktop easier to find your way around. It has three cards:
   **Find groups** sorts what sits on your Desktop into groups and changes nothing on your PC;
-  **Clear old stuff** and **Folder by group** move the things you tick, and **Put back** returns
+  **Put each group in its own folder** and **Clear old stuff** move the things you tick, and **Put back** returns
   your latest change.
 - **My workspace** — starter packs, pinned searches, folder templates, DeskAI's look, and
   your wallpaper.
@@ -131,8 +131,9 @@ DeskAI's own program folder is never on the board. Disconnecting the Desktop or 
 forgets the board. Find groups never moves, renames, or opens your files, or changes Windows.
 
 **Clear old stuff** gathers folders and files you haven't changed in 6 months into one **Old
-stuff** folder on your Desktop. **Folder by group** puts each group from Find groups into its own
-folder; Not sure stays where it is. Press **Show what would move**, untick anything you want to
+stuff** folder on your Desktop. Under your groups, **Put each group in its own folder** makes a folder on your Desktop for each
+group and puts the group's things inside; Not sure stays where it is. Each shows the list first
+(on Clear old stuff, press **Show what would move**), untick anything you want to
 keep where it is, and press **Move**. The first time, DeskAI asks for your permission to move
 things on your Desktop — this is separate from tidying on Organize, and **Stop DeskAI moving
 things on my Desktop** takes it back. **Put back** returns your latest change on the Desktop,
