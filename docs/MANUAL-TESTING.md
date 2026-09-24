@@ -1210,6 +1210,6 @@ folder connected. Never press a folder button in your everyday DeskAI during thi
    last page, press **Connect Downloads**, then **Connect my Downloads**: Organize opens on
    Downloads and asks permission before suggesting anything. Nothing moved.
 4. Open the welcome again from Privacy and AI: Downloads now says **Tidy Downloads**. Press
-   **Skip**, the X, and Esc on separate openings; each closes it at once.
+   **Skip** and Esc on separate openings; each closes it at once. (A pop-up in DeskAI has no X button.)
 5. In your everyday DeskAI (folders already connected), start it: no welcome appears. **Show the
    welcome again** opens it; press **Skip**.

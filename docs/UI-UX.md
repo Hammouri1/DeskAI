@@ -40,7 +40,7 @@ Home, with the logo, three page dots, and **Back**, **Next** (**Done** on the la
 3. **Let's start** — one button per personal folder Windows reports, and a line saying AI is off
    (or which AI is on, when reopened later).
 
-It is remembered as shown the moment it opens, so Skip, the X, Esc, or closing DeskAI all count;
+It is remembered as shown the moment it opens, so Skip, Esc, or closing DeskAI all count;
 people already using DeskAI are not greeted after an update. A folder button closes the pop-up and
 asks Home's usual "Connect your …?" question; only that question's yes connects, then Organize
 opens on the folder. **Privacy and AI → Show the welcome again** reopens it on page one. **Start

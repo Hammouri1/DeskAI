@@ -37,7 +37,7 @@ public sealed class WelcomeService(IAppSettingsStore settings, IAuthorizedRootRe
 
     /// <summary>True when the welcome should open now; it is then already remembered as shown.</summary>
     /// <remarks>
-    /// Remembered before it opens, so Skip, the X, closing DeskAI, or a crash all count. A welcome
+    /// Remembered before it opens, so Skip, Esc, closing DeskAI, or a crash all count. A welcome
     /// whose showing cannot be written down is not shown at all: it would otherwise open again on
     /// every start, which is worse than never greeting.
     /// </remarks>

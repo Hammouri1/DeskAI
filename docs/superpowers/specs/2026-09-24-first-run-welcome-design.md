@@ -18,7 +18,7 @@ silently.
 ## What the person sees
 
 A pop-up over Home, the first time DeskAI opens. It has the DeskAI logo, a row of three dots
-showing which page is open, and **Back**, **Next**, and **Skip**. Skip, the X, and Esc close it at
+showing which page is open, and **Back**, **Next**, and **Skip**. Skip and Esc close it at
 once. It never blocks the app and never comes back by itself.
 
 1. **Welcome to DeskAI** — "Find your files and keep them tidy."
@@ -44,7 +44,7 @@ keeps the safety wording in one place.
 
 - Shown at startup when both are true: DeskAI has never shown it, and no folder is connected.
   People already using DeskAI do not get it after updating.
-- Remembered as shown **the moment it opens**, so Skip, the X, closing DeskAI, or a crash all
+- Remembered as shown **the moment it opens**, so Skip, Esc, closing DeskAI, or a crash all
   count and it never nags.
 - **Start fresh** forgets it, so a reset DeskAI greets the person like new.
 - The reminder is one small value, `welcome.shown`, in the existing `app_settings` key/value store

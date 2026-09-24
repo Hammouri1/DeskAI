@@ -10,7 +10,7 @@ using Microsoft.UI.Xaml.Shapes;
 namespace DeskAI.App.Views;
 
 /// <summary>
-/// The first-run welcome pop-up. Next and Back stay inside it; Skip, the X, Esc, and Done close
+/// The first-run welcome pop-up. Next and Back stay inside it; Skip, Esc, and Done close
 /// it. A Connect button only records the folder and closes it; the window then asks Home's question.
 /// </summary>
 internal static class WelcomeDialog

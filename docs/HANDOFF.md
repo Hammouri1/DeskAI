@@ -1,8 +1,34 @@
 # DeskAI — Coding Handoff
 
-## Start here (updated 2026-09-24, after Desktop Studio step 4, Tag names)
+## Start here (updated 2026-09-25, after the first-run welcome)
 
-**State:** Desktop Studio steps 1 (**Find groups**), 3 (**Clear old stuff**, **Put each group in
+**First-run welcome: built** on branch `first-run-welcome` (stacked on `desktop-studio-find-groups`),
+from `docs/superpowers/plans/2026-09-24-first-run-welcome.md` in 4 tasks plus one fresh review.
+`WelcomeService` (Core) shows it only when `welcome.shown` is not in `app_settings` and no folder is
+remembered, and writes the key before the pop-up opens (a store that cannot be read or written means
+no welcome, never one on every start). `WelcomeViewModel` holds the three pages and the folder rows
+(Home's `PersonalFoldersViewModel`); `WelcomeDialog` (App) draws it; `MainWindow` opens it at startup
+and from **Privacy and AI → Show the welcome again**, and on a folder button asks Home's own
+"Connect your …?" question before connecting. Start fresh removes the key. Tests: `WelcomePageTests`,
+`WelcomeLayoutTests`, `WelcomeServiceTests`, one in `FreshStartPageTests`; all 1,686 tests passed and
+formatting passed. **The full Release solution build is still to run with DeskAI closed** (the owner
+had it open from `bin\x64\Release`; the app alone built to a scratch folder with 0 warnings).
+Review: no critical findings; the docs promised an X button a pop-up does not have — fixed. Deferred
+small points (the owner decides): the welcome is marked shown before it is on screen, so a very
+unlikely failure to open (another pop-up opened in the same instant) means it is never shown; the
+page dots take the accent colour of Windows' theme, not DeskAI's own dark/light choice; after Back
+lands on page 1 keyboard focus sits on a disabled button and Narrator is not told the page changed;
+if the folder list cannot be read on reopen, connected folders say "Connect" (harmless, it finds
+the existing connection); the tick icon is a raw private-use character in `WelcomeDialog.cs`; no
+test for the folder list failing in `WelcomeServiceTests`. Other dialogs' docs in `docs/UI-UX.md`
+also mention an X button that WinUI pop-ups do not have (older text, not changed). Manual check:
+`docs/MANUAL-TESTING.md` "2026-09-24 First-run welcome" (use the UI preview build).
+
+**Next (owner's request, 2026-09-24):** check that Desktop Studio works well end to end, and bring
+the owner suggestions for Desktop Studio additions to choose from. Pushing both branches is still
+to be asked; do not push before.
+
+**Desktop Studio state (unchanged since 2026-09-24):** Desktop Studio steps 1 (**Find groups**), 3 (**Clear old stuff**, **Put each group in
 its own folder**), and 4 (**Tag names**) are built on the branch `desktop-studio-find-groups`
 (from `2153fdd` on `main`), one commit per plan task plus the review fixes. Step 2 (icon
 positions) was dropped after the probe (ADR 0043). Nothing is merged, pushed, tagged, or
@@ -43,11 +69,7 @@ Studio is "super cool designs on the desktop" while DeskAI rearranges folders an
 0043 showed Windows does not keep icons where a program places them. `tools/FolderColorProbe`
 stays as the record.
 
-**Next task (owner's choice, 2026-09-24): the first-run welcome**, on branch `first-run-welcome`
-(stacked on `desktop-studio-find-groups`). Design: `docs/superpowers/specs/2026-09-24-first-run-welcome-design.md`
-(a three-page pop-up, only for brand-new people, reopened from Privacy and AI). **After it**, the
-owner asked to check that Desktop Studio works well end to end and to bring them suggestions for
-Desktop Studio additions. Pushing both branches is still to be asked; do not push before.
+**The first-run welcome** (owner's choice, 2026-09-24) is built; see the top of this section.
 
 **Decisions the owner made that are not yet in code** (also in
 `docs/superpowers/specs/2026-09-24-desktop-studio-design.md`):
@@ -82,7 +104,7 @@ Desktop Studio additions. Pushing both branches is still to be asked; do not pus
   opened (CLAUDE.md). Ask them to paste the images into the chat.
 - Other improvement ideas not yet picked, in the suggested order: code signing, an opt-in
   "newer version?" button, re-enabling picture search after a fresh review, Recycle Bin for
-  proven copies, a first-run guide, architecture guard tests.
+  proven copies, architecture guard tests (the first-run guide is now built as the welcome).
 
 ## 2026-09-24 Desktop Studio step 4: Tag names
 
@@ -517,7 +539,8 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 > here" first), and especially `docs/SECURITY.md`; inspect Git status and the
 > `desktop-studio-find-groups` branch (Desktop Studio steps 1, 3, and 4, ADR 0042, ADR 0044, and
 > ADR 0045; step 2 dropped, ADR 0043). Nothing on it is pushed yet. All planned Desktop
-> Studio work is built; Color groups was dropped (ADR 0046). Ask me whether to push Desktop Studio
+> Studio work is built; Color groups was dropped (ADR 0046). The first-run welcome is built on
+> `first-run-welcome`; run the full Release build if not yet done. Ask me whether to push Desktop Studio
 > or look for another way to make Desktop designs first.
 > Do not open or scan my personal folders or use my API key. Test with generated
 > files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
