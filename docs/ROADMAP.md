@@ -573,7 +573,7 @@ is released and checked by the owner before the next.
   but a refresh or an Explorer restart undid it, so **Keep together**, **Make zones**, and
   **Name the zones** are dropped.
 - Step 3 — **Clear old stuff** and **Folder by group** (ADR 0044): built on the branch; moving things on the Desktop needs its own yes, and each card has Put back.
-- Step 4 — **Tag names** (rename a folder). Planned.
+- Step 4 — **Tag names** (ADR 0045): built on the branch; each folder in a group gets the group's name in front, as a same-place folder move under the same yes, with Put back.
 - Step 5 — color-icon probe, then **Color groups**. Planned.
 
 ## Explicitly Deferred Beyond V1 Unless Reprioritized

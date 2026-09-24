@@ -124,6 +124,8 @@ changer, and a test asserts that; nothing in this step changes a file or Windows
 
 **Desktop Studio — moving things (ADR 0044).** `DesktopInventoryService` makes a read-only look at the Desktop (8 levels, 20,000 entries) with dates, file counts, and warnings; `DesktopMovePlanner` turns it, and for Folder by group the saved board, into a plan whose `Purpose` names the card. `DesktopMoveService` approves exactly the ticked rows and the folders they need and hands the plan to the one executor, which now also moves a whole folder (`MoveFolderOperation`, one rename) and puts it back by its made-at time. Only a non-Tidy plan may move a folder, and the executor checks the grant that matches the plan's purpose: `CanTidy` for tidies, `CanMoveFolders` (table `folder_move_permissions`, schema 17) for Desktop Studio. Organize's Undo is not offered once a Desktop Studio change ran after its tidy.
 
+**Desktop Studio — Tag names (ADR 0045).** A rename is a `MoveFolderOperation` whose destination is a new name in the same place, in a plan with `PlanPurpose.TagNames`; `DesktopMovePlanner.TagNames` builds it from the saved board, so there is no new executor action and no schema change.
+
 ### `DeskAI.Presentation`
 
 The logic behind every page: view models, commands, and

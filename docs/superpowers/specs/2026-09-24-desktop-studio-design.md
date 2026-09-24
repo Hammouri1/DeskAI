@@ -107,7 +107,8 @@ and confirms the groups. **Put back** undoes only that card's own last change.
   the total, for example "3 folders holding 1,204 files".
 - New executor actions, each with live re-checks just before acting: **move a folder**
   (within the same connected Desktop, which is a single rename in Windows, so a folder is never
-  half-moved) and **rename a folder** (for Tag names).
+  half-moved) and **rename a folder** (for Tag names). Built 2026-09-24: the rename is the same
+  folder move to a new name in the same place, not a new action (ADR 0045).
 - **Unticked by default, with a warning:** folders that look like active projects (`.git`,
   `.sln`, `package.json`, a Python environment), folders containing programs (`.exe`), and
   folders with online-only files. Moving or renaming these can break programs, shortcuts, or
@@ -150,7 +151,7 @@ arithmetic, snapshot/restore, and the new executor actions' refusal cases.
 1. Find groups (board, Send window, AI request, local fallback, storage).
 2. Icon-position probe → Keep together → Make zones → Name the zones.
 3. Clear old stuff and Folder by group (move a folder). Built 2026-09-24 (ADR 0044).
-4. Tag names (rename a folder).
+4. Tag names (rename a folder). Built 2026-09-24 (ADR 0045).
 5. Color-icon probe → Color groups.
 
 ## Not in scope

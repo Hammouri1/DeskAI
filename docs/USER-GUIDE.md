@@ -24,10 +24,11 @@ happens, and every move is written down so it can be undone.
   connected folder or search all of them.
 - **Automatic tasks** — write rules ("move invoices to Documents"), try them as a practice run,
   and let DeskAI check your folders every so often and tell you when something matches.
-- **Desktop Studio** — make your Desktop easier to find your way around. It has three cards:
+- **Desktop Studio** — make your Desktop easier to find your way around. It has four cards:
   **Find groups** sorts what sits on your Desktop into groups and changes nothing on your PC;
-  **Put each group in its own folder** and **Clear old stuff** move the things you tick, and **Put back** returns
-  your latest change.
+  **Put each group in its own folder** and **Clear old stuff** move the things you tick,
+  **Add the group's name to each folder's name** renames the folders you tick, and **Put back**
+  returns your latest change.
 - **My workspace** — starter packs, pinned searches, folder templates, DeskAI's look, and
   your wallpaper.
 - **Privacy and AI** — what AI (if any) DeskAI uses and what it may see, your backup, and
@@ -141,6 +142,14 @@ even after you close DeskAI. Folders that look like projects or
 hold programs start unticked, because moving them can break shortcuts. Anything DeskAI leaves
 where it is — a name already taken, something that changed after you looked, something open in
 another program — is listed with the reason. Nothing is ever deleted.
+
+If you'd rather keep your folders where they are, **Add the group's name to each folder's name**
+(right under your groups) puts each group's name in front of its folders' names, so "Python
+stuff" becomes "Coding – Python stuff". You see each folder with its new name first, and only the
+ones you tick are renamed when you press **Rename**. Files and Not sure keep their names, a name
+already taken is never used, and a folder that already starts with its group's name is left as it
+is. It uses the same permission as moving (the dialog asks to "move or rename things on your
+Desktop"), and **Put back** gives the folders their old names again.
 
 ## Backups, moving computers, and leaving
 

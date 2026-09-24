@@ -251,6 +251,11 @@ with a warning. Nothing is deleted; the only folder ever removed is an empty one
 that run, on Put back. No AI is asked when moving; Folder by group uses the groups the person saw
 and could change on the board. Review: `docs/security/2026-09-24-desktop-moves-review.md`.
 
+Tag names (ADR 0045) renames folders with the same yes and the same single rename: a folder
+move to a new name in the same place, with every check above. Files are never renamed, a new
+name already used by anything on the Desktop (seen or left out) is never taken, and the new name
+must pass the folder-name check. Review: `docs/security/2026-09-24-tag-names-review.md`.
+
 ## Backup Files and Start Fresh
 
 Since V0.8 (ADR 0030, review `docs/security/2026-09-16-v0.8-privacy-review.md`) DeskAI can write
