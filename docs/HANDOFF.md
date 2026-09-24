@@ -1,6 +1,6 @@
 # DeskAI — Coding Handoff
 
-## Start here (updated 2026-09-24, after Desktop Studio step 3)
+## Start here (updated 2026-09-24, after Desktop Studio step 3, the page-order and tray-logo fixes, and the Tag names plan)
 
 **State:** Desktop Studio steps 1 (**Find groups**) and 3 (**Clear old stuff**, **Folder by
 group**) are built on the branch `desktop-studio-find-groups` (from `2153fdd` on `main`), one
@@ -30,9 +30,25 @@ Find groups, then under the board **Put each group in its own folder**, Move, Pu
 Desktop**; check that Organize's tidy permission for the Desktop did not change. The owner
 checked Find groups' move, rename, and merge by hand on 2026-09-24 and said they work well.
 
-**Next task:** **Tag names** (design step 4: the group name in front of each folder's name, a
-new "rename a folder" action). It needs its own plan, ADR, and security review before any code.
-Ask the owner first; do not start it unasked.
+**Since then (2026-09-24, same session):**
+- **Page order (owner-found):** the Desktop Studio page now reads as steps — **1. Find groups**,
+  the board, **2. Happy with these groups?** with **Put each group in its own folder** (the old
+  "Folder by group"), then **Other tidy-ups** with Clear old stuff. `DesktopStudioLayoutTests`
+  keeps the order. The owner said "ok better now".
+- **Tray logo (owner-found):** the icon near the clock showed Windows' generic program icon (it
+  asked for icon number 1, which .NET does not use). `TrayPresence` now loads `Assets\DeskAI.ico`
+  at the small tray size and destroys it on close; `ShellLayoutTests` pins it.
+- After both, the Release build (full rebuild) had 0 warnings, all 1,608 tests passed, and
+  formatting verification passed. Everything is committed on the branch; nothing is pushed.
+
+**Next task:** carry out `docs/superpowers/plans/2026-09-24-desktop-studio-tag-names.md`
+(**Tag names**, ADR 0045 to be written as its Task 1). It reuses ADR 0044's folder move for a
+rename in place, adds `PlanPurpose.TagNames`, and puts the card right under step 2 with the button
+**Add the group's name to each folder's name**; the permission dialog becomes "move or rename".
+The owner has seen the plan summary; **ask them to confirm the build method** — "one by one"
+(inline, one fresh review at the end) was recommended, as used for step 3. After Tag names:
+**Color groups**, which starts with its own probe and is dropped if the colour cannot be removed
+cleanly. Then ask the owner about pushing the whole Desktop Studio feature.
 
 **Decisions the owner made that are not yet in code** (also in
 `docs/superpowers/specs/2026-09-24-desktop-studio-design.md`):
@@ -459,9 +475,9 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 > Continue DeskAI in the repository checkout. Read `AGENTS.md`, `docs/HANDOFF.md` ("Start
 > here" first), and especially `docs/SECURITY.md`; inspect Git status and the
 > `desktop-studio-find-groups` branch (Desktop Studio steps 1 and 3, ADR 0042 and ADR 0044; step 2
-> dropped, ADR 0043). Nothing on it is pushed yet. Next, after my manual check of step 3, is
-> Desktop Studio step 4, **Tag names**: write its plan, ADR, and security review first and ask me
-> before building. Do not open or scan my personal folders or use my API key. Test with generated
+> dropped, ADR 0043). Nothing on it is pushed yet. Next is Desktop Studio step 4, **Tag names**:
+> its plan is `docs/superpowers/plans/2026-09-24-desktop-studio-tag-names.md`. Ask me how to build
+> it (one by one was recommended), then build it. Do not open or scan my personal folders or use my API key. Test with generated
 > files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
 
 ## How to update this file
