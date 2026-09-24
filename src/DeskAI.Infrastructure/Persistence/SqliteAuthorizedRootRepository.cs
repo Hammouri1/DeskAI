@@ -38,8 +38,9 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT r.canonical_path, r.display_name, r.permission, r.authorization_scope, t.granted_at_utc
+            SELECT r.canonical_path, r.display_name, r.permission, r.authorization_scope, t.granted_at_utc, f.granted_at_utc
             FROM authorized_roots r LEFT JOIN tidy_permissions t ON t.root_id = r.id
+            LEFT JOIN folder_move_permissions f ON f.root_id = r.id
             WHERE r.id = $id;
             """;
         command.Parameters.AddWithValue("$id", rootId.ToString("D"));
@@ -49,6 +50,7 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
                     rootId, reader.GetString(0), reader.GetString(1),
                     (RootAccessLevel)reader.GetInt32(2), (RootAuthorizationScope)reader.GetInt32(3))
                 .WithTidyAllowedSince(ReadGrant(reader, 4))
+                .WithFolderMovesAllowedSince(ReadGrant(reader, 5))
             : null;
     }
 
@@ -57,8 +59,9 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
         await using var connection = await SqliteStore.OpenAsync(_databasePath, cancellationToken).ConfigureAwait(false);
         await using var command = connection.CreateCommand();
         command.CommandText = """
-            SELECT r.id, r.canonical_path, r.display_name, r.permission, r.authorization_scope, t.granted_at_utc
+            SELECT r.id, r.canonical_path, r.display_name, r.permission, r.authorization_scope, t.granted_at_utc, f.granted_at_utc
             FROM authorized_roots r LEFT JOIN tidy_permissions t ON t.root_id = r.id
+            LEFT JOIN folder_move_permissions f ON f.root_id = r.id
             ORDER BY r.display_name COLLATE NOCASE;
             """;
         var roots = new List<AuthorizedRoot>();
@@ -68,7 +71,8 @@ public sealed class SqliteAuthorizedRootRepository(IOptions<DatabaseOptions> opt
             roots.Add(AuthorizedRoot.Create(
                     Guid.Parse(reader.GetString(0)), reader.GetString(1), reader.GetString(2),
                     (RootAccessLevel)reader.GetInt32(3), (RootAuthorizationScope)reader.GetInt32(4))
-                .WithTidyAllowedSince(ReadGrant(reader, 5)));
+                .WithTidyAllowedSince(ReadGrant(reader, 5))
+                .WithFolderMovesAllowedSince(ReadGrant(reader, 6)));
         }
 
         return roots;

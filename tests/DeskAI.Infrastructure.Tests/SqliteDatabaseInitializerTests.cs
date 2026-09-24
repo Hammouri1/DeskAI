@@ -33,7 +33,7 @@ public sealed class SqliteDatabaseInitializerTests
 
         // Every migration must record its own number so the upgrade path stays auditable.
         command.CommandText = "SELECT group_concat(version, ',') FROM (SELECT version FROM schema_migrations ORDER BY version);";
-        Assert.Equal("1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16", await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal("1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17", await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -290,8 +290,43 @@ public sealed class SqliteDatabaseInitializerTests
         await verify.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
 
         verify.CommandText = "SELECT MAX(version) FROM schema_migrations;";
-        Assert.Equal(16L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        Assert.Equal((long)SqliteDatabaseInitializer.CurrentSchemaVersion, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
         verify.CommandText = "SELECT COUNT(*) FROM desktop_group_boards;";
         Assert.Equal(0L, await verify.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task Schema_17_adds_the_plan_purpose_the_folder_date_and_the_move_yes_and_can_run_twice()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var databasePath = System.IO.Path.Combine(sandbox.Path, "deskai.db");
+        var initializer = new SqliteDatabaseInitializer(
+            Options.Create(new DatabaseOptions { DatabasePath = databasePath }),
+            new SystemClock(),
+            NullLogger<SqliteDatabaseInitializer>.Instance);
+
+        await initializer.InitializeAsync(TestContext.Current.CancellationToken);
+        await initializer.InitializeAsync(TestContext.Current.CancellationToken);
+
+        await using var connection = new SqliteConnection($"Data Source={databasePath};Pooling=False");
+        await connection.OpenAsync(TestContext.Current.CancellationToken);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT COUNT(*) FROM pragma_table_info('organization_plans') WHERE name = 'purpose';";
+        Assert.Equal(1L, await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+        command.CommandText = "SELECT COUNT(*) FROM pragma_table_info('execution_operation_journal') WHERE name = 'before_created_at_utc';";
+        Assert.Equal(1L, await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
+
+        // The yes goes with its folder.
+        command.CommandText = """
+            PRAGMA foreign_keys = ON;
+            INSERT INTO authorized_roots(id, canonical_path, display_name, permission, created_at_utc, authorization_scope)
+            VALUES ('99999999-9999-9999-9999-999999999999', 'C:\Sandbox\Desktop', 'Desktop', 0, '2026-09-24T00:00:00Z', 0);
+            INSERT INTO folder_move_permissions(root_id, granted_at_utc)
+            VALUES ('99999999-9999-9999-9999-999999999999', '2026-09-24T00:00:00Z');
+            DELETE FROM authorized_roots WHERE id = '99999999-9999-9999-9999-999999999999';
+            """;
+        await command.ExecuteNonQueryAsync(TestContext.Current.CancellationToken);
+        command.CommandText = "SELECT COUNT(*) FROM folder_move_permissions;";
+        Assert.Equal(0L, await command.ExecuteScalarAsync(TestContext.Current.CancellationToken));
     }
 }

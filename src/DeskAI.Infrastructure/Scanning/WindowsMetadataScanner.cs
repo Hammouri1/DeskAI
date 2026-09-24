@@ -130,7 +130,11 @@ public sealed class WindowsMetadataScanner(IPathPolicy pathPolicy) : IFileScanne
 
                 if ((attributes.Value & FileAttributes.Directory) != 0)
                 {
-                    yield return new FolderDiscovered(NormalizeRelativePath(relativePath), ToTraits(attributes.Value));
+                    yield return new FolderDiscovered(
+                        NormalizeRelativePath(relativePath),
+                        ToTraits(attributes.Value),
+                        new DateTimeOffset(entry.CreationTimeUtc),
+                        new DateTimeOffset(entry.LastWriteTimeUtc));
                     if (depth >= options.MaxDepth)
                     {
                         yield return Issue(

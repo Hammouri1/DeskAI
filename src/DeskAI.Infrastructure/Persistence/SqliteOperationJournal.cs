@@ -52,8 +52,8 @@ public sealed class SqliteOperationJournal(IOptions<DatabaseOptions> options) : 
             command.CommandText = """
                 INSERT INTO execution_operation_journal(
                     transaction_id, sequence, operation_id, kind, source_relative_path,
-                    destination_relative_path, before_size_bytes, before_modified_at_utc, state, error)
-                VALUES ($transaction, $sequence, $operation, $kind, $source, $destination, $size, $modified, $state, $error);
+                    destination_relative_path, before_size_bytes, before_modified_at_utc, state, error, before_created_at_utc)
+                VALUES ($transaction, $sequence, $operation, $kind, $source, $destination, $size, $modified, $state, $error, $created);
                 """;
             command.Parameters.AddWithValue("$transaction", entry.Id.ToString("D"));
             command.Parameters.AddWithValue("$sequence", operation.Sequence);
@@ -65,6 +65,7 @@ public sealed class SqliteOperationJournal(IOptions<DatabaseOptions> options) : 
             command.Parameters.AddWithValue("$modified", operation.BeforeModifiedAtUtc?.ToString("O") ?? (object)DBNull.Value);
             command.Parameters.AddWithValue("$state", (int)operation.State);
             command.Parameters.AddWithValue("$error", (object?)operation.Error ?? DBNull.Value);
+            command.Parameters.AddWithValue("$created", operation.BeforeCreatedAtUtc?.ToString("O") ?? (object)DBNull.Value);
             await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -197,13 +198,15 @@ public sealed class SqliteOperationJournal(IOptions<DatabaseOptions> options) : 
         DateTimeOffset started;
         DateTimeOffset? finished;
         Guid? original;
+        PlanPurpose purpose;
         await using (var command = connection.CreateCommand())
         {
             command.CommandText = """
                 SELECT t.plan_id, t.plan_revision, t.approval_id, t.state,
-                       t.started_at_utc, t.finished_at_utc, u.original_transaction_id
+                       t.started_at_utc, t.finished_at_utc, u.original_transaction_id, p.purpose
                 FROM execution_transactions t
                 LEFT JOIN undo_transaction_links u ON u.undo_transaction_id = t.id
+                LEFT JOIN organization_plans p ON p.id = t.plan_id AND p.revision = t.plan_revision
                 WHERE t.id = $id;
                 """;
             command.Parameters.AddWithValue("$id", transactionId.ToString("D"));
@@ -220,6 +223,7 @@ public sealed class SqliteOperationJournal(IOptions<DatabaseOptions> options) : 
             started = ParseTimestamp(reader.GetString(4));
             finished = reader.IsDBNull(5) ? null : ParseTimestamp(reader.GetString(5));
             original = reader.IsDBNull(6) ? null : Guid.Parse(reader.GetString(6));
+            purpose = reader.IsDBNull(7) ? PlanPurpose.Tidy : (PlanPurpose)reader.GetInt32(7);
         }
 
         var operations = new List<OperationJournalEntry>();
@@ -227,7 +231,7 @@ public sealed class SqliteOperationJournal(IOptions<DatabaseOptions> options) : 
         {
             command.CommandText = """
                 SELECT sequence, operation_id, kind, source_relative_path, destination_relative_path,
-                       before_size_bytes, before_modified_at_utc, state, error
+                       before_size_bytes, before_modified_at_utc, state, error, before_created_at_utc
                 FROM execution_operation_journal WHERE transaction_id = $id ORDER BY sequence;
                 """;
             command.Parameters.AddWithValue("$id", transactionId.ToString("D"));
@@ -243,14 +247,20 @@ public sealed class SqliteOperationJournal(IOptions<DatabaseOptions> options) : 
                     reader.IsDBNull(5) ? null : reader.GetInt64(5),
                     reader.IsDBNull(6) ? null : ParseTimestamp(reader.GetString(6)),
                     (JournalOperationState)reader.GetInt32(7),
-                    reader.IsDBNull(8) ? null : reader.GetString(8)));
+                    reader.IsDBNull(8) ? null : reader.GetString(8))
+                {
+                    BeforeCreatedAtUtc = reader.IsDBNull(9) ? null : ParseTimestamp(reader.GetString(9)),
+                });
             }
         }
 
         return new ExecutionJournalEntry(
             transactionId, planId, revision, approvalId,
             original is null ? ExecutionTransactionKind.Execute : ExecutionTransactionKind.Undo,
-            original, state, started, finished, operations);
+            original, state, started, finished, operations)
+        {
+            Purpose = purpose,
+        };
     }
 
     private static async Task<List<Guid>> ReadIdsAsync(

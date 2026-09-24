@@ -38,6 +38,7 @@ public static class ServiceCollectionExtensions
         services.AddSingleton<IMetadataIndexService, MetadataIndexService>();
         services.AddSingleton<IDatabaseInitializer, SqliteDatabaseInitializer>();
         services.AddSingleton<IAuthorizedRootRepository, SqliteAuthorizedRootRepository>();
+        services.AddSingleton<IFolderMovePermissions, SqliteFolderMovePermissions>();
         services.AddSingleton<ISavedSearchRepository, SqliteSavedSearchRepository>();
         services.AddSingleton<IRuleRepository, SqliteRuleRepository>();
         services.AddSingleton<IAutomaticCheckSettingsRepository, SqliteAutomaticCheckSettingsRepository>();

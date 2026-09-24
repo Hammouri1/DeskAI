@@ -163,4 +163,35 @@ public sealed class SqliteAuthorizedRootRepositoryTests
             .InitializeAsync(TestContext.Current.CancellationToken);
         return new SqliteAuthorizedRootRepository(options, new SystemClock());
     }
+
+    [Fact]
+    public async Task The_move_yes_is_separate_from_tidying_and_only_for_folders_connected_for_reading()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var options = Options.Create(new DatabaseOptions { DatabasePath = Path.Combine(sandbox.Path, "deskai.db") });
+        await new SqliteDatabaseInitializer(options, new SystemClock(), NullLogger<SqliteDatabaseInitializer>.Instance)
+            .InitializeAsync(TestContext.Current.CancellationToken);
+        var roots = new SqliteAuthorizedRootRepository(options, new SystemClock());
+        var moves = new SqliteFolderMovePermissions(options);
+        var desktop = AuthorizedRoot.Create(Guid.NewGuid(), Path.Combine(sandbox.Path, "Desktop"), "Desktop", RootAccessLevel.Allowed, RootAuthorizationScope.MetadataOnly);
+        var practice = AuthorizedRoot.Create(Guid.NewGuid(), Path.Combine(sandbox.Path, "Practice"), "Practice", RootAccessLevel.Allowed, RootAuthorizationScope.ControlledDemo);
+        await roots.SaveAsync(desktop, TestContext.Current.CancellationToken);
+        await roots.SaveAsync(practice, TestContext.Current.CancellationToken);
+
+        await moves.AllowAsync(desktop.Id, DateTimeOffset.UnixEpoch, TestContext.Current.CancellationToken);
+        await moves.AllowAsync(practice.Id, DateTimeOffset.UnixEpoch, TestContext.Current.CancellationToken);
+
+        var allowed = await roots.FindAsync(desktop.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(DateTimeOffset.UnixEpoch, allowed!.FolderMovesAllowedSinceUtc);
+        Assert.Null(allowed.TidyAllowedSinceUtc);
+        Assert.Null((await roots.FindAsync(practice.Id, TestContext.Current.CancellationToken))!.FolderMovesAllowedSinceUtc);
+        Assert.Contains(await roots.ListAsync(TestContext.Current.CancellationToken), root => root.Id == desktop.Id && root.FolderMovesAllowedSinceUtc is not null);
+
+        // Stopping tidying leaves the move yes; its own Stop ends it.
+        await roots.AllowTidyAsync(desktop.Id, DateTimeOffset.UnixEpoch, TestContext.Current.CancellationToken);
+        await roots.StopTidyAsync(desktop.Id, TestContext.Current.CancellationToken);
+        Assert.NotNull((await roots.FindAsync(desktop.Id, TestContext.Current.CancellationToken))!.FolderMovesAllowedSinceUtc);
+        await moves.StopAsync(desktop.Id, TestContext.Current.CancellationToken);
+        Assert.Null((await roots.FindAsync(desktop.Id, TestContext.Current.CancellationToken))!.FolderMovesAllowedSinceUtc);
+    }
 }

@@ -10,7 +10,7 @@ public sealed partial class SqliteDatabaseInitializer(
     IClock clock,
     ILogger<SqliteDatabaseInitializer> logger) : IDatabaseInitializer
 {
-    public const int CurrentSchemaVersion = 16;
+    public const int CurrentSchemaVersion = 17;
     private readonly DatabaseOptions _options = options.Value;
 
     public async Task InitializeAsync(CancellationToken cancellationToken = default)
@@ -49,6 +49,7 @@ public sealed partial class SqliteDatabaseInitializer(
         await ApplyAwayTidyMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyIndexLookMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
         await ApplyDesktopGroupMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
+        await ApplyDesktopMovesMigrationAsync(connection, clock.UtcNow, cancellationToken).ConfigureAwait(false);
 
         LogDatabaseReady(logger, CurrentSchemaVersion);
     }
@@ -79,6 +80,42 @@ public sealed partial class SqliteDatabaseInitializer(
                 ALTER TABLE saved_searches ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0;
                 INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (13, $appliedAtUtc);
                 """;
+        command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
+        await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
+        await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Desktop Studio moving things (ADR 0044): which feature made each plan, when a moved folder
+    /// was made, and the separate yes to move things, cascading with its folder.
+    /// </summary>
+    /// <remarks>
+    /// Existing plans become tidies (0), which is what they are. SQLite has no "add column if
+    /// missing", so each column is looked for first; running this twice changes nothing.
+    /// </remarks>
+    private static async Task ApplyDesktopMovesMigrationAsync(
+        SqliteConnection connection,
+        DateTimeOffset appliedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var transaction = await connection.BeginTransactionAsync(cancellationToken).ConfigureAwait(false);
+        await using var command = connection.CreateCommand();
+        command.Transaction = (SqliteTransaction)transaction;
+        command.CommandText = "SELECT COUNT(*) FROM pragma_table_info('organization_plans') WHERE name = 'purpose';";
+        var hasPurpose = (long)(await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) ?? 0L) > 0;
+        command.CommandText = "SELECT COUNT(*) FROM pragma_table_info('execution_operation_journal') WHERE name = 'before_created_at_utc';";
+        var hasCreated = (long)(await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false) ?? 0L) > 0;
+
+        command.CommandText = (hasPurpose ? string.Empty : "ALTER TABLE organization_plans ADD COLUMN purpose INTEGER NOT NULL DEFAULT 0;\n")
+            + (hasCreated ? string.Empty : "ALTER TABLE execution_operation_journal ADD COLUMN before_created_at_utc TEXT NULL;\n")
+            + """
+            CREATE TABLE IF NOT EXISTS folder_move_permissions (
+                root_id        TEXT NOT NULL PRIMARY KEY REFERENCES authorized_roots(id) ON DELETE CASCADE,
+                granted_at_utc TEXT NOT NULL
+            );
+
+            INSERT OR IGNORE INTO schema_migrations(version, applied_at_utc) VALUES (17, $appliedAtUtc);
+            """;
         command.Parameters.AddWithValue("$appliedAtUtc", appliedAtUtc.ToString("O"));
         await command.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         await transaction.CommitAsync(cancellationToken).ConfigureAwait(false);

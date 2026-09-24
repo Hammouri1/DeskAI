@@ -21,8 +21,8 @@ public sealed class SqlitePlanRepository(IOptions<DatabaseOptions> options) : IP
         {
             planCommand.Transaction = (SqliteTransaction)transaction;
             planCommand.CommandText = """
-                INSERT INTO organization_plans(id, revision, root_id, created_at_utc, policy_version, state)
-                VALUES ($id, $revision, $root, $created, $policy, $state)
+                INSERT INTO organization_plans(id, revision, root_id, created_at_utc, policy_version, state, purpose)
+                VALUES ($id, $revision, $root, $created, $policy, $state, $purpose)
                 """;
             planCommand.Parameters.AddWithValue("$id", plan.Id.ToString("D"));
             planCommand.Parameters.AddWithValue("$revision", plan.Revision);
@@ -30,6 +30,7 @@ public sealed class SqlitePlanRepository(IOptions<DatabaseOptions> options) : IP
             planCommand.Parameters.AddWithValue("$created", plan.CreatedAtUtc.ToString("O"));
             planCommand.Parameters.AddWithValue("$policy", plan.PolicyVersion);
             planCommand.Parameters.AddWithValue("$state", (int)plan.State);
+            planCommand.Parameters.AddWithValue("$purpose", (int)plan.Purpose);
             await planCommand.ExecuteNonQueryAsync(cancellationToken).ConfigureAwait(false);
         }
 
@@ -88,9 +89,10 @@ public sealed class SqlitePlanRepository(IOptions<DatabaseOptions> options) : IP
         Guid rootId;
         DateTimeOffset created;
         string policy;
+        PlanPurpose purpose;
         await using (var command = connection.CreateCommand())
         {
-            command.CommandText = "SELECT root_id, created_at_utc, policy_version FROM organization_plans WHERE id = $id AND revision = $revision;";
+            command.CommandText = "SELECT root_id, created_at_utc, policy_version, purpose FROM organization_plans WHERE id = $id AND revision = $revision;";
             command.Parameters.AddWithValue("$id", planId.ToString("D"));
             command.Parameters.AddWithValue("$revision", revision);
             await using var reader = await command.ExecuteReaderAsync(cancellationToken).ConfigureAwait(false);
@@ -103,11 +105,12 @@ public sealed class SqlitePlanRepository(IOptions<DatabaseOptions> options) : IP
             created = DateTimeOffset.Parse(
                 reader.GetString(1), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind);
             policy = reader.GetString(2);
+            purpose = (PlanPurpose)reader.GetInt32(3);
         }
 
         var operations = await ReadOperationsAsync(connection, planId, revision, cancellationToken).ConfigureAwait(false);
         var issues = await ReadIssuesAsync(connection, planId, revision, cancellationToken).ConfigureAwait(false);
-        return OrganizationPlan.CreateDraft(planId, rootId, revision, created, policy, operations, issues);
+        return OrganizationPlan.CreateDraft(planId, rootId, revision, created, policy, operations, issues, purpose);
     }
 
     private static async Task<List<PlanOperation>> ReadOperationsAsync(
@@ -135,6 +138,7 @@ public sealed class SqlitePlanRepository(IOptions<DatabaseOptions> options) : IP
                 PlanOperationKind.CreateDirectory => new CreateDirectoryOperation(id, destination, reason, provenance),
                 PlanOperationKind.MoveFile => new MoveFileOperation(id, source!, destination, reason, provenance),
                 PlanOperationKind.RenameFile => new RenameFileOperation(id, source!, destination, reason, provenance),
+                PlanOperationKind.MoveFolder => new MoveFolderOperation(id, source!, destination, reason, provenance),
                 _ => throw new InvalidDataException("Stored plan contains an unknown operation kind."),
             });
         }
@@ -172,6 +176,7 @@ public sealed class SqlitePlanRepository(IOptions<DatabaseOptions> options) : IP
         CreateDirectoryOperation create => (null, create.DestinationRelativePath),
         MoveFileOperation move => (move.SourceRelativePath, move.DestinationRelativePath),
         RenameFileOperation rename => (rename.SourceRelativePath, rename.DestinationRelativePath),
+        MoveFolderOperation folder => (folder.SourceRelativePath, folder.DestinationRelativePath),
         _ => throw new ArgumentOutOfRangeException(nameof(operation)),
     };
 }

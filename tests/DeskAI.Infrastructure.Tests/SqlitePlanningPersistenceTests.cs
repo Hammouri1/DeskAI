@@ -74,4 +74,35 @@ public sealed class SqlitePlanningPersistenceTests
         Assert.Equal(JournalOperationState.Completed, Assert.Single(storedTransaction.Operations).State);
         Assert.Empty(await journal.ListIncompleteAsync(TestContext.Current.CancellationToken));
     }
+
+    [Fact]
+    public async Task A_folder_move_its_made_at_time_and_the_plan_purpose_survive_saving()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var options = Options.Create(new DatabaseOptions { DatabasePath = Path.Combine(sandbox.Path, "deskai.db") });
+        await new SqliteDatabaseInitializer(options, new SystemClock(), NullLogger<SqliteDatabaseInitializer>.Instance)
+            .InitializeAsync(TestContext.Current.CancellationToken);
+        var root = AuthorizedRoot.Create(Guid.NewGuid(), sandbox.Path, "Desktop", RootAccessLevel.Allowed, RootAuthorizationScope.MetadataOnly);
+        await new SqliteAuthorizedRootRepository(options, new SystemClock()).SaveAsync(root, TestContext.Current.CancellationToken);
+        var move = new MoveFolderOperation(Guid.NewGuid(), "Old project", @"Old stuff\Old project", "Unchanged for 6 months", OperationProvenance.Heuristic);
+        var plan = OrganizationPlan.CreateDraft(Guid.NewGuid(), root.Id, 1, DateTimeOffset.UtcNow, "1", [move], purpose: PlanPurpose.ClearOldStuff);
+        var plans = new SqlitePlanRepository(options);
+        await plans.SaveAsync(plan, TestContext.Current.CancellationToken);
+        var madeAt = new DateTimeOffset(2025, 1, 2, 3, 4, 5, TimeSpan.Zero);
+        var journal = new SqliteOperationJournal(options);
+        var record = new ExecutionJournalEntry(
+            Guid.NewGuid(), plan.Id, 1, Guid.NewGuid(), ExecutionTransactionKind.Execute, null,
+            ExecutionTransactionState.Prepared, DateTimeOffset.UtcNow, null,
+            [new OperationJournalEntry(0, move.Id, PlanOperationKind.MoveFolder, move.SourceRelativePath, move.DestinationRelativePath,
+                null, madeAt.AddDays(1), JournalOperationState.Pending, null) { BeforeCreatedAtUtc = madeAt }]);
+        await journal.CreateAsync(record, TestContext.Current.CancellationToken);
+
+        var storedPlan = await plans.FindAsync(plan.Id, 1, TestContext.Current.CancellationToken);
+        var storedRecord = await journal.FindAsync(record.Id, TestContext.Current.CancellationToken);
+
+        Assert.Equal(PlanPurpose.ClearOldStuff, storedPlan!.Purpose);
+        Assert.IsType<MoveFolderOperation>(Assert.Single(storedPlan.Operations));
+        Assert.Equal(PlanPurpose.ClearOldStuff, storedRecord!.Purpose);
+        Assert.Equal(madeAt, Assert.Single(storedRecord.Operations).BeforeCreatedAtUtc);
+    }
 }

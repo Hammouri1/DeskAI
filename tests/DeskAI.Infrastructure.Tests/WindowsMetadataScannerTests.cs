@@ -277,4 +277,28 @@ public sealed class WindowsMetadataScannerTests
 
         return events;
     }
+
+    [Fact]
+    public async Task A_folder_is_reported_with_when_it_was_made_and_last_changed()
+    {
+        using var sandbox = new TemporaryDirectory();
+        var rootPath = sandbox.CreateDummyDirectory("Root");
+        var folder = sandbox.CreateDummyDirectory(@"Root\Old project");
+        var made = new DateTime(2024, 3, 4, 5, 6, 7, DateTimeKind.Utc);
+        var changed = new DateTime(2025, 6, 7, 8, 9, 10, DateTimeKind.Utc);
+        Directory.SetCreationTimeUtc(folder, made);
+        Directory.SetLastWriteTimeUtc(folder, changed);
+        var root = AuthorizedRoot.Create(Guid.NewGuid(), rootPath, "Root", RootAccessLevel.Allowed, RootAuthorizationScope.MetadataOnly);
+
+        var found = new List<ScanEvent>();
+        await foreach (var scanEvent in new WindowsMetadataScanner(new WindowsPathPolicy())
+                           .ScanAsync(root, new MetadataScanOptions(2, 100), TestContext.Current.CancellationToken))
+        {
+            found.Add(scanEvent);
+        }
+
+        var reported = Assert.Single(found.OfType<FolderDiscovered>());
+        Assert.Equal(new DateTimeOffset(made), reported.CreatedAtUtc);
+        Assert.Equal(new DateTimeOffset(changed), reported.ModifiedAtUtc);
+    }
 }
