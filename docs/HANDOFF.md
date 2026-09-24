@@ -26,9 +26,10 @@ driving the Desktop's list control from another process) are outside what `docs/
 allows this feature and need a new decision by the owner. The probe stays in `tools/` as a
 record; it is not part of the app and refuses to run outside the Sandbox.
 
-**Next task:** the owner checks step 1 by hand (see the dated section below), then the next
-design step, **Clear old stuff and Folder by group**, which needs its own plan
-(`superpowers:writing-plans`) before any code. Ask the owner first; do not start it unasked.
+**Next task:** carry out `docs/superpowers/plans/2026-09-24-desktop-studio-moves.md` (Clear old
+stuff and Folder by group, ADR 0044) once the owner has reviewed the plan and chosen how it is run.
+The plan gives moving things on the Desktop **its own yes**, separate from "Allow tidying", because
+the tidy dialog promises DeskAI never touches what is inside a folder.
 
 **Decisions the owner made that are not yet in code** (also in
 `docs/superpowers/specs/2026-09-24-desktop-studio-design.md`):
@@ -38,6 +39,8 @@ design step, **Clear old stuff and Folder by group**, which needs its own plan
 - Build order after step 1: ~~screen designs (icon positions + labelled wallpaper)~~ — dropped
   after the probe (ADR 0043) → Clear old stuff and Folder by group → Tag names → Color groups
   (after a probe). Each step is released and checked by the owner before the next.
+- 2026-09-24: the owner chose to **skip the hand check of Find groups for now** and look at
+  Desktop Studio as a whole later, going straight on to Clear old stuff and Folder by group.
 
 **Open with the owner:**
 - Merge and push: the owner decided (2026-09-24) to keep committing each task locally on this
