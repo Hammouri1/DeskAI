@@ -90,6 +90,22 @@ stays as the record.
   a step that builds on the groups goes under the board (Tag names does); independent jobs go
   under Other tidy-ups.
 
+**Desktop Studio end-to-end check (2026-09-25), found by a throwaway page-level walk-through on a
+generated Desktop (not committed): all three cards used one after another, then reopening.** Waiting
+for the owner to choose what to fix:
+1. After **Put each group in its own folder**, the board is not updated: the next look empties
+   every group and puts the new group folders under Not sure, so the person's groups (and any
+   renames or merges) are lost.
+2. After one card moves things, the other cards keep their old lists. Pressing them then says
+   "It is no longer there" for every row, and a stale **Clear old stuff** leaves an empty
+   "Old stuff" folder on the Desktop that Put back does not offer to remove.
+3. After Folder by group, finding groups again offers Tag names renames like "Coding – Coding"
+   and "Documents – Documents" (a folder named like its own group).
+4. Clear old stuff finds nothing after Folder by group, because the old things are now inside the
+   group folders; the page does not suggest doing Clear old stuff first.
+5. Put back of Folder by group leaves the board showing folders that are gone until DeskAI reopens.
+Everything stayed safe: nothing was lost, and each Put back restored exactly what it moved.
+
 **Open with the owner:**
 - The deferred small points from Tag names' review (listed in the dated section below): the
   owner decides whether any are worth doing.
