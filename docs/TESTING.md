@@ -180,6 +180,7 @@ changes a feature.
 | Automatic tasks | Keep checking after the window is closed: asked first, stores nothing until yes, survives reopening, off again at once | `BackgroundCheckingPageTests` |
 | Automatic tasks | The icon near the clock: appears when turned on, says how often or paused, never a file name | `BackgroundCheckingPageTests`, `BackgroundCheckingChoiceTests` |
 | Automatic tasks | Where the icon is: the switch caption, the dialog, the still-running notice, and the help topic all say to click the arrow for hidden icons | `BackgroundCheckingPageTests` |
+| Automatic tasks | The icon near the clock is DeskAI's logo, not Windows' generic program icon (owner-found 2026-09-24; failed before the fix) | `ShellLayoutTests` |
 | Automatic tasks | Pause from the icon; the page and the icon never disagree | `BackgroundCheckingPageTests` |
 | Automatic tasks | Wording follows the mode: never claims checking stops on close while it does not, always says nothing moves by itself, always says no Windows startup | `BackgroundCheckingPageTests`, `BackgroundCheckingChoiceTests` |
 | Whole app | Never registers itself to start with Windows | `NeverStartsWithWindowsTests` |

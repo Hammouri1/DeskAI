@@ -61,6 +61,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
     private readonly uint _revealMessage;
     private nint _window;
     private nint _icon;
+    private bool _ownsIcon;
     private string _tooltip = string.Empty;
     private bool _isPaused;
     private bool _isShowing;
@@ -177,6 +178,12 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
 
         _disposed = true;
         RemoveIcon();
+        if (_ownsIcon && _icon != 0)
+        {
+            TrayInterop.DestroyIcon(_icon);
+            _icon = 0;
+            _ownsIcon = false;
+        }
 
         if (_window != 0)
         {
@@ -269,7 +276,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
             }
 
             Instances[_window] = this;
-            _icon = LoadTrayIcon();
+            (_icon, _ownsIcon) = LoadTrayIcon();
             return true;
         }
         catch (Exception exception) when (exception is DllNotFoundException or EntryPointNotFoundException or ExternalException)
@@ -322,15 +329,22 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
         }
     }
 
-    private static nint LoadTrayIcon()
+    /// <summary>
+    /// DeskAI's logo at the small size Windows uses near the clock, read from the same icon file the
+    /// window uses. The program's embedded icon is not used: it asked for icon number 1, which .NET
+    /// does not use, and so showed Windows' generic program icon (owner-found 2026-09-24).
+    /// </summary>
+    /// <returns>The icon, and whether this class owns it and must destroy it. The generic fallback is shared.</returns>
+    private static (nint Icon, bool Owned) LoadTrayIcon()
     {
-        // The executable's own first icon when it has one, otherwise the generic application icon.
-        // Both are shared handles: nothing here owns them, so nothing here destroys them.
-        var module = TrayInterop.GetModuleHandleW(null);
-        var icon = module == 0
-            ? 0
-            : TrayInterop.LoadImageW(module, 1, TrayInterop.IMAGE_ICON, 0, 0, TrayInterop.LR_DEFAULTSIZE | TrayInterop.LR_SHARED);
-        return icon != 0 ? icon : TrayInterop.LoadIconW(0, IdiApplication);
+        var path = Path.Combine(AppContext.BaseDirectory, "Assets", "DeskAI.ico");
+        var icon = File.Exists(path)
+            ? TrayInterop.LoadImageFromFileW(
+                0, path, TrayInterop.IMAGE_ICON,
+                TrayInterop.GetSystemMetrics(TrayInterop.SM_CXSMICON), TrayInterop.GetSystemMetrics(TrayInterop.SM_CYSMICON),
+                TrayInterop.LR_LOADFROMFILE)
+            : 0;
+        return icon != 0 ? (icon, true) : (TrayInterop.LoadIconW(0, IdiApplication), false);
     }
 
     /// <summary>

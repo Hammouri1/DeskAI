@@ -52,6 +52,9 @@ internal static class TrayInterop
     internal const uint IMAGE_ICON = 1;
     internal const uint LR_DEFAULTSIZE = 0x0000_0040;
     internal const uint LR_SHARED = 0x0000_8000;
+    internal const uint LR_LOADFROMFILE = 0x0000_0010;
+    internal const int SM_CXSMICON = 49;
+    internal const int SM_CYSMICON = 50;
 
     /// <summary>The class name is registered once and already exists on any second attempt.</summary>
     internal const int ERROR_CLASS_ALREADY_EXISTS = 1410;
@@ -125,6 +128,16 @@ internal static class TrayInterop
 
     [DllImport("user32.dll", EntryPoint = "LoadImageW", CharSet = CharSet.Unicode, SetLastError = true)]
     internal static extern nint LoadImageW(nint instance, nint name, uint type, int cx, int cy, uint load);
+
+    [DllImport("user32.dll", EntryPoint = "LoadImageW", CharSet = CharSet.Unicode, SetLastError = true)]
+    internal static extern nint LoadImageFromFileW(nint instance, string name, uint type, int cx, int cy, uint load);
+
+    [DllImport("user32.dll", EntryPoint = "GetSystemMetrics")]
+    internal static extern int GetSystemMetrics(int index);
+
+    [DllImport("user32.dll", EntryPoint = "DestroyIcon", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    internal static extern bool DestroyIcon(nint icon);
 
     [DllImport("kernel32.dll", EntryPoint = "GetModuleHandleW", CharSet = CharSet.Unicode, SetLastError = true)]
     internal static extern nint GetModuleHandleW(string? moduleName);

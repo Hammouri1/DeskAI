@@ -83,6 +83,20 @@ public sealed partial class ShellLayoutTests
         Assert.Equal(2, Regex.Count(windowSource, @"\bApplyWindowIcon\(\);"));
     }
 
+    /// <summary>
+    /// Owner-found 2026-09-24: the icon near the clock was Windows' generic program icon. It asked
+    /// the program for icon number 1, which .NET does not use, so Windows fell back to the generic one.
+    /// </summary>
+    [Fact]
+    public void The_icon_near_the_clock_is_the_DeskAI_logo()
+    {
+        var tray = File.ReadAllText(AppFile(Path.Combine("Services", "TrayPresence.cs")));
+
+        Assert.Contains("\"DeskAI.ico\"", tray, StringComparison.Ordinal);
+        Assert.Contains("LR_LOADFROMFILE", tray, StringComparison.Ordinal);
+        Assert.Contains("DestroyIcon", tray, StringComparison.Ordinal);
+    }
+
     /// <summary>Owner screenshot 2026-09-21: Home was visibly shifted right on a wide window.</summary>
     [Fact]
     public void Home_centers_its_bounded_content_in_the_visible_page_viewport()
