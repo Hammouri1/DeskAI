@@ -1,0 +1,60 @@
+# ADR 0046: Coloured Folder Icons (Proposed, waiting for the probe)
+
+- Status: Proposed
+- Date: 2026-09-24
+- Review: `docs/security/2026-09-24-folder-color-probe-review.md`
+- Plan: `docs/superpowers/plans/2026-09-24-folder-color-probe.md`
+
+## Context
+
+Desktop Studio's last step, Color groups, gives each group's folders their own colour. Windows
+has no colour setting for a folder, but a folder can show its own icon: Windows'
+folder-customization call (`SHGetSetFolderCustomSettings`) writes an `IconResource` line into the
+folder's hidden `desktop.ini` and marks the folder read-only so Explorer reads that file. This is
+the first Desktop Studio change that writes inside a person's folder rather than moving or
+renaming it, and the icon file it points to must stay where it is.
+
+The design says the card is dropped if it cannot be undone cleanly: restoring or removing exactly
+the `desktop.ini` and attributes DeskAI changed. Whether that works, and whether Explorer shows
+the colour after a refresh and a restart and stops showing it after Put back (Explorer keeps an
+icon cache), is unknown on the owner's Windows (build 26200).
+
+## Decision (proposed)
+
+- **Probe first.** `tools/FolderColorProbe` answers the question. It runs only inside Windows
+  Sandbox (user `WDAGUtilityAccount`), refuses anywhere else, and works only on four folders it
+  makes on the Sandbox's throwaway Desktop, with networking off. It is not part of the app.
+- **Put back from a snapshot.** Before colouring, the probe writes down each folder's attributes
+  and whether it had a `desktop.ini`, with its exact bytes and attributes. Put back restores
+  those, or removes the `desktop.ini` if there was none, then tells Explorer the folder changed.
+- **Go** only if, in the Sandbox, all of these pass:
+  - `color`: every probe folder's `desktop.ini` names the probe icon, the folder that already had
+    its own `desktop.ini` keeps its other lines, and the shell reports the probe icon.
+  - `refresh` and `explorer restart`: each folder's icon area on screen shows at least 200 pixels
+    of its colour (within 40 per colour channel).
+  - `put back`: every folder's attributes, `desktop.ini` presence, bytes, and attributes equal the
+    snapshot, and the shell reports the original icon.
+  - `put back after refresh`: each folder's icon area shows fewer than 20 pixels of its colour.
+- **Recorded, not required:** whether the colour shows before a refresh (if not, the app must
+  refresh the Desktop itself), and what a coloured folder shows after its icon file is deleted
+  (what a person would see after removing DeskAI).
+- If the screen cannot be read (for example the Sandbox window was minimized), the pixel stages
+  are Skipped and the verdict is "not reliable"; the owner's look at the saved pictures decides.
+- **No-go** otherwise: Color groups is dropped and the owner is told (design, "Color groups").
+
+## Consequences
+
+The probe writes `desktop.ini` files and changes folder attributes, but only on folders it made
+on a Desktop that is deleted when the Sandbox closes. No test, and no agent, touches the owner's
+Desktop.
+
+If the answer is go, a later plan still has to decide, with its own security review:
+
+- where the icon files live so a coloured folder does not turn blank if DeskAI is removed;
+- that Put back removes a `desktop.ini` only when DeskAI made it and it still holds exactly what
+  DeskAI wrote (the rule "nothing is deleted" otherwise holds, as for the empty folders DeskAI
+  makes in a run);
+- what happens when a person or another program changes the `desktop.ini` after DeskAI did
+  (Put back leaves it alone and says so);
+- the journal record for a colour change and its separate yes (ADR 0044's moving permission does
+  not cover writing inside folders).
