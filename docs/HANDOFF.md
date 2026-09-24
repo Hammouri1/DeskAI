@@ -31,7 +31,6 @@ offered. Step 3's checks: **Show what would move** on Clear old stuff, Move, loo
 folder, Put back; **Put each group in its own folder**, Move, Put back; **Stop DeskAI moving
 things on my Desktop**; check Organize's tidy permission for the Desktop did not change. The launchable exe is
 `src\DeskAI.App\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`.
-et10.0-windows10.0.26100.0win-x64DeskAI.App.exe`.
 
 **Next task:** **Color groups**, the last Desktop Studio step. It starts with its own probe, like
 the icon-position probe (ADR 0043), in Windows Sandbox only, and is dropped if the colour cannot be
