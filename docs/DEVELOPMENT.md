@@ -99,6 +99,14 @@ dotnet test --solution DeskAI.sln --no-build --no-restore --configuration Debug
 
 .NET 10 uses Microsoft Testing Platform as selected in `global.json`, which is why the solution form is `dotnet test --solution DeskAI.sln`. The app is an x64, unpackaged, self-contained Windows App SDK application. Open `DeskAI.sln` in Visual Studio for interactive launch; install the Windows application development workload and Windows 11 SDK 10.0.26100 or later if Visual Studio reports missing tooling. The command-line build obtains compile-time Windows App SDK assets from the pinned NuGet package.
 
+## Icon-Position Probe
+
+`tools/IconPositionProbe` is a development probe for ADR 0043, not part of the app. It moves
+Desktop icons, so it runs only inside Windows Sandbox and refuses anywhere else. To run it: turn
+on "Windows Sandbox" in Windows Features (admin rights, one restart), run
+`tools/IconPositionProbe/Run-InSandbox.ps1`, and read `artifacts/icon-probe/results/report.txt`
+when it appears. Then close the Sandbox (it is thrown away). Never run the exe on your own PC.
+
 ## Continuous Integration and Releases (V0.8)
 
 `.github/workflows/build.yml` runs on every push and pull request on a Windows runner: locked

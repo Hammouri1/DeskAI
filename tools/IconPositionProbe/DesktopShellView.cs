@@ -116,6 +116,12 @@ internal sealed class DesktopShellView : IDisposable
 
     internal void Refresh() => _view.Refresh();
 
+    /// <summary>
+    /// Asks Explorer to store the current layout. Without it, a refresh or restart reloads the
+    /// last stored layout and placed icons fall back to the grid (probe run 1, ADR 0043).
+    /// </summary>
+    internal void Save() => _view.SaveViewState();
+
     public void Dispose()
     {
         Marshal.ReleaseComObject(_view);
@@ -184,6 +190,11 @@ internal sealed class DesktopShellView : IDisposable
         void EnableModeless();
         void UIActivate();
         void Refresh();
+        void CreateViewWindow();
+        void DestroyViewWindow();
+        void GetCurrentInfo();
+        void AddPropertySheetPages();
+        void SaveViewState();
     }
 
     [ComImport, Guid("1AF3A467-214F-4298-908E-06B03E0B39F9"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]

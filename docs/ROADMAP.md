@@ -569,8 +569,9 @@ is released and checked by the owner before the next.
   own guess sorts the Desktop's folders and loose files into at most 8 groups plus Not sure; the
   person renames, merges, and moves. Stored per folder (schema 16), erased with it. Changes
   nothing on disk or in Windows.
-- Step 2 — icon-position feasibility probe, then **Keep together**, **Make zones**, and
-  **Name the zones** (labelled wallpaper). Planned; needs its own plan, ADR, and review.
+- Step 2 — icon-position feasibility probe: **done, no-go** (ADR 0043). Icons could be placed
+  but a refresh or an Explorer restart undid it, so **Keep together**, **Make zones**, and
+  **Name the zones** are dropped.
 - Step 3 — **Clear old stuff** and **Folder by group** (move a folder). Planned.
 - Step 4 — **Tag names** (rename a folder). Planned.
 - Step 5 — color-icon probe, then **Color groups**. Planned.

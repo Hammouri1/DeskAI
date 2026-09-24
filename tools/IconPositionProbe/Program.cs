@@ -40,11 +40,13 @@ var originalFlags = view.ReadFlags();
 var originalPositions = view.ReadPositions();
 report.Note($"auto arrange at start: {(originalFlags & DesktopShellView.AutoArrange) != 0}");
 report.Note($"icons at start: {originalPositions.Count}");
+report.Note("layout saved: after place and after put back");
 
 // Place.
 view.WriteFlags(DesktopShellView.AutoArrange | DesktopShellView.SnapToGrid, 0);
 var targets = names.Zip(ProbeLayout.Targets(names.Count, view.Spacing, area)).ToDictionary(p => p.First, p => p.Second);
 view.Place(targets);
+view.Save();
 await Task.Delay(TimeSpan.FromSeconds(2));
 Record("place", PositionCheck.Differences(targets, view.ReadPositions(), view.Spacing));
 
@@ -76,7 +78,9 @@ Record("explorer restart", PositionCheck.Differences(targets, view.ReadPositions
 // Put back: every original position, then the original flags.
 view.Place(originalPositions);
 view.WriteFlags(DesktopShellView.AutoArrange | DesktopShellView.SnapToGrid, originalFlags);
-await Task.Delay(TimeSpan.FromSeconds(2));
+view.Save();
+view.Refresh();
+await Task.Delay(TimeSpan.FromSeconds(3));
 var putBack = PositionCheck.Differences(originalPositions, view.ReadPositions(), view.Spacing).ToList();
 if ((view.ReadFlags() & (DesktopShellView.AutoArrange | DesktopShellView.SnapToGrid))
     != (originalFlags & (DesktopShellView.AutoArrange | DesktopShellView.SnapToGrid)))

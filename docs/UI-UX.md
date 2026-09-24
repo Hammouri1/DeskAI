@@ -484,4 +484,4 @@ into** (left out when there is no other group); each item has a folder or file i
 **Move to…**, and a long group scrolls inside its card. **Not sure** comes last, across the full
 width, with its items in columns and its own scroll after about eight rows. The owner found on a
 real Desktop (2026-09-24) that Not sure ran down the page in one column and that the Rename and
-Merge buttons squeezed names into "Document s"; `DesktopStudioLayoutTests` keeps both fixed. Later cards (Keep together, Make zones, and so on) join this page one at a time.
+Merge buttons squeezed names into "Document s"; `DesktopStudioLayoutTests` keeps both fixed. Later cards (Clear old stuff, Folder by group, and so on) join this page one at a time.

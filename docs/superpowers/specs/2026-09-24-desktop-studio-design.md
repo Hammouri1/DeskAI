@@ -91,8 +91,11 @@ and confirms the groups. **Put back** undoes only that card's own last change.
   fake, as they do for the wallpaper. **The real Desktop is never touched by a test.**
 - **Feasibility check first:** Windows has no official "set icon position" setting, but the
   shell lets a program position items in the Desktop's view, and other tools do. The first task
-  of this stage is a small probe against a generated folder view to confirm this works reliably
-  on Windows 11 24H2. If it does not, these three cards are dropped and the owner is told.
+  of this stage is a small probe (in Windows Sandbox, since only a Desktop keeps free positions)
+  to confirm this works reliably on the owner's Windows 11 (build 26200). If it does not, these
+  three cards are dropped and the owner is told.
+  **Outcome (2026-09-24): it does not.** Icons can be placed, but a refresh or an Explorer restart
+  puts them back on the grid, so the three cards are dropped (ADR 0043).
 
 ## Disk features: Clear old stuff, Folder by group, Tag names
 

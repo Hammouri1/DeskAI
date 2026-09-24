@@ -17,19 +17,27 @@ names; per file: its name) or by DeskAI's own guess from the kinds of files. The
 rename, merge, and move. The board is stored per folder (schema 16) and erased with it. Nothing
 changes on disk or in Windows. Details in the dated section below.
 
-**Next task:** the owner checks step 1 by hand (see the dated section), then step 2 of the
-design, which starts with the **icon-position feasibility probe** for Keep together / Make zones
-/ Name the zones. It needs its own plan (`superpowers:writing-plans`), ADR, and security review
-before any code. Ask the owner first; do not start it unasked.
+**Icon-position probe (2026-09-24): no-go.** ADR 0043 is Rejected. In two Windows Sandbox runs
+(`tools/IconPositionProbe`, plan `docs/superpowers/plans/2026-09-24-icon-position-probe.md`),
+icons could be placed, but a Desktop refresh (F5) or an Explorer restart put them back on the
+grid, even with the layout saved. So **Keep together, Make zones, and Name the zones are
+dropped**, as the design said. The other routes (Explorer's stored layout in the registry, or
+driving the Desktop's list control from another process) are outside what `docs/SECURITY.md`
+allows this feature and need a new decision by the owner. The probe stays in `tools/` as a
+record; it is not part of the app and refuses to run outside the Sandbox.
+
+**Next task:** the owner checks step 1 by hand (see the dated section below), then the next
+design step, **Clear old stuff and Folder by group**, which needs its own plan
+(`superpowers:writing-plans`) before any code. Ask the owner first; do not start it unasked.
 
 **Decisions the owner made that are not yet in code** (also in
 `docs/superpowers/specs/2026-09-24-desktop-studio-design.md`):
 - Every Desktop Studio card is chosen on its own; one never turns on another. Naming style
   "short and friendly": Keep together, Make zones, Name the zones, Clear old stuff, Folder by
   group, Tag names, Color groups.
-- Build order after step 1: screen designs (icon positions + labelled wallpaper, after a probe)
-  → Clear old stuff and Folder by group → Tag names → Color groups (after a probe). Each step is
-  released and checked by the owner before the next.
+- Build order after step 1: ~~screen designs (icon positions + labelled wallpaper)~~ — dropped
+  after the probe (ADR 0043) → Clear old stuff and Folder by group → Tag names → Color groups
+  (after a probe). Each step is released and checked by the owner before the next.
 
 **Open with the owner:**
 - Merge and push: the owner decided (2026-09-24) to keep committing each task locally on this
