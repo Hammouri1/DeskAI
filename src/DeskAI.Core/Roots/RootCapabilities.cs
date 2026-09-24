@@ -103,7 +103,7 @@ public static class RootCapabilities
         {
             RootAuthorizationScope.ControlledDemo => true,
             RootAuthorizationScope.Organize => true,
-            _ => CanTidy(root),
+            _ => CanTidy(root) || CanMoveFolders(root),
         };
     }
 
@@ -120,6 +120,27 @@ public static class RootCapabilities
     {
         ArgumentNullException.ThrowIfNull(root);
         return IsUsable(root) && root.TidyAllowedSinceUtc is not null && root.AuthorizationScope switch
+        {
+            RootAuthorizationScope.MetadataOnly => true,
+            RootAuthorizationScope.MetadataAndContent => true,
+            RootAuthorizationScope.MetadataAndDocuments => true,
+            RootAuthorizationScope.MetadataDocumentsAndPdf => true,
+            RootAuthorizationScope.MetadataDocumentsAndSlides => true,
+            RootAuthorizationScope.MetadataDocumentsPdfAndSlides => true,
+            _ => false,
+        };
+    }
+
+    /// <summary>May Desktop Studio move things in this folder, whole folders included (ADR 0044)?</summary>
+    /// <remarks>
+    /// A separate yes from <see cref="CanTidy"/> and never implied by it: allowing tidying
+    /// promised that DeskAI never touches what is inside a folder. The scope list is explicit,
+    /// like tidying's, so a scope added later cannot inherit it by falling through.
+    /// </remarks>
+    public static bool CanMoveFolders(AuthorizedRoot root)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        return IsUsable(root) && root.FolderMovesAllowedSinceUtc is not null && root.AuthorizationScope switch
         {
             RootAuthorizationScope.MetadataOnly => true,
             RootAuthorizationScope.MetadataAndContent => true,

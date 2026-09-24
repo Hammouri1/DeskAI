@@ -12,7 +12,11 @@ public sealed record ExecutionJournalEntry(
     ExecutionTransactionState State,
     DateTimeOffset StartedAtUtc,
     DateTimeOffset? FinishedAtUtc,
-    IReadOnlyList<OperationJournalEntry> Operations);
+    IReadOnlyList<OperationJournalEntry> Operations)
+{
+    /// <summary>Which feature made the plan behind this record (ADR 0044).</summary>
+    public PlanPurpose Purpose { get; init; }
+}
 
 public sealed record OperationJournalEntry(
     int Sequence,
@@ -23,7 +27,11 @@ public sealed record OperationJournalEntry(
     long? BeforeSizeBytes,
     DateTimeOffset? BeforeModifiedAtUtc,
     JournalOperationState State,
-    string? Error);
+    string? Error)
+{
+    /// <summary>For a moved folder: when it was made, which a move keeps (ADR 0044). Null for files.</summary>
+    public DateTimeOffset? BeforeCreatedAtUtc { get; init; }
+}
 
 public enum ExecutionTransactionKind
 {

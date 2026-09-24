@@ -172,4 +172,53 @@ public sealed class PlanValidatorTests
         Assert.False(result.CanBeApproved);
         Assert.Equal(ValidationReasonCode.InvalidOperation, Assert.Single(result.Operations).Result.ReasonCode);
     }
+
+    [Fact]
+    public void A_folder_move_inside_the_folder_is_allowed()
+    {
+        var root = FolderMoveRoot();
+
+        Assert.True(new PlanValidator(new WindowsPathPolicy())
+            .Validate(FolderMovePlan(root, "Old project", @"Old stuff\Old project"), root).CanBeApproved);
+    }
+
+    [Fact]
+    public void A_folder_cannot_be_moved_into_itself()
+    {
+        var root = FolderMoveRoot();
+
+        var report = new PlanValidator(new WindowsPathPolicy())
+            .Validate(FolderMovePlan(root, "Projects", @"Projects\Archive\Projects"), root);
+
+        Assert.False(report.CanBeApproved);
+        Assert.Contains(report.Operations, item => item.Result.Explanation == "A folder cannot be moved into itself.");
+    }
+
+    [Fact]
+    public void A_folder_holding_a_protected_entry_cannot_be_moved()
+    {
+        var root = FolderMoveRoot();
+        var validator = new PlanValidator(new WindowsPathPolicy(userProtectedEntries: [@"C:\DeskAITests\Desktop\DeskAI\app"]));
+
+        Assert.False(validator.Validate(FolderMovePlan(root, "DeskAI", @"Old stuff\DeskAI"), root).CanBeApproved);
+    }
+
+    [Fact]
+    public void A_folder_move_cannot_leave_the_folder()
+    {
+        var root = FolderMoveRoot();
+
+        Assert.False(new PlanValidator(new WindowsPathPolicy())
+            .Validate(FolderMovePlan(root, "Old project", @"..\Elsewhere\Old project"), root).CanBeApproved);
+    }
+
+    private static AuthorizedRoot FolderMoveRoot() =>
+        AuthorizedRoot.Create(Guid.NewGuid(), @"C:\DeskAITests\Desktop", "Desktop", RootAccessLevel.Allowed, RootAuthorizationScope.MetadataOnly)
+            .WithFolderMovesAllowedSince(DateTimeOffset.UnixEpoch);
+
+    private static OrganizationPlan FolderMovePlan(AuthorizedRoot root, string from, string to) =>
+        OrganizationPlan.CreateDraft(
+            Guid.NewGuid(), root.Id, 1, DateTimeOffset.UnixEpoch, PlanValidator.CurrentPolicyVersion,
+            [new MoveFolderOperation(Guid.NewGuid(), from, to, "Unchanged for 6 months", OperationProvenance.Heuristic)],
+            purpose: PlanPurpose.ClearOldStuff);
 }

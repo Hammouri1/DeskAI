@@ -8,7 +8,8 @@ public sealed record AuthorizedRoot
         string displayName,
         RootAccessLevel permission,
         RootAuthorizationScope authorizationScope,
-        DateTimeOffset? tidyAllowedSinceUtc)
+        DateTimeOffset? tidyAllowedSinceUtc,
+        DateTimeOffset? folderMovesAllowedSinceUtc)
     {
         Id = id;
         CanonicalPath = canonicalPath;
@@ -16,6 +17,7 @@ public sealed record AuthorizedRoot
         Permission = permission;
         AuthorizationScope = authorizationScope;
         TidyAllowedSinceUtc = tidyAllowedSinceUtc;
+        FolderMovesAllowedSinceUtc = folderMovesAllowedSinceUtc;
     }
 
     public Guid Id { get; }
@@ -37,8 +39,22 @@ public sealed record AuthorizedRoot
     /// </remarks>
     public DateTimeOffset? TidyAllowedSinceUtc { get; }
 
+    /// <summary>
+    /// When the person allowed Desktop Studio to move things here, whole folders included, or null
+    /// (ADR 0044).
+    /// </summary>
+    /// <remarks>
+    /// Its own yes, apart from tidying: allowing tidying promised that DeskAI never touches what is
+    /// inside a folder, so that yes can never be read as this one. Ask
+    /// <see cref="RootCapabilities.CanMoveFolders"/>.
+    /// </remarks>
+    public DateTimeOffset? FolderMovesAllowedSinceUtc { get; }
+
     public AuthorizedRoot WithTidyAllowedSince(DateTimeOffset? sinceUtc) =>
-        new(Id, CanonicalPath, DisplayName, Permission, AuthorizationScope, sinceUtc);
+        new(Id, CanonicalPath, DisplayName, Permission, AuthorizationScope, sinceUtc, FolderMovesAllowedSinceUtc);
+
+    public AuthorizedRoot WithFolderMovesAllowedSince(DateTimeOffset? sinceUtc) =>
+        new(Id, CanonicalPath, DisplayName, Permission, AuthorizationScope, TidyAllowedSinceUtc, sinceUtc);
 
     /// <remarks>
     /// There is deliberately no default scope. A default is what a caller gets by forgetting,
@@ -64,7 +80,7 @@ public sealed record AuthorizedRoot
             throw new ArgumentException("An authorized root must be an absolute path.", nameof(canonicalPath));
         }
 
-        return new AuthorizedRoot(id, canonicalPath, displayName, permission, authorizationScope, null);
+        return new AuthorizedRoot(id, canonicalPath, displayName, permission, authorizationScope, null, null);
     }
 }
 

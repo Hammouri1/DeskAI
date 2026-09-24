@@ -178,4 +178,30 @@ public sealed class RootCapabilitiesTests
             "Capabilities",
             permission,
             scope);
+
+    [Fact]
+    public void Moving_folders_is_its_own_yes_apart_from_tidying()
+    {
+        var reading = AuthorizedRoot.Create(Guid.NewGuid(), @"C:\DeskAITests\Desktop", "Desktop", RootAccessLevel.Allowed, RootAuthorizationScope.MetadataOnly);
+        var tidyOnly = reading.WithTidyAllowedSince(DateTimeOffset.UnixEpoch);
+        var movesOnly = reading.WithFolderMovesAllowedSince(DateTimeOffset.UnixEpoch);
+
+        Assert.False(RootCapabilities.CanMoveFolders(reading));
+        Assert.False(RootCapabilities.CanMoveFolders(tidyOnly));
+        Assert.True(RootCapabilities.CanMoveFolders(movesOnly));
+        Assert.False(RootCapabilities.CanTidy(movesOnly));
+        Assert.True(RootCapabilities.CanMutate(movesOnly));
+
+        // Changing one yes keeps the other exactly as it was.
+        Assert.Equal(DateTimeOffset.UnixEpoch, movesOnly.WithTidyAllowedSince(null).FolderMovesAllowedSinceUtc);
+        Assert.Equal(DateTimeOffset.UnixEpoch, tidyOnly.WithFolderMovesAllowedSince(null).TidyAllowedSinceUtc);
+    }
+
+    [Theory]
+    [InlineData(RootAuthorizationScope.ControlledDemo)]
+    [InlineData(RootAuthorizationScope.Organize)]
+    public void A_folder_move_yes_means_nothing_outside_a_folder_connected_for_reading(RootAuthorizationScope scope) =>
+        Assert.False(RootCapabilities.CanMoveFolders(
+            AuthorizedRoot.Create(Guid.NewGuid(), @"C:\DeskAITests\X", "X", RootAccessLevel.Allowed, scope)
+                .WithFolderMovesAllowedSince(DateTimeOffset.UnixEpoch)));
 }

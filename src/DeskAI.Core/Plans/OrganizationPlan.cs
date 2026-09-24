@@ -10,7 +10,8 @@ public sealed record OrganizationPlan
         string policyVersion,
         IReadOnlyList<PlanOperation> operations,
         IReadOnlyList<PlanIssue> issues,
-        PlanState state)
+        PlanState state,
+        PlanPurpose purpose)
     {
         Id = id;
         RootId = rootId;
@@ -20,6 +21,7 @@ public sealed record OrganizationPlan
         Operations = operations;
         Issues = issues;
         State = state;
+        Purpose = purpose;
     }
 
     public Guid Id { get; }
@@ -31,6 +33,9 @@ public sealed record OrganizationPlan
     public IReadOnlyList<PlanIssue> Issues { get; }
     public PlanState State { get; }
 
+    /// <summary>Which feature made the plan (ADR 0044). Plans made before it existed are tidies.</summary>
+    public PlanPurpose Purpose { get; }
+
     public static OrganizationPlan CreateDraft(
         Guid id,
         Guid rootId,
@@ -38,7 +43,8 @@ public sealed record OrganizationPlan
         DateTimeOffset createdAtUtc,
         string policyVersion,
         IEnumerable<PlanOperation> operations,
-        IEnumerable<PlanIssue>? issues = null)
+        IEnumerable<PlanIssue>? issues = null,
+        PlanPurpose purpose = PlanPurpose.Tidy)
     {
         if (id == Guid.Empty || rootId == Guid.Empty)
         {
@@ -61,6 +67,18 @@ public sealed record OrganizationPlan
             throw new ArgumentException("Operation IDs must be unique within a plan.", nameof(operations));
         }
 
+        if (!Enum.IsDefined(purpose))
+        {
+            throw new ArgumentOutOfRangeException(nameof(purpose));
+        }
+
+        // Organize, folder templates, and Tidy while I'm away promise never to touch what is
+        // inside a folder. Only Desktop Studio's own yes covers moving one (ADR 0044).
+        if (purpose == PlanPurpose.Tidy && operationList.Any(operation => operation is MoveFolderOperation))
+        {
+            throw new ArgumentException("Only Desktop Studio may move a folder.", nameof(operations));
+        }
+
         var issueList = (issues ?? []).ToArray();
         var operationIds = operationList.Select(operation => operation.Id).ToHashSet();
         if (issueList.SelectMany(issue => issue.OperationIds).Any(id => !operationIds.Contains(id)))
@@ -76,7 +94,8 @@ public sealed record OrganizationPlan
             policyVersion,
             Array.AsReadOnly(operationList),
             Array.AsReadOnly(issueList),
-            PlanState.Draft);
+            PlanState.Draft,
+            purpose);
     }
 }
 

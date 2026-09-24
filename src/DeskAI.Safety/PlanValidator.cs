@@ -75,6 +75,7 @@ public sealed class PlanValidator(IPathPolicy pathPolicy)
             RenameFileOperation rename => Combine(
                 pathPolicy.ValidateRelativePath(root, rename.SourceRelativePath),
                 pathPolicy.ValidateRelativePath(root, rename.DestinationRelativePath)),
+            MoveFolderOperation folder => ValidateFolderMove(root, folder),
             _ => ValidationResult.Blocked(
                 ValidationReasonCode.InvalidOperation,
                 "The operation type is not allowed."),
@@ -83,6 +84,30 @@ public sealed class PlanValidator(IPathPolicy pathPolicy)
 
     private static ValidationResult Combine(ValidationResult source, ValidationResult destination) =>
         source.Status == ValidationStatus.Blocked ? source : destination;
+
+    /// <summary>
+    /// Both ends must pass the path policy, which also refuses a folder that holds a protected
+    /// entry, and a folder may never go inside itself.
+    /// </summary>
+    private ValidationResult ValidateFolderMove(AuthorizedRoot root, MoveFolderOperation move)
+    {
+        var paths = Combine(
+            pathPolicy.ValidateRelativePath(root, move.SourceRelativePath),
+            pathPolicy.ValidateRelativePath(root, move.DestinationRelativePath));
+        if (paths.Status == ValidationStatus.Blocked)
+        {
+            return paths;
+        }
+
+        var source = Trimmed(move.SourceRelativePath);
+        var destination = Trimmed(move.DestinationRelativePath);
+        return string.Equals(destination, source, StringComparison.OrdinalIgnoreCase) ||
+               destination.StartsWith(source + '\\', StringComparison.OrdinalIgnoreCase)
+            ? ValidationResult.Blocked(ValidationReasonCode.InvalidOperation, "A folder cannot be moved into itself.")
+            : paths;
+    }
+
+    private static string Trimmed(string relativePath) => relativePath.Replace('/', '\\').Trim('\\');
 }
 
 public sealed record OperationValidation(Guid OperationId, ValidationResult Result);
