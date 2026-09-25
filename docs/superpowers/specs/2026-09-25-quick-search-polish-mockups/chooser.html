@@ -1,0 +1,788 @@
+<style>
+
+  .stage { height: 230px; display:flex; align-items:center; justify-content:center; border-radius: 12px; overflow:hidden; position:relative; }
+  .night  { background: radial-gradient(circle at 50% 55%, #16405c 0%, #0a1726 72%); }
+  .study  { background: radial-gradient(circle at 50% 55%, #4a3524 0%, #1c130c 75%); }
+  .lab    { background: radial-gradient(circle at 50% 55%, #1d2c46 0%, #0b111d 75%); }
+  .forest { background: radial-gradient(circle at 50% 55%, #2d4a2a 0%, #101c10 75%); }
+  .sea    { background: radial-gradient(circle at 50% 55%, #1b3f6e 0%, #081a33 75%); }
+  .meadow { background: radial-gradient(circle at 50% 55%, #1d5a4b 0%, #0a2019 75%); }
+  .dusk   { background: radial-gradient(circle at 50% 55%, #3a2d5c 0%, #140f24 75%); }
+
+  @keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-12px) } }
+  @keyframes shadow { 0%,100% { transform: scale(1); opacity:.35 } 50% { transform: scale(.72); opacity:.18 } }
+  @keyframes blink { 0%,90%,100% { transform: scaleY(1) } 94% { transform: scaleY(.08) } }
+  @keyframes wink { 0%,78%,100% { transform: scaleY(1) } 82%,88% { transform: scaleY(.08) } }
+  @keyframes spin { to { transform: rotate(360deg) } }
+  @keyframes pulse { 0%,100% { transform: scale(1) } 50% { transform: scale(1.07) } }
+  @keyframes wave { 0%,100% { transform: rotate(-12deg) } 50% { transform: rotate(14deg) } }
+  @keyframes twinkle { 0%,100% { transform: scale(.6); opacity:.4 } 50% { transform: scale(1.15); opacity:1 } }
+  @keyframes flapL { 0%,100% { transform: rotate(0) } 50% { transform: rotate(16deg) } }
+  @keyframes flapR { 0%,100% { transform: rotate(0) } 50% { transform: rotate(-16deg) } }
+  @keyframes look { 0%,35%,100% { transform: translateX(0) } 45%,60% { transform: translateX(3px) } 70%,85% { transform: translateX(-3px) } }
+  @keyframes tilt { 0%,100% { transform: rotate(0) } 30% { transform: rotate(-6deg) } 60% { transform: rotate(4deg) } }
+  @keyframes flicker { from { transform: scaleY(1) } to { transform: scaleY(.65) } }
+  @keyframes light { 0%,100% { opacity:1 } 50% { opacity:.25 } }
+  @keyframes swing { 0%,100% { transform: rotate(0) } 50% { transform: rotate(-14deg) } }
+  @keyframes wag { 0%,100% { transform: rotate(10deg) } 50% { transform: rotate(-14deg) } }
+  @keyframes twitch { 0%,86%,100% { transform: rotate(0) } 90% { transform: rotate(-12deg) } 94% { transform: rotate(6deg) } }
+  @keyframes tent { 0%,100% { transform: rotate(-8deg) } 50% { transform: rotate(8deg) } }
+  @keyframes rise { 0% { transform: translateY(0); opacity:0 } 20% { opacity:.8 } 100% { transform: translateY(-70px); opacity:0 } }
+  @keyframes squish { 0%,100% { transform: scale(1,1) } 50% { transform: scale(1.07,.93) } }
+  @keyframes sway { 0%,100% { transform: rotate(-7deg) } 50% { transform: rotate(7deg) } }
+
+  .bob { animation: bob 2.8s ease-in-out infinite; }
+  .shadow { transform-box: fill-box; transform-origin: center; animation: shadow 2.8s ease-in-out infinite; }
+  .eye { transform-box: fill-box; transform-origin: center; animation: blink 4.5s infinite; }
+  .wink { transform-box: fill-box; transform-origin: center; animation: wink 6s infinite; }
+  .orbit { transform-box: view-box; transform-origin: 100px 90px; animation: spin 9s linear infinite; }
+  .pulse { transform-box: fill-box; transform-origin: center; animation: pulse 2.4s ease-in-out infinite; }
+  .waveArm { transform-box: fill-box; transform-origin: 0% 100%; animation: wave 1.3s ease-in-out infinite; }
+  .waveArmL { transform-box: fill-box; transform-origin: 100% 100%; animation: wave 1.6s ease-in-out infinite; }
+  .twinkle { transform-box: fill-box; transform-origin: center; animation: twinkle 1.8s ease-in-out infinite; }
+  .flapL { transform-box: fill-box; transform-origin: 100% 0%; animation: flapL 1.9s ease-in-out infinite; }
+  .flapR { transform-box: fill-box; transform-origin: 0% 0%; animation: flapR 1.9s ease-in-out infinite; }
+  .look { animation: look 5s ease-in-out infinite; }
+  .tilt { transform-box: fill-box; transform-origin: 50% 100%; animation: tilt 5.5s ease-in-out infinite; }
+  .flicker { transform-box: fill-box; transform-origin: 50% 0%; animation: flicker .18s ease-in-out infinite alternate; }
+  .light { animation: light 1.3s infinite; }
+  .swing { transform-box: fill-box; transform-origin: 0% 100%; animation: swing 2.4s ease-in-out infinite; }
+  .tail { transform-box: fill-box; transform-origin: 0% 100%; animation: wag .8s ease-in-out infinite; }
+  .flutter { transform-box: fill-box; transform-origin: 0% 0%; animation: wave 1.1s ease-in-out infinite; }
+  .ear { transform-box: fill-box; transform-origin: 50% 100%; animation: twitch 3.2s infinite; }
+  .tent { transform-box: fill-box; transform-origin: 50% 0%; animation: tent 2.2s ease-in-out infinite; }
+  .rise { animation: rise 3.2s ease-in infinite; }
+  .squish { transform-box: fill-box; transform-origin: 50% 100%; animation: squish 1.5s ease-in-out infinite; }
+  .sway { transform-box: fill-box; transform-origin: 50% 100%; animation: sway 2.2s ease-in-out infinite; }
+  .floaty { transform-box: fill-box; transform-origin: 50% 0%; animation: sway 3.4s ease-in-out infinite; }
+
+  .card-image { aspect-ratio:auto !important; display:block !important; }
+  .page { background:#0b1624; border-radius:12px; padding:18px; font-family:"Segoe UI Variable","Segoe UI",sans-serif; color:#e8f1f8; }
+  .page h4 { margin:0 0 4px; font-size:15px; } .page .sub { color:#8fa3b8; font-size:12px; margin-bottom:14px; }
+  .stage { height:auto; }
+  /* A: tiles */
+  .grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(128px,1fr)); gap:12px; }
+  .tile { position:relative; border-radius:16px; padding:1.5px; overflow:hidden; cursor:pointer; background:#22384f; transition:transform .18s; }
+  .tile:hover { transform:translateY(-3px); }
+  .tile .ring { position:absolute; inset:-60%; background:conic-gradient(from 0deg,#3fd9a8,#6a8cff,#c86bff,#ff8fb8,#3fd9a8); opacity:0; transition:opacity .2s; animation:spin 6s linear infinite; }
+  .tile.chosen .ring { opacity:1; } .tile.chosen { box-shadow:0 0 26px rgba(63,217,168,.35); }
+  .tin { position:relative; border-radius:15px; background:#0f1d2e; padding:10px 8px 10px; display:flex; flex-direction:column; align-items:center; gap:6px; height:100%; box-sizing:border-box; }
+  .pic { width:100%; height:104px; border-radius:11px; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+  .tile .pic * { animation-play-state:paused !important; }
+  .tile:hover .pic *, .tile.chosen .pic * { animation-play-state:running !important; }
+  .nm { font-weight:600; font-size:13px; text-align:center; min-height:2.6em; display:flex; align-items:center; line-height:1.3; }
+  .badge { font-size:11px; font-weight:700; color:#3fd9a8; background:rgba(63,217,168,.12); border:1px solid rgba(63,217,168,.4); border-radius:999px; padding:2px 9px; visibility:hidden; }
+  .tile.chosen .badge { visibility:visible; }
+  /* B: showcase */
+  .show { display:flex; gap:18px; align-items:stretch; }
+  .stage2 { position:relative; width:240px; flex:none; border-radius:18px; display:flex; align-items:center; justify-content:center; min-height:230px; box-shadow: inset 0 0 0 1.5px rgba(63,217,168,.5), 0 0 30px rgba(63,217,168,.2); }
+  .stage2.pop .who { animation: popIn .5s cubic-bezier(.3,1.4,.5,1); }
+  @keyframes popIn { 0% { transform:scale(.5) translateY(30px); opacity:0 } 100% { transform:none; opacity:1 } }
+  .info { flex:1; display:flex; flex-direction:column; gap:10px; justify-content:center; }
+  .bn { font-size:20px; font-weight:700; }
+  .bl { align-self:flex-start; background:linear-gradient(135deg,#3fd9a8,#6a8cff); color:#04121c; font-weight:700; font-size:13px; padding:7px 12px; border-radius:14px 14px 14px 4px; }
+  .avs { display:flex; flex-wrap:wrap; gap:10px; margin-top:6px; }
+  .av { width:60px; height:60px; border-radius:50%; border:2px solid #22384f; display:flex; align-items:center; justify-content:center; cursor:pointer; padding:0; overflow:hidden; transition:transform .15s, border-color .15s; }
+  .av:hover { transform:scale(1.08); } .av.on { border-color:#3fd9a8; box-shadow:0 0 0 3px rgba(63,217,168,.25); }
+  .av * { animation-play-state:paused !important; }
+</style>
+
+<h2>How should you pick your buddy?</h2>
+<p class="subtitle">Both are on My workspace, in the Quick search card. Try clicking buddies inside each one. No more "Choose" buttons: you click the buddy itself. Click the one you like, or tell me in the terminal.</p>
+
+<div class="cards">
+  <div class="card" data-choice="tiles" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="page">
+      <h4>Your search buddy</h4><div class="sub">Click a buddy to pick it. Point at one to see it move.</div>
+      <div class="grid">
+      <div class="tile" onclick="event.stopPropagation(); this.parentElement.querySelectorAll('.tile').forEach(t=>t.classList.remove('chosen')); this.classList.add('chosen')">
+        <div class="ring"></div>
+        <div class="tin">
+          <div class="pic night"><svg width="92" height="92" viewBox="0 0 200 200">
+        <defs>
+          <radialGradient id="sp-core" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#c8fff0"/><stop offset="1" stop-color="#3fd9a8"/></radialGradient>
+          <linearGradient id="sp-ray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a6ffe6"/><stop offset="1" stop-color="#17a47c"/></linearGradient>
+          <filter id="sp-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="186" rx="34" ry="6" fill="#000"/>
+        <path class="twinkle" style="animation-delay:.4s" d="M30 40 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" fill="#bfffea"/>
+        <path class="twinkle" style="animation-delay:1.1s" d="M172 150 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#bfffea"/>
+        <g class="bob">
+          <g class="orbit">
+            <path d="M100 22 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" fill="#fff6a8"/>
+            <path d="M160 118 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" fill="#8dffe0"/>
+            <path d="M40 118 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" fill="#ffc6e0"/>
+          </g>
+          <path class="pulse" d="M100 26 L113 76 L164 90 L113 104 L100 154 L87 104 L36 90 L87 76 Z" fill="url(#sp-ray)" filter="url(#sp-glow)"/>
+          <circle cx="100" cy="90" r="33" fill="url(#sp-core)"/>
+          <path d="M78 74 Q88 64 100 64" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".8"/>
+          <g class="eye"><ellipse cx="88" cy="88" rx="5.5" ry="8" fill="#0b2233"/><circle cx="90" cy="84" r="2.3" fill="#fff"/></g>
+          <g class="eye"><ellipse cx="112" cy="88" rx="5.5" ry="8" fill="#0b2233"/><circle cx="114" cy="84" r="2.3" fill="#fff"/></g>
+          <ellipse cx="78" cy="100" rx="5" ry="3" fill="#ff9fb8" opacity=".75"/><ellipse cx="122" cy="100" rx="5" ry="3" fill="#ff9fb8" opacity=".75"/>
+          <path d="M92 102 Q100 110 108 102" stroke="#0b2233" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path class="waveArm" d="M131 96 Q146 90 150 76" stroke="#c8fff0" stroke-width="5" stroke-linecap="round" fill="none"/>
+          <path d="M69 96 Q56 100 52 110" stroke="#c8fff0" stroke-width="5" stroke-linecap="round" fill="none"/>
+        </g>
+      </svg></div>
+          <div class="nm">Sparky</div>
+          <div class="badge">✓ Your buddy</div>
+        </div>
+      </div>
+      <div class="tile chosen" onclick="event.stopPropagation(); this.parentElement.querySelectorAll('.tile').forEach(t=>t.classList.remove('chosen')); this.classList.add('chosen')">
+        <div class="ring"></div>
+        <div class="tin">
+          <div class="pic study"><svg width="92" height="92" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="ow-body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a6844"/><stop offset="1" stop-color="#5b3a25"/></linearGradient>
+          <linearGradient id="ow-belly" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7e6cb"/><stop offset="1" stop-color="#e0c49c"/></linearGradient>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="188" rx="40" ry="6" fill="#000"/>
+        <g class="bob"><g class="tilt">
+          <path class="flapL" d="M54 100 Q28 128 44 164 Q60 152 64 118 Z" fill="#6b4630"/>
+          <path class="flapR" d="M146 100 Q172 128 156 164 Q140 152 136 118 Z" fill="#6b4630"/>
+          <ellipse cx="100" cy="120" rx="50" ry="56" fill="url(#ow-body)"/>
+          <path d="M62 74 L56 42 L82 64 Z" fill="#5b3a25"/><path d="M138 74 L144 42 L118 64 Z" fill="#5b3a25"/>
+          <ellipse cx="100" cy="138" rx="32" ry="35" fill="url(#ow-belly)"/>
+          <path d="M84 130 q4 5 8 0 M96 130 q4 5 8 0 M108 130 q4 5 8 0 M90 144 q4 5 8 0 M102 144 q4 5 8 0 M96 158 q4 5 8 0" stroke="#c9a57a" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <ellipse cx="100" cy="92" rx="44" ry="31" fill="#7a5036"/>
+          <circle cx="80" cy="92" r="16" fill="#fff8e8"/><circle cx="120" cy="92" r="16" fill="#fff8e8"/>
+          <g class="eye"><g class="look"><circle cx="81" cy="93" r="7.5" fill="#1d1208"/><circle cx="84" cy="90" r="2.5" fill="#fff"/></g></g>
+          <g class="eye"><g class="look"><circle cx="121" cy="93" r="7.5" fill="#1d1208"/><circle cx="124" cy="90" r="2.5" fill="#fff"/></g></g>
+          <circle cx="80" cy="92" r="18" fill="none" stroke="#e8b84a" stroke-width="3.5"/>
+          <circle cx="120" cy="92" r="18" fill="none" stroke="#e8b84a" stroke-width="3.5"/>
+          <path d="M98 90 Q100 86 102 90" stroke="#e8b84a" stroke-width="3" fill="none"/>
+          <path d="M94 106 L106 106 L100 117 Z" fill="#f2a33a"/>
+          <path d="M84 174 l-4 8 M89 175 l0 8 M94 174 l4 8 M106 174 l-4 8 M111 175 l0 8 M116 174 l4 8" stroke="#f2a33a" stroke-width="3" stroke-linecap="round"/>
+          <g transform="rotate(-10 134 150)">
+            <rect x="120" y="138" width="32" height="24" rx="3" fill="#fffdf6" stroke="#d6cbb5"/>
+            <path d="M125 145 h22 M125 150 h17 M125 155 h12" stroke="#9aa7b5" stroke-width="2"/>
+            <rect x="120" y="138" width="32" height="5" rx="2" fill="#3fd9a8"/>
+          </g>
+          <ellipse cx="124" cy="160" rx="9" ry="6" fill="#6b4630"/>
+        </g></g>
+      </svg></div>
+          <div class="nm">Archie the owl</div>
+          <div class="badge">✓ Your buddy</div>
+        </div>
+      </div>
+      <div class="tile" onclick="event.stopPropagation(); this.parentElement.querySelectorAll('.tile').forEach(t=>t.classList.remove('chosen')); this.classList.add('chosen')">
+        <div class="ring"></div>
+        <div class="tin">
+          <div class="pic lab"><svg width="92" height="92" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="pp-metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2f6fb"/><stop offset="1" stop-color="#9fadbf"/></linearGradient>
+          <linearGradient id="pp-screen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#12324a"/><stop offset="1" stop-color="#071320"/></linearGradient>
+          <linearGradient id="pp-flame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6b0"/><stop offset=".5" stop-color="#ffb23f"/><stop offset="1" stop-color="#ff5e3a" stop-opacity="0"/></linearGradient>
+          <filter id="pp-glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="190" rx="30" ry="5" fill="#000"/>
+        <g class="bob">
+          <path class="flicker" d="M88 160 Q100 198 112 160 Z" fill="url(#pp-flame)"/>
+          <line x1="100" y1="38" x2="100" y2="22" stroke="#8a97a8" stroke-width="3"/>
+          <circle class="light" cx="100" cy="17" r="6" fill="#5ef2c2" filter="url(#pp-glow)"/>
+          <rect x="42" y="62" width="12" height="24" rx="5" fill="#8a97a8"/><rect x="146" y="62" width="12" height="24" rx="5" fill="#8a97a8"/>
+          <rect x="52" y="38" width="96" height="72" rx="22" fill="url(#pp-metal)" stroke="#7d8b9c" stroke-width="2"/>
+          <rect x="62" y="50" width="76" height="48" rx="14" fill="url(#pp-screen)"/>
+          <g class="eye"><rect x="78" y="62" width="12" height="18" rx="6" fill="#5ef2c2" filter="url(#pp-glow)"/></g>
+          <g class="eye"><rect x="110" y="62" width="12" height="18" rx="6" fill="#5ef2c2" filter="url(#pp-glow)"/></g>
+          <path d="M92 88 Q100 94 108 88" stroke="#5ef2c2" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path d="M68 57 Q80 52 94 54" stroke="#fff" stroke-opacity=".3" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <rect x="92" y="110" width="16" height="7" fill="#8a97a8"/>
+          <rect x="66" y="116" width="68" height="46" rx="16" fill="url(#pp-metal)" stroke="#7d8b9c" stroke-width="2"/>
+          <path class="pulse" d="M100 127 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3z" fill="#3fd9a8" filter="url(#pp-glow)"/>
+          <circle cx="74" cy="124" r="2" fill="#7d8b9c"/><circle cx="126" cy="124" r="2" fill="#7d8b9c"/><circle cx="74" cy="154" r="2" fill="#7d8b9c"/><circle cx="126" cy="154" r="2" fill="#7d8b9c"/>
+          <path d="M66 128 Q50 136 52 150" stroke="#b5c1d0" stroke-width="7" stroke-linecap="round" fill="none"/><circle cx="52" cy="153" r="6" fill="#8a97a8"/>
+          <g class="swing">
+            <path d="M134 128 Q150 122 156 106" stroke="#b5c1d0" stroke-width="7" stroke-linecap="round" fill="none"/>
+            <line x1="156" y1="104" x2="161" y2="97" stroke="#e8b84a" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="168" cy="86" r="13" fill="#bfefff" fill-opacity=".3" stroke="#e8b84a" stroke-width="4"/>
+            <path d="M161 80 Q165 76 170 77" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </g>
+        </g>
+      </svg></div>
+          <div class="nm">Pip the robot</div>
+          <div class="badge">✓ Your buddy</div>
+        </div>
+      </div>
+      <div class="tile" onclick="event.stopPropagation(); this.parentElement.querySelectorAll('.tile').forEach(t=>t.classList.remove('chosen')); this.classList.add('chosen')">
+        <div class="ring"></div>
+        <div class="tin">
+          <div class="pic forest"><svg width="92" height="92" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="fx-fur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffa565"/><stop offset="1" stop-color="#e8622a"/></linearGradient>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="186" rx="44" ry="6" fill="#000"/>
+        <g class="bob">
+          <g class="tail">
+            <path d="M126 152 Q178 142 172 94 Q164 82 154 92 Q160 126 122 134 Z" fill="url(#fx-fur)"/>
+            <path d="M172 94 Q164 82 154 92 Q162 100 171 106 Z" fill="#fff4e8"/>
+          </g>
+          <ellipse cx="100" cy="148" rx="36" ry="30" fill="url(#fx-fur)"/>
+          <path d="M82 134 Q100 170 118 134 Q100 142 82 134 Z" fill="#fff4e8"/>
+          <rect x="80" y="166" width="14" height="16" rx="7" fill="#3a2418"/><rect x="106" y="166" width="14" height="16" rx="7" fill="#3a2418"/>
+          <path d="M68 118 Q100 136 132 118 L132 128 Q100 146 68 128 Z" fill="#3fd9a8"/>
+          <path class="flutter" d="M116 128 L136 154 L123 157 L108 131 Z" fill="#26b487"/>
+          <g class="tilt">
+            <g class="ear"><path d="M66 72 L60 28 L94 60 Z" fill="url(#fx-fur)"/><path d="M68 66 L64 40 L85 60 Z" fill="#3a2418"/></g>
+            <g class="ear" style="animation-delay:1.4s"><path d="M134 72 L140 28 L106 60 Z" fill="url(#fx-fur)"/><path d="M132 66 L136 40 L115 60 Z" fill="#3a2418"/></g>
+            <path d="M58 78 Q60 50 100 48 Q140 50 142 78 Q138 106 100 118 Q62 106 58 78 Z" fill="url(#fx-fur)"/>
+            <path d="M64 86 Q84 88 100 112 Q116 88 136 86 Q130 108 100 118 Q70 108 64 86 Z" fill="#fff4e8"/>
+            <g class="eye"><ellipse cx="84" cy="80" rx="5" ry="7" fill="#1b1b2b"/><circle cx="86" cy="77" r="2" fill="#fff"/></g>
+            <g class="eye"><ellipse cx="116" cy="80" rx="5" ry="7" fill="#1b1b2b"/><circle cx="118" cy="77" r="2" fill="#fff"/></g>
+            <ellipse cx="72" cy="92" rx="5" ry="3" fill="#ff8f8f" opacity=".6"/><ellipse cx="128" cy="92" rx="5" ry="3" fill="#ff8f8f" opacity=".6"/>
+            <ellipse cx="100" cy="100" rx="5.5" ry="4" fill="#1b1b2b"/>
+            <g transform="rotate(10 112 112)">
+              <rect x="104" y="104" width="24" height="18" rx="2" fill="#fff" stroke="#cfd6de"/>
+              <path d="M108 109 h15 M108 113 h11 M108 117 h7" stroke="#9aa7b5" stroke-width="1.6"/>
+            </g>
+          </g>
+        </g>
+      </svg></div>
+          <div class="nm">Fetch the fox</div>
+          <div class="badge">✓ Your buddy</div>
+        </div>
+      </div>
+      <div class="tile" onclick="event.stopPropagation(); this.parentElement.querySelectorAll('.tile').forEach(t=>t.classList.remove('chosen')); this.classList.add('chosen')">
+        <div class="ring"></div>
+        <div class="tin">
+          <div class="pic sea"><svg width="92" height="92" viewBox="0 0 200 200">
+        <defs>
+          <radialGradient id="oc-head" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#d9b0ff"/><stop offset="1" stop-color="#7040d6"/></radialGradient>
+        </defs>
+        <circle class="rise" cx="36" cy="170" r="4" fill="none" stroke="#9fd4ff" stroke-width="1.5"/>
+        <circle class="rise" style="animation-delay:1.2s" cx="168" cy="176" r="6" fill="none" stroke="#9fd4ff" stroke-width="1.5"/>
+        <circle class="rise" style="animation-delay:2.1s" cx="150" cy="168" r="3" fill="none" stroke="#9fd4ff" stroke-width="1.5"/>
+        <ellipse class="shadow" cx="100" cy="190" rx="44" ry="5" fill="#000"/>
+        <g class="bob">
+          <path d="M70 116 Q46 136 38 160" stroke="#8a58ee" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="tent" d="M84 120 Q70 150 76 176" stroke="#8a58ee" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="tent" style="animation-delay:.5s" d="M96 122 Q94 154 88 178" stroke="#7d4be4" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="tent" style="animation-delay:1s" d="M106 122 Q110 154 114 178" stroke="#7d4be4" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="tent" style="animation-delay:1.5s" d="M118 120 Q132 150 126 176" stroke="#8a58ee" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path d="M130 116 Q154 136 162 158" stroke="#8a58ee" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <g><rect x="18" y="146" width="28" height="24" rx="3" fill="#fff"/><path d="M21 166 L29 156 L34 161 L39 155 L44 166 Z" fill="#3fd9a8"/><circle cx="39" cy="151" r="2.6" fill="#f7c65c"/></g>
+          <g><rect x="154" y="138" width="24" height="30" rx="3" fill="#fff"/><rect x="154" y="138" width="24" height="10" rx="3" fill="#ff5e5e"/><text x="166" y="146" font-size="7.5" text-anchor="middle" fill="#fff" font-family="Segoe UI, sans-serif" font-weight="700">PDF</text><path d="M158 154 h16 M158 159 h12 M158 164 h14" stroke="#b9c2cc" stroke-width="1.5"/></g>
+          <path d="M52 92 Q52 38 100 36 Q148 38 148 92 Q148 126 100 128 Q52 126 52 92 Z" fill="url(#oc-head)"/>
+          <circle cx="74" cy="60" r="5" fill="#e8d0ff" opacity=".6"/><circle cx="128" cy="56" r="4" fill="#e8d0ff" opacity=".6"/><circle cx="136" cy="76" r="3" fill="#e8d0ff" opacity=".6"/>
+          <path d="M68 52 Q80 42 94 42" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".55"/>
+          <g class="eye"><circle cx="84" cy="90" r="11" fill="#fff"/><circle cx="86" cy="92" r="6" fill="#23123f"/><circle cx="88" cy="89" r="2" fill="#fff"/></g>
+          <g class="wink"><circle cx="116" cy="90" r="11" fill="#fff"/><circle cx="118" cy="92" r="6" fill="#23123f"/><circle cx="120" cy="89" r="2" fill="#fff"/></g>
+          <ellipse cx="72" cy="106" rx="6" ry="3.5" fill="#ff9fcf" opacity=".7"/><ellipse cx="128" cy="106" rx="6" ry="3.5" fill="#ff9fcf" opacity=".7"/>
+          <path d="M93 108 Q100 114 107 108" stroke="#23123f" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg></div>
+          <div class="nm">Inky the octopus</div>
+          <div class="badge">✓ Your buddy</div>
+        </div>
+      </div>
+      <div class="tile" onclick="event.stopPropagation(); this.parentElement.querySelectorAll('.tile').forEach(t=>t.classList.remove('chosen')); this.classList.add('chosen')">
+        <div class="ring"></div>
+        <div class="tin">
+          <div class="pic meadow"><svg width="92" height="92" viewBox="0 0 200 200">
+        <defs>
+          <radialGradient id="mc-body" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#f2fffb"/><stop offset=".45" stop-color="#8ff7d8"/><stop offset="1" stop-color="#2fc493"/></radialGradient>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="184" rx="58" ry="7" fill="#000"/>
+        <path class="twinkle" style="animation-delay:.8s" d="M34 60 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#fff6a8"/>
+        <g class="bob"><g class="squish">
+          <ellipse cx="80" cy="176" rx="10" ry="5" fill="#25a97d"/><ellipse cx="120" cy="176" rx="10" ry="5" fill="#25a97d"/>
+          <path d="M34 150 Q26 80 100 72 Q174 80 166 150 Q164 178 100 178 Q36 178 34 150 Z" fill="url(#mc-body)"/>
+          <ellipse cx="70" cy="102" rx="15" ry="8" fill="#fff" opacity=".65" transform="rotate(-28 70 102)"/>
+          <circle cx="92" cy="92" r="3" fill="#fff" opacity=".7"/>
+          <g class="sway">
+            <path d="M100 74 Q100 58 102 50" stroke="#2c9c6f" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <path d="M102 52 Q86 38 74 47 Q88 60 102 52 Z" fill="#6bd47c"/>
+            <path d="M102 52 Q118 36 130 45 Q116 60 102 52 Z" fill="#8ae68f"/>
+          </g>
+          <g class="eye"><ellipse cx="80" cy="126" rx="7" ry="9" fill="#0b2233"/><circle cx="83" cy="122" r="3" fill="#fff"/><circle cx="78" cy="130" r="1.4" fill="#fff"/></g>
+          <g class="eye"><ellipse cx="120" cy="126" rx="7" ry="9" fill="#0b2233"/><circle cx="123" cy="122" r="3" fill="#fff"/><circle cx="118" cy="130" r="1.4" fill="#fff"/></g>
+          <ellipse cx="64" cy="143" rx="8" ry="4.5" fill="#ff9fb8" opacity=".8"/><ellipse cx="136" cy="143" rx="8" ry="4.5" fill="#ff9fb8" opacity=".8"/>
+          <path d="M93 140 Q100 148 107 140" stroke="#0b2233" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path class="waveArm" d="M160 140 Q172 132 174 120" stroke="#4fdcb0" stroke-width="8" stroke-linecap="round" fill="none"/>
+          <path class="twinkle" d="M176 104 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#f7c65c"/>
+        </g></g>
+      </svg></div>
+          <div class="nm">Mochi</div>
+          <div class="badge">✓ Your buddy</div>
+        </div>
+      </div>
+      <div class="tile" onclick="event.stopPropagation(); this.parentElement.querySelectorAll('.tile').forEach(t=>t.classList.remove('chosen')); this.classList.add('chosen')">
+        <div class="ring"></div>
+        <div class="tin">
+          <div class="pic dusk"><svg width="92" height="92" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="pg-paper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dde5f0"/></linearGradient>
+          <filter id="pg-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="190" rx="36" ry="5" fill="#000"/>
+        <path class="twinkle" style="animation-delay:.3s" d="M34 50 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#d8c8ff"/>
+        <path class="twinkle" style="animation-delay:1.3s" d="M170 70 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#d8c8ff"/>
+        <g class="bob"><g class="floaty">
+          <path class="waveArmL" d="M58 112 Q42 108 36 94" stroke="#e8eef6" stroke-width="11" stroke-linecap="round" fill="none"/>
+          <path d="M142 112 Q156 118 160 130" stroke="#e8eef6" stroke-width="11" stroke-linecap="round" fill="none"/>
+          <path d="M56 170 L56 82 Q56 38 100 38 Q144 38 144 82 L144 170 Q136 160 128 170 Q120 180 112 170 Q104 160 96 170 Q88 180 80 170 Q72 160 64 170 Q60 176 56 170 Z" fill="url(#pg-paper)" stroke="#c7d1de" stroke-width="2" filter="url(#pg-glow)"/>
+          <g stroke="#a9c7ff" stroke-width="1.5" opacity=".75"><line x1="58" y1="122" x2="142" y2="122"/><line x1="58" y1="136" x2="142" y2="136"/><line x1="58" y1="150" x2="142" y2="150"/><line x1="58" y1="164" x2="142" y2="164"/></g>
+          <line x1="72" y1="56" x2="72" y2="170" stroke="#ff9aa8" stroke-width="1.5" opacity=".75"/>
+          <path d="M118 28 L118 58 Q118 65 124 65 Q130 65 130 58 L130 36 Q130 31 126 31 Q122 31 122 36 L122 55" stroke="#8d99a8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <g class="eye"><ellipse cx="86" cy="88" rx="6" ry="9" fill="#2a3446"/><circle cx="88" cy="84" r="2.3" fill="#fff"/></g>
+          <g class="eye"><ellipse cx="114" cy="88" rx="6" ry="9" fill="#2a3446"/><circle cx="116" cy="84" r="2.3" fill="#fff"/></g>
+          <ellipse cx="76" cy="102" rx="6" ry="3.5" fill="#ffb3c7" opacity=".8"/><ellipse cx="124" cy="102" rx="6" ry="3.5" fill="#ffb3c7" opacity=".8"/>
+          <ellipse cx="100" cy="106" rx="5" ry="6" fill="#2a3446"/>
+        </g></g>
+      </svg></div>
+          <div class="nm">Paige the paper ghost</div>
+          <div class="badge">✓ Your buddy</div>
+        </div>
+      </div>
+      </div>
+    </div></div>
+    <div class="card-body"><h3>A · Tiles with a glowing ring</h3><p>Seven equal tiles, each buddy on its own little background. Pointing at a tile makes that buddy move; your buddy keeps moving, has the same turning glow ring as the bar, and says "✓ Your buddy". Names always fit.</p></div>
+  </div>
+
+  <div class="card" data-choice="showcase" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="page">
+      <h4>Your search buddy</h4><div class="sub">Click a face below to meet that buddy.</div>
+      <div class="show">
+        <div class="stage2 study"><div class="who"><svg width="170" height="170" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="ow-body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a6844"/><stop offset="1" stop-color="#5b3a25"/></linearGradient>
+          <linearGradient id="ow-belly" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7e6cb"/><stop offset="1" stop-color="#e0c49c"/></linearGradient>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="188" rx="40" ry="6" fill="#000"/>
+        <g class="bob"><g class="tilt">
+          <path class="flapL" d="M54 100 Q28 128 44 164 Q60 152 64 118 Z" fill="#6b4630"/>
+          <path class="flapR" d="M146 100 Q172 128 156 164 Q140 152 136 118 Z" fill="#6b4630"/>
+          <ellipse cx="100" cy="120" rx="50" ry="56" fill="url(#ow-body)"/>
+          <path d="M62 74 L56 42 L82 64 Z" fill="#5b3a25"/><path d="M138 74 L144 42 L118 64 Z" fill="#5b3a25"/>
+          <ellipse cx="100" cy="138" rx="32" ry="35" fill="url(#ow-belly)"/>
+          <path d="M84 130 q4 5 8 0 M96 130 q4 5 8 0 M108 130 q4 5 8 0 M90 144 q4 5 8 0 M102 144 q4 5 8 0 M96 158 q4 5 8 0" stroke="#c9a57a" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <ellipse cx="100" cy="92" rx="44" ry="31" fill="#7a5036"/>
+          <circle cx="80" cy="92" r="16" fill="#fff8e8"/><circle cx="120" cy="92" r="16" fill="#fff8e8"/>
+          <g class="eye"><g class="look"><circle cx="81" cy="93" r="7.5" fill="#1d1208"/><circle cx="84" cy="90" r="2.5" fill="#fff"/></g></g>
+          <g class="eye"><g class="look"><circle cx="121" cy="93" r="7.5" fill="#1d1208"/><circle cx="124" cy="90" r="2.5" fill="#fff"/></g></g>
+          <circle cx="80" cy="92" r="18" fill="none" stroke="#e8b84a" stroke-width="3.5"/>
+          <circle cx="120" cy="92" r="18" fill="none" stroke="#e8b84a" stroke-width="3.5"/>
+          <path d="M98 90 Q100 86 102 90" stroke="#e8b84a" stroke-width="3" fill="none"/>
+          <path d="M94 106 L106 106 L100 117 Z" fill="#f2a33a"/>
+          <path d="M84 174 l-4 8 M89 175 l0 8 M94 174 l4 8 M106 174 l-4 8 M111 175 l0 8 M116 174 l4 8" stroke="#f2a33a" stroke-width="3" stroke-linecap="round"/>
+          <g transform="rotate(-10 134 150)">
+            <rect x="120" y="138" width="32" height="24" rx="3" fill="#fffdf6" stroke="#d6cbb5"/>
+            <path d="M125 145 h22 M125 150 h17 M125 155 h12" stroke="#9aa7b5" stroke-width="2"/>
+            <rect x="120" y="138" width="32" height="5" rx="2" fill="#3fd9a8"/>
+          </g>
+          <ellipse cx="124" cy="160" rx="9" ry="6" fill="#6b4630"/>
+        </g></g>
+      </svg></div></div>
+        <div class="info">
+          <div class="bn">Archie the owl</div>
+          <div class="bl">Which file shall we find?</div>
+          <div class="avs">
+        <button class="av night" title="Sparky" onclick="event.stopPropagation();
+          const w=this.closest('.show'); w.querySelectorAll('.av').forEach(a=>a.classList.remove('on')); this.classList.add('on');
+          const st=w.querySelector('.stage2'); st.className='stage2 night'; st.querySelector('.who').innerHTML=document.getElementById('t-sparky').innerHTML;
+          w.querySelector('.bn').textContent='Sparky'; w.querySelector('.bl').textContent='Hi! What are we looking for?';
+          st.classList.remove('pop'); void st.offsetWidth; st.classList.add('pop')"><svg width="46" height="46" viewBox="0 0 200 200">
+        <defs>
+          <radialGradient id="sp-core" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#c8fff0"/><stop offset="1" stop-color="#3fd9a8"/></radialGradient>
+          <linearGradient id="sp-ray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a6ffe6"/><stop offset="1" stop-color="#17a47c"/></linearGradient>
+          <filter id="sp-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="186" rx="34" ry="6" fill="#000"/>
+        <path class="twinkle" style="animation-delay:.4s" d="M30 40 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" fill="#bfffea"/>
+        <path class="twinkle" style="animation-delay:1.1s" d="M172 150 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#bfffea"/>
+        <g class="bob">
+          <g class="orbit">
+            <path d="M100 22 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" fill="#fff6a8"/>
+            <path d="M160 118 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" fill="#8dffe0"/>
+            <path d="M40 118 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" fill="#ffc6e0"/>
+          </g>
+          <path class="pulse" d="M100 26 L113 76 L164 90 L113 104 L100 154 L87 104 L36 90 L87 76 Z" fill="url(#sp-ray)" filter="url(#sp-glow)"/>
+          <circle cx="100" cy="90" r="33" fill="url(#sp-core)"/>
+          <path d="M78 74 Q88 64 100 64" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".8"/>
+          <g class="eye"><ellipse cx="88" cy="88" rx="5.5" ry="8" fill="#0b2233"/><circle cx="90" cy="84" r="2.3" fill="#fff"/></g>
+          <g class="eye"><ellipse cx="112" cy="88" rx="5.5" ry="8" fill="#0b2233"/><circle cx="114" cy="84" r="2.3" fill="#fff"/></g>
+          <ellipse cx="78" cy="100" rx="5" ry="3" fill="#ff9fb8" opacity=".75"/><ellipse cx="122" cy="100" rx="5" ry="3" fill="#ff9fb8" opacity=".75"/>
+          <path d="M92 102 Q100 110 108 102" stroke="#0b2233" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path class="waveArm" d="M131 96 Q146 90 150 76" stroke="#c8fff0" stroke-width="5" stroke-linecap="round" fill="none"/>
+          <path d="M69 96 Q56 100 52 110" stroke="#c8fff0" stroke-width="5" stroke-linecap="round" fill="none"/>
+        </g>
+      </svg></button>
+        <button class="av study on" title="Archie the owl" onclick="event.stopPropagation();
+          const w=this.closest('.show'); w.querySelectorAll('.av').forEach(a=>a.classList.remove('on')); this.classList.add('on');
+          const st=w.querySelector('.stage2'); st.className='stage2 study'; st.querySelector('.who').innerHTML=document.getElementById('t-owl').innerHTML;
+          w.querySelector('.bn').textContent='Archie the owl'; w.querySelector('.bl').textContent='Which file shall we find?';
+          st.classList.remove('pop'); void st.offsetWidth; st.classList.add('pop')"><svg width="46" height="46" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="ow-body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a6844"/><stop offset="1" stop-color="#5b3a25"/></linearGradient>
+          <linearGradient id="ow-belly" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7e6cb"/><stop offset="1" stop-color="#e0c49c"/></linearGradient>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="188" rx="40" ry="6" fill="#000"/>
+        <g class="bob"><g class="tilt">
+          <path class="flapL" d="M54 100 Q28 128 44 164 Q60 152 64 118 Z" fill="#6b4630"/>
+          <path class="flapR" d="M146 100 Q172 128 156 164 Q140 152 136 118 Z" fill="#6b4630"/>
+          <ellipse cx="100" cy="120" rx="50" ry="56" fill="url(#ow-body)"/>
+          <path d="M62 74 L56 42 L82 64 Z" fill="#5b3a25"/><path d="M138 74 L144 42 L118 64 Z" fill="#5b3a25"/>
+          <ellipse cx="100" cy="138" rx="32" ry="35" fill="url(#ow-belly)"/>
+          <path d="M84 130 q4 5 8 0 M96 130 q4 5 8 0 M108 130 q4 5 8 0 M90 144 q4 5 8 0 M102 144 q4 5 8 0 M96 158 q4 5 8 0" stroke="#c9a57a" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <ellipse cx="100" cy="92" rx="44" ry="31" fill="#7a5036"/>
+          <circle cx="80" cy="92" r="16" fill="#fff8e8"/><circle cx="120" cy="92" r="16" fill="#fff8e8"/>
+          <g class="eye"><g class="look"><circle cx="81" cy="93" r="7.5" fill="#1d1208"/><circle cx="84" cy="90" r="2.5" fill="#fff"/></g></g>
+          <g class="eye"><g class="look"><circle cx="121" cy="93" r="7.5" fill="#1d1208"/><circle cx="124" cy="90" r="2.5" fill="#fff"/></g></g>
+          <circle cx="80" cy="92" r="18" fill="none" stroke="#e8b84a" stroke-width="3.5"/>
+          <circle cx="120" cy="92" r="18" fill="none" stroke="#e8b84a" stroke-width="3.5"/>
+          <path d="M98 90 Q100 86 102 90" stroke="#e8b84a" stroke-width="3" fill="none"/>
+          <path d="M94 106 L106 106 L100 117 Z" fill="#f2a33a"/>
+          <path d="M84 174 l-4 8 M89 175 l0 8 M94 174 l4 8 M106 174 l-4 8 M111 175 l0 8 M116 174 l4 8" stroke="#f2a33a" stroke-width="3" stroke-linecap="round"/>
+          <g transform="rotate(-10 134 150)">
+            <rect x="120" y="138" width="32" height="24" rx="3" fill="#fffdf6" stroke="#d6cbb5"/>
+            <path d="M125 145 h22 M125 150 h17 M125 155 h12" stroke="#9aa7b5" stroke-width="2"/>
+            <rect x="120" y="138" width="32" height="5" rx="2" fill="#3fd9a8"/>
+          </g>
+          <ellipse cx="124" cy="160" rx="9" ry="6" fill="#6b4630"/>
+        </g></g>
+      </svg></button>
+        <button class="av lab" title="Pip the robot" onclick="event.stopPropagation();
+          const w=this.closest('.show'); w.querySelectorAll('.av').forEach(a=>a.classList.remove('on')); this.classList.add('on');
+          const st=w.querySelector('.stage2'); st.className='stage2 lab'; st.querySelector('.who').innerHTML=document.getElementById('t-robot').innerHTML;
+          w.querySelector('.bn').textContent='Pip the robot'; w.querySelector('.bl').textContent='Ready to scan.';
+          st.classList.remove('pop'); void st.offsetWidth; st.classList.add('pop')"><svg width="46" height="46" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="pp-metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2f6fb"/><stop offset="1" stop-color="#9fadbf"/></linearGradient>
+          <linearGradient id="pp-screen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#12324a"/><stop offset="1" stop-color="#071320"/></linearGradient>
+          <linearGradient id="pp-flame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6b0"/><stop offset=".5" stop-color="#ffb23f"/><stop offset="1" stop-color="#ff5e3a" stop-opacity="0"/></linearGradient>
+          <filter id="pp-glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="190" rx="30" ry="5" fill="#000"/>
+        <g class="bob">
+          <path class="flicker" d="M88 160 Q100 198 112 160 Z" fill="url(#pp-flame)"/>
+          <line x1="100" y1="38" x2="100" y2="22" stroke="#8a97a8" stroke-width="3"/>
+          <circle class="light" cx="100" cy="17" r="6" fill="#5ef2c2" filter="url(#pp-glow)"/>
+          <rect x="42" y="62" width="12" height="24" rx="5" fill="#8a97a8"/><rect x="146" y="62" width="12" height="24" rx="5" fill="#8a97a8"/>
+          <rect x="52" y="38" width="96" height="72" rx="22" fill="url(#pp-metal)" stroke="#7d8b9c" stroke-width="2"/>
+          <rect x="62" y="50" width="76" height="48" rx="14" fill="url(#pp-screen)"/>
+          <g class="eye"><rect x="78" y="62" width="12" height="18" rx="6" fill="#5ef2c2" filter="url(#pp-glow)"/></g>
+          <g class="eye"><rect x="110" y="62" width="12" height="18" rx="6" fill="#5ef2c2" filter="url(#pp-glow)"/></g>
+          <path d="M92 88 Q100 94 108 88" stroke="#5ef2c2" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path d="M68 57 Q80 52 94 54" stroke="#fff" stroke-opacity=".3" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <rect x="92" y="110" width="16" height="7" fill="#8a97a8"/>
+          <rect x="66" y="116" width="68" height="46" rx="16" fill="url(#pp-metal)" stroke="#7d8b9c" stroke-width="2"/>
+          <path class="pulse" d="M100 127 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3z" fill="#3fd9a8" filter="url(#pp-glow)"/>
+          <circle cx="74" cy="124" r="2" fill="#7d8b9c"/><circle cx="126" cy="124" r="2" fill="#7d8b9c"/><circle cx="74" cy="154" r="2" fill="#7d8b9c"/><circle cx="126" cy="154" r="2" fill="#7d8b9c"/>
+          <path d="M66 128 Q50 136 52 150" stroke="#b5c1d0" stroke-width="7" stroke-linecap="round" fill="none"/><circle cx="52" cy="153" r="6" fill="#8a97a8"/>
+          <g class="swing">
+            <path d="M134 128 Q150 122 156 106" stroke="#b5c1d0" stroke-width="7" stroke-linecap="round" fill="none"/>
+            <line x1="156" y1="104" x2="161" y2="97" stroke="#e8b84a" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="168" cy="86" r="13" fill="#bfefff" fill-opacity=".3" stroke="#e8b84a" stroke-width="4"/>
+            <path d="M161 80 Q165 76 170 77" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </g>
+        </g>
+      </svg></button>
+        <button class="av forest" title="Fetch the fox" onclick="event.stopPropagation();
+          const w=this.closest('.show'); w.querySelectorAll('.av').forEach(a=>a.classList.remove('on')); this.classList.add('on');
+          const st=w.querySelector('.stage2'); st.className='stage2 forest'; st.querySelector('.who').innerHTML=document.getElementById('t-fox').innerHTML;
+          w.querySelector('.bn').textContent='Fetch the fox'; w.querySelector('.bl').textContent='Want me to fetch something?';
+          st.classList.remove('pop'); void st.offsetWidth; st.classList.add('pop')"><svg width="46" height="46" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="fx-fur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffa565"/><stop offset="1" stop-color="#e8622a"/></linearGradient>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="186" rx="44" ry="6" fill="#000"/>
+        <g class="bob">
+          <g class="tail">
+            <path d="M126 152 Q178 142 172 94 Q164 82 154 92 Q160 126 122 134 Z" fill="url(#fx-fur)"/>
+            <path d="M172 94 Q164 82 154 92 Q162 100 171 106 Z" fill="#fff4e8"/>
+          </g>
+          <ellipse cx="100" cy="148" rx="36" ry="30" fill="url(#fx-fur)"/>
+          <path d="M82 134 Q100 170 118 134 Q100 142 82 134 Z" fill="#fff4e8"/>
+          <rect x="80" y="166" width="14" height="16" rx="7" fill="#3a2418"/><rect x="106" y="166" width="14" height="16" rx="7" fill="#3a2418"/>
+          <path d="M68 118 Q100 136 132 118 L132 128 Q100 146 68 128 Z" fill="#3fd9a8"/>
+          <path class="flutter" d="M116 128 L136 154 L123 157 L108 131 Z" fill="#26b487"/>
+          <g class="tilt">
+            <g class="ear"><path d="M66 72 L60 28 L94 60 Z" fill="url(#fx-fur)"/><path d="M68 66 L64 40 L85 60 Z" fill="#3a2418"/></g>
+            <g class="ear" style="animation-delay:1.4s"><path d="M134 72 L140 28 L106 60 Z" fill="url(#fx-fur)"/><path d="M132 66 L136 40 L115 60 Z" fill="#3a2418"/></g>
+            <path d="M58 78 Q60 50 100 48 Q140 50 142 78 Q138 106 100 118 Q62 106 58 78 Z" fill="url(#fx-fur)"/>
+            <path d="M64 86 Q84 88 100 112 Q116 88 136 86 Q130 108 100 118 Q70 108 64 86 Z" fill="#fff4e8"/>
+            <g class="eye"><ellipse cx="84" cy="80" rx="5" ry="7" fill="#1b1b2b"/><circle cx="86" cy="77" r="2" fill="#fff"/></g>
+            <g class="eye"><ellipse cx="116" cy="80" rx="5" ry="7" fill="#1b1b2b"/><circle cx="118" cy="77" r="2" fill="#fff"/></g>
+            <ellipse cx="72" cy="92" rx="5" ry="3" fill="#ff8f8f" opacity=".6"/><ellipse cx="128" cy="92" rx="5" ry="3" fill="#ff8f8f" opacity=".6"/>
+            <ellipse cx="100" cy="100" rx="5.5" ry="4" fill="#1b1b2b"/>
+            <g transform="rotate(10 112 112)">
+              <rect x="104" y="104" width="24" height="18" rx="2" fill="#fff" stroke="#cfd6de"/>
+              <path d="M108 109 h15 M108 113 h11 M108 117 h7" stroke="#9aa7b5" stroke-width="1.6"/>
+            </g>
+          </g>
+        </g>
+      </svg></button>
+        <button class="av sea" title="Inky the octopus" onclick="event.stopPropagation();
+          const w=this.closest('.show'); w.querySelectorAll('.av').forEach(a=>a.classList.remove('on')); this.classList.add('on');
+          const st=w.querySelector('.stage2'); st.className='stage2 sea'; st.querySelector('.who').innerHTML=document.getElementById('t-octopus').innerHTML;
+          w.querySelector('.bn').textContent='Inky the octopus'; w.querySelector('.bl').textContent='All arms ready!';
+          st.classList.remove('pop'); void st.offsetWidth; st.classList.add('pop')"><svg width="46" height="46" viewBox="0 0 200 200">
+        <defs>
+          <radialGradient id="oc-head" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#d9b0ff"/><stop offset="1" stop-color="#7040d6"/></radialGradient>
+        </defs>
+        <circle class="rise" cx="36" cy="170" r="4" fill="none" stroke="#9fd4ff" stroke-width="1.5"/>
+        <circle class="rise" style="animation-delay:1.2s" cx="168" cy="176" r="6" fill="none" stroke="#9fd4ff" stroke-width="1.5"/>
+        <circle class="rise" style="animation-delay:2.1s" cx="150" cy="168" r="3" fill="none" stroke="#9fd4ff" stroke-width="1.5"/>
+        <ellipse class="shadow" cx="100" cy="190" rx="44" ry="5" fill="#000"/>
+        <g class="bob">
+          <path d="M70 116 Q46 136 38 160" stroke="#8a58ee" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="tent" d="M84 120 Q70 150 76 176" stroke="#8a58ee" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="tent" style="animation-delay:.5s" d="M96 122 Q94 154 88 178" stroke="#7d4be4" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="tent" style="animation-delay:1s" d="M106 122 Q110 154 114 178" stroke="#7d4be4" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="tent" style="animation-delay:1.5s" d="M118 120 Q132 150 126 176" stroke="#8a58ee" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path d="M130 116 Q154 136 162 158" stroke="#8a58ee" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <g><rect x="18" y="146" width="28" height="24" rx="3" fill="#fff"/><path d="M21 166 L29 156 L34 161 L39 155 L44 166 Z" fill="#3fd9a8"/><circle cx="39" cy="151" r="2.6" fill="#f7c65c"/></g>
+          <g><rect x="154" y="138" width="24" height="30" rx="3" fill="#fff"/><rect x="154" y="138" width="24" height="10" rx="3" fill="#ff5e5e"/><text x="166" y="146" font-size="7.5" text-anchor="middle" fill="#fff" font-family="Segoe UI, sans-serif" font-weight="700">PDF</text><path d="M158 154 h16 M158 159 h12 M158 164 h14" stroke="#b9c2cc" stroke-width="1.5"/></g>
+          <path d="M52 92 Q52 38 100 36 Q148 38 148 92 Q148 126 100 128 Q52 126 52 92 Z" fill="url(#oc-head)"/>
+          <circle cx="74" cy="60" r="5" fill="#e8d0ff" opacity=".6"/><circle cx="128" cy="56" r="4" fill="#e8d0ff" opacity=".6"/><circle cx="136" cy="76" r="3" fill="#e8d0ff" opacity=".6"/>
+          <path d="M68 52 Q80 42 94 42" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".55"/>
+          <g class="eye"><circle cx="84" cy="90" r="11" fill="#fff"/><circle cx="86" cy="92" r="6" fill="#23123f"/><circle cx="88" cy="89" r="2" fill="#fff"/></g>
+          <g class="wink"><circle cx="116" cy="90" r="11" fill="#fff"/><circle cx="118" cy="92" r="6" fill="#23123f"/><circle cx="120" cy="89" r="2" fill="#fff"/></g>
+          <ellipse cx="72" cy="106" rx="6" ry="3.5" fill="#ff9fcf" opacity=".7"/><ellipse cx="128" cy="106" rx="6" ry="3.5" fill="#ff9fcf" opacity=".7"/>
+          <path d="M93 108 Q100 114 107 108" stroke="#23123f" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg></button>
+        <button class="av meadow" title="Mochi" onclick="event.stopPropagation();
+          const w=this.closest('.show'); w.querySelectorAll('.av').forEach(a=>a.classList.remove('on')); this.classList.add('on');
+          const st=w.querySelector('.stage2'); st.className='stage2 meadow'; st.querySelector('.who').innerHTML=document.getElementById('t-mochi').innerHTML;
+          w.querySelector('.bn').textContent='Mochi'; w.querySelector('.bl').textContent='Hello! What shall we find?';
+          st.classList.remove('pop'); void st.offsetWidth; st.classList.add('pop')"><svg width="46" height="46" viewBox="0 0 200 200">
+        <defs>
+          <radialGradient id="mc-body" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#f2fffb"/><stop offset=".45" stop-color="#8ff7d8"/><stop offset="1" stop-color="#2fc493"/></radialGradient>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="184" rx="58" ry="7" fill="#000"/>
+        <path class="twinkle" style="animation-delay:.8s" d="M34 60 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#fff6a8"/>
+        <g class="bob"><g class="squish">
+          <ellipse cx="80" cy="176" rx="10" ry="5" fill="#25a97d"/><ellipse cx="120" cy="176" rx="10" ry="5" fill="#25a97d"/>
+          <path d="M34 150 Q26 80 100 72 Q174 80 166 150 Q164 178 100 178 Q36 178 34 150 Z" fill="url(#mc-body)"/>
+          <ellipse cx="70" cy="102" rx="15" ry="8" fill="#fff" opacity=".65" transform="rotate(-28 70 102)"/>
+          <circle cx="92" cy="92" r="3" fill="#fff" opacity=".7"/>
+          <g class="sway">
+            <path d="M100 74 Q100 58 102 50" stroke="#2c9c6f" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <path d="M102 52 Q86 38 74 47 Q88 60 102 52 Z" fill="#6bd47c"/>
+            <path d="M102 52 Q118 36 130 45 Q116 60 102 52 Z" fill="#8ae68f"/>
+          </g>
+          <g class="eye"><ellipse cx="80" cy="126" rx="7" ry="9" fill="#0b2233"/><circle cx="83" cy="122" r="3" fill="#fff"/><circle cx="78" cy="130" r="1.4" fill="#fff"/></g>
+          <g class="eye"><ellipse cx="120" cy="126" rx="7" ry="9" fill="#0b2233"/><circle cx="123" cy="122" r="3" fill="#fff"/><circle cx="118" cy="130" r="1.4" fill="#fff"/></g>
+          <ellipse cx="64" cy="143" rx="8" ry="4.5" fill="#ff9fb8" opacity=".8"/><ellipse cx="136" cy="143" rx="8" ry="4.5" fill="#ff9fb8" opacity=".8"/>
+          <path d="M93 140 Q100 148 107 140" stroke="#0b2233" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path class="waveArm" d="M160 140 Q172 132 174 120" stroke="#4fdcb0" stroke-width="8" stroke-linecap="round" fill="none"/>
+          <path class="twinkle" d="M176 104 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#f7c65c"/>
+        </g></g>
+      </svg></button>
+        <button class="av dusk" title="Paige the paper ghost" onclick="event.stopPropagation();
+          const w=this.closest('.show'); w.querySelectorAll('.av').forEach(a=>a.classList.remove('on')); this.classList.add('on');
+          const st=w.querySelector('.stage2'); st.className='stage2 dusk'; st.querySelector('.who').innerHTML=document.getElementById('t-ghost').innerHTML;
+          w.querySelector('.bn').textContent='Paige the paper ghost'; w.querySelector('.bl').textContent='Boo! Looking for something?';
+          st.classList.remove('pop'); void st.offsetWidth; st.classList.add('pop')"><svg width="46" height="46" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="pg-paper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dde5f0"/></linearGradient>
+          <filter id="pg-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="190" rx="36" ry="5" fill="#000"/>
+        <path class="twinkle" style="animation-delay:.3s" d="M34 50 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#d8c8ff"/>
+        <path class="twinkle" style="animation-delay:1.3s" d="M170 70 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#d8c8ff"/>
+        <g class="bob"><g class="floaty">
+          <path class="waveArmL" d="M58 112 Q42 108 36 94" stroke="#e8eef6" stroke-width="11" stroke-linecap="round" fill="none"/>
+          <path d="M142 112 Q156 118 160 130" stroke="#e8eef6" stroke-width="11" stroke-linecap="round" fill="none"/>
+          <path d="M56 170 L56 82 Q56 38 100 38 Q144 38 144 82 L144 170 Q136 160 128 170 Q120 180 112 170 Q104 160 96 170 Q88 180 80 170 Q72 160 64 170 Q60 176 56 170 Z" fill="url(#pg-paper)" stroke="#c7d1de" stroke-width="2" filter="url(#pg-glow)"/>
+          <g stroke="#a9c7ff" stroke-width="1.5" opacity=".75"><line x1="58" y1="122" x2="142" y2="122"/><line x1="58" y1="136" x2="142" y2="136"/><line x1="58" y1="150" x2="142" y2="150"/><line x1="58" y1="164" x2="142" y2="164"/></g>
+          <line x1="72" y1="56" x2="72" y2="170" stroke="#ff9aa8" stroke-width="1.5" opacity=".75"/>
+          <path d="M118 28 L118 58 Q118 65 124 65 Q130 65 130 58 L130 36 Q130 31 126 31 Q122 31 122 36 L122 55" stroke="#8d99a8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <g class="eye"><ellipse cx="86" cy="88" rx="6" ry="9" fill="#2a3446"/><circle cx="88" cy="84" r="2.3" fill="#fff"/></g>
+          <g class="eye"><ellipse cx="114" cy="88" rx="6" ry="9" fill="#2a3446"/><circle cx="116" cy="84" r="2.3" fill="#fff"/></g>
+          <ellipse cx="76" cy="102" rx="6" ry="3.5" fill="#ffb3c7" opacity=".8"/><ellipse cx="124" cy="102" rx="6" ry="3.5" fill="#ffb3c7" opacity=".8"/>
+          <ellipse cx="100" cy="106" rx="5" ry="6" fill="#2a3446"/>
+        </g></g>
+      </svg></button>
+          </div>
+        </div>
+      </div>
+      <template id="t-sparky"><svg width="170" height="170" viewBox="0 0 200 200">
+        <defs>
+          <radialGradient id="sp-core" cx="45%" cy="40%" r="60%"><stop offset="0" stop-color="#ffffff"/><stop offset=".5" stop-color="#c8fff0"/><stop offset="1" stop-color="#3fd9a8"/></radialGradient>
+          <linearGradient id="sp-ray" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a6ffe6"/><stop offset="1" stop-color="#17a47c"/></linearGradient>
+          <filter id="sp-glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="7" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="186" rx="34" ry="6" fill="#000"/>
+        <path class="twinkle" style="animation-delay:.4s" d="M30 40 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" fill="#bfffea"/>
+        <path class="twinkle" style="animation-delay:1.1s" d="M172 150 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#bfffea"/>
+        <g class="bob">
+          <g class="orbit">
+            <path d="M100 22 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" fill="#fff6a8"/>
+            <path d="M160 118 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" fill="#8dffe0"/>
+            <path d="M40 118 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" fill="#ffc6e0"/>
+          </g>
+          <path class="pulse" d="M100 26 L113 76 L164 90 L113 104 L100 154 L87 104 L36 90 L87 76 Z" fill="url(#sp-ray)" filter="url(#sp-glow)"/>
+          <circle cx="100" cy="90" r="33" fill="url(#sp-core)"/>
+          <path d="M78 74 Q88 64 100 64" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".8"/>
+          <g class="eye"><ellipse cx="88" cy="88" rx="5.5" ry="8" fill="#0b2233"/><circle cx="90" cy="84" r="2.3" fill="#fff"/></g>
+          <g class="eye"><ellipse cx="112" cy="88" rx="5.5" ry="8" fill="#0b2233"/><circle cx="114" cy="84" r="2.3" fill="#fff"/></g>
+          <ellipse cx="78" cy="100" rx="5" ry="3" fill="#ff9fb8" opacity=".75"/><ellipse cx="122" cy="100" rx="5" ry="3" fill="#ff9fb8" opacity=".75"/>
+          <path d="M92 102 Q100 110 108 102" stroke="#0b2233" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path class="waveArm" d="M131 96 Q146 90 150 76" stroke="#c8fff0" stroke-width="5" stroke-linecap="round" fill="none"/>
+          <path d="M69 96 Q56 100 52 110" stroke="#c8fff0" stroke-width="5" stroke-linecap="round" fill="none"/>
+        </g>
+      </svg></template><template id="t-owl"><svg width="170" height="170" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="ow-body" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9a6844"/><stop offset="1" stop-color="#5b3a25"/></linearGradient>
+          <linearGradient id="ow-belly" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f7e6cb"/><stop offset="1" stop-color="#e0c49c"/></linearGradient>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="188" rx="40" ry="6" fill="#000"/>
+        <g class="bob"><g class="tilt">
+          <path class="flapL" d="M54 100 Q28 128 44 164 Q60 152 64 118 Z" fill="#6b4630"/>
+          <path class="flapR" d="M146 100 Q172 128 156 164 Q140 152 136 118 Z" fill="#6b4630"/>
+          <ellipse cx="100" cy="120" rx="50" ry="56" fill="url(#ow-body)"/>
+          <path d="M62 74 L56 42 L82 64 Z" fill="#5b3a25"/><path d="M138 74 L144 42 L118 64 Z" fill="#5b3a25"/>
+          <ellipse cx="100" cy="138" rx="32" ry="35" fill="url(#ow-belly)"/>
+          <path d="M84 130 q4 5 8 0 M96 130 q4 5 8 0 M108 130 q4 5 8 0 M90 144 q4 5 8 0 M102 144 q4 5 8 0 M96 158 q4 5 8 0" stroke="#c9a57a" stroke-width="2" fill="none" stroke-linecap="round"/>
+          <ellipse cx="100" cy="92" rx="44" ry="31" fill="#7a5036"/>
+          <circle cx="80" cy="92" r="16" fill="#fff8e8"/><circle cx="120" cy="92" r="16" fill="#fff8e8"/>
+          <g class="eye"><g class="look"><circle cx="81" cy="93" r="7.5" fill="#1d1208"/><circle cx="84" cy="90" r="2.5" fill="#fff"/></g></g>
+          <g class="eye"><g class="look"><circle cx="121" cy="93" r="7.5" fill="#1d1208"/><circle cx="124" cy="90" r="2.5" fill="#fff"/></g></g>
+          <circle cx="80" cy="92" r="18" fill="none" stroke="#e8b84a" stroke-width="3.5"/>
+          <circle cx="120" cy="92" r="18" fill="none" stroke="#e8b84a" stroke-width="3.5"/>
+          <path d="M98 90 Q100 86 102 90" stroke="#e8b84a" stroke-width="3" fill="none"/>
+          <path d="M94 106 L106 106 L100 117 Z" fill="#f2a33a"/>
+          <path d="M84 174 l-4 8 M89 175 l0 8 M94 174 l4 8 M106 174 l-4 8 M111 175 l0 8 M116 174 l4 8" stroke="#f2a33a" stroke-width="3" stroke-linecap="round"/>
+          <g transform="rotate(-10 134 150)">
+            <rect x="120" y="138" width="32" height="24" rx="3" fill="#fffdf6" stroke="#d6cbb5"/>
+            <path d="M125 145 h22 M125 150 h17 M125 155 h12" stroke="#9aa7b5" stroke-width="2"/>
+            <rect x="120" y="138" width="32" height="5" rx="2" fill="#3fd9a8"/>
+          </g>
+          <ellipse cx="124" cy="160" rx="9" ry="6" fill="#6b4630"/>
+        </g></g>
+      </svg></template><template id="t-robot"><svg width="170" height="170" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="pp-metal" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f2f6fb"/><stop offset="1" stop-color="#9fadbf"/></linearGradient>
+          <linearGradient id="pp-screen" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#12324a"/><stop offset="1" stop-color="#071320"/></linearGradient>
+          <linearGradient id="pp-flame" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff6b0"/><stop offset=".5" stop-color="#ffb23f"/><stop offset="1" stop-color="#ff5e3a" stop-opacity="0"/></linearGradient>
+          <filter id="pp-glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="190" rx="30" ry="5" fill="#000"/>
+        <g class="bob">
+          <path class="flicker" d="M88 160 Q100 198 112 160 Z" fill="url(#pp-flame)"/>
+          <line x1="100" y1="38" x2="100" y2="22" stroke="#8a97a8" stroke-width="3"/>
+          <circle class="light" cx="100" cy="17" r="6" fill="#5ef2c2" filter="url(#pp-glow)"/>
+          <rect x="42" y="62" width="12" height="24" rx="5" fill="#8a97a8"/><rect x="146" y="62" width="12" height="24" rx="5" fill="#8a97a8"/>
+          <rect x="52" y="38" width="96" height="72" rx="22" fill="url(#pp-metal)" stroke="#7d8b9c" stroke-width="2"/>
+          <rect x="62" y="50" width="76" height="48" rx="14" fill="url(#pp-screen)"/>
+          <g class="eye"><rect x="78" y="62" width="12" height="18" rx="6" fill="#5ef2c2" filter="url(#pp-glow)"/></g>
+          <g class="eye"><rect x="110" y="62" width="12" height="18" rx="6" fill="#5ef2c2" filter="url(#pp-glow)"/></g>
+          <path d="M92 88 Q100 94 108 88" stroke="#5ef2c2" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <path d="M68 57 Q80 52 94 54" stroke="#fff" stroke-opacity=".3" stroke-width="4" fill="none" stroke-linecap="round"/>
+          <rect x="92" y="110" width="16" height="7" fill="#8a97a8"/>
+          <rect x="66" y="116" width="68" height="46" rx="16" fill="url(#pp-metal)" stroke="#7d8b9c" stroke-width="2"/>
+          <path class="pulse" d="M100 127 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3z" fill="#3fd9a8" filter="url(#pp-glow)"/>
+          <circle cx="74" cy="124" r="2" fill="#7d8b9c"/><circle cx="126" cy="124" r="2" fill="#7d8b9c"/><circle cx="74" cy="154" r="2" fill="#7d8b9c"/><circle cx="126" cy="154" r="2" fill="#7d8b9c"/>
+          <path d="M66 128 Q50 136 52 150" stroke="#b5c1d0" stroke-width="7" stroke-linecap="round" fill="none"/><circle cx="52" cy="153" r="6" fill="#8a97a8"/>
+          <g class="swing">
+            <path d="M134 128 Q150 122 156 106" stroke="#b5c1d0" stroke-width="7" stroke-linecap="round" fill="none"/>
+            <line x1="156" y1="104" x2="161" y2="97" stroke="#e8b84a" stroke-width="5" stroke-linecap="round"/>
+            <circle cx="168" cy="86" r="13" fill="#bfefff" fill-opacity=".3" stroke="#e8b84a" stroke-width="4"/>
+            <path d="M161 80 Q165 76 170 77" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </g>
+        </g>
+      </svg></template><template id="t-fox"><svg width="170" height="170" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="fx-fur" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffa565"/><stop offset="1" stop-color="#e8622a"/></linearGradient>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="186" rx="44" ry="6" fill="#000"/>
+        <g class="bob">
+          <g class="tail">
+            <path d="M126 152 Q178 142 172 94 Q164 82 154 92 Q160 126 122 134 Z" fill="url(#fx-fur)"/>
+            <path d="M172 94 Q164 82 154 92 Q162 100 171 106 Z" fill="#fff4e8"/>
+          </g>
+          <ellipse cx="100" cy="148" rx="36" ry="30" fill="url(#fx-fur)"/>
+          <path d="M82 134 Q100 170 118 134 Q100 142 82 134 Z" fill="#fff4e8"/>
+          <rect x="80" y="166" width="14" height="16" rx="7" fill="#3a2418"/><rect x="106" y="166" width="14" height="16" rx="7" fill="#3a2418"/>
+          <path d="M68 118 Q100 136 132 118 L132 128 Q100 146 68 128 Z" fill="#3fd9a8"/>
+          <path class="flutter" d="M116 128 L136 154 L123 157 L108 131 Z" fill="#26b487"/>
+          <g class="tilt">
+            <g class="ear"><path d="M66 72 L60 28 L94 60 Z" fill="url(#fx-fur)"/><path d="M68 66 L64 40 L85 60 Z" fill="#3a2418"/></g>
+            <g class="ear" style="animation-delay:1.4s"><path d="M134 72 L140 28 L106 60 Z" fill="url(#fx-fur)"/><path d="M132 66 L136 40 L115 60 Z" fill="#3a2418"/></g>
+            <path d="M58 78 Q60 50 100 48 Q140 50 142 78 Q138 106 100 118 Q62 106 58 78 Z" fill="url(#fx-fur)"/>
+            <path d="M64 86 Q84 88 100 112 Q116 88 136 86 Q130 108 100 118 Q70 108 64 86 Z" fill="#fff4e8"/>
+            <g class="eye"><ellipse cx="84" cy="80" rx="5" ry="7" fill="#1b1b2b"/><circle cx="86" cy="77" r="2" fill="#fff"/></g>
+            <g class="eye"><ellipse cx="116" cy="80" rx="5" ry="7" fill="#1b1b2b"/><circle cx="118" cy="77" r="2" fill="#fff"/></g>
+            <ellipse cx="72" cy="92" rx="5" ry="3" fill="#ff8f8f" opacity=".6"/><ellipse cx="128" cy="92" rx="5" ry="3" fill="#ff8f8f" opacity=".6"/>
+            <ellipse cx="100" cy="100" rx="5.5" ry="4" fill="#1b1b2b"/>
+            <g transform="rotate(10 112 112)">
+              <rect x="104" y="104" width="24" height="18" rx="2" fill="#fff" stroke="#cfd6de"/>
+              <path d="M108 109 h15 M108 113 h11 M108 117 h7" stroke="#9aa7b5" stroke-width="1.6"/>
+            </g>
+          </g>
+        </g>
+      </svg></template><template id="t-octopus"><svg width="170" height="170" viewBox="0 0 200 200">
+        <defs>
+          <radialGradient id="oc-head" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#d9b0ff"/><stop offset="1" stop-color="#7040d6"/></radialGradient>
+        </defs>
+        <circle class="rise" cx="36" cy="170" r="4" fill="none" stroke="#9fd4ff" stroke-width="1.5"/>
+        <circle class="rise" style="animation-delay:1.2s" cx="168" cy="176" r="6" fill="none" stroke="#9fd4ff" stroke-width="1.5"/>
+        <circle class="rise" style="animation-delay:2.1s" cx="150" cy="168" r="3" fill="none" stroke="#9fd4ff" stroke-width="1.5"/>
+        <ellipse class="shadow" cx="100" cy="190" rx="44" ry="5" fill="#000"/>
+        <g class="bob">
+          <path d="M70 116 Q46 136 38 160" stroke="#8a58ee" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="tent" d="M84 120 Q70 150 76 176" stroke="#8a58ee" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="tent" style="animation-delay:.5s" d="M96 122 Q94 154 88 178" stroke="#7d4be4" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="tent" style="animation-delay:1s" d="M106 122 Q110 154 114 178" stroke="#7d4be4" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path class="tent" style="animation-delay:1.5s" d="M118 120 Q132 150 126 176" stroke="#8a58ee" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <path d="M130 116 Q154 136 162 158" stroke="#8a58ee" stroke-width="12" fill="none" stroke-linecap="round"/>
+          <g><rect x="18" y="146" width="28" height="24" rx="3" fill="#fff"/><path d="M21 166 L29 156 L34 161 L39 155 L44 166 Z" fill="#3fd9a8"/><circle cx="39" cy="151" r="2.6" fill="#f7c65c"/></g>
+          <g><rect x="154" y="138" width="24" height="30" rx="3" fill="#fff"/><rect x="154" y="138" width="24" height="10" rx="3" fill="#ff5e5e"/><text x="166" y="146" font-size="7.5" text-anchor="middle" fill="#fff" font-family="Segoe UI, sans-serif" font-weight="700">PDF</text><path d="M158 154 h16 M158 159 h12 M158 164 h14" stroke="#b9c2cc" stroke-width="1.5"/></g>
+          <path d="M52 92 Q52 38 100 36 Q148 38 148 92 Q148 126 100 128 Q52 126 52 92 Z" fill="url(#oc-head)"/>
+          <circle cx="74" cy="60" r="5" fill="#e8d0ff" opacity=".6"/><circle cx="128" cy="56" r="4" fill="#e8d0ff" opacity=".6"/><circle cx="136" cy="76" r="3" fill="#e8d0ff" opacity=".6"/>
+          <path d="M68 52 Q80 42 94 42" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".55"/>
+          <g class="eye"><circle cx="84" cy="90" r="11" fill="#fff"/><circle cx="86" cy="92" r="6" fill="#23123f"/><circle cx="88" cy="89" r="2" fill="#fff"/></g>
+          <g class="wink"><circle cx="116" cy="90" r="11" fill="#fff"/><circle cx="118" cy="92" r="6" fill="#23123f"/><circle cx="120" cy="89" r="2" fill="#fff"/></g>
+          <ellipse cx="72" cy="106" rx="6" ry="3.5" fill="#ff9fcf" opacity=".7"/><ellipse cx="128" cy="106" rx="6" ry="3.5" fill="#ff9fcf" opacity=".7"/>
+          <path d="M93 108 Q100 114 107 108" stroke="#23123f" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+        </g>
+      </svg></template><template id="t-mochi"><svg width="170" height="170" viewBox="0 0 200 200">
+        <defs>
+          <radialGradient id="mc-body" cx="35%" cy="30%" r="80%"><stop offset="0" stop-color="#f2fffb"/><stop offset=".45" stop-color="#8ff7d8"/><stop offset="1" stop-color="#2fc493"/></radialGradient>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="184" rx="58" ry="7" fill="#000"/>
+        <path class="twinkle" style="animation-delay:.8s" d="M34 60 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#fff6a8"/>
+        <g class="bob"><g class="squish">
+          <ellipse cx="80" cy="176" rx="10" ry="5" fill="#25a97d"/><ellipse cx="120" cy="176" rx="10" ry="5" fill="#25a97d"/>
+          <path d="M34 150 Q26 80 100 72 Q174 80 166 150 Q164 178 100 178 Q36 178 34 150 Z" fill="url(#mc-body)"/>
+          <ellipse cx="70" cy="102" rx="15" ry="8" fill="#fff" opacity=".65" transform="rotate(-28 70 102)"/>
+          <circle cx="92" cy="92" r="3" fill="#fff" opacity=".7"/>
+          <g class="sway">
+            <path d="M100 74 Q100 58 102 50" stroke="#2c9c6f" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+            <path d="M102 52 Q86 38 74 47 Q88 60 102 52 Z" fill="#6bd47c"/>
+            <path d="M102 52 Q118 36 130 45 Q116 60 102 52 Z" fill="#8ae68f"/>
+          </g>
+          <g class="eye"><ellipse cx="80" cy="126" rx="7" ry="9" fill="#0b2233"/><circle cx="83" cy="122" r="3" fill="#fff"/><circle cx="78" cy="130" r="1.4" fill="#fff"/></g>
+          <g class="eye"><ellipse cx="120" cy="126" rx="7" ry="9" fill="#0b2233"/><circle cx="123" cy="122" r="3" fill="#fff"/><circle cx="118" cy="130" r="1.4" fill="#fff"/></g>
+          <ellipse cx="64" cy="143" rx="8" ry="4.5" fill="#ff9fb8" opacity=".8"/><ellipse cx="136" cy="143" rx="8" ry="4.5" fill="#ff9fb8" opacity=".8"/>
+          <path d="M93 140 Q100 148 107 140" stroke="#0b2233" stroke-width="3" fill="none" stroke-linecap="round"/>
+          <path class="waveArm" d="M160 140 Q172 132 174 120" stroke="#4fdcb0" stroke-width="8" stroke-linecap="round" fill="none"/>
+          <path class="twinkle" d="M176 104 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3z" fill="#f7c65c"/>
+        </g></g>
+      </svg></template><template id="t-ghost"><svg width="170" height="170" viewBox="0 0 200 200">
+        <defs>
+          <linearGradient id="pg-paper" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#dde5f0"/></linearGradient>
+          <filter id="pg-glow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+        </defs>
+        <ellipse class="shadow" cx="100" cy="190" rx="36" ry="5" fill="#000"/>
+        <path class="twinkle" style="animation-delay:.3s" d="M34 50 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#d8c8ff"/>
+        <path class="twinkle" style="animation-delay:1.3s" d="M170 70 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" fill="#d8c8ff"/>
+        <g class="bob"><g class="floaty">
+          <path class="waveArmL" d="M58 112 Q42 108 36 94" stroke="#e8eef6" stroke-width="11" stroke-linecap="round" fill="none"/>
+          <path d="M142 112 Q156 118 160 130" stroke="#e8eef6" stroke-width="11" stroke-linecap="round" fill="none"/>
+          <path d="M56 170 L56 82 Q56 38 100 38 Q144 38 144 82 L144 170 Q136 160 128 170 Q120 180 112 170 Q104 160 96 170 Q88 180 80 170 Q72 160 64 170 Q60 176 56 170 Z" fill="url(#pg-paper)" stroke="#c7d1de" stroke-width="2" filter="url(#pg-glow)"/>
+          <g stroke="#a9c7ff" stroke-width="1.5" opacity=".75"><line x1="58" y1="122" x2="142" y2="122"/><line x1="58" y1="136" x2="142" y2="136"/><line x1="58" y1="150" x2="142" y2="150"/><line x1="58" y1="164" x2="142" y2="164"/></g>
+          <line x1="72" y1="56" x2="72" y2="170" stroke="#ff9aa8" stroke-width="1.5" opacity=".75"/>
+          <path d="M118 28 L118 58 Q118 65 124 65 Q130 65 130 58 L130 36 Q130 31 126 31 Q122 31 122 36 L122 55" stroke="#8d99a8" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+          <g class="eye"><ellipse cx="86" cy="88" rx="6" ry="9" fill="#2a3446"/><circle cx="88" cy="84" r="2.3" fill="#fff"/></g>
+          <g class="eye"><ellipse cx="114" cy="88" rx="6" ry="9" fill="#2a3446"/><circle cx="116" cy="84" r="2.3" fill="#fff"/></g>
+          <ellipse cx="76" cy="102" rx="6" ry="3.5" fill="#ffb3c7" opacity=".8"/><ellipse cx="124" cy="102" rx="6" ry="3.5" fill="#ffb3c7" opacity=".8"/>
+          <ellipse cx="100" cy="106" rx="5" ry="6" fill="#2a3446"/>
+        </g></g>
+      </svg></template>
+    </div></div>
+    <div class="card-body"><h3>B · Big stage and faces</h3><p>Like picking a character in a game: your buddy stands big on a stage, moving and saying hello in its own voice. Click a round face below to switch, and the new buddy pops in.</p></div>
+  </div>
+</div>
