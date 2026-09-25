@@ -225,7 +225,10 @@ public sealed partial class MainWindow : Window
     {
         if (_toldThemWhereItWent
             || _notifier is not { IsAvailable: true }
-            || _presence is not { KeepsRunningWhenClosed: true })
+            || _presence is not { KeepsRunningWhenClosed: true }
+            // Only checking in the background gets the notice; the owner did not pick a
+            // notification for quick search (spec decision 12), and its card says what closing does.
+            || _presence.QuickSearchKeepsItRunning)
         {
             return;
         }

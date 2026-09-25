@@ -140,6 +140,7 @@ public sealed class QuickSearchPageTests
 
         Assert.Empty(bar.InsideRows);
         Assert.Equal("To find words inside files too, allow it for a folder on the Search page.", bar.InsideFact);
+        Assert.True(bar.ShowsSeeMore);
     }
 
     [Fact]

@@ -1,0 +1,152 @@
+namespace DeskAI.Presentation.Tests;
+
+/// <summary>
+/// The quick search window and buddies, read from their source: where the bar sits, what the
+/// screen reader hears, that every buddy has every mood and a still pose, and that the shortcut is
+/// the agreed one registered without a keyboard hook.
+/// </summary>
+public sealed class QuickSearchLayoutTests
+{
+    private static readonly string[] BuddyFiles =
+        ["SparkyBuddy.xaml", "ArchieBuddy.xaml", "PipBuddy.xaml", "FetchBuddy.xaml", "InkyBuddy.xaml", "MochiBuddy.xaml", "PaigeBuddy.xaml"];
+
+    [Fact]
+    public void The_shortcut_is_Ctrl_Alt_Space_without_repeat_and_without_a_keyboard_hook()
+    {
+        var hotKey = Read("src", "DeskAI.App", "Services", "GlobalHotKey.cs") + Read("src", "DeskAI.App", "Services", "HotKeyInterop.cs");
+
+        Assert.Contains("RegisterHotKey", hotKey, StringComparison.Ordinal);
+        Assert.Contains("MOD_CONTROL | HotKeyInterop.MOD_ALT | HotKeyInterop.MOD_NOREPEAT", hotKey, StringComparison.Ordinal);
+        Assert.Contains("VK_SPACE", hotKey, StringComparison.Ordinal);
+        Assert.DoesNotContain("SetWindowsHookEx", hotKey, StringComparison.Ordinal);
+        Assert.DoesNotContain("WH_KEYBOARD", hotKey, StringComparison.Ordinal);
+        Assert.DoesNotContain("GetAsyncKeyState", hotKey, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_bar_sits_top_centre_and_stays_out_of_the_taskbar_and_Alt_Tab()
+    {
+        var window = Read("src", "DeskAI.App", "Views", "QuickSearchWindow.xaml.cs");
+
+        Assert.Contains("TopFraction = 0.12", window, StringComparison.Ordinal);
+        Assert.Contains("IsShownInSwitchers = false", window, StringComparison.Ordinal);
+        Assert.Contains("IsAlwaysOnTop = true", window, StringComparison.Ordinal);
+        Assert.Contains("SetBorderAndTitleBar(false, false)", window, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_buddys_line_is_announced_politely_and_the_buddy_itself_is_decorative()
+    {
+        var xaml = Read("src", "DeskAI.App", "Views", "QuickSearchWindow.xaml");
+
+        Assert.Contains("AutomationProperties.LiveSetting=\"Polite\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.AccessibilityView=\"Raw\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.Name=\"Find a file\"", xaml, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Snippets_are_plain_text()
+    {
+        var xaml = Read("src", "DeskAI.App", "Views", "QuickSearchWindow.xaml");
+
+        Assert.Contains("Text=\"{x:Bind Snippet}\"", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("RichTextBlock", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("Hyperlink", xaml, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [MemberData(nameof(Buddies))]
+    public void Every_buddy_has_the_five_moods_their_moves_and_a_still_pose(string file)
+    {
+        var path = Path.Combine(RepositoryRoot(), "src", "DeskAI.App", "Views", "Buddies", file);
+        if (!File.Exists(path))
+        {
+            Assert.Skip($"{file} is drawn in a later task.");
+        }
+
+        var xaml = File.ReadAllText(path);
+        foreach (var mood in new[] { "Idle", "Thinking", "Found", "Nothing", "Happy" })
+        {
+            Assert.Contains($"<VisualState x:Name=\"{mood}\"", xaml, StringComparison.Ordinal);
+            Assert.Contains($"<VisualState x:Name=\"{mood}Moving\"", xaml, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("<VisualState x:Name=\"Still\"", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("MediaElement", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("MediaPlayer", xaml, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Moves_stop_when_Windows_animation_effects_are_off()
+    {
+        var control = Read("src", "DeskAI.App", "Views", "Buddies", "BuddyControl.cs");
+
+        Assert.Contains("AnimationsEnabled", control, StringComparison.Ordinal);
+        Assert.Contains("\"Still\"", control, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Only_the_quick_search_bar_notice_is_skipped_when_quick_search_alone_keeps_DeskAI()
+    {
+        var window = Read("src", "DeskAI.App", "MainWindow.xaml.cs");
+
+        Assert.Contains("QuickSearchKeepsItRunning", window, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_icon_menu_offers_Find_a_file_and_Pause_only_when_offered()
+    {
+        var tray = Read("src", "DeskAI.App", "Services", "TrayPresence.cs");
+
+        Assert.Contains("\"Find a file\"", tray, StringComparison.Ordinal);
+        Assert.Contains("_menu.OffersPause", tray, StringComparison.Ordinal);
+        Assert.Contains("_menu.OffersFind", tray, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The bar is a second window that is only ever hidden; if it outlived the main window, DeskAI
+    /// would keep running with nothing on screen and no icon to quit from.
+    /// </summary>
+    [Fact]
+    public void Closing_the_main_window_for_real_closes_the_bar_and_stops_the_shortcut()
+    {
+        var app = Read("src", "DeskAI.App", "App.xaml.cs");
+
+        Assert.Contains("window.Closed +=", app, StringComparison.Ordinal);
+        Assert.Contains("bar.Close();", app, StringComparison.Ordinal);
+        Assert.Contains("Listen(false)", app, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void The_Quick_search_card_the_tip_and_the_welcome_picture_are_placed()
+    {
+        var workspace = Read("src", "DeskAI.App", "Views", "WorkspacePage.xaml");
+        Assert.Contains("Header=\"Press Ctrl + Alt + Space to find a file\"", workspace, StringComparison.Ordinal);
+        Assert.Contains("Text=\"Your search buddy\"", workspace, StringComparison.Ordinal);
+        Assert.Contains("Topic=\"workspace.quicksearch\"", workspace, StringComparison.Ordinal);
+
+        foreach (var page in new[] { "DashboardPage.xaml", "SearchPage.xaml" })
+        {
+            Assert.Contains("<controls:QuickSearchTipBar Tip=\"{x:Bind ViewModel.Tip}\" />", Read("src", "DeskAI.App", "Views", page), StringComparison.Ordinal);
+        }
+
+        Assert.Contains("AutomationProperties.SetName(close, \"Close the tip\")", Read("src", "DeskAI.App", "Controls", "QuickSearchTipBar.cs"), StringComparison.Ordinal);
+        Assert.Contains("welcome.Current.ShowsBuddy", Read("src", "DeskAI.App", "Views", "WelcomeDialog.cs"), StringComparison.Ordinal);
+    }
+
+    public static TheoryData<string> Buddies() => new(BuddyFiles);
+
+    private static string Read(params string[] parts) =>
+        File.ReadAllText(Path.Combine([RepositoryRoot(), .. parts]));
+
+    private static string RepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "DeskAI.sln")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? throw new InvalidOperationException("Repository root not found.");
+    }
+}

@@ -114,6 +114,19 @@ Answered when the owner reviewed this spec (2026-09-25):
 - If a see-through window is not possible, the buddy sits in a strip above the bar painted like the
   bar (the plan's Task 8 probe decides; the owner is told which).
 
+### Rulings made while building (2026-09-25; the owner may overrule)
+
+- **The window shape is the fallback.** The see-through probe was not run; the bar window is the
+  bar's translucent navy over Windows' acrylic, with Sparky in a strip at the top and rounded
+  corners asked of Windows 11. Checked in the UI preview: greeting, examples, typing, Esc.
+- The "allow reading inside" line also shows **See more in DeskAI**, as "Honest lines" says.
+- The buddy tiles on My workspace and the tip's small Sparky hold still (the pose only); the bar's
+  and the welcome's Sparky move.
+- **Found on the owner's PC:** Windows refused Ctrl + Alt + Space because another running program
+  already uses it (Windows error 1409; the Claude desktop app, which was running, is the likely
+  owner). The card says so plainly, as designed, and there is no automatic fallback. The owner
+  decides: free the shortcut in that program, or choose a different shortcut for DeskAI.
+
 ## What the person sees
 
 ### The bar (layout C)

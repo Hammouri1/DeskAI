@@ -1,5 +1,6 @@
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
+using DeskAI.App.Views.Buddies;
 using DeskAI.Core.Roots;
 using DeskAI.Core.Templates;
 using DeskAI.Core.Workspace;
@@ -152,6 +153,34 @@ public sealed partial class WorkspacePage : Page
     /// <summary>A "#RRGGBB" swatch from a look card as a brush, for the card's colour strip.</summary>
     public static Microsoft.UI.Xaml.Media.SolidColorBrush Swatch(string hex) =>
         new(DeskAI.App.Services.WindowsAppearanceApplier.ToColor(hex));
+
+    /// <summary>Only a change the person made reaches the switch, never the page setting its own value.</summary>
+    private async void OnQuickSearchToggled(object sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleSwitch toggle && toggle.IsOn != ViewModel.QuickSearch.IsOn)
+        {
+            await ViewModel.QuickSearch.SetOnAsync(toggle.IsOn);
+        }
+    }
+
+    private async void OnChooseBuddyClicked(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: BuddyTileViewModel tile })
+        {
+            await ViewModel.QuickSearch.ChooseBuddyAsync(tile.Buddy);
+        }
+    }
+
+    /// <summary>Draws each tile's buddy standing still in its Idle pose.</summary>
+    private void OnBuddyPictureLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is ContentControl { Tag: BuddyTileViewModel tile, Content: null } host)
+        {
+            var buddy = BuddyFactory.Create(tile.Buddy);
+            buddy.HoldsStill = true;
+            host.Content = buddy;
+        }
+    }
 
     private async void OnThemeModeChanged(object sender, SelectionChangedEventArgs e)
     {

@@ -351,8 +351,13 @@ public sealed class QuickSearchViewModel : ObservableObject, IDisposable
 
             if (!byName.AnyFolderReadsInside || byName.Fact is Fact.NoFolders)
             {
-                InsideFact = byName.Fact is Fact.NoFolders ? string.Empty
-                    : "To find words inside files too, allow it for a folder on the Search page.";
+                if (byName.Fact is not Fact.NoFolders)
+                {
+                    // The spec pairs this line with See more, which opens Search, where it is allowed.
+                    InsideFact = "To find words inside files too, allow it for a folder on the Search page.";
+                    ShowsSeeMore = true;
+                }
+
                 Settle();
                 return;
             }

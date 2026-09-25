@@ -114,6 +114,9 @@
                 </Grid>
             </Border>
 
+            <!-- One line about quick search (ADR 0047); closing it here closes it on Search too. -->
+            <controls:QuickSearchTipBar Tip="{x:Bind ViewModel.Tip}" />
+
             <!--
                 Quick look: four counts on soft tints. Each is a reading of remembered metadata,
                 never a live number, and no tint is the accent, because a count is not a permission.

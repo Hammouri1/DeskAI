@@ -296,8 +296,10 @@ public sealed partial class ShellLayoutTests
     private static string AppFile(string relative) =>
         Path.Combine(RepositoryRoot(), "src", "DeskAI.App", relative);
 
+    /// <summary>Every page. Windows in the same folder, such as the quick search bar, are not pages.</summary>
     private static IEnumerable<string> PageFiles() =>
-        Directory.EnumerateFiles(Path.Combine(RepositoryRoot(), "src", "DeskAI.App", "Views"), "*.xaml");
+        Directory.EnumerateFiles(Path.Combine(RepositoryRoot(), "src", "DeskAI.App", "Views"), "*.xaml")
+            .Where(file => File.ReadAllText(file).Contains("<Page", StringComparison.Ordinal));
 
     private static string RepositoryRoot()
     {

@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Sparky, the default search buddy, drawn from the approved mockup
+  (docs/superpowers/specs/2026-09-25-quick-search-mockups/characters.html, the "sparky" card).
+  The 200 x 200 drawing sits in a Viewbox so it scales to any size. Each moving part is a full-size
+  Canvas at 0,0, so its transform centre is written in the mockup's own coordinates.
+  "Moods" poses with setters only; "Motion" runs the moves, and "Still" runs none (Windows'
+  Animation effects off). Decorative: screen readers hear the buddy's line, not the drawing.
+-->
+<buddies:BuddyControl
+    x:Class="DeskAI.App.Views.Buddies.SparkyBuddy"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:buddies="using:DeskAI.App.Views.Buddies"
+    AutomationProperties.AccessibilityView="Raw">
+
+    <Grid>
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="Moods">
+                <VisualState x:Name="Idle" />
+                <VisualState x:Name="Thinking">
+                    <VisualState.Setters>
+                        <Setter Target="Glow.Opacity" Value="0.8" />
+                        <Setter Target="Mouth.Visibility" Value="Collapsed" />
+                        <Setter Target="MouthOpen.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Found">
+                    <VisualState.Setters>
+                        <Setter Target="Glow.Opacity" Value="0.6" />
+                        <Setter Target="Mouth.Visibility" Value="Collapsed" />
+                        <Setter Target="MouthBig.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Nothing">
+                    <VisualState.Setters>
+                        <Setter Target="Glow.Opacity" Value="0.2" />
+                        <Setter Target="Mouth.Visibility" Value="Collapsed" />
+                        <Setter Target="MouthFlat.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Happy">
+                    <VisualState.Setters>
+                        <Setter Target="LeftEye.Visibility" Value="Collapsed" />
+                        <Setter Target="RightEye.Visibility" Value="Collapsed" />
+                        <Setter Target="HappyEyes.Visibility" Value="Visible" />
+                        <Setter Target="Mouth.Visibility" Value="Collapsed" />
+                        <Setter Target="MouthBig.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+
+            <VisualStateGroup x:Name="Motion">
+                <VisualState x:Name="IdleMoving">
+                    <Storyboard>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="BodyTransform" Storyboard.TargetProperty="TranslateY" RepeatBehavior="Forever">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:1.4" Value="-12"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                            <EasingDoubleKeyFrame KeyTime="0:0:2.8" Value="0"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ShadowTransform" Storyboard.TargetProperty="ScaleX" RepeatBehavior="Forever">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:1.4" Value="0.72" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:2.8" Value="1" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="LeftEyeTransform" Storyboard.TargetProperty="ScaleY" RepeatBehavior="Forever">
+                            <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:4.05" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:4.23" Value="0.08" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:4.5" Value="1" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RightEyeTransform" Storyboard.TargetProperty="ScaleY" RepeatBehavior="Forever">
+                            <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:4.05" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:4.23" Value="0.08" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:4.5" Value="1" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimation Storyboard.TargetName="OrbitTransform" Storyboard.TargetProperty="Rotation" From="0" To="360" Duration="0:0:9" RepeatBehavior="Forever" />
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RaysTransform" Storyboard.TargetProperty="ScaleX" RepeatBehavior="Forever">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:1.2" Value="1.07"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                            <EasingDoubleKeyFrame KeyTime="0:0:2.4" Value="1"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RaysTransform" Storyboard.TargetProperty="ScaleY" RepeatBehavior="Forever">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:1.2" Value="1.07"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                            <EasingDoubleKeyFrame KeyTime="0:0:2.4" Value="1"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="WaveArmTransform" Storyboard.TargetProperty="Rotation" RepeatBehavior="Forever">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="-12" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:0.65" Value="14"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                            <EasingDoubleKeyFrame KeyTime="0:0:1.3" Value="-12"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Twinkle1" Storyboard.TargetProperty="Opacity" BeginTime="0:0:0.4" RepeatBehavior="Forever">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="0.4" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.9" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:1.8" Value="0.4" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Twinkle2" Storyboard.TargetProperty="Opacity" BeginTime="0:0:1.1" RepeatBehavior="Forever">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="0.4" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.9" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:1.8" Value="0.4" />
+                        </DoubleAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+
+                <VisualState x:Name="ThinkingMoving">
+                    <Storyboard>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="BodyTransform" Storyboard.TargetProperty="TranslateY" RepeatBehavior="Forever">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:1.4" Value="-12"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                            <EasingDoubleKeyFrame KeyTime="0:0:2.8" Value="0"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimation Storyboard.TargetName="OrbitTransform" Storyboard.TargetProperty="Rotation" From="0" To="360" Duration="0:0:3" RepeatBehavior="Forever" />
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RaysTransform" Storyboard.TargetProperty="ScaleX" RepeatBehavior="Forever">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="1.07" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:0.8" Value="1" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RaysTransform" Storyboard.TargetProperty="ScaleY" RepeatBehavior="Forever">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="1" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="1.07" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:0.8" Value="1" />
+                        </DoubleAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+
+                <VisualState x:Name="FoundMoving">
+                    <Storyboard>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="BodyTransform" Storyboard.TargetProperty="TranslateY" RepeatBehavior="Forever">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:1.4" Value="-12"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                            <EasingDoubleKeyFrame KeyTime="0:0:2.8" Value="0"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="WaveArmTransform" Storyboard.TargetProperty="Rotation" RepeatBehavior="Forever">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="-12" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:0.4" Value="14" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:0.8" Value="-12" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Twinkle1" Storyboard.TargetProperty="Opacity" RepeatBehavior="Forever">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="0.4" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.9" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:1.8" Value="0.4" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Twinkle2" Storyboard.TargetProperty="Opacity" BeginTime="0:0:0.7" RepeatBehavior="Forever">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="0.4" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.9" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:1.8" Value="0.4" />
+                        </DoubleAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+
+                <VisualState x:Name="NothingMoving">
+                    <Storyboard>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="BodyTransform" Storyboard.TargetProperty="TranslateY" RepeatBehavior="Forever">
+                            <EasingDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <EasingDoubleKeyFrame KeyTime="0:0:2" Value="-8"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                            <EasingDoubleKeyFrame KeyTime="0:0:4" Value="0"><EasingDoubleKeyFrame.EasingFunction><SineEase EasingMode="EaseInOut" /></EasingDoubleKeyFrame.EasingFunction></EasingDoubleKeyFrame>
+                        </DoubleAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+
+                <VisualState x:Name="HappyMoving">
+                    <Storyboard>
+                        <DoubleAnimation Storyboard.TargetName="BodyTransform" Storyboard.TargetProperty="Rotation" From="0" To="360" Duration="0:0:0.9">
+                            <DoubleAnimation.EasingFunction><SineEase EasingMode="EaseInOut" /></DoubleAnimation.EasingFunction>
+                        </DoubleAnimation>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Twinkle1" Storyboard.TargetProperty="Opacity" RepeatBehavior="Forever">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="0.4" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.45" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.9" Value="0.4" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Twinkle2" Storyboard.TargetProperty="Opacity" RepeatBehavior="Forever">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.45" Value="0.4" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.9" Value="1" />
+                        </DoubleAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+
+                <VisualState x:Name="Still" />
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <Viewbox>
+            <Canvas Width="200" Height="200">
+                <Ellipse x:Name="BuddyShadow" Canvas.Left="66" Canvas.Top="180" Width="68" Height="12" Fill="#000000" Opacity="0.3">
+                    <Ellipse.RenderTransform>
+                        <CompositeTransform x:Name="ShadowTransform" CenterX="34" CenterY="6" />
+                    </Ellipse.RenderTransform>
+                </Ellipse>
+                <Path x:Name="Twinkle1" Data="M30 40 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" Fill="#BFFFEA" Opacity="0.7" />
+                <Path x:Name="Twinkle2" Data="M172 150 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" Fill="#BFFFEA" Opacity="0.7" />
+
+                <Canvas x:Name="Body" Width="200" Height="200">
+                    <Canvas.RenderTransform>
+                        <CompositeTransform x:Name="BodyTransform" CenterX="100" CenterY="90" />
+                    </Canvas.RenderTransform>
+
+                    <Canvas x:Name="Orbit" Width="200" Height="200">
+                        <Canvas.RenderTransform>
+                            <CompositeTransform x:Name="OrbitTransform" CenterX="100" CenterY="90" />
+                        </Canvas.RenderTransform>
+                        <Path Data="M100 22 l3 8 8 3 -8 3 -3 8 -3 -8 -8 -3 8 -3z" Fill="#FFF6A8" />
+                        <Path Data="M160 118 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" Fill="#8DFFE0" />
+                        <Path Data="M40 118 l2 6 6 2 -6 2 -2 6 -2 -6 -6 -2 6 -2z" Fill="#FFC6E0" />
+                    </Canvas>
+
+                    <Canvas x:Name="Rays" Width="200" Height="200">
+                        <Canvas.RenderTransform>
+                            <CompositeTransform x:Name="RaysTransform" CenterX="100" CenterY="90" />
+                        </Canvas.RenderTransform>
+                        <!-- The mockup's blurred glow: a larger, fainter copy behind the rays. -->
+                        <Path x:Name="Glow" Data="M100 26 L113 76 L164 90 L113 104 L100 154 L87 104 L36 90 L87 76 Z" Opacity="0.45">
+                            <Path.RenderTransform>
+                                <CompositeTransform CenterX="100" CenterY="90" ScaleX="1.15" ScaleY="1.15" />
+                            </Path.RenderTransform>
+                            <Path.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Offset="0" Color="#A6FFE6" />
+                                    <GradientStop Offset="1" Color="#17A47C" />
+                                </LinearGradientBrush>
+                            </Path.Fill>
+                        </Path>
+                        <Path Data="M100 26 L113 76 L164 90 L113 104 L100 154 L87 104 L36 90 L87 76 Z">
+                            <Path.Fill>
+                                <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                                    <GradientStop Offset="0" Color="#A6FFE6" />
+                                    <GradientStop Offset="1" Color="#17A47C" />
+                                </LinearGradientBrush>
+                            </Path.Fill>
+                        </Path>
+                    </Canvas>
+
+                    <Ellipse Canvas.Left="67" Canvas.Top="57" Width="66" Height="66">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush Center="0.45,0.4" GradientOrigin="0.45,0.4" RadiusX="0.6" RadiusY="0.6">
+                                <GradientStop Offset="0" Color="#FFFFFF" />
+                                <GradientStop Offset="0.5" Color="#C8FFF0" />
+                                <GradientStop Offset="1" Color="#3FD9A8" />
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
+                    </Ellipse>
+                    <Path Data="M78 74 Q88 64 100 64" Stroke="#FFFFFF" StrokeThickness="4" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Opacity="0.8" />
+
+                    <Canvas x:Name="LeftEye" Width="200" Height="200">
+                        <Canvas.RenderTransform>
+                            <CompositeTransform x:Name="LeftEyeTransform" CenterX="88" CenterY="88" />
+                        </Canvas.RenderTransform>
+                        <Ellipse Canvas.Left="82.5" Canvas.Top="80" Width="11" Height="16" Fill="#0B2233" />
+                        <Ellipse Canvas.Left="87.7" Canvas.Top="81.7" Width="4.6" Height="4.6" Fill="#FFFFFF" />
+                    </Canvas>
+                    <Canvas x:Name="RightEye" Width="200" Height="200">
+                        <Canvas.RenderTransform>
+                            <CompositeTransform x:Name="RightEyeTransform" CenterX="112" CenterY="88" />
+                        </Canvas.RenderTransform>
+                        <Ellipse Canvas.Left="106.5" Canvas.Top="80" Width="11" Height="16" Fill="#0B2233" />
+                        <Ellipse Canvas.Left="111.7" Canvas.Top="81.7" Width="4.6" Height="4.6" Fill="#FFFFFF" />
+                    </Canvas>
+                    <Canvas x:Name="HappyEyes" Width="200" Height="200" Visibility="Collapsed">
+                        <Path Data="M82 90 Q88 81 94 90" Stroke="#0B2233" StrokeThickness="3.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                        <Path Data="M106 90 Q112 81 118 90" Stroke="#0B2233" StrokeThickness="3.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                    </Canvas>
+
+                    <Ellipse Canvas.Left="73" Canvas.Top="97" Width="10" Height="6" Fill="#FF9FB8" Opacity="0.75" />
+                    <Ellipse Canvas.Left="117" Canvas.Top="97" Width="10" Height="6" Fill="#FF9FB8" Opacity="0.75" />
+
+                    <Path x:Name="Mouth" Data="M92 102 Q100 110 108 102" Stroke="#0B2233" StrokeThickness="3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                    <Path x:Name="MouthBig" Data="M90 100 Q100 114 110 100" Stroke="#0B2233" StrokeThickness="3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Visibility="Collapsed" />
+                    <Ellipse x:Name="MouthOpen" Canvas.Left="96" Canvas.Top="101" Width="8" Height="9" Fill="#0B2233" Visibility="Collapsed" />
+                    <Path x:Name="MouthFlat" Data="M93 105 L107 105" Stroke="#0B2233" StrokeThickness="3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Visibility="Collapsed" />
+
+                    <Canvas x:Name="WaveArm" Width="200" Height="200">
+                        <Canvas.RenderTransform>
+                            <CompositeTransform x:Name="WaveArmTransform" CenterX="131" CenterY="96" />
+                        </Canvas.RenderTransform>
+                        <Path Data="M131 96 Q146 90 150 76" Stroke="#C8FFF0" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                    </Canvas>
+                    <Path Data="M69 96 Q56 100 52 110" Stroke="#C8FFF0" StrokeThickness="5" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                </Canvas>
+            </Canvas>
+        </Viewbox>
+    </Grid>
+</buddies:BuddyControl>

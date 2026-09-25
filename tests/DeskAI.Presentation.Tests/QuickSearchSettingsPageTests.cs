@@ -22,6 +22,7 @@ public sealed class QuickSearchSettingsPageTests
         Assert.Equal("Sparky", Assert.Single(card.Buddies, tile => tile.IsChosen).Name);
         Assert.Equal("Works while DeskAI is open or near the clock. Closing the window keeps it near the clock; quit from the icon's menu there.", QuickSearchCardViewModel.WorksWhen);
         Assert.False(card.HasShortcutProblem);
+        Assert.Equal(["Choose Sparky", "Choose Archie the owl"], card.Buddies.Take(2).Select(tile => tile.ChooseName));
     }
 
     [Fact]

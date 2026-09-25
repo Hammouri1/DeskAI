@@ -1,6 +1,7 @@
 using DeskAI.App.Composition;
 using DeskAI.App.Navigation;
 using DeskAI.App.Services;
+using DeskAI.App.ViewModels;
 using DeskAI.App.Views;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Rules;
@@ -129,6 +130,17 @@ public partial class App : Application
                 }
 
                 services.AddSingleton<IShellStarter, WindowsShellStarter>();
+
+                // The real Ctrl + Alt + Space (ADR 0047) replaces the one that never listens. In the
+                // UI preview too, so the owner can try the real shortcut on generated folders.
+                foreach (var existing in services
+                    .Where(descriptor => descriptor.ServiceType == typeof(IQuickSearchHotKey))
+                    .ToArray())
+                {
+                    services.Remove(existing);
+                }
+
+                services.AddSingleton<IQuickSearchHotKey, GlobalHotKey>();
                 services.AddTransient<DashboardPage>();
                 services.AddTransient<OrganizePage>();
                 services.AddTransient<SearchPage>();
@@ -178,6 +190,10 @@ public partial class App : Application
 #if !DESKAI_UI_PREVIEW
             await ConnectTheBackgroundPresenceAsync(window);
 #endif
+
+            // After the icon: the controller's first Refresh has run, so quick search sees the
+            // stored checking mode when it asks to keep DeskAI near the clock.
+            await ConnectQuickSearchAsync(window);
         }
         catch (Exception exception)
         {
@@ -235,6 +251,53 @@ public partial class App : Application
     }
 
     /// <summary>
+    /// Starts listening for Ctrl + Alt + Space when quick search is on, and joins the shortcut and
+    /// the icon's "Find a file" to the bar (ADR 0047).
+    /// </summary>
+    /// <remarks>
+    /// The bar is a second window that is only ever hidden. When the main window really closes,
+    /// the bar closes with it, so no hidden window can keep DeskAI running with no way to stop it.
+    /// </remarks>
+    private async Task ConnectQuickSearchAsync(MainWindow window)
+    {
+        var bar = new QuickSearchWindow(_host.Services.GetRequiredService<QuickSearchViewModel>());
+        var hotKey = _host.Services.GetRequiredService<IQuickSearchHotKey>();
+        if (hotKey is GlobalHotKey global)
+        {
+            global.EnsureMessageWindow();
+        }
+
+        hotKey.Pressed += (_, _) => window.DispatcherQueue.TryEnqueue(() => ToggleBar(bar));
+        _host.Services.GetRequiredService<BackgroundPresenceController>().FindRequested +=
+            (_, _) => window.DispatcherQueue.TryEnqueue(bar.ShowNearPointer);
+        bar.ViewModel.OpenDeskAiRequested += (_, route) => window.DispatcherQueue.TryEnqueue(() =>
+        {
+            bar.HideBar();
+            window.Reveal();
+            window.GoTo(route, fresh: true);
+        });
+        window.Closed += (_, _) =>
+        {
+            hotKey.Listen(false);
+            bar.Close();
+        };
+        await _host.Services.GetRequiredService<QuickSearchSwitch>().ApplyStoredAsync();
+    }
+
+    /// <summary>The shortcut shows the bar, and pressed again while it shows, hides it.</summary>
+    private static void ToggleBar(QuickSearchWindow bar)
+    {
+        if (bar.AppWindow.IsVisible)
+        {
+            bar.HideBar();
+        }
+        else
+        {
+            bar.ShowNearPointer();
+        }
+    }
+
+    /// <summary>
     /// Shows the window again, on the UI thread whatever thread asked.
     /// </summary>
     /// <remarks>
@@ -269,6 +332,7 @@ public partial class App : Application
         try
         {
             window.AllowTheRealClose();
+            _host.Services.GetRequiredService<IQuickSearchHotKey>().Listen(false);
             presence.Hide();
             await _host.StopAsync();
         }

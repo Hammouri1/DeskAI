@@ -13,6 +13,9 @@ public sealed class BuddyTileViewModel(SearchBuddy buddy) : ObservableObject
 
     public string Name { get; } = SearchBuddyLines.Name(buddy);
 
+    /// <summary>What a screen reader says for the tile's button, e.g. "Choose Sparky".</summary>
+    public string ChooseName => $"Choose {Name}";
+
     public bool IsChosen { get => _isChosen; set => SetProperty(ref _isChosen, value); }
 }
 

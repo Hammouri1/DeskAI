@@ -82,6 +82,54 @@
                     <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
                                Visibility="{x:Bind ViewModel.HasLookMessage, Mode=OneWay}"
                                Text="{x:Bind ViewModel.LookMessage, Mode=OneWay}" />
+                </StackPanel>
+
+                <!-- Quick search (ADR 0047): the switch, what closing means, and the seven buddies. -->
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock Style="{StaticResource SectionTitleStyle}" Text="Quick search" />
+                        <controls:HelpButton Topic="workspace.quicksearch" />
+                    </StackPanel>
+                    <ToggleSwitch x:Name="QuickSearchSwitch"
+                                  Header="Press Ctrl + Alt + Space to find a file"
+                                  IsOn="{x:Bind ViewModel.QuickSearch.IsOn, Mode=OneWay}"
+                                  Toggled="OnQuickSearchToggled" />
+                    <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="620" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Text="{x:Bind viewmodels:QuickSearchCardViewModel.WorksWhen}" />
+                    <TextBlock Foreground="{ThemeResource DeskCautionBrush}" MaxWidth="620" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Visibility="{x:Bind ViewModel.QuickSearch.HasShortcutProblem, Mode=OneWay}"
+                               Text="{x:Bind ViewModel.QuickSearch.ShortcutProblem, Mode=OneWay}" />
+                    <TextBlock Style="{StaticResource GroupLabelStyle}" Text="Your search buddy" />
+                    <ItemsControl ItemsSource="{x:Bind ViewModel.QuickSearch.Buddies}"
+                                  AutomationProperties.Name="Search buddies">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="160" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:BuddyTileViewModel">
+                                <Border Style="{StaticResource RowCardStyle}" Width="150" Margin="0,0,10,10">
+                                    <StackPanel Spacing="6" HorizontalAlignment="Center">
+                                        <!-- The buddy's picture; it is drawn by BuddyFactory when the tile loads. -->
+                                        <ContentControl Width="64" Height="64" HorizontalAlignment="Center" IsTabStop="False"
+                                                        Tag="{x:Bind}" Loaded="OnBuddyPictureLoaded" />
+                                        <TextBlock FontWeight="SemiBold" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
+                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}" Text="{x:Bind Name}" />
+                                        <Border Style="{StaticResource AccentPillStyle}" Padding="8,2" HorizontalAlignment="Center"
+                                                Visibility="{x:Bind IsChosen, Mode=OneWay}">
+                                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                                <FontIcon FontSize="10" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
+                                                <TextBlock Style="{StaticResource PillTextStyle}" FontSize="11" Text="Chosen" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Button Content="Choose" HorizontalAlignment="Center" Tag="{x:Bind}" Click="OnChooseBuddyClicked"
+                                                AutomationProperties.Name="{x:Bind ChooseName}" />
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
                 </StackPanel></StackPanel></PivotItem><PivotItem Header="Shortcuts"><StackPanel Spacing="22" Margin="0,12,0,8"><Border Style="{StaticResource CardStyle}">
                     <StackPanel Spacing="14">
                         <StackPanel Orientation="Horizontal" Spacing="8">

@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The quick search bar (ADR 0047), layout C: the buddy perched above the box, results below.
+  Uses the planned fallback shape: the whole window is the bar's navy, with a strip on top for the
+  buddy, rather than a see-through window around it.
+-->
+<Window
+    x:Class="DeskAI.App.Views.QuickSearchWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewmodels="using:DeskAI.App.ViewModels"
+    Title="DeskAI quick search">
+
+    <!-- Acrylic behind the translucent navy, so the bar looks like the mockup without a see-through window. -->
+    <Window.SystemBackdrop>
+        <DesktopAcrylicBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid
+        x:Name="Root"
+        Width="640"
+        VerticalAlignment="Top"
+        Background="#E60B1726"
+        BorderBrush="{ThemeResource DeskAccentBrush}"
+        BorderThickness="1"
+        CornerRadius="0"
+        PreviewKeyDown="OnKeyDown"
+        RequestedTheme="Dark"
+        RowDefinitions="Auto,Auto">
+        <Grid.Resources>
+            <DataTemplate x:Key="QuickRowTemplate" x:DataType="viewmodels:QuickSearchRowViewModel">
+                <Grid Padding="10,6" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" CornerRadius="8">
+                    <!-- The selected row: what Enter will do. -->
+                    <Border
+                        Grid.ColumnSpan="3"
+                        Margin="-10,-6"
+                        Background="#143FD9A8"
+                        BorderBrush="{ThemeResource DeskAccentBrush}"
+                        BorderThickness="1"
+                        CornerRadius="8"
+                        Visibility="{x:Bind IsSelected, Mode=OneWay}" />
+                    <FontIcon VerticalAlignment="Center" FontSize="18" Glyph="{x:Bind Glyph}" />
+                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                        <TextBlock FontWeight="SemiBold" Text="{x:Bind Name}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Style="{StaticResource CaptionStyle}" Text="{x:Bind Where}" TextTrimming="CharacterEllipsis" />
+                        <TextBlock Style="{StaticResource CaptionStyle}" Text="{x:Bind Snippet}" TextTrimming="CharacterEllipsis" Visibility="{x:Bind HasSnippet}" />
+                    </StackPanel>
+                    <Button Grid.Column="2" VerticalAlignment="Center" Click="OnRowButtonClicked" Content="{x:Bind ActionText}" Tag="{x:Bind}" />
+                </Grid>
+            </DataTemplate>
+        </Grid.Resources>
+
+        <!-- The buddy, perched on the bar's top edge. Decorative for screen readers: its line is announced instead. -->
+        <StackPanel
+            Margin="0,10,0,-6"
+            HorizontalAlignment="Center"
+            Orientation="Horizontal"
+            Spacing="10">
+            <ContentControl
+                x:Name="BuddyHost"
+                Width="72"
+                Height="72"
+                AutomationProperties.AccessibilityView="Raw"
+                IsTabStop="False"
+                Tapped="OnBuddyTapped" />
+            <Border
+                MaxWidth="360"
+                Padding="12,8"
+                VerticalAlignment="Center"
+                Background="#1F3FD9A8"
+                BorderBrush="{ThemeResource DeskAccentBrush}"
+                BorderThickness="1"
+                CornerRadius="14">
+                <TextBlock
+                    AutomationProperties.LiveSetting="Polite"
+                    Text="{x:Bind ViewModel.BuddyLine, Mode=OneWay}"
+                    TextWrapping="Wrap" />
+            </Border>
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Padding="14" Spacing="8">
+            <TextBox
+                x:Name="Box"
+                AutomationProperties.Name="Find a file"
+                FontSize="18"
+                PlaceholderText="Find a file"
+                Text="{x:Bind ViewModel.Phrase, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+
+            <ItemsControl ItemsSource="{x:Bind viewmodels:QuickSearchViewModel.Examples}" Visibility="{x:Bind ViewModel.ShowsExamples, Mode=OneWay}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="8" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="x:String">
+                        <Button Click="OnExampleClicked" Content="{x:Bind}" Tag="{x:Bind}" />
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <TextBlock x:Name="NameHeader" Style="{StaticResource CaptionStyle}" Text="By name" Visibility="Collapsed" />
+            <ItemsControl ItemTemplate="{StaticResource QuickRowTemplate}" ItemsSource="{x:Bind ViewModel.NameRows}" />
+            <TextBlock Style="{StaticResource BodySecondaryStyle}" Text="{x:Bind ViewModel.NameFact, Mode=OneWay}" TextWrapping="Wrap" Visibility="{x:Bind ViewModel.HasNameFact, Mode=OneWay}" />
+
+            <TextBlock Style="{StaticResource CaptionStyle}" Text="Words inside" Visibility="{x:Bind ViewModel.ShowsInsideGroup, Mode=OneWay}" />
+            <ItemsControl ItemTemplate="{StaticResource QuickRowTemplate}" ItemsSource="{x:Bind ViewModel.InsideRows}" />
+            <TextBlock Style="{StaticResource BodySecondaryStyle}" Text="{x:Bind ViewModel.InsideFact, Mode=OneWay}" TextWrapping="Wrap" Visibility="{x:Bind ViewModel.HasInsideFact, Mode=OneWay}" />
+
+            <TextBlock Foreground="{ThemeResource DeskCautionBrush}" Text="{x:Bind ViewModel.OpenMessage, Mode=OneWay}" TextWrapping="Wrap" Visibility="{x:Bind ViewModel.HasOpenMessage, Mode=OneWay}" />
+
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Click="OnSeeMoreClicked" Content="See more in DeskAI" Visibility="{x:Bind ViewModel.ShowsSeeMore, Mode=OneWay}" />
+                <Button Click="OnOpenDeskAiClicked" Content="Open DeskAI" Style="{StaticResource AccentButtonStyle}" Visibility="{x:Bind ViewModel.ShowsOpenDeskAi, Mode=OneWay}" />
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Window>

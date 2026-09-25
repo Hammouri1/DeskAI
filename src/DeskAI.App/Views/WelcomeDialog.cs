@@ -86,6 +86,17 @@ internal static class WelcomeDialog
         }
 
         page.Children.Add(dots);
+        if (welcome.Current.ShowsBuddy)
+        {
+            // Sparky, the quick search buddy (ADR 0047). Decorative: the body line says what matters.
+            page.Children.Add(new Buddies.SparkyBuddy
+            {
+                Width = 96,
+                Height = 96,
+                HorizontalAlignment = HorizontalAlignment.Left,
+            });
+        }
+
         if (welcome.Current.Body.Length > 0)
         {
             page.Children.Add(new TextBlock { Text = welcome.Current.Body, TextWrapping = TextWrapping.Wrap });

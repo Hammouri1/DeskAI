@@ -98,6 +98,7 @@ public sealed class HelpCatalogTests
     [InlineData("settings.key")]
     [InlineData("settings.dailyLimit")]
     [InlineData("shell.scope")]
+    [InlineData("workspace.quicksearch")]
     public void Each_feature_the_design_names_has_help(string id) =>
         Assert.NotNull(HelpCatalog.Find(id));
 
