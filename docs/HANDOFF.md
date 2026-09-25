@@ -18,9 +18,15 @@ date, and size (no AI, nothing saved); Enter opens allow-listed file types in th
 everything else only gets Show in folder; closing the window now keeps DeskAI near the clock while
 quick search is on; a new welcome page and a tip on Home and Search. It needs ADR 0047 and a
 security review first (DeskAI's first "open a file" action; amends ADR 0025).
-**State of that task:** the spec is written and committed; **the owner has not yet reviewed it.**
-Next steps in order: the owner reviews the spec → write the implementation plan with the
-writing-plans skill in `docs/superpowers/plans/` → the owner picks how to run it → build.
+**State of that task (2026-09-25):** the owner reviewed and approved the spec with one change:
+**the bar also reads inside files** (only where Search's "Read inside files" permission was given,
+same limits, never the scanned-PDF reader), starting by itself after a short pause in typing. They
+confirmed no AI in the bar and on by default. All of it is in the spec's decisions 16–19 and its
+"Rulings made while planning". **The implementation plan is written:
+`docs/superpowers/plans/2026-09-25-quick-search.md`** (15 tasks: ADR 0047 and review → Core → the
+file launcher → the bar's behaviour → switch, icon near the clock, closing → tip and welcome → the
+window with Sparky → six buddies one by one → docs and review). Next: the owner reviews the plan
+and picks how to run it (one by one here, or a fresh helper per task). Nothing is built yet.
 The owner said to keep asking questions whenever something is unclear ("always better").
 
 **Kept for later (owner, 2026-09-25):** Desktop Studio cards for Downloads; the buddy inside
