@@ -1,5 +1,6 @@
 using DeskAI.App.ViewModels;
 using DeskAI.Core.Abstractions;
+using DeskAI.Core.Classification;
 using DeskAI.Core.Content;
 using DeskAI.Core.QuickSearch;
 using DeskAI.Core.Roots;
@@ -346,6 +347,25 @@ public sealed class QuickSearchPageTests
 
         Assert.True(reader.WasCancelled);
         Assert.False(bar.IsLookingInside);
+    }
+
+    [Theory]
+    [InlineData("Notes.docx", FileCategory.Documents, OpenChoice.Open, "DOC", "doc", "Open ↵")]
+    [InlineData("Slides.pptx", FileCategory.Presentations, OpenChoice.Open, "DOC", "doc", "Open ↵")]
+    [InlineData("Budget.xlsx", FileCategory.Spreadsheets, OpenChoice.Open, "DOC", "doc", "Open ↵")]
+    [InlineData("Lesson handout.PDF", FileCategory.Documents, OpenChoice.Open, "PDF", "pdf", "Open ↵")]
+    [InlineData("Beach.jpg", FileCategory.Images, OpenChoice.Open, "IMG", "img", "Open ↵")]
+    [InlineData("Screen 1.png", FileCategory.Screenshots, OpenChoice.Open, "IMG", "img", "Open ↵")]
+    [InlineData("Trip.mp4", FileCategory.Videos, OpenChoice.Open, "VID", "vid", "Open ↵")]
+    [InlineData("setup.exe", FileCategory.Installers, OpenChoice.ShowInFolderOnly, "FILE", "file", "Show in folder ↵")]
+    public void Each_row_shows_what_kind_of_file_it_is_and_what_Enter_does(
+        string name, FileCategory category, OpenChoice choice, string label, string key, string hint)
+    {
+        var row = new QuickSearchRowViewModel(new QuickSearchRow(Guid.NewGuid(), name, name, "Downloads", category, choice));
+
+        Assert.Equal(label, row.KindLabel);
+        Assert.Equal(key, row.KindKey);
+        Assert.Equal(hint, row.EnterHint);
     }
 
     private static async Task TypeAsync(QuickSearchViewModel bar, string words)

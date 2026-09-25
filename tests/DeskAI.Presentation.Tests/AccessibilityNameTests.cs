@@ -48,7 +48,8 @@ public sealed partial class AccessibilityNameTests
         var app = Path.Combine(RepositoryRoot(), "src", "DeskAI.App");
         var files = Directory.EnumerateFiles(Path.Combine(app, "Views"), "*.xaml")
             .Append(Path.Combine(app, "MainWindow.xaml"));
-        var pattern = new Regex($@"<{control}\b[^>]*?(/>|>)", RegexOptions.Singleline);
+        // "(?![.\w])": a property element such as <TextBox.Resources> is part of a control, not another one.
+        var pattern = new Regex($@"<{control}(?![.\w])[^>]*?(/>|>)", RegexOptions.Singleline);
         foreach (var file in files)
         {
             foreach (Match match in pattern.Matches(File.ReadAllText(file)))

@@ -47,6 +47,34 @@ public sealed class QuickSearchLayoutTests
     }
 
     [Fact]
+    public void The_bar_has_a_search_icon_an_Esc_hint_and_an_edge_that_turns_only_while_buddies_may_move()
+    {
+        var xaml = Read("src", "DeskAI.App", "Views", "QuickSearchWindow.xaml");
+        var code = Read("src", "DeskAI.App", "Views", "QuickSearchWindow.xaml.cs");
+
+        Assert.Contains("Glyph=\"&#xE721;\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("Text=\"Esc\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"EdgeAngle\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("CornerRadius=\"20\"", xaml, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"if \(_motion\.IsOn\)\s*\{\s*_edgeTurn\.Begin\(\);", RegexOptions.None, TimeSpan.FromSeconds(1)), code);
+        Assert.Contains("_edgeTurn.Stop();", code, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Owner-found 2026-09-25 in the see-through probe: the card was 95% opaque, so text behind it
+    /// showed through the middle of the box. Only the glow around the card may be see-through.
+    /// </summary>
+    [Fact]
+    public void The_card_is_solid_and_only_the_glow_around_it_is_see_through()
+    {
+        var xaml = Read("src", "DeskAI.App", "Views", "QuickSearchWindow.xaml");
+
+        Assert.Contains("<views:SeeThroughBackdrop />", xaml, StringComparison.Ordinal);
+        Assert.Contains("Background=\"#FF0B1624\"", xaml, StringComparison.Ordinal);
+        Assert.DoesNotContain("#F20B1624", xaml, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Snippets_are_plain_text()
     {
         var xaml = Read("src", "DeskAI.App", "Views", "QuickSearchWindow.xaml");

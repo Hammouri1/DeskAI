@@ -27,6 +27,15 @@ public sealed class QuickSearchRowViewModel(QuickSearchRow row) : ObservableObje
 
     public string ActionText => Row.Choice == OpenChoice.Open ? "Open" : "Show in folder";
 
+    /// <summary>The coloured tile's key: document blue, PDF red, picture orange, video violet, anything else grey.</summary>
+    public string KindKey { get; } = KindOf(row);
+
+    /// <summary>The short word on the tile.</summary>
+    public string KindLabel => KindKey.ToUpperInvariant();
+
+    /// <summary>What Enter does on the selected row.</summary>
+    public string EnterHint => ActionText + " ↵";
+
     public string Glyph => Row.Category switch
     {
         FileCategory.Images or FileCategory.Screenshots => "",
@@ -40,6 +49,15 @@ public sealed class QuickSearchRowViewModel(QuickSearchRow row) : ObservableObje
         get => _isSelected;
         set => SetProperty(ref _isSelected, value);
     }
+
+    private static string KindOf(QuickSearchRow row) => row.Category switch
+    {
+        _ when row.Name.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) => "pdf",
+        FileCategory.Images or FileCategory.Screenshots => "img",
+        FileCategory.Videos => "vid",
+        FileCategory.Documents or FileCategory.Presentations or FileCategory.Spreadsheets => "doc",
+        _ => "file",
+    };
 
     private static string OneLine(string text)
     {
