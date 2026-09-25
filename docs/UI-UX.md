@@ -354,8 +354,15 @@ Spec: `docs/superpowers/specs/2026-09-25-quick-search-design.md`.
   **Shortcut** drop-down with Ctrl + Alt + D (the default), Ctrl + Alt + Space, and Ctrl + Shift +
   Space, which DeskAI listens for at once; if another program uses the one picked: "Another program
   already uses {shortcut}. Pick another shortcut above." (nothing listens until another is picked);
-  a line saying closing keeps DeskAI near the clock, and **Your search buddy**: seven tiles with a
-  still picture, the name, a "Chosen" pill, and **Choose**.
+  a line saying closing keeps DeskAI near the clock, and **Your search buddy** (chooser B, "Big
+  stage and faces", 2026-09-25): a stage about 240 × 230 with the chosen buddy large on its own
+  background (night, study, lab, forest, sea, meadow, dusk) and a mint edge; beside it the buddy's
+  name and its hello line in a mint-to-blue bubble; under them seven round faces (60 px, a mint
+  ring on the chosen one). Clicking a face, or moving to it with the arrow keys, chooses it at once;
+  the new buddy pops in when **Let my buddy move** is on. Screen readers hear a radio group "Search
+  buddies", each face as "Choose Archie the owl" with whether it is chosen, and the new name and
+  line announced politely; the stage drawing is silent. Under the chooser: the **Let my buddy
+  move** switch and "Turn this off to keep your buddy and the search bar still."
 - **Welcome.** A page before the last: "Find any file, from anywhere", with Sparky and the shortcut
   the person picked.
 - **Icon near the clock.** Its menu is Open DeskAI, **Find a file** (while quick search is on),

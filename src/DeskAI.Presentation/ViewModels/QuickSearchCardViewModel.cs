@@ -4,7 +4,7 @@ using DeskAI.Core.QuickSearch;
 
 namespace DeskAI.App.ViewModels;
 
-/// <summary>One buddy's tile on the Quick search card.</summary>
+/// <summary>One buddy on the Quick search card: its face, and what the stage shows when it is chosen.</summary>
 public sealed class BuddyTileViewModel(SearchBuddy buddy) : ObservableObject
 {
     private bool _isChosen;
@@ -13,13 +13,28 @@ public sealed class BuddyTileViewModel(SearchBuddy buddy) : ObservableObject
 
     public string Name { get; } = SearchBuddyLines.Name(buddy);
 
+    /// <summary>What the buddy says on the stage: its hello.</summary>
+    public string HelloLine { get; } = SearchBuddyLines.Line(buddy, BuddyMood.Idle);
+
+    /// <summary>The stage's colours, named as in the mockup: night, study, lab, forest, sea, meadow, dusk.</summary>
+    public string Stage { get; } = buddy switch
+    {
+        SearchBuddy.Archie => "study",
+        SearchBuddy.Pip => "lab",
+        SearchBuddy.Fetch => "forest",
+        SearchBuddy.Inky => "sea",
+        SearchBuddy.Mochi => "meadow",
+        SearchBuddy.Paige => "dusk",
+        _ => "night",
+    };
+
     /// <summary>What a screen reader says for the tile's button, e.g. "Choose Sparky".</summary>
     public string ChooseName => $"Choose {Name}";
 
     public bool IsChosen { get => _isChosen; set => SetProperty(ref _isChosen, value); }
 }
 
-/// <summary>The Quick search card on My workspace: the switch, the shortcut, the seven buddies, and a shortcut problem.</summary>
+/// <summary>The Quick search card on My workspace: the switch, the shortcut, the buddy stage and faces, and a shortcut problem.</summary>
 public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings, QuickSearchSwitch quickSwitch, IQuickSearchHotKey hotKey, BuddyMotion motion) : ObservableObject
 {
     public const string WorksWhenLine =
@@ -34,6 +49,7 @@ public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings
     private string _shortcutProblem = string.Empty;
     private QuickSearchShortcut _shortcut = QuickSearchShortcuts.Default;
     private bool _letsBuddyMove = true;
+    private BuddyTileViewModel? _chosen;
 
     /// <summary>The same line, for the page to bind to.</summary>
     public static string WorksWhen => WorksWhenLine;
@@ -69,6 +85,12 @@ public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings
 
     public IReadOnlyList<BuddyTileViewModel> Buddies { get; } =
         Enum.GetValues<SearchBuddy>().Select(buddy => new BuddyTileViewModel(buddy)).ToArray();
+
+    /// <summary>The buddy on the stage. Sparky until the stored choice is read.</summary>
+    public BuddyTileViewModel Chosen => _chosen ?? Buddies[0];
+
+    /// <summary>The chosen face's place in the row: the buddies are listed in the enum's order.</summary>
+    public int ChosenIndex => (int)Chosen.Buddy;
 
     public bool IsOn { get => _isOn; private set => SetProperty(ref _isOn, value); }
 
@@ -126,6 +148,10 @@ public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings
         {
             tile.IsChosen = tile.Buddy == buddy;
         }
+
+        _chosen = Buddies.First(tile => tile.IsChosen);
+        OnPropertyChanged(nameof(Chosen));
+        OnPropertyChanged(nameof(ChosenIndex));
     }
 
     private void Report(HotKeyState state) => ShortcutProblem = state == HotKeyState.TakenByAnotherProgram

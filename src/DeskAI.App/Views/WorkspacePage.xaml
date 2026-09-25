@@ -7,6 +7,53 @@
     xmlns:views="using:DeskAI.App.Views"
     xmlns:controls="using:DeskAI.App.Controls"
     Background="{ThemeResource DeskGroundBrush}">
+    <Page.Resources>
+        <!-- A buddy's round face on the Quick search card: a mint ring when chosen, a little bigger under the pointer. -->
+        <Style x:Key="BuddyFaceStyle" TargetType="RadioButton">
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="MinWidth" Value="0" />
+            <Setter Property="UseSystemFocusVisuals" Value="True" />
+            <Setter Property="FocusVisualMargin" Value="-4" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Grid Width="60" Height="60" Background="Transparent" RenderTransformOrigin="0.5,0.5">
+                            <Grid.RenderTransform>
+                                <ScaleTransform x:Name="FaceScale" />
+                            </Grid.RenderTransform>
+                            <VisualStateManager.VisualStateGroups>
+                                <VisualStateGroup x:Name="CommonStates">
+                                    <VisualState x:Name="Normal" />
+                                    <VisualState x:Name="PointerOver">
+                                        <VisualState.Setters>
+                                            <Setter Target="FaceScale.ScaleX" Value="1.08" />
+                                            <Setter Target="FaceScale.ScaleY" Value="1.08" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Pressed" />
+                                    <VisualState x:Name="Disabled" />
+                                </VisualStateGroup>
+                                <VisualStateGroup x:Name="CheckStates">
+                                    <VisualState x:Name="Checked">
+                                        <VisualState.Setters>
+                                            <Setter Target="Ring.Stroke" Value="#3FD9A8" />
+                                            <Setter Target="Halo.Opacity" Value="1" />
+                                        </VisualState.Setters>
+                                    </VisualState>
+                                    <VisualState x:Name="Unchecked" />
+                                    <VisualState x:Name="Indeterminate" />
+                                </VisualStateGroup>
+                            </VisualStateManager.VisualStateGroups>
+                            <Ellipse x:Name="Halo" Margin="-5" Stroke="#403FD9A8" StrokeThickness="3" Opacity="0" />
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                              Content="{TemplateBinding Content}" ContentTemplate="{TemplateBinding ContentTemplate}" />
+                            <Ellipse x:Name="Ring" Stroke="#22384F" StrokeThickness="2" />
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Page.Resources>
     <Grid>
         <ScrollViewer>
             <StackPanel Style="{StaticResource PageContentStyle}">
@@ -106,36 +153,55 @@
                     <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="620" HorizontalAlignment="Left" TextWrapping="Wrap"
                                Text="{x:Bind viewmodels:QuickSearchCardViewModel.WorksWhen}" />
                     <TextBlock Style="{StaticResource GroupLabelStyle}" Text="Your search buddy" />
-                    <ItemsControl ItemsSource="{x:Bind ViewModel.QuickSearch.Buddies}"
-                                  AutomationProperties.Name="Search buddies">
-                        <ItemsControl.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="160" />
-                            </ItemsPanelTemplate>
-                        </ItemsControl.ItemsPanel>
-                        <ItemsControl.ItemTemplate>
-                            <DataTemplate x:DataType="viewmodels:BuddyTileViewModel">
-                                <Border Style="{StaticResource RowCardStyle}" Width="150" Margin="0,0,10,10">
-                                    <StackPanel Spacing="6" HorizontalAlignment="Center">
-                                        <!-- The buddy's picture; it is drawn by BuddyFactory when the tile loads. -->
-                                        <ContentControl Width="64" Height="64" HorizontalAlignment="Center" IsTabStop="False"
-                                                        Tag="{x:Bind}" Loaded="OnBuddyPictureLoaded" />
-                                        <TextBlock FontWeight="SemiBold" HorizontalAlignment="Center" TextAlignment="Center" TextWrapping="Wrap"
-                                                   Foreground="{ThemeResource DeskTextPrimaryBrush}" Text="{x:Bind Name}" />
-                                        <Border Style="{StaticResource AccentPillStyle}" Padding="8,2" HorizontalAlignment="Center"
-                                                Visibility="{x:Bind IsChosen, Mode=OneWay}">
-                                            <StackPanel Orientation="Horizontal" Spacing="5">
-                                                <FontIcon FontSize="10" Glyph="&#xE73E;" Foreground="{ThemeResource DeskAccentBrush}" />
-                                                <TextBlock Style="{StaticResource PillTextStyle}" FontSize="11" Text="Chosen" />
-                                            </StackPanel>
-                                        </Border>
-                                        <Button Content="Choose" HorizontalAlignment="Center" Tag="{x:Bind}" Click="OnChooseBuddyClicked"
-                                                AutomationProperties.Name="{x:Bind ChooseName}" />
-                                    </StackPanel>
+                    <TextBlock Style="{StaticResource CaptionStyle}" Text="Click a face to pick your buddy." />
+                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="18">
+                        <!-- The stage: the chosen buddy, large. Decorative; the name and line beside it say who it is. -->
+                        <Border x:Name="BuddyStage"
+                                Width="240" Height="230" CornerRadius="18"
+                                BorderBrush="#803FD9A8" BorderThickness="1.5"
+                                AutomationProperties.AccessibilityView="Raw">
+                            <ContentControl x:Name="BuddyStageHost" Width="170" Height="170" IsTabStop="False"
+                                            HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Center">
+                            <StackPanel Spacing="10" AutomationProperties.LiveSetting="Polite">
+                                <TextBlock FontSize="20" FontWeight="Bold" TextWrapping="Wrap"
+                                           Foreground="{ThemeResource DeskTextPrimaryBrush}"
+                                           Text="{x:Bind ViewModel.QuickSearch.Chosen.Name, Mode=OneWay}" />
+                                <Border HorizontalAlignment="Left" Padding="12,7" CornerRadius="14,14,14,4">
+                                    <Border.Background>
+                                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                            <GradientStop Offset="0" Color="#3FD9A8" />
+                                            <GradientStop Offset="1" Color="#6A8CFF" />
+                                        </LinearGradientBrush>
+                                    </Border.Background>
+                                    <TextBlock FontSize="13" FontWeight="Bold" Foreground="#04121C" TextWrapping="Wrap"
+                                               Text="{x:Bind ViewModel.QuickSearch.Chosen.HelloLine, Mode=OneWay}" />
                                 </Border>
-                            </DataTemplate>
-                        </ItemsControl.ItemTemplate>
-                    </ItemsControl>
+                            </StackPanel>
+                            <RadioButtons x:Name="BuddyFaces"
+                                          AutomationProperties.Name="Search buddies"
+                                          MaxColumns="7"
+                                          ItemsSource="{x:Bind ViewModel.QuickSearch.Buddies}"
+                                          SelectedIndex="{x:Bind ViewModel.QuickSearch.ChosenIndex, Mode=OneWay}"
+                                          SelectionChanged="OnBuddyFaceChosen">
+                                <RadioButtons.ItemTemplate>
+                                    <DataTemplate x:DataType="viewmodels:BuddyTileViewModel">
+                                        <RadioButton Style="{StaticResource BuddyFaceStyle}"
+                                                     AutomationProperties.Name="{x:Bind ChooseName}"
+                                                     ToolTipService.ToolTip="{x:Bind Name}">
+                                            <Grid Width="56" Height="56">
+                                                <Ellipse Tag="{x:Bind Stage}" Loaded="OnFaceBackgroundLoaded" />
+                                                <!-- The buddy's still picture; drawn by BuddyFactory when the face loads. -->
+                                                <ContentControl Width="46" Height="46" IsTabStop="False"
+                                                                Tag="{x:Bind}" Loaded="OnBuddyPictureLoaded" />
+                                            </Grid>
+                                        </RadioButton>
+                                    </DataTemplate>
+                                </RadioButtons.ItemTemplate>
+                            </RadioButtons>
+                        </StackPanel>
+                    </Grid>
                     <ToggleSwitch x:Name="BuddyMotionSwitch"
                                   Header="Let my buddy move"
                                   IsOn="{x:Bind ViewModel.QuickSearch.LetsBuddyMove, Mode=OneWay}"

@@ -135,7 +135,7 @@ with your search buddy sitting on it.
 - If a file moved or was renamed since DeskAI last looked, the bar says so and opens nothing.
   Press **Refresh** on Search so DeskAI catches up.
 
-**Your search buddy.** On **My workspace**, choose one of seven: Sparky, Archie the owl, Pip the
+**Your search buddy.** On **My workspace**, click a face to choose one of seven: Sparky, Archie the owl, Pip the
 robot, Fetch the fox, Inky the octopus, Mochi, or Paige the paper ghost. Each has its own way of
 talking and moving; click it in the bar for a happy moment. To keep your buddy and the search bar
 still, turn off **Let my buddy move** on My workspace.

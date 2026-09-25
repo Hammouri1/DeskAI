@@ -218,6 +218,60 @@ public sealed class QuickSearchSettingsPageTests
     }
 
     [Fact]
+    public async Task The_stage_starts_with_Sparky_at_night()
+    {
+        await using var app = await TestApp.StartAsync();
+        var card = await OpenCardAsync(app);
+
+        Assert.Equal("Sparky", card.Chosen.Name);
+        Assert.Equal("Hi! What are we looking for?", card.Chosen.HelloLine);
+        Assert.Equal("night", card.Chosen.Stage);
+        Assert.Equal(0, card.ChosenIndex);
+    }
+
+    [Fact]
+    public async Task Choosing_a_face_saves_the_buddy_and_the_stage_shows_its_name_and_hello()
+    {
+        await using var app = await TestApp.StartAsync();
+        var card = await OpenCardAsync(app);
+        var changed = new List<string?>();
+        card.PropertyChanged += (_, args) => changed.Add(args.PropertyName);
+
+        await card.ChooseBuddyAsync(SearchBuddy.Paige);
+
+        Assert.Equal("Paige the paper ghost", card.Chosen.Name);
+        Assert.Equal("Boo! Looking for something?", card.Chosen.HelloLine);
+        Assert.Equal("dusk", card.Chosen.Stage);
+        Assert.Equal(6, card.ChosenIndex);
+        Assert.Contains(nameof(QuickSearchCardViewModel.Chosen), changed);
+
+        await using var reopened = await app.ReopenAsync();
+        Assert.Equal("Paige the paper ghost", (await OpenCardAsync(reopened)).Chosen.Name);
+    }
+
+    [Fact]
+    public async Task Choosing_faces_one_after_another_keeps_exactly_one_chosen()
+    {
+        await using var app = await TestApp.StartAsync();
+        var card = await OpenCardAsync(app);
+
+        foreach (var buddy in new[] { SearchBuddy.Archie, SearchBuddy.Pip, SearchBuddy.Fetch, SearchBuddy.Pip })
+        {
+            await card.ChooseBuddyAsync(buddy);
+            Assert.Equal(buddy, Assert.Single(card.Buddies, tile => tile.IsChosen).Buddy);
+            Assert.Equal(buddy, card.Chosen.Buddy);
+        }
+    }
+
+    [Fact]
+    public void Every_buddy_has_its_own_stage()
+    {
+        var stages = Enum.GetValues<SearchBuddy>().Select(buddy => new BuddyTileViewModel(buddy).Stage).ToArray();
+
+        Assert.Equal(["night", "study", "lab", "forest", "sea", "meadow", "dusk"], stages);
+    }
+
+    [Fact]
     public async Task The_welcome_buddy_follows_the_same_switch()
     {
         await using var app = await TestApp.StartAsync();

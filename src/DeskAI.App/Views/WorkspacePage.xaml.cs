@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.App.Views.Buddies;
@@ -7,6 +8,7 @@ using DeskAI.Core.Templates;
 using DeskAI.Core.Workspace;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Shapes;
 
 namespace DeskAI.App.Views;
 
@@ -103,6 +105,10 @@ public sealed partial class WorkspacePage : Page
     {
         Loaded -= OnLoaded;
         await ViewModel.InitializeAsync();
+        // The page and its view model are made fresh for each visit, so one handler per page is all there ever is.
+        ShowStage(popIn: false);
+        ViewModel.QuickSearch.PropertyChanged += OnQuickSearchCardChanged;
+        Unloaded += (_, _) => ViewModel.QuickSearch.PropertyChanged -= OnQuickSearchCardChanged;
     }
 
     /// <summary>
@@ -182,15 +188,51 @@ public sealed partial class WorkspacePage : Page
         }
     }
 
-    private async void OnChooseBuddyClicked(object sender, RoutedEventArgs e)
+    /// <summary>Clicking a face, or moving to it with the arrow keys, chooses that buddy at once.</summary>
+    private async void OnBuddyFaceChosen(object sender, SelectionChangedEventArgs e)
     {
-        if (sender is FrameworkElement { Tag: BuddyTileViewModel tile })
+        if (sender is RadioButtons { SelectedIndex: >= 0 } faces && faces.SelectedIndex != ViewModel.QuickSearch.ChosenIndex)
         {
-            await ViewModel.QuickSearch.ChooseBuddyAsync(tile.Buddy);
+            await ViewModel.QuickSearch.ChooseBuddyAsync((SearchBuddy)faces.SelectedIndex);
         }
     }
 
-    /// <summary>Draws each tile's buddy standing still in its Idle pose.</summary>
+    private void OnFaceBackgroundLoaded(object sender, RoutedEventArgs e)
+    {
+        if (sender is Ellipse { Tag: string stage } face)
+        {
+            face.Fill = BuddyStageBrushes.For(stage);
+        }
+    }
+
+    private void OnQuickSearchCardChanged(object? sender, PropertyChangedEventArgs e)
+    {
+        if (e.PropertyName == nameof(QuickSearchCardViewModel.Chosen))
+        {
+            ShowStage(popIn: true);
+        }
+    }
+
+    /// <summary>The chosen buddy, large, on its own background; it pops in when it changes and buddies may move.</summary>
+    private void ShowStage(bool popIn)
+    {
+        var chosen = ViewModel.QuickSearch.Chosen;
+        if (BuddyStageHost.Content is BuddyControl { Tag: SearchBuddy current } && current == chosen.Buddy)
+        {
+            return;
+        }
+
+        BuddyStage.Background = BuddyStageBrushes.For(chosen.Stage);
+        var buddy = BuddyFactory.Create(chosen.Buddy, ViewModel.QuickSearch.Motion);
+        buddy.Tag = chosen.Buddy;
+        BuddyStageHost.Content = buddy;
+        if (popIn && ViewModel.QuickSearch.Motion.IsOn)
+        {
+            BuddyAnimations.PopIn(BuddyStageHost, TimeSpan.Zero);
+        }
+    }
+
+    /// <summary>Draws each face's buddy standing still in its Idle pose.</summary>
     private void OnBuddyPictureLoaded(object sender, RoutedEventArgs e)
     {
         if (sender is ContentControl { Tag: BuddyTileViewModel tile, Content: null } host)

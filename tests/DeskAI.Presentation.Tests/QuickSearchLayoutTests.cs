@@ -124,6 +124,29 @@ public sealed class QuickSearchLayoutTests
         Assert.Contains("MotionSwitch = welcome.Motion", Read("src", "DeskAI.App", "Views", "WelcomeDialog.cs"), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Owner-found 2026-09-25: the tiles clipped their Choose button and Paige's name pushed hers
+    /// out of the card. The faces replace them: a named radio group, each face named and reporting
+    /// whether it is chosen, the stage decorative, the name and line announced.
+    /// </summary>
+    [Fact]
+    public void The_buddy_faces_are_a_named_radio_group_beside_a_decorative_stage()
+    {
+        var page = Read("src", "DeskAI.App", "Views", "WorkspacePage.xaml");
+        var start = page.IndexOf("Text=\"Your search buddy\"", StringComparison.Ordinal);
+        var end = page.IndexOf("Header=\"Let my buddy move\"", StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start, "The buddy chooser sits between its label and the motion switch.");
+        var workspace = page[start..end];
+
+        Assert.Contains("<RadioButtons", workspace, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.Name=\"Search buddies\"", workspace, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.Name=\"{x:Bind ChooseName}\"", workspace, StringComparison.Ordinal);
+        Assert.Contains("x:Name=\"BuddyStage\"", workspace, StringComparison.Ordinal);
+        Assert.Contains("AutomationProperties.LiveSetting=\"Polite\"", workspace, StringComparison.Ordinal);
+        Assert.DoesNotContain("VariableSizedWrapGrid", workspace, StringComparison.Ordinal);
+        Assert.DoesNotContain("Content=\"Choose\"", workspace, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Only_the_quick_search_bar_notice_is_skipped_when_quick_search_alone_keeps_DeskAI()
     {
