@@ -1,6 +1,27 @@
 # DeskAI — Coding Handoff
 
-## Start here (updated 2026-09-25, quick search built)
+## Start here (updated 2026-09-25, quick search polish designed)
+
+**Current task: quick search polish, designed and approved in chat, spec written, plan NOT yet
+written.** Spec: `docs/superpowers/specs/2026-09-25-quick-search-polish-design.md` (commit
+`6332945` on `quick-search`; mockups in `…-quick-search-polish-mockups/`). The owner tried quick
+search and reported: no animation (cause: Windows' Animation effects is off on their PC, and
+`BuddyControl` obeys it), the buddy chooser looks bad (clipped Choose button, Paige's name wraps),
+the bar is plain, and Ctrl + Alt + Space clashes with the Claude desktop app. **Owner's decisions
+(2026-09-25):** a fixed shortcut list on the Quick search card with **Ctrl + Alt + D** as the new
+default (plus Ctrl + Alt + Space, Ctrl + Shift + Space); a DeskAI switch **"Let my buddy move"**,
+on by default, that wins over Windows' setting; chooser **B · Big stage and faces**; bar
+**C · Glowing edge** (buddy perched on top, turning mint-to-rainbow edge, glow, opening
+animation), after a throwaway see-through-window probe (backup: buddy inside the card on the left).
+Build order: shortcut → motion switch → chooser → probe → new bar → docs and handoff; commit each
+step on `quick-search`; do not push or release.
+
+**Next step:** the owner was asked to review the written spec (the two small rulings in it: a
+refused shortcut does not fall back to the old one; the motion switch's line "Turn this off to keep
+your buddy and the search bar still."). Ask whether it is approved; then write the plan with the
+writing-plans skill (`docs/superpowers/plans/2026-09-25-quick-search-polish.md`), then build.
+
+## Earlier state (2026-09-25, quick search built)
 
 **Quick search is built, on branch `quick-search`** (from `main` at `e61e6e0`; not pushed, not
 merged, not released). All 15 plan tasks are done (`docs/superpowers/plans/2026-09-25-quick-search.md`;
@@ -642,9 +663,10 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 
 > Continue DeskAI in the repository checkout. Read `AGENTS.md`, `docs/HANDOFF.md` ("Start
 > here" first), and especially `docs/SECURITY.md`; inspect Git status. Quick search is built on
-> branch `quick-search` (not pushed; `main` is at `e61e6e0`: 1.2.0 plus the plan). Ask me whether
-> to push it and release 1.3.0, or check it by hand first with `docs/MANUAL-TESTING.md`
-> "2026-09-25 Quick search". Ask me questions whenever something is unclear.
+> branch `quick-search` (not pushed; `main` is at `e61e6e0`). Its polish is designed in
+> `docs/superpowers/specs/2026-09-25-quick-search-polish-design.md`: ask me if the spec is
+> approved, then write the plan and build it step by step. Do not push or release 1.3.0 until
+> the polish is done and I say so. Ask me questions whenever something is unclear.
 > Do not open or scan my personal folders or use my API key. Test with generated
 > files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
 
