@@ -11,6 +11,7 @@ internal static class BuddyFactory
         SearchBuddy.Pip => new PipBuddy(),
         SearchBuddy.Fetch => new FetchBuddy(),
         SearchBuddy.Inky => new InkyBuddy(),
+        SearchBuddy.Mochi => new MochiBuddy(),
         _ => new SparkyBuddy(),
     };
 }
