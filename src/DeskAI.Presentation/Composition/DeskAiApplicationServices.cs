@@ -17,6 +17,7 @@ using DeskAI.Core.Workspace;
 using DeskAI.Infrastructure.Content;
 using DeskAI.Infrastructure.DependencyInjection;
 using DeskAI.Infrastructure.Execution;
+using DeskAI.Infrastructure.Launching;
 using DeskAI.Infrastructure.Time;
 using DeskAI.Safety;
 using Microsoft.Extensions.DependencyInjection;
@@ -91,6 +92,10 @@ public static class DeskAiApplicationServices
         // Quick search (ADR 0047): the two read-only searches above, and nothing that can open,
         // change, or send a file. A test asserts it.
         services.AddSingleton<QuickSearchService>();
+        // DeskAI's only "open a file" action (ADR 0047). It starts nothing here: the shared
+        // registration's starter refuses, and only the app registers the real one.
+        services.AddSingleton<IShellStarter, NoShellStarter>();
+        services.AddSingleton<IFileLauncher, WindowsFileLauncher>();
         services.AddSingleton<IVisualAssetReader, VisualAssetReader>();
         services.AddSingleton<IVisualImageMatcher, ConfiguredVisualImageMatcher>();
         services.AddSingleton<VisualSearchService>();

@@ -4,6 +4,7 @@ using DeskAI.App.Services;
 using DeskAI.App.Views;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Rules;
+using DeskAI.Infrastructure.Launching;
 using DeskAI.Infrastructure.Logging;
 using DeskAI.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
@@ -118,6 +119,16 @@ public partial class App : Application
                 }
 
                 services.AddSingleton<IAppearanceApplier, WindowsAppearanceApplier>();
+
+                // The real "open" and "show in folder" (ADR 0047) replace the ones that start nothing.
+                foreach (var existing in services
+                    .Where(descriptor => descriptor.ServiceType == typeof(IShellStarter))
+                    .ToArray())
+                {
+                    services.Remove(existing);
+                }
+
+                services.AddSingleton<IShellStarter, WindowsShellStarter>();
                 services.AddTransient<DashboardPage>();
                 services.AddTransient<OrganizePage>();
                 services.AddTransient<SearchPage>();

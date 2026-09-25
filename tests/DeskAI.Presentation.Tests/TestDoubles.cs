@@ -192,6 +192,39 @@ internal sealed class RecordingAppearanceApplier : IAppearanceApplier
     public void Apply(DeskAI.Core.Appearance.AppearanceSettings settings) => Applied.Add(settings);
 }
 
+/// <summary>
+/// Stands in for Windows' "open" and "show in folder": remembers each validated path and starts
+/// nothing. <see cref="Fail"/> acts as Windows refusing.
+/// </summary>
+internal sealed class RecordingShellStarter : DeskAI.Infrastructure.Launching.IShellStarter
+{
+    public List<string> Opened { get; } = [];
+
+    public List<string> Shown { get; } = [];
+
+    public bool Fail { get; set; }
+
+    public void OpenWithUsualApp(string fullPath)
+    {
+        if (Fail)
+        {
+            throw new System.ComponentModel.Win32Exception();
+        }
+
+        Opened.Add(fullPath);
+    }
+
+    public void ShowInFolder(string fullPath)
+    {
+        if (Fail)
+        {
+            throw new System.ComponentModel.Win32Exception();
+        }
+
+        Shown.Add(fullPath);
+    }
+}
+
 internal sealed class RecordingNotifier : IFindingNotifier
 {
     public List<string> Messages { get; } = [];

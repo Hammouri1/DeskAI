@@ -5,6 +5,7 @@ using DeskAI.Core.Abstractions;
 using DeskAI.Core.Content;
 using DeskAI.Core.Files;
 using DeskAI.Core.Search;
+using DeskAI.Infrastructure.Launching;
 using DeskAI.Infrastructure.Persistence;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -56,6 +57,9 @@ internal sealed class TestApp : IAsyncDisposable
     public RecordingPresence Presence => (RecordingPresence)_services.GetRequiredService<IBackgroundPresence>();
 
     public RecordingAppearanceApplier Painter => (RecordingAppearanceApplier)_services.GetRequiredService<IAppearanceApplier>();
+
+    /// <summary>Stands in for Windows' "open" and "show in folder": records, starts nothing.</summary>
+    public RecordingShellStarter Shell => (RecordingShellStarter)_services.GetRequiredService<IShellStarter>();
 
     public RecordingWallpaperSetter Wallpaper => (RecordingWallpaperSetter)_services.GetRequiredService<IWallpaperSetter>();
 
@@ -126,6 +130,7 @@ internal sealed class TestApp : IAsyncDisposable
         Replace<IFindingNotifier>(services, new RecordingNotifier());
         Replace<IBackgroundPresence>(services, new RecordingPresence());
         Replace<IAppearanceApplier>(services, new RecordingAppearanceApplier());
+        Replace<IShellStarter>(services, new RecordingShellStarter());
         Replace<IPdfOcrReader>(services, new RecordingPdfOcrReader());
         Replace<IClock>(services, new MovableClock());
         if (searchBounds is not null)
