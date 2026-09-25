@@ -2,6 +2,7 @@
 
 - Status: Accepted
 - Date: 2026-09-12
+- Amended by: ADR 0047 (quick search also keeps DeskAI near the clock after the window closes)
 
 ## Context
 
