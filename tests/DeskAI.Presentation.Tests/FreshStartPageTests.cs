@@ -112,6 +112,7 @@ public sealed class FreshStartPageTests
         await quick.SetOnAsync(false, TestContext.Current.CancellationToken);
         await quick.SetBuddyAsync(SearchBuddy.Mochi, TestContext.Current.CancellationToken);
         await quick.SetShortcutAsync(QuickSearchShortcut.CtrlAltSpace, TestContext.Current.CancellationToken);
+        await quick.SetMotionAsync(false, TestContext.Current.CancellationToken);
         // Written by a build that still had the Home and Search tip.
         await store.WriteAsync(QuickSearchSettingsService.RetiredTipKey, "yes", TestContext.Current.CancellationToken);
         var settings = app.Get<SettingsViewModel>();
@@ -122,5 +123,6 @@ public sealed class FreshStartPageTests
         Assert.Equal(QuickSearchSettings.Default, await quick.LoadAsync(TestContext.Current.CancellationToken));
         Assert.Null(await store.ReadAsync(QuickSearchSettingsService.RetiredTipKey, TestContext.Current.CancellationToken));
         Assert.Null(await store.ReadAsync(QuickSearchSettingsService.ShortcutKey, TestContext.Current.CancellationToken));
+        Assert.Null(await store.ReadAsync(QuickSearchSettingsService.MotionKey, TestContext.Current.CancellationToken));
     }
 }

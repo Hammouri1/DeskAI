@@ -144,6 +144,8 @@ public static class DeskAiApplicationServices
         services.AddSingleton<BackgroundPresenceController>();
         // The quick search shortcut. None here; the Windows one is registered by the app.
         services.AddSingleton<IQuickSearchHotKey, NoQuickSearchHotKey>();
+        // Whether buddies move (DeskAI's own switch, not Windows'). One value everyone reads.
+        services.AddSingleton<BuddyMotion>();
         services.AddSingleton<QuickSearchSwitch>();
         services.AddTransient<QuickSearchCardViewModel>();
         services.AddTransient<ShellViewModel>();

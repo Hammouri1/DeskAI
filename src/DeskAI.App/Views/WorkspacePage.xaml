@@ -136,6 +136,12 @@
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>
+                    <ToggleSwitch x:Name="BuddyMotionSwitch"
+                                  Header="Let my buddy move"
+                                  IsOn="{x:Bind ViewModel.QuickSearch.LetsBuddyMove, Mode=OneWay}"
+                                  Toggled="OnBuddyMotionToggled" />
+                    <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="620" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Text="{x:Bind viewmodels:QuickSearchCardViewModel.MotionText}" />
                 </StackPanel></StackPanel></PivotItem><PivotItem Header="Shortcuts"><StackPanel Spacing="22" Margin="0,12,0,8"><Border Style="{StaticResource CardStyle}">
                     <StackPanel Spacing="14">
                         <StackPanel Orientation="Horizontal" Spacing="8">

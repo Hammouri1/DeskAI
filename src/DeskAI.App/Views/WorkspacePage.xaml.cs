@@ -164,6 +164,15 @@ public sealed partial class WorkspacePage : Page
         }
     }
 
+    /// <summary>Only a change the person made reaches the switch, never the page setting its own value.</summary>
+    private async void OnBuddyMotionToggled(object sender, RoutedEventArgs e)
+    {
+        if (sender is ToggleSwitch toggle && toggle.IsOn != ViewModel.QuickSearch.LetsBuddyMove)
+        {
+            await ViewModel.QuickSearch.SetMotionAsync(toggle.IsOn);
+        }
+    }
+
     /// <summary>Only a choice the person made reaches the switch, never the page setting its own value.</summary>
     private async void OnShortcutChosen(object sender, SelectionChangedEventArgs e)
     {
@@ -186,7 +195,7 @@ public sealed partial class WorkspacePage : Page
     {
         if (sender is ContentControl { Tag: BuddyTileViewModel tile, Content: null } host)
         {
-            var buddy = BuddyFactory.Create(tile.Buddy);
+            var buddy = BuddyFactory.Create(tile.Buddy, motion: null);
             buddy.HoldsStill = true;
             host.Content = buddy;
         }

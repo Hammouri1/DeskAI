@@ -137,8 +137,8 @@ with your search buddy sitting on it.
 
 **Your search buddy.** On **My workspace**, choose one of seven: Sparky, Archie the owl, Pip the
 robot, Fetch the fox, Inky the octopus, Mochi, or Paige the paper ghost. Each has its own way of
-talking and moving; click it in the bar for a happy moment. If Windows' **Animation effects** are
-off, the buddy stands still.
+talking and moving; click it in the bar for a happy moment. To keep your buddy and the search bar
+still, turn off **Let my buddy move** on My workspace.
 
 **Closing and quitting.** While quick search is on, closing the DeskAI window keeps DeskAI near
 the clock, so the shortcut still works. Right-click the icon there for **Find a file** or **Quit

@@ -346,7 +346,9 @@ Spec: `docs/superpowers/specs/2026-09-25-quick-search-design.md`.
   bar's colour.)
 - **Buddies.** Seven drawings (Sparky, Archie the owl, Pip the robot, Fetch the fox, Inky the
   octopus, Mochi, Paige the paper ghost), each with five moods: waiting, thinking, found,
-  nothing, happy (after a click). They stand still when Windows' animation effects are off.
+  nothing, happy (after a click). They stand still when **Let my buddy move** is off (on the Quick
+  search card, on by default; DeskAI's own switch wins over Windows' Animation effects, the
+  owner's choice 2026-09-25).
   Screen readers hear the buddy's line (announced politely), never the drawing.
 - **My workspace → Looks → Quick search.** The switch "Press {shortcut} to find a file"; under it a
   **Shortcut** drop-down with Ctrl + Alt + D (the default), Ctrl + Alt + Space, and Ctrl + Shift +

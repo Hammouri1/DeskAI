@@ -261,7 +261,8 @@ public partial class App : Application
     /// </remarks>
     private async Task ConnectQuickSearchAsync(MainWindow window)
     {
-        var bar = new QuickSearchWindow(_host.Services.GetRequiredService<QuickSearchViewModel>());
+        var bar = new QuickSearchWindow(
+            _host.Services.GetRequiredService<QuickSearchViewModel>(), _host.Services.GetRequiredService<BuddyMotion>());
         var hotKey = _host.Services.GetRequiredService<IQuickSearchHotKey>();
         if (hotKey is GlobalHotKey global)
         {

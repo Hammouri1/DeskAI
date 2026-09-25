@@ -35,9 +35,12 @@ public sealed partial class QuickSearchWindow : Window
     private const int DwmWindowCornerPreference = 33;
     private const int DwmRound = 2;
 
-    public QuickSearchWindow(QuickSearchViewModel viewModel)
+    private readonly BuddyMotion _motion;
+
+    public QuickSearchWindow(QuickSearchViewModel viewModel, BuddyMotion motion)
     {
         ViewModel = viewModel;
+        _motion = motion;
         InitializeComponent();
         var presenter = OverlappedPresenter.CreateForDialog();
         presenter.IsResizable = false;
@@ -167,7 +170,7 @@ public sealed partial class QuickSearchWindow : Window
 
     private void ShowBuddy()
     {
-        var buddy = BuddyFactory.Create(ViewModel.Buddy);
+        var buddy = BuddyFactory.Create(ViewModel.Buddy, _motion);
         buddy.Mood = ViewModel.Mood;
         BuddyHost.Content = buddy;
     }

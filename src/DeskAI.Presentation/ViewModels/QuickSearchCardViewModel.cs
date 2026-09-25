@@ -20,10 +20,12 @@ public sealed class BuddyTileViewModel(SearchBuddy buddy) : ObservableObject
 }
 
 /// <summary>The Quick search card on My workspace: the switch, the shortcut, the seven buddies, and a shortcut problem.</summary>
-public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings, QuickSearchSwitch quickSwitch, IQuickSearchHotKey hotKey) : ObservableObject
+public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings, QuickSearchSwitch quickSwitch, IQuickSearchHotKey hotKey, BuddyMotion motion) : ObservableObject
 {
     public const string WorksWhenLine =
         "Works while DeskAI is open or near the clock. Closing the window keeps it near the clock; quit from the icon's menu there.";
+
+    public const string MotionLine = "Turn this off to keep your buddy and the search bar still.";
 
     private readonly QuickSearchSettingsService _settings = settings;
     private readonly QuickSearchSwitch _switch = quickSwitch;
@@ -31,9 +33,18 @@ public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings
     private bool _isOn = true;
     private string _shortcutProblem = string.Empty;
     private QuickSearchShortcut _shortcut = QuickSearchShortcuts.Default;
+    private bool _letsBuddyMove = true;
 
     /// <summary>The same line, for the page to bind to.</summary>
     public static string WorksWhen => WorksWhenLine;
+
+    /// <summary>The motion switch's line, for the page to bind to.</summary>
+    public static string MotionText => MotionLine;
+
+    /// <summary>What the page's buddies follow.</summary>
+    public BuddyMotion Motion { get; } = motion;
+
+    public bool LetsBuddyMove { get => _letsBuddyMove; private set => SetProperty(ref _letsBuddyMove, value); }
 
     /// <summary>The drop-down's choices, in the list's order.</summary>
     public static IReadOnlyList<string> ShortcutChoices { get; } = [.. QuickSearchShortcuts.All.Select(QuickSearchShortcuts.Text)];
@@ -80,6 +91,7 @@ public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings
         var stored = await _settings.LoadAsync().ConfigureAwait(true);
         IsOn = stored.IsOn;
         Shortcut = stored.Shortcut;
+        LetsBuddyMove = stored.LetsBuddyMove;
         Choose(stored.Buddy);
         Report(_hotKey.State);
     }
@@ -94,6 +106,12 @@ public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings
     {
         Shortcut = shortcut;
         Report(await _switch.SetShortcutAsync(shortcut).ConfigureAwait(true));
+    }
+
+    public async Task SetMotionAsync(bool moves)
+    {
+        LetsBuddyMove = moves;
+        await _switch.SetMotionAsync(moves).ConfigureAwait(true);
     }
 
     public async Task ChooseBuddyAsync(SearchBuddy buddy)

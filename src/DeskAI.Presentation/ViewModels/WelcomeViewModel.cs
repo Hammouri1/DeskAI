@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.QuickSearch;
 using DeskAI.Core.Roots;
@@ -20,7 +21,7 @@ public sealed record WelcomePage(string Title, string Body, IReadOnlyList<string
 /// <see cref="ConnectChosenAsync"/>, which is Home's own connect. It holds no settings store it
 /// writes to: opening it again from Privacy and AI never changes whether DeskAI remembers greeting.
 /// </remarks>
-public sealed class WelcomeViewModel(PersonalFoldersViewModel folders, IAiSettingsRepository aiSettings, QuickSearchSettingsService quickSearch) : ObservableObject
+public sealed class WelcomeViewModel(PersonalFoldersViewModel folders, IAiSettingsRepository aiSettings, QuickSearchSettingsService quickSearch, BuddyMotion motion) : ObservableObject
 {
     public const string AiOffLine = "AI is off. You can turn it on later in Privacy and AI.";
 
@@ -49,6 +50,9 @@ public sealed class WelcomeViewModel(PersonalFoldersViewModel folders, IAiSettin
     ];
 
     public PersonalFoldersViewModel Folders { get; } = folders;
+
+    /// <summary>What the welcome's Sparky follows.</summary>
+    public BuddyMotion Motion { get; } = motion;
 
     public int PageIndex
     {

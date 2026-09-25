@@ -107,13 +107,21 @@ public sealed class QuickSearchLayoutTests
         Assert.Contains("_ => new SparkyBuddy(),", factory, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Owner-found 2026-09-25: Windows' Animation effects was off on their PC, so no buddy ever
+    /// moved. DeskAI's own "Let my buddy move" switch decides instead (the owner's choice).
+    /// </summary>
     [Fact]
-    public void Moves_stop_when_Windows_animation_effects_are_off()
+    public void Moves_follow_DeskAIs_own_switch_not_Windows()
     {
         var control = Read("src", "DeskAI.App", "Views", "Buddies", "BuddyControl.cs");
 
-        Assert.Contains("AnimationsEnabled", control, StringComparison.Ordinal);
+        Assert.DoesNotContain("AnimationsEnabled", control, StringComparison.Ordinal);
+        Assert.DoesNotContain("UISettings", control, StringComparison.Ordinal);
+        Assert.Contains("MotionSwitch is { IsOn: true }", control, StringComparison.Ordinal);
         Assert.Contains("\"Still\"", control, StringComparison.Ordinal);
+        Assert.Contains("Header=\"Let my buddy move\"", Read("src", "DeskAI.App", "Views", "WorkspacePage.xaml"), StringComparison.Ordinal);
+        Assert.Contains("MotionSwitch = welcome.Motion", Read("src", "DeskAI.App", "Views", "WelcomeDialog.cs"), StringComparison.Ordinal);
     }
 
     [Fact]

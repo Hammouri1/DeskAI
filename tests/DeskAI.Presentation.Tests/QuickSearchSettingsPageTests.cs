@@ -176,16 +176,53 @@ public sealed class QuickSearchSettingsPageTests
         await app.Get<QuickSearchSwitch>().SetOnAsync(false);
         await app.Get<QuickSearchSettingsService>().SetBuddyAsync(SearchBuddy.Inky, TestContext.Current.CancellationToken);
         await (await OpenCardAsync(app)).SetShortcutAsync(QuickSearchShortcut.CtrlShiftSpace);
+        await (await OpenCardAsync(app)).SetMotionAsync(false);
 
         await app.Get<SettingsViewModel>().StartFreshAsync();
 
         Assert.True(app.HotKey.IsListening);
         Assert.Equal(QuickSearchShortcut.CtrlAltD, app.HotKey.ListeningFor);
         Assert.True(app.Presence.IsShowing);
+        Assert.True(app.Get<BuddyMotion>().IsOn);
         var card = await OpenCardAsync(app);
         Assert.True(card.IsOn);
+        Assert.True(card.LetsBuddyMove);
         Assert.Equal(QuickSearchShortcut.CtrlAltD, card.Shortcut);
         Assert.Equal("Sparky", Assert.Single(card.Buddies, tile => tile.IsChosen).Name);
+    }
+
+    [Fact]
+    public async Task Buddies_move_until_the_switch_is_turned_off_and_the_choice_is_kept()
+    {
+        await using var app = await TestApp.StartAsync();
+        await app.Get<QuickSearchSwitch>().ApplyStoredAsync();
+        var card = await OpenCardAsync(app);
+
+        Assert.True(card.LetsBuddyMove);
+        Assert.True(app.Get<BuddyMotion>().IsOn);
+        Assert.Equal("Turn this off to keep your buddy and the search bar still.", QuickSearchCardViewModel.MotionLine);
+
+        var changes = 0;
+        app.Get<BuddyMotion>().Changed += (_, _) => changes++;
+        await card.SetMotionAsync(false);
+
+        Assert.False(card.LetsBuddyMove);
+        Assert.False(app.Get<BuddyMotion>().IsOn);
+        Assert.Equal(1, changes);
+        Assert.Same(app.Get<BuddyMotion>(), card.Motion);
+
+        await using var reopened = await app.ReopenAsync();
+        await reopened.Get<QuickSearchSwitch>().ApplyStoredAsync();
+        Assert.False(reopened.Get<BuddyMotion>().IsOn);
+        Assert.False((await OpenCardAsync(reopened)).LetsBuddyMove);
+    }
+
+    [Fact]
+    public async Task The_welcome_buddy_follows_the_same_switch()
+    {
+        await using var app = await TestApp.StartAsync();
+
+        Assert.Same(app.Get<BuddyMotion>(), app.Get<WelcomeViewModel>().Motion);
     }
 
     [Fact]

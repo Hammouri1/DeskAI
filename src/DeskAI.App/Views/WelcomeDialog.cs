@@ -94,6 +94,7 @@ internal static class WelcomeDialog
                 Width = 96,
                 Height = 96,
                 HorizontalAlignment = HorizontalAlignment.Left,
+                MotionSwitch = welcome.Motion,
             });
         }
 

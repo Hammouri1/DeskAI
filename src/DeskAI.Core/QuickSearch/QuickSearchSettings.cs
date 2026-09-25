@@ -3,8 +3,8 @@ using DeskAI.Core.Abstractions;
 
 namespace DeskAI.Core.QuickSearch;
 
-/// <summary>Whether quick search listens, for which shortcut, and which buddy shows.</summary>
-public sealed record QuickSearchSettings(bool IsOn, SearchBuddy Buddy, QuickSearchShortcut Shortcut = QuickSearchShortcut.CtrlAltD)
+/// <summary>Whether quick search listens, for which shortcut, which buddy shows, and whether buddies move.</summary>
+public sealed record QuickSearchSettings(bool IsOn, SearchBuddy Buddy, QuickSearchShortcut Shortcut = QuickSearchShortcut.CtrlAltD, bool LetsBuddyMove = true)
 {
     public static QuickSearchSettings Default { get; } = new(true, SearchBuddy.Sparky);
 }
@@ -22,6 +22,7 @@ public sealed class QuickSearchSettingsService(IAppSettingsStore store)
     public const string OnKey = "quicksearch.on";
     public const string BuddyKey = "quicksearch.buddy";
     public const string ShortcutKey = "quicksearch.shortcut";
+    public const string MotionKey = "quicksearch.motion";
 
     /// <summary>
     /// The retired Home and Search tip's "closed" mark (removed 2026-09-25 at the owner's request).
@@ -32,7 +33,7 @@ public sealed class QuickSearchSettingsService(IAppSettingsStore store)
     private readonly IAppSettingsStore _store = store;
 
     /// <summary>Everything Start fresh must forget.</summary>
-    public static IReadOnlyList<string> Keys { get; } = [OnKey, BuddyKey, ShortcutKey, RetiredTipKey];
+    public static IReadOnlyList<string> Keys { get; } = [OnKey, BuddyKey, ShortcutKey, MotionKey, RetiredTipKey];
 
     public async Task<QuickSearchSettings> LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -41,7 +42,8 @@ public sealed class QuickSearchSettingsService(IAppSettingsStore store)
             var on = await _store.ReadAsync(OnKey, cancellationToken).ConfigureAwait(false);
             var buddy = await _store.ReadAsync(BuddyKey, cancellationToken).ConfigureAwait(false);
             var shortcut = await _store.ReadAsync(ShortcutKey, cancellationToken).ConfigureAwait(false);
-            return new QuickSearchSettings(on != "no", ReadBuddy(buddy), ReadShortcut(shortcut));
+            var motion = await _store.ReadAsync(MotionKey, cancellationToken).ConfigureAwait(false);
+            return new QuickSearchSettings(on != "no", ReadBuddy(buddy), ReadShortcut(shortcut), LetsBuddyMove: motion != "no");
         }
         catch (Exception exception) when (exception is InvalidOperationException
             or DbException
@@ -60,6 +62,9 @@ public sealed class QuickSearchSettingsService(IAppSettingsStore store)
 
     public Task SetShortcutAsync(QuickSearchShortcut shortcut, CancellationToken cancellationToken = default) =>
         _store.WriteAsync(ShortcutKey, shortcut.ToString(), cancellationToken);
+
+    public Task SetMotionAsync(bool moves, CancellationToken cancellationToken = default) =>
+        _store.WriteAsync(MotionKey, moves ? "yes" : "no", cancellationToken);
 
     /// <summary>Only an exact name from the list counts; anything else, numbers included, is Ctrl + Alt + D.</summary>
     private static QuickSearchShortcut ReadShortcut(string? stored) =>

@@ -26,9 +26,10 @@ public sealed class QuickSearchSettingsServiceTests
         await service.SetOnAsync(false, token);
         await service.SetBuddyAsync(SearchBuddy.Inky, token);
         await service.SetShortcutAsync(QuickSearchShortcut.CtrlShiftSpace, token);
+        await service.SetMotionAsync(false, token);
 
-        Assert.Equal(new QuickSearchSettings(false, SearchBuddy.Inky, QuickSearchShortcut.CtrlShiftSpace), await service.LoadAsync(token));
-        Assert.Equal(["quicksearch.buddy", "quicksearch.on", "quicksearch.shortcut"], store.Values.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(new QuickSearchSettings(false, SearchBuddy.Inky, QuickSearchShortcut.CtrlShiftSpace, LetsBuddyMove: false), await service.LoadAsync(token));
+        Assert.Equal(["quicksearch.buddy", "quicksearch.motion", "quicksearch.on", "quicksearch.shortcut"], store.Values.Keys.Order(StringComparer.Ordinal));
         Assert.Equal("CtrlShiftSpace", store.Values[QuickSearchSettingsService.ShortcutKey]);
         Assert.Subset(QuickSearchSettingsService.Keys.ToHashSet(StringComparer.Ordinal), store.Values.Keys.ToHashSet(StringComparer.Ordinal));
         Assert.Contains("quicksearch.tip.dismissed", QuickSearchSettingsService.Keys);
@@ -65,6 +66,22 @@ public sealed class QuickSearchSettingsServiceTests
         store.Values[QuickSearchSettingsService.BuddyKey] = stored;
 
         Assert.Equal(SearchBuddy.Sparky, (await new QuickSearchSettingsService(store).LoadAsync(TestContext.Current.CancellationToken)).Buddy);
+    }
+
+    [Theory]
+    [InlineData(null, true)]
+    [InlineData("no", false)]
+    [InlineData("yes", true)]
+    [InlineData("NO", true)]
+    public async Task Buddies_move_unless_no_is_remembered(string? stored, bool moves)
+    {
+        var store = new FakeStore();
+        if (stored is not null)
+        {
+            store.Values[QuickSearchSettingsService.MotionKey] = stored;
+        }
+
+        Assert.Equal(moves, (await new QuickSearchSettingsService(store).LoadAsync(TestContext.Current.CancellationToken)).LetsBuddyMove);
     }
 
     [Fact]
