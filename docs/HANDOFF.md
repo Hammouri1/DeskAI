@@ -1,6 +1,34 @@
 # DeskAI — Coding Handoff
 
-## Start here (updated 2026-09-25, after the first-run welcome)
+## Start here (updated 2026-09-25, after 1.2.0 and the quick search design)
+
+**1.2.0 is released** (https://github.com/Hammouri1/DeskAI/releases/tag/v1.2.0): `main` holds
+Desktop Studio, the first-run welcome, and the wider Search; both GitHub workflows passed. Details
+under "Released as 1.2.0" below.
+
+**Next task: quick search with a search buddy.** The owner chose it on 2026-09-25 and answered
+every design question. **Everything agreed is in
+`docs/superpowers/specs/2026-09-25-quick-search-design.md`** (read it fully; its "Decisions the
+owner made" list must not be re-asked), with the mockups beside it in
+`docs/superpowers/specs/2026-09-25-quick-search-mockups/` (`characters.html` = the seven buddies'
+art reference; `layouts.html`, layout C chosen). In short: Ctrl + Alt + Space anywhere shows a slim
+bar near the top of the screen with an animated buddy perched on it (seven buddies, Sparky by
+default, each with its own voice, no sounds); typing searches connected folders by name, kind,
+date, and size (no AI, nothing saved); Enter opens allow-listed file types in their usual app and
+everything else only gets Show in folder; closing the window now keeps DeskAI near the clock while
+quick search is on; a new welcome page and a tip on Home and Search. It needs ADR 0047 and a
+security review first (DeskAI's first "open a file" action; amends ADR 0025).
+**State of that task:** the spec is written and committed; **the owner has not yet reviewed it.**
+Next steps in order: the owner reviews the spec → write the implementation plan with the
+writing-plans skill in `docs/superpowers/plans/` → the owner picks how to run it → build.
+The owner said to keep asking questions whenever something is unclear ("always better").
+
+**Kept for later (owner, 2026-09-25):** Desktop Studio cards for Downloads; the buddy inside
+DeskAI's own window; AI in the quick search bar. Ideas offered but not picked are listed in the
+spec's decision 1.
+
+
+## Earlier state (2026-09-25, after the first-run welcome)
 
 **First-run welcome: built** on branch `first-run-welcome` (stacked on `desktop-studio-find-groups`),
 from `docs/superpowers/plans/2026-09-24-first-run-welcome.md` in 4 tasks plus one fresh review.
@@ -599,13 +627,12 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 ## Copy-paste starter prompt
 
 > Continue DeskAI in the repository checkout. Read `AGENTS.md`, `docs/HANDOFF.md` ("Start
-> here" first), and especially `docs/SECURITY.md`; inspect Git status and the
-> `desktop-studio-find-groups` branch (Desktop Studio steps 1, 3, and 4, ADR 0042, ADR 0044, and
-> ADR 0045; step 2 dropped, ADR 0043). Nothing on it is pushed yet. All planned Desktop
-> Studio work is built; Color groups was dropped (ADR 0046). The first-run welcome is built on
-> `first-run-welcome` and verified; the Desktop Studio end-to-end check and all five of its fixes
-> are done; next is the list of suggested Desktop Studio additions. Ask me whether to push Desktop Studio
-> or look for another way to make Desktop designs first.
+> here" first), and especially `docs/SECURITY.md`; inspect Git status on `main` (1.2.0 is
+> released: Desktop Studio, the first-run welcome, wider Search). The next task is quick search
+> with a search buddy: read `docs/superpowers/specs/2026-09-25-quick-search-design.md` and its
+> mockups folder fully, do not re-ask its decisions, and ask me to review the spec if I have not
+> said I approved it; then write the implementation plan and ask me how to run it. Ask me
+> questions whenever something is unclear.
 > Do not open or scan my personal folders or use my API key. Test with generated
 > files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
 

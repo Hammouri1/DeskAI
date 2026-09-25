@@ -1,0 +1,89 @@
+<style>
+  .desk { position:relative; width:100%; height:100%; min-height:300px; align-self:stretch; border-radius: 10px; overflow:hidden;
+          background: linear-gradient(135deg, #2b4f7a 0%, #6a4f8f 55%, #d98a6a 100%); font-family: "Segoe UI", sans-serif; }
+  .taskbar { position:absolute; left:0; right:0; bottom:0; height:22px; background: rgba(15,20,30,.85); }
+  .clock { position:absolute; right:8px; bottom:4px; color:#dfe7f1; font-size:10px; }
+  .app { position:absolute; background: rgba(255,255,255,.18); border:1px solid rgba(255,255,255,.25); border-radius:6px; }
+  .panel { position:absolute; background: rgba(14,24,38,.94); border:1px solid rgba(94,242,194,.35);
+           border-radius:14px; box-shadow: 0 12px 30px rgba(0,0,0,.45); color:#e8f1f8; padding:10px; font-size:11px; }
+  .box { background:#0a1422; border:1px solid #2f4a63; border-radius:8px; padding:6px 8px; color:#e8f1f8; font-size:11px; margin-bottom:6px; }
+  .row { display:flex; align-items:center; gap:6px; padding:4px 6px; border-radius:6px; }
+  .row.sel { background: rgba(94,242,194,.14); }
+  .ico { width:14px; height:14px; border-radius:3px; flex:none; }
+  .name { flex:1; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .where { color:#8fa3b8; font-size:9.5px; }
+  .btn { font-size:9.5px; padding:2px 6px; border-radius:5px; background:#3fd9a8; color:#06231a; font-weight:600; }
+  .btn.ghost { background:transparent; color:#8fe9cc; border:1px solid #2f6b58; }
+  .bubble { position:absolute; background:#fff; color:#12324a; border-radius:12px; padding:6px 9px; font-size:10.5px; font-weight:600; box-shadow:0 4px 12px rgba(0,0,0,.3); }
+  @keyframes bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-6px) } }
+  .bob { animation: bob 2.6s ease-in-out infinite; }
+</style>
+
+<h2>Where should your character pop up?</h2>
+<p class="subtitle">You press the shortcut over whatever you're doing. Sparky stands in for whichever character you chose. In all three: type, the results appear, press Enter to open, Esc to hide. A program such as a .exe only gets "Show in folder".</p>
+
+<div class="cards">
+
+  <div class="card" data-choice="center" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="desk">
+      <div class="app" style="left:14px; top:14px; width:62%; height:60%"></div>
+      <div class="panel" style="left:50%; top:46px; transform:translateX(-50%); width:72%; padding-left:74px; min-height:150px">
+        <svg class="bob" style="position:absolute; left:6px; top:14px" width="62" height="62" viewBox="0 0 200 200">
+          <path d="M100 26 L113 76 L164 90 L113 104 L100 154 L87 104 L36 90 L87 76 Z" fill="#3fd9a8"/>
+          <circle cx="100" cy="90" r="33" fill="#c8fff0"/>
+          <ellipse cx="88" cy="88" rx="5.5" ry="8" fill="#0b2233"/><ellipse cx="112" cy="88" rx="5.5" ry="8" fill="#0b2233"/>
+          <path d="M92 102 Q100 110 108 102" stroke="#0b2233" stroke-width="4" fill="none" stroke-linecap="round"/>
+        </svg>
+        <div style="color:#8fe9cc; font-weight:600; margin-bottom:5px">What are you looking for?</div>
+        <div class="box">my essay from last week▌</div>
+        <div class="row sel"><div class="ico" style="background:#4f8cff"></div><div class="name">History essay final.docx<div class="where">Documents › School</div></div><span class="btn">Open</span></div>
+        <div class="row"><div class="ico" style="background:#4f8cff"></div><div class="name">Essay notes.docx<div class="where">Desktop</div></div><span class="btn ghost">Open</span></div>
+        <div class="row"><div class="ico" style="background:#ff5e5e"></div><div class="name">Essay rubric.pdf<div class="where">Downloads</div></div><span class="btn ghost">Open</span></div>
+      </div>
+      <div class="taskbar"><span class="clock">10:42</span></div>
+    </div></div>
+    <div class="card-body"><h3>A · Centre card</h3><p>A card in the middle of the screen with your character sitting at its left. Big and easy to read, like the search box on a Mac or in PowerToys.</p></div>
+  </div>
+
+  <div class="card" data-choice="corner" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="desk">
+      <div class="app" style="left:14px; top:14px; width:62%; height:60%"></div>
+      <div class="panel" style="right:14px; bottom:96px; width:58%">
+        <div class="box">my essay from last week▌</div>
+        <div class="row sel"><div class="ico" style="background:#4f8cff"></div><div class="name">History essay final.docx<div class="where">Documents › School</div></div><span class="btn">Open</span></div>
+        <div class="row"><div class="ico" style="background:#4f8cff"></div><div class="name">Essay notes.docx<div class="where">Desktop</div></div><span class="btn ghost">Open</span></div>
+        <div class="row"><div class="ico" style="background:#ff5e5e"></div><div class="name">Essay rubric.pdf<div class="where">Downloads</div></div><span class="btn ghost">Open</span></div>
+      </div>
+      <div class="bubble" style="right:84px; bottom:62px">Found 3! 🎉</div>
+      <svg class="bob" style="position:absolute; right:16px; bottom:24px" width="70" height="70" viewBox="0 0 200 200">
+        <path d="M100 26 L113 76 L164 90 L113 104 L100 154 L87 104 L36 90 L87 76 Z" fill="#3fd9a8"/>
+        <circle cx="100" cy="90" r="33" fill="#c8fff0"/>
+        <ellipse cx="88" cy="88" rx="5.5" ry="8" fill="#0b2233"/><ellipse cx="112" cy="88" rx="5.5" ry="8" fill="#0b2233"/>
+        <path d="M92 102 Q100 110 108 102" stroke="#0b2233" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="taskbar"><span class="clock">10:42</span></div>
+    </div></div>
+    <div class="card-body"><h3>B · Pops up by the clock</h3><p>The character hops up from the bottom-right corner, near DeskAI's icon, and talks to you in a speech bubble, with the box and results just above it. Most "pet-like"; covers less of your work.</p></div>
+  </div>
+
+  <div class="card" data-choice="top" onclick="toggleSelect(this)">
+    <div class="card-image"><div class="desk">
+      <div class="app" style="left:14px; top:14px; width:62%; height:60%"></div>
+      <svg class="bob" style="position:absolute; left:50%; top:10px; margin-left:-28px" width="56" height="56" viewBox="0 0 200 200">
+        <path d="M100 26 L113 76 L164 90 L113 104 L100 154 L87 104 L36 90 L87 76 Z" fill="#3fd9a8"/>
+        <circle cx="100" cy="90" r="33" fill="#c8fff0"/>
+        <ellipse cx="88" cy="88" rx="5.5" ry="8" fill="#0b2233"/><ellipse cx="112" cy="88" rx="5.5" ry="8" fill="#0b2233"/>
+        <path d="M92 102 Q100 110 108 102" stroke="#0b2233" stroke-width="4" fill="none" stroke-linecap="round"/>
+      </svg>
+      <div class="panel" style="left:50%; top:62px; transform:translateX(-50%); width:70%">
+        <div class="box">my essay from last week▌</div>
+        <div class="row sel"><div class="ico" style="background:#4f8cff"></div><div class="name">History essay final.docx<div class="where">Documents › School</div></div><span class="btn">Open</span></div>
+        <div class="row"><div class="ico" style="background:#4f8cff"></div><div class="name">Essay notes.docx<div class="where">Desktop</div></div><span class="btn ghost">Open</span></div>
+        <div class="row"><div class="ico" style="background:#ff5e5e"></div><div class="name">Essay rubric.pdf<div class="where">Downloads</div></div><span class="btn ghost">Open</span></div>
+      </div>
+      <div class="taskbar"><span class="clock">10:42</span></div>
+    </div></div>
+    <div class="card-body"><h3>C · Perched on top</h3><p>A slim search bar near the top centre with the character sitting on its edge, peeking over. Results drop down below it.</p></div>
+  </div>
+
+</div>
