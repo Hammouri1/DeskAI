@@ -26,9 +26,13 @@ also mention an X button that WinUI pop-ups do not have (older text, not changed
 
 **Next (owner's request, 2026-09-24):** check that Desktop Studio works well end to end, and bring
 the owner suggestions for Desktop Studio additions to choose from. The check is done and all five
-of its problems are fixed (2026-09-25, below). **Still to come: the list of suggested Desktop Studio
-additions for the owner to choose from.** Pushing both branches is still to be asked; do not push
-before.
+of its problems are fixed (2026-09-25, below). The list of suggested Desktop Studio additions was
+given (2026-09-25): a wallpaper made from the groups, a before-and-after picture, picture icons for
+group folders, one button for a full tidy, "keep it tidy later", the same cards for Downloads, and
+the review's small points. **The owner chose "the same cards for Downloads" but not now: keep it
+for later** (it would need its own separate permission, like the Desktop's). The owner then asked
+for more interesting features for the whole of DeskAI; their choice among those is the next task.
+Pushing both branches is still to be asked; do not push before.
 
 **Desktop Studio state (unchanged since 2026-09-24):** Desktop Studio steps 1 (**Find groups**), 3 (**Clear old stuff**, **Put each group in
 its own folder**), and 4 (**Tag names**) are built on the branch `desktop-studio-find-groups`
