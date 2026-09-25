@@ -13,6 +13,9 @@ namespace DeskAI.Core.Search;
 public sealed record ContentHit(string RootName, string RelativePath, string Name, string Snippet)
 {
     public string? Section { get; init; }
+
+    /// <summary>The connected folder the file is in, so quick search can open it through the launcher's own checks.</summary>
+    public Guid RootId { get; init; }
 }
 
 /// <summary>One attempted file and what the bounded local read established.</summary>
@@ -277,6 +280,7 @@ public sealed class ContentSearchService(
                     {
                         Section = extraction.Sections.FirstOrDefault(section =>
                             position >= section.Start && position < section.End)?.Label,
+                        RootId = root.Id,
                     });
                 }
             }

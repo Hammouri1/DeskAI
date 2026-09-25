@@ -88,6 +88,9 @@ public static class DeskAiApplicationServices
         services.AddSingleton<IContentTextExtractor, PlainTextExtractor>();
         services.AddSingleton<IPdfOcrReader, NoPdfOcrReader>();
         services.AddSingleton<ContentSearchService>();
+        // Quick search (ADR 0047): the two read-only searches above, and nothing that can open,
+        // change, or send a file. A test asserts it.
+        services.AddSingleton<QuickSearchService>();
         services.AddSingleton<IVisualAssetReader, VisualAssetReader>();
         services.AddSingleton<IVisualImageMatcher, ConfiguredVisualImageMatcher>();
         services.AddSingleton<VisualSearchService>();
