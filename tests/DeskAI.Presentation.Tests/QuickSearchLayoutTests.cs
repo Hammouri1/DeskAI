@@ -77,6 +77,19 @@ public sealed class QuickSearchLayoutTests
     }
 
     [Fact]
+    public void Each_buddy_you_choose_is_the_one_drawn()
+    {
+        var factory = Read("src", "DeskAI.App", "Views", "Buddies", "BuddyFactory.cs");
+
+        foreach (var buddy in new[] { "Archie", "Pip", "Fetch", "Inky", "Mochi", "Paige" })
+        {
+            Assert.Contains($"SearchBuddy.{buddy} => new {buddy}Buddy(),", factory, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("_ => new SparkyBuddy(),", factory, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Moves_stop_when_Windows_animation_effects_are_off()
     {
         var control = Read("src", "DeskAI.App", "Views", "Buddies", "BuddyControl.cs");
