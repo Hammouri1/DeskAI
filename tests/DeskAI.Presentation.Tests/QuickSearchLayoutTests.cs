@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace DeskAI.Presentation.Tests;
 
 /// <summary>
@@ -74,6 +76,22 @@ public sealed class QuickSearchLayoutTests
         Assert.Contains("<VisualState x:Name=\"Still\"", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("MediaElement", xaml, StringComparison.Ordinal);
         Assert.DoesNotContain("MediaPlayer", xaml, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// A mood or a move that names a part the drawing does not have fails only when that mood is
+    /// shown, on a person's screen. Every name a buddy's states use must exist in that buddy.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(Buddies))]
+    public void Every_mood_and_move_names_a_part_the_buddy_has(string file)
+    {
+        var xaml = Read("src", "DeskAI.App", "Views", "Buddies", file);
+        var parts = Regex.Matches(xaml, "x:Name=\"(\\w+)\"").Select(match => match.Groups[1].Value).ToHashSet(StringComparer.Ordinal);
+        var used = Regex.Matches(xaml, "Target=\"(\\w+)\\.").Concat(Regex.Matches(xaml, "TargetName=\"(\\w+)\""))
+            .Select(match => match.Groups[1].Value);
+
+        Assert.All(used, name => Assert.Contains(name, parts));
     }
 
     [Fact]
