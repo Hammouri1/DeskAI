@@ -6,6 +6,7 @@ using DeskAI.Core.Abstractions;
 using DeskAI.Core.Ai;
 using DeskAI.Core.Backup;
 using DeskAI.Core.Desktop;
+using DeskAI.Core.QuickSearch;
 using DeskAI.Core.Rules;
 using DeskAI.Core.Search;
 using DeskAI.Core.Studio;
@@ -125,6 +126,8 @@ public static class DeskAiApplicationServices
         // The first-run welcome (2026-09-24): one remembered value and the folder list; nothing
         // that can reach a file.
         services.AddSingleton<WelcomeService>();
+        // Quick search's three remembered values (ADR 0047). The settings store and nothing else.
+        services.AddSingleton<QuickSearchSettingsService>();
         // A DeskAI with no notification area is a legitimate DeskAI: it simply never offers
         // to keep running with no window. The Windows one is registered by the app.
         services.AddSingleton<IBackgroundPresence, NoBackgroundPresence>();

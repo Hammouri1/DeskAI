@@ -4,6 +4,7 @@ using DeskAI.Core.Abstractions;
 using DeskAI.Core.Ai;
 using DeskAI.Core.Appearance;
 using DeskAI.Core.Desktop;
+using DeskAI.Core.QuickSearch;
 using DeskAI.Core.Rules;
 using DeskAI.Core.Welcome;
 
@@ -98,5 +99,21 @@ public sealed class FreshStartPageTests
         await settings.StartFreshAsync();
 
         Assert.True(await welcome.ClaimFirstShowAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task Start_fresh_turns_quick_search_back_on_with_Sparky_and_the_tip()
+    {
+        await using var app = await TestApp.StartAsync();
+        var quick = app.Get<QuickSearchSettingsService>();
+        await quick.SetOnAsync(false, TestContext.Current.CancellationToken);
+        await quick.SetBuddyAsync(SearchBuddy.Mochi, TestContext.Current.CancellationToken);
+        await quick.DismissTipAsync(TestContext.Current.CancellationToken);
+        var settings = app.Get<SettingsViewModel>();
+        await settings.InitializeAsync();
+
+        await settings.StartFreshAsync();
+
+        Assert.Equal(QuickSearchSettings.Default, await quick.LoadAsync(TestContext.Current.CancellationToken));
     }
 }

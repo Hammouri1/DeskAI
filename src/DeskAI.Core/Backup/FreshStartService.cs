@@ -102,6 +102,10 @@ public sealed class FreshStartService(
         await _appSettings.RemoveAsync(WallpaperService.SetKey, cancellationToken).ConfigureAwait(false);
         await _appSettings.RemoveAsync(Ai.AskDeskAiService.AgreedKey, cancellationToken).ConfigureAwait(false);
         await _appSettings.RemoveAsync(Welcome.WelcomeService.ShownKey, cancellationToken).ConfigureAwait(false);
+        foreach (var key in QuickSearch.QuickSearchSettingsService.Keys)
+        {
+            await _appSettings.RemoveAsync(key, cancellationToken).ConfigureAwait(false);
+        }
 
         return new FreshStartOutcome(foldersForgotten, rulesRemoved, searchesRemoved, keysRemoved);
     }
