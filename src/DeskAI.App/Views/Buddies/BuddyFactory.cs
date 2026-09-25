@@ -9,6 +9,7 @@ internal static class BuddyFactory
     {
         SearchBuddy.Archie => new ArchieBuddy(),
         SearchBuddy.Pip => new PipBuddy(),
+        SearchBuddy.Fetch => new FetchBuddy(),
         _ => new SparkyBuddy(),
     };
 }

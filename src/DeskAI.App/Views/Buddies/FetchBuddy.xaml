@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Fetch the fox, drawn from the approved mockup (characters.html, the "fox" card). Same rules as
+  Sparky: a 200 x 200 drawing in a Viewbox, each moving part a full-size Canvas at 0,0 so its
+  transform centre is in the mockup's coordinates. "Moods" poses with setters only; "Motion" runs
+  the moves; "Still" runs none. Decorative: screen readers hear the buddy's line, not the drawing.
+-->
+<buddies:BuddyControl
+    x:Class="DeskAI.App.Views.Buddies.FetchBuddy"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:buddies="using:DeskAI.App.Views.Buddies"
+    AutomationProperties.AccessibilityView="Raw">
+
+    <Grid>
+        <Grid.Resources>
+            <LinearGradientBrush x:Key="Fur" StartPoint="0,0" EndPoint="0,1">
+                <GradientStop Offset="0" Color="#FFA565" />
+                <GradientStop Offset="1" Color="#E8622A" />
+            </LinearGradientBrush>
+        </Grid.Resources>
+
+        <VisualStateManager.VisualStateGroups>
+            <VisualStateGroup x:Name="Moods">
+                <VisualState x:Name="Idle" />
+                <VisualState x:Name="Thinking">
+                    <VisualState.Setters>
+                        <!-- Nose down: sniffing. -->
+                        <Setter Target="Nose.Visibility" Value="Collapsed" />
+                        <Setter Target="NoseLow.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Found">
+                    <VisualState.Setters>
+                        <Setter Target="Sparkles.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Nothing">
+                    <VisualState.Setters>
+                        <!-- The file is put down; a small down mouth shows instead. -->
+                        <Setter Target="FileInMouth.Visibility" Value="Collapsed" />
+                        <Setter Target="MouthDown.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="Happy">
+                    <VisualState.Setters>
+                        <Setter Target="Eyes.Visibility" Value="Collapsed" />
+                        <Setter Target="HappyEyes.Visibility" Value="Visible" />
+                        <Setter Target="Sparkles.Visibility" Value="Visible" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+
+            <VisualStateGroup x:Name="Motion">
+                <VisualState x:Name="IdleMoving">
+                    <Storyboard>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="BodyTransform" Storyboard.TargetProperty="TranslateY" RepeatBehavior="Forever">
+                            <SplineDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:1.4" Value="-12" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:2.8" Value="0" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ShadowTransform" Storyboard.TargetProperty="ScaleX" RepeatBehavior="Forever">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:1.4" Value="0.72" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:2.8" Value="1" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="TailTransform" Storyboard.TargetProperty="Rotation" RepeatBehavior="Forever">
+                            <SplineDoubleKeyFrame KeyTime="0:0:0" Value="10" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:0.4" Value="-14" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:0.8" Value="10" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="LeftEarTransform" Storyboard.TargetProperty="Rotation" RepeatBehavior="Forever">
+                            <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:2.75" Value="0" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:2.88" Value="-12" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:3.01" Value="6" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:3.2" Value="0" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RightEarTransform" Storyboard.TargetProperty="Rotation" BeginTime="0:0:1.4" RepeatBehavior="Forever">
+                            <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:2.75" Value="0" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:2.88" Value="12" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:3.01" Value="-6" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:3.2" Value="0" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="ScarfTransform" Storyboard.TargetProperty="Rotation" RepeatBehavior="Forever">
+                            <SplineDoubleKeyFrame KeyTime="0:0:0" Value="-12" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:0.55" Value="14" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:1.1" Value="-12" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="HeadTransform" Storyboard.TargetProperty="Rotation" RepeatBehavior="Forever">
+                            <SplineDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:1.65" Value="-6" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:3.3" Value="4" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:5.5" Value="0" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="EyesTransform" Storyboard.TargetProperty="ScaleY" RepeatBehavior="Forever">
+                            <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:4.05" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:4.23" Value="0.08" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:4.5" Value="1" />
+                        </DoubleAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+
+                <VisualState x:Name="ThinkingMoving">
+                    <Storyboard>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="BodyTransform" Storyboard.TargetProperty="TranslateY" RepeatBehavior="Forever">
+                            <SplineDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:1.4" Value="-12" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:2.8" Value="0" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="LeftEarTransform" Storyboard.TargetProperty="Rotation" RepeatBehavior="Forever">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.2" Value="-12" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.4" Value="0" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:1.6" Value="0" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="RightEarTransform" Storyboard.TargetProperty="Rotation" BeginTime="0:0:0.8" RepeatBehavior="Forever">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.2" Value="12" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.4" Value="0" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:1.6" Value="0" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="TailTransform" Storyboard.TargetProperty="Rotation" RepeatBehavior="Forever">
+                            <SplineDoubleKeyFrame KeyTime="0:0:0" Value="10" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:0.4" Value="-14" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:0.8" Value="10" />
+                        </DoubleAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+
+                <VisualState x:Name="FoundMoving">
+                    <Storyboard>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="BodyTransform" Storyboard.TargetProperty="TranslateY" RepeatBehavior="Forever">
+                            <SplineDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:1.4" Value="-12" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:2.8" Value="0" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="TailTransform" Storyboard.TargetProperty="Rotation" RepeatBehavior="Forever">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="10" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.25" Value="-14" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.5" Value="10" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Sparkles" Storyboard.TargetProperty="Opacity" RepeatBehavior="Forever">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="0.4" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.9" Value="1" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:1.8" Value="0.4" />
+                        </DoubleAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+
+                <VisualState x:Name="NothingMoving">
+                    <Storyboard>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="BodyTransform" Storyboard.TargetProperty="TranslateY" RepeatBehavior="Forever">
+                            <SplineDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:2" Value="-8" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:4" Value="0" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="TailTransform" Storyboard.TargetProperty="Rotation" RepeatBehavior="Forever">
+                            <SplineDoubleKeyFrame KeyTime="0:0:0" Value="10" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:1" Value="0" />
+                            <SplineDoubleKeyFrame KeySpline="0.45,0,0.55,1" KeyTime="0:0:2" Value="10" />
+                        </DoubleAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+
+                <VisualState x:Name="HappyMoving">
+                    <Storyboard>
+                        <!-- A fast wag, four times. -->
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="TailTransform" Storyboard.TargetProperty="Rotation" RepeatBehavior="4x">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="10" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.15" Value="-18" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.3" Value="10" />
+                        </DoubleAnimationUsingKeyFrames>
+                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="BodyTransform" Storyboard.TargetProperty="TranslateY">
+                            <LinearDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.3" Value="-14" />
+                            <LinearDoubleKeyFrame KeyTime="0:0:0.6" Value="0" />
+                        </DoubleAnimationUsingKeyFrames>
+                    </Storyboard>
+                </VisualState>
+
+                <VisualState x:Name="Still" />
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
+
+        <Viewbox>
+            <Canvas Width="200" Height="200">
+                <Ellipse Canvas.Left="56" Canvas.Top="180" Width="88" Height="12" Fill="#000000" Opacity="0.3">
+                    <Ellipse.RenderTransform>
+                        <CompositeTransform x:Name="ShadowTransform" CenterX="44" CenterY="6" />
+                    </Ellipse.RenderTransform>
+                </Ellipse>
+
+                <Canvas x:Name="Body" Width="200" Height="200">
+                    <Canvas.RenderTransform>
+                        <CompositeTransform x:Name="BodyTransform" />
+                    </Canvas.RenderTransform>
+
+                    <Canvas x:Name="Tail" Width="200" Height="200">
+                        <Canvas.RenderTransform>
+                            <CompositeTransform x:Name="TailTransform" CenterX="122" CenterY="152" />
+                        </Canvas.RenderTransform>
+                        <Path Data="M126 152 Q178 142 172 94 Q164 82 154 92 Q160 126 122 134 Z" Fill="{StaticResource Fur}" />
+                        <Path Data="M172 94 Q164 82 154 92 Q162 100 171 106 Z" Fill="#FFF4E8" />
+                    </Canvas>
+
+                    <Ellipse Canvas.Left="64" Canvas.Top="118" Width="72" Height="60" Fill="{StaticResource Fur}" />
+                    <Path Data="M82 134 Q100 170 118 134 Q100 142 82 134 Z" Fill="#FFF4E8" />
+                    <Rectangle Canvas.Left="80" Canvas.Top="166" Width="14" Height="16" RadiusX="7" RadiusY="7" Fill="#3A2418" />
+                    <Rectangle Canvas.Left="106" Canvas.Top="166" Width="14" Height="16" RadiusX="7" RadiusY="7" Fill="#3A2418" />
+                    <Path Data="M68 118 Q100 136 132 118 L132 128 Q100 146 68 128 Z" Fill="#3FD9A8" />
+                    <Canvas x:Name="Scarf" Width="200" Height="200">
+                        <Canvas.RenderTransform>
+                            <CompositeTransform x:Name="ScarfTransform" CenterX="108" CenterY="128" />
+                        </Canvas.RenderTransform>
+                        <Path Data="M116 128 L136 154 L123 157 L108 131 Z" Fill="#26B487" />
+                    </Canvas>
+
+                    <Canvas x:Name="Head" Width="200" Height="200">
+                        <Canvas.RenderTransform>
+                            <CompositeTransform x:Name="HeadTransform" CenterX="100" CenterY="118" />
+                        </Canvas.RenderTransform>
+                        <Canvas x:Name="LeftEar" Width="200" Height="200">
+                            <Canvas.RenderTransform>
+                                <CompositeTransform x:Name="LeftEarTransform" CenterX="77" CenterY="72" />
+                            </Canvas.RenderTransform>
+                            <Path Data="M66 72 L60 28 L94 60 Z" Fill="{StaticResource Fur}" />
+                            <Path Data="M68 66 L64 40 L85 60 Z" Fill="#3A2418" />
+                        </Canvas>
+                        <Canvas x:Name="RightEar" Width="200" Height="200">
+                            <Canvas.RenderTransform>
+                                <CompositeTransform x:Name="RightEarTransform" CenterX="123" CenterY="72" />
+                            </Canvas.RenderTransform>
+                            <Path Data="M134 72 L140 28 L106 60 Z" Fill="{StaticResource Fur}" />
+                            <Path Data="M132 66 L136 40 L115 60 Z" Fill="#3A2418" />
+                        </Canvas>
+                        <Path Data="M58 78 Q60 50 100 48 Q140 50 142 78 Q138 106 100 118 Q62 106 58 78 Z" Fill="{StaticResource Fur}" />
+                        <Path Data="M64 86 Q84 88 100 112 Q116 88 136 86 Q130 108 100 118 Q70 108 64 86 Z" Fill="#FFF4E8" />
+
+                        <Canvas x:Name="Eyes" Width="200" Height="200">
+                            <Canvas.RenderTransform>
+                                <CompositeTransform x:Name="EyesTransform" CenterX="100" CenterY="80" />
+                            </Canvas.RenderTransform>
+                            <Ellipse Canvas.Left="79" Canvas.Top="73" Width="10" Height="14" Fill="#1B1B2B" />
+                            <Ellipse Canvas.Left="84" Canvas.Top="75" Width="4" Height="4" Fill="#FFFFFF" />
+                            <Ellipse Canvas.Left="111" Canvas.Top="73" Width="10" Height="14" Fill="#1B1B2B" />
+                            <Ellipse Canvas.Left="116" Canvas.Top="75" Width="4" Height="4" Fill="#FFFFFF" />
+                        </Canvas>
+                        <Path x:Name="HappyEyes" Data="M78 82 Q84 74 90 82 M110 82 Q116 74 122 82" Stroke="#1B1B2B" StrokeThickness="3"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" Visibility="Collapsed" />
+                        <Ellipse Canvas.Left="67" Canvas.Top="89" Width="10" Height="6" Fill="#FF8F8F" Opacity="0.6" />
+                        <Ellipse Canvas.Left="123" Canvas.Top="89" Width="10" Height="6" Fill="#FF8F8F" Opacity="0.6" />
+                        <Ellipse x:Name="Nose" Canvas.Left="94.5" Canvas.Top="96" Width="11" Height="8" Fill="#1B1B2B" />
+                        <Ellipse x:Name="NoseLow" Canvas.Left="94.5" Canvas.Top="100" Width="11" Height="8" Fill="#1B1B2B" Visibility="Collapsed" />
+                        <Path x:Name="MouthDown" Data="M94 110 Q100 106 106 110" Stroke="#1B1B2B" StrokeThickness="2.5"
+                              StrokeStartLineCap="Round" StrokeEndLineCap="Round" Visibility="Collapsed" />
+
+                        <Canvas x:Name="FileInMouth" Width="200" Height="200">
+                            <Canvas.RenderTransform>
+                                <RotateTransform Angle="10" CenterX="112" CenterY="112" />
+                            </Canvas.RenderTransform>
+                            <Rectangle Canvas.Left="104" Canvas.Top="104" Width="24" Height="18" RadiusX="2" RadiusY="2" Fill="#FFFFFF" Stroke="#CFD6DE" />
+                            <Path Data="M108 109 h15 M108 113 h11 M108 117 h7" Stroke="#9AA7B5" StrokeThickness="1.6" />
+                        </Canvas>
+                        <Canvas x:Name="Sparkles" Width="200" Height="200" Visibility="Collapsed">
+                            <Path Data="M138 100 l2 5 5 2 -5 2 -2 5 -2 -5 -5 -2 5 -2z" Fill="#FFF6A8" />
+                            <Path Data="M134 124 l1.5 4 4 1.5 -4 1.5 -1.5 4 -1.5 -4 -4 -1.5 4 -1.5z" Fill="#BFFFEA" />
+                        </Canvas>
+                    </Canvas>
+                </Canvas>
+            </Canvas>
+        </Viewbox>
+    </Grid>
+</buddies:BuddyControl>
