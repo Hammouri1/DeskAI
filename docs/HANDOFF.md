@@ -26,7 +26,14 @@ confirmed no AI in the bar and on by default. All of it is in the spec's decisio
 `docs/superpowers/plans/2026-09-25-quick-search.md`** (15 tasks: ADR 0047 and review → Core → the
 file launcher → the bar's behaviour → switch, icon near the clock, closing → tip and welcome → the
 window with Sparky → six buddies one by one → docs and review). Next: the owner reviews the plan
-and picks how to run it (one by one here, or a fresh helper per task). Nothing is built yet.
+and picks how to run it (one by one here, or a fresh helper per task).
+**Building (owner's choice 2026-09-25: one by one here, with one fresh review at the end).** On
+branch `quick-search` (from `main` at `e61e6e0`), plan Tasks 1–3 are done and committed: ADR 0047
+and its security review; the open rule, the buddies' lines, and the three remembered choices
+(Start fresh forgets them); `QuickSearchService` (by name, then inside). Release build 0 warnings,
+all 1,777 tests passed, formatting passed. Nothing a person can see yet. The owner asked for only
+Tasks 1–3 while away; **next is Task 4** (the file launcher). Progress ledger with the rulings made:
+`.superpowers/sdd/2026-09-25-quick-search/progress.md` (git-ignored).
 The owner said to keep asking questions whenever something is unclear ("always better").
 
 **Kept for later (owner, 2026-09-25):** Desktop Studio cards for Downloads; the buddy inside
