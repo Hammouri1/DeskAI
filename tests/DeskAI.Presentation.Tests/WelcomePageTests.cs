@@ -37,7 +37,7 @@ public sealed class WelcomePageTests
     }
 
     [Fact]
-    public async Task Next_Back_and_Done_walk_the_three_pages()
+    public async Task Next_Back_and_Done_walk_the_four_pages()
     {
         await using var app = await TestApp.StartAsync();
         var welcome = app.Get<WelcomeViewModel>();
@@ -47,8 +47,8 @@ public sealed class WelcomePageTests
         Assert.Equal("Find your files and keep them tidy.", welcome.Current.Body);
         Assert.False(welcome.CanGoBack);
         Assert.Equal("Next", welcome.NextText);
-        Assert.Equal([true, false, false], welcome.Dots);
-        Assert.Equal("Page 1 of 3", welcome.PageNumberText);
+        Assert.Equal([true, false, false, false], welcome.Dots);
+        Assert.Equal("Page 1 of 4", welcome.PageNumberText);
 
         Assert.False(welcome.Next());
         Assert.Equal("You stay in charge", welcome.Current.Title);
@@ -61,7 +61,7 @@ public sealed class WelcomePageTests
             ],
             welcome.Current.Promises);
         Assert.True(welcome.CanGoBack);
-        Assert.Equal([false, true, false], welcome.Dots);
+        Assert.Equal([false, true, false, false], welcome.Dots);
 
         welcome.Back();
         Assert.Equal(0, welcome.PageIndex);
@@ -69,6 +69,8 @@ public sealed class WelcomePageTests
         Assert.Equal(0, welcome.PageIndex);
 
         Assert.False(welcome.Next());
+        Assert.False(welcome.Next());
+        Assert.Equal("Find any file, from anywhere", welcome.Current.Title);
         Assert.False(welcome.Next());
         Assert.Equal("Let's start", welcome.Current.Title);
         Assert.True(welcome.IsLastPage);

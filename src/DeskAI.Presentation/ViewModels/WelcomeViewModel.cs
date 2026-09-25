@@ -4,11 +4,14 @@ using DeskAI.Core.Roots;
 
 namespace DeskAI.App.ViewModels;
 
-/// <summary>One page of the welcome: a title, a line under it, and ticked promises (page 2 only).</summary>
-public sealed record WelcomePage(string Title, string Body, IReadOnlyList<string> Promises);
+/// <summary>
+/// One page of the welcome: a title, a line under it, ticked promises (page 2 only), and whether
+/// Sparky, the quick search buddy, is drawn above the line (page 3 only).
+/// </summary>
+public sealed record WelcomePage(string Title, string Body, IReadOnlyList<string> Promises, bool ShowsBuddy = false);
 
 /// <summary>
-/// The first-run welcome's three pages, and the folder a person chose to connect from it.
+/// The first-run welcome's four pages, and the folder a person chose to connect from it.
 /// </summary>
 /// <remarks>
 /// It cannot connect anything by itself. Choosing a folder only records it; the window then asks
@@ -34,6 +37,8 @@ public sealed class WelcomeViewModel(PersonalFoldersViewModel folders, IAiSettin
             "Nothing moves until you see it and say yes.",
             "You can put things back.",
         ]),
+        new("Find any file, from anywhere",
+            "Press Ctrl + Alt + Space in any app. Type what you're looking for, and press Enter to open it.", [], ShowsBuddy: true),
         new("Let's start", "Connect a folder to begin. DeskAI asks once more before connecting.", []),
     ];
 

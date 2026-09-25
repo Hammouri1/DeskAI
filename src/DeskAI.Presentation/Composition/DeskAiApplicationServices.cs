@@ -146,6 +146,7 @@ public static class DeskAiApplicationServices
         services.AddSingleton<IQuickSearchHotKey, NoQuickSearchHotKey>();
         services.AddSingleton<QuickSearchSwitch>();
         services.AddTransient<QuickSearchCardViewModel>();
+        services.AddTransient<QuickSearchTipViewModel>();
         services.AddTransient<ShellViewModel>();
         services.AddTransient<TidyViewModel>();
         services.AddTransient<SettingsViewModel>();
