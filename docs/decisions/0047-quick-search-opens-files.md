@@ -64,3 +64,27 @@ closed.
 - DeskAI staying near the clock after the window closes is now normal while quick search is on.
   Every sentence that says what closing does must stay true. "Closing it stops everything"
   becomes "Closing it stops checking", and Start fresh's dialog says checking stops.
+
+## Update 2026-09-25: shortcut choice and motion
+
+After trying quick search, the owner found that Ctrl + Alt + Space clashed with another program
+(the Claude desktop app) and that no buddy moved because Windows' Animation effects was off on
+their PC. They chose (spec `docs/superpowers/specs/2026-09-25-quick-search-polish-design.md`):
+
+- **The shortcut is one of three fixed combinations**, picked on My workspace: **Ctrl + Alt + D**
+  (the default for everyone), Ctrl + Alt + Space, or Ctrl + Shift + Space. It is still
+  `RegisterHotKey` with `MOD_NOREPEAT`, one combination at a time, and the old one is given back
+  before a new one is asked for. The list is a closed enum (`QuickSearchShortcut`), so a stored
+  value can never name any other key; anything unknown reads as Ctrl + Alt + D. There is no key
+  recorder and no keyboard hook. A shortcut Windows refuses is not replaced by the old one:
+  nothing listens until the person picks another or turns the switch off and on.
+- **Buddies follow DeskAI's own "Let my buddy move" switch**, on by default, not Windows'
+  Animation effects. Windows' switch is often off for speed rather than comfort; DeskAI's switch
+  sits on the card with the buddies, in plain words, so a person who needs stillness finds it
+  where the motion is. Off holds every buddy, the bar's opening, and its turning edge still.
+- **The bar's window is see-through around the card** (a transparent window background, the
+  glass extended over the whole window, and the window frame removed by answering
+  `WM_NCCALCSIZE`). This changes only drawing; the bar gains no other Windows ability, and it
+  still hides on Esc, on losing focus, and on a click on the see-through part.
+
+Nothing changed in what quick search reads, opens, remembers, or sends.

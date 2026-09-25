@@ -174,3 +174,18 @@ After trying quick search, the owner reported (with two screenshots, 2026-09-25)
      middle of the box and "some words look weird". Ruling: the card is fully opaque; only the
      glow around it is see-through.
   5. Not checked: high contrast and a 150% display (optional in section 4).
+- **Help text:** the help topic is fixed text, so it names the default and where to change it:
+  "A small search bar you open from any app. Ctrl + Alt + D opens it; pick another shortcut
+  here." (The plan's longer line broke the 20-word help limit.)
+- **The refusal line** ("Another program already uses {shortcut}. Pick another shortcut above.")
+  is also shown when turning the switch on finds the chosen shortcut taken; it sits directly
+  under the Shortcut list so "above" points at it.
+- **The motion switch** sits under the faces, on the same card.
+- **The faces are a `RadioButtons` group**, so moving with the arrow keys chooses each buddy as it
+  moves (and saves it), as radio groups do.
+- **Names in code:** the buddy's switch property is `MotionSwitch` (every buddy drawing already has
+  a state group named `Motion`).
+- **The search box** has no frame of its own while typing, only the mint underline (WinUI's focus
+  state drew a full frame until its focused thickness was set to the underline).
+- **The welcome's quick search page** names the chosen shortcut; so do the switch header, the problem line, and
+  the icon's tooltip near the clock.

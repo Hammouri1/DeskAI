@@ -588,6 +588,10 @@ The owner's pick from the ideas for all of DeskAI: find a file from anywhere. De
   after checking the live file. No AI, nothing sent, nothing remembered. A switch and the buddy
   choice on My workspace; **Find a file** near the clock; a welcome page. The Home and Search tip
   was built and then removed at the owner's request.
+- ✅ 2026-09-25: **Quick search polish** on `quick-search` (not released): a shortcut picked from
+  three (Ctrl + Alt + D by default), a "Let my buddy move" switch that wins over Windows'
+  animation setting, a buddy stage with round faces, and a see-through glowing bar with the buddy
+  perched on top.
 - Kept for later (owner, 2026-09-25): the buddy inside DeskAI's own window; AI in the quick
   search bar; the Desktop Studio cards for Downloads.
 

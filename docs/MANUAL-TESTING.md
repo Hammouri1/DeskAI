@@ -1261,3 +1261,29 @@ welcome now has four pages (the third is **Find any file, from anywhere**, with 
    close the window: DeskAI quits (unless checking in the background is on), and the shortcut
    does nothing. Turn it back on.
 9. Home and Search show no quick search tip.
+
+## 2026-09-25 Quick search polish
+
+The earlier "2026-09-25 Quick search" check says Ctrl + Alt + Space; the default is now Ctrl + Alt + D.
+Use the isolated `DeskAiUiPreview=true` build, which starts with generated temporary data. Connect
+the generated Downloads on Home first.
+
+1. Over another app, press **Ctrl + Alt + D**. The card drops in, Sparky pops up on its top edge,
+   and the edge slowly turns mint, blue, violet, pink. Around the card the screen shows through
+   with a soft mint glow and no square frame; nothing behind shows through the card itself.
+2. Type `lesson`: **Lesson handout.pdf** appears with a red **PDF** tile, a mint left edge, and
+   "Open ↵". Press **Down** and **Up**, then **Esc**: the bar hides.
+3. Open it again and click just next to the card, on the see-through part: it hides. Open it
+   again and click somewhere else: it hides.
+4. On **My workspace → Looks → Quick search**, pick **Ctrl + Shift + Space**. The switch now
+   reads "Press Ctrl + Shift + Space to find a file", the icon near the clock says so when you
+   point at it, Ctrl + Shift + Space opens the bar, and Ctrl + Alt + D no longer does. If you know
+   a shortcut another program uses, pick it and read the line under the list; then pick another.
+5. Click each face under **Your search buddy**: the stage shows that buddy large on its own
+   background, with its name and hello line, and it pops in. Use the arrow keys on the faces.
+   Paige's name fits on one line.
+6. Turn **Let my buddy move** off: the stage buddy stops at once; the bar opens without its
+   drop-in and nothing on it moves; **Privacy and AI → Show the welcome again** shows Sparky still.
+   Turn it back on.
+7. **Privacy and AI → Start fresh**: afterwards Ctrl + Alt + D opens the bar again and buddies
+   move again.

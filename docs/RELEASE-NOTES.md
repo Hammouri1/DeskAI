@@ -1,5 +1,20 @@
 # Release notes
 
+## Unreleased
+
+- **Quick search** (new): press **Ctrl + Alt + D** in any app and a small search bar appears with
+  a friendly search buddy. It finds files in your connected folders by name, and by words inside
+  where you allowed that on Search. Enter opens familiar files; anything else is shown in its
+  folder. It uses no AI and sends nothing.
+- The shortcut is **Ctrl + Alt + D**. Earlier test builds used Ctrl + Alt + Space, which another
+  popular app also uses. You can pick Ctrl + Alt + Space or Ctrl + Shift + Space on **My
+  workspace**, and DeskAI says so if another program already uses the one you pick.
+- **Let my buddy move**: your buddy and the search bar move unless you turn this off on My
+  workspace. It no longer depends on Windows' animation setting.
+- A new buddy chooser: your buddy large on its own stage, with round faces to click.
+- A new look for the bar: a solid card with a slowly turning glowing edge, your buddy perched on
+  top, and a see-through glow around it.
+
 ## 1.2.0 — 2026-09-25
 
 - **Desktop Studio**, a new page for your Desktop. **Find groups** sorts the folders and files on

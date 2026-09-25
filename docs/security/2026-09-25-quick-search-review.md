@@ -38,7 +38,7 @@ reading inside only where it was allowed). What they type. The promise that noth
 | Words from inside a file seen over another app | Only after the person's shortcut; short pieces; gone on hide | Behaviour of Task 5; accepted in ADR 0047 |
 | A snippet shown as markup or a link | Plain `TextBlock` text only | `QuickSearchLayoutTests.Snippets_are_plain_text` (Task 8) |
 | AI reaching the launcher | Only `QuickSearchViewModel` takes `IFileLauncher`; no AI in quick search | `QuickSearchContainmentTests.Only_the_quick_search_bar_holds_the_launcher` (Task 5) |
-| The shortcut as a key logger | `RegisterHotKey` for one combination; no hook | `QuickSearchLayoutTests.The_shortcut_is_Ctrl_Alt_Space_without_repeat_and_without_a_keyboard_hook` (Task 8) |
+| The shortcut as a key logger | `RegisterHotKey` for one combination; no hook | `QuickSearchLayoutTests.The_shortcut_comes_from_the_fixed_list_one_at_a_time_without_a_keyboard_hook` (renamed in the polish) |
 | DeskAI invisible with no way to quit | Stays only while the icon shows; Quit on the icon's menu | `QuickSearchSettingsPageTests.When_the_icon_cannot_show_closing_really_quits` (Task 6) |
 | Typed words, results, or snippets kept or logged | Nothing stored; no logging of phrase, names, or snippets | `QuickSearchPageTests.Nothing_typed_or_found_is_remembered` (Task 5) |
 
@@ -46,7 +46,28 @@ reading inside only where it was allowed). What they type. The promise that noth
 
 - A file swapped in the moment between the last check and Windows opening it (accepted, above).
 - Windows' own choice of app for an allow-listed type (the person's setting).
-- Another program already holding Ctrl + Alt + Space: quick search says so and does not fall back
+- Another program already holding the chosen shortcut: quick search says so and does not fall back
   to another key.
 
 No new AI capability, network access, Windows setting change, or file change.
+
+## Polish (2026-09-25)
+
+The shortcut choice, the "Let my buddy move" switch, the buddy stage and faces, and the
+see-through bar (spec `docs/superpowers/specs/2026-09-25-quick-search-polish-design.md`, ADR 0047
+"Update 2026-09-25").
+
+| Threat | Mitigation | Evidence |
+|---|---|---|
+| A stored value naming another key | Closed enum; only an exact name counts, anything else is Ctrl + Alt + D | `QuickSearchSettingsServiceTests.A_shortcut_DeskAI_does_not_know_falls_back_to_Ctrl_Alt_D`, `QuickSearchHotKeysTests` |
+| A keyboard hook or key recorder | `RegisterHotKey` only, values from a fixed table | `QuickSearchLayoutTests.The_shortcut_comes_from_the_fixed_list_one_at_a_time_without_a_keyboard_hook` |
+| Two shortcuts held at once after a change | `GlobalHotKey` unregisters the old one before registering the new; the recording fake mirrors it | same layout test; `QuickSearchSettingsPageTests.A_shortcut_another_program_uses_is_named_and_nothing_listens_until_another_is_picked` |
+| A person who needs stillness | "Let my buddy move" on the card with the buddies, plain words; off stops everything at once | `QuickSearchSettingsPageTests.Buddies_move_until_the_switch_is_turned_off_and_the_choice_is_kept`, `QuickSearchLayoutTests.Moves_follow_DeskAIs_own_switch_not_Windows` |
+| A see-through area catching clicks meant for the app below, or an invisible window left on top | A click on the see-through part hides the bar; losing focus hides it; the window is only as large as the card plus a 24 px glow. Checked by the agent on sample screens and by the owner on theirs | spec "Rulings made while building" |
+| Text behind the bar blending into its words | The card is fully opaque (owner-found) | `QuickSearchLayoutTests.The_card_is_solid_and_only_the_glow_around_it_is_see_through` |
+
+Residual: a click on the see-through glow hides the bar but does not reach the app below (the
+person clicks again). The frame removal answers one drawing message (`WM_NCCALCSIZE`) through a
+window subclass; a future Windows App SDK that draws the frame differently could show a thin line
+again, which is cosmetic. No new AI capability, network access, stored text, Windows setting
+change, or file change.
