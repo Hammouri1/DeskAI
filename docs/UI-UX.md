@@ -330,6 +330,34 @@ The sentence under the page title is "Your shortcuts, starter packs, and folder 
 Nothing here moves a file." It stopped saying "changes files" the day templates arrived, because
 a template does change a folder; the narrower promise is the one that is still true.
 
+## Quick search (built 2026-09-25, ADR 0047)
+
+Spec: `docs/superpowers/specs/2026-09-25-quick-search-design.md`.
+
+- **The bar.** Ctrl + Alt + Space shows it on the screen with the pointer, centred, about 12% down
+  from the top: about 640 px wide, translucent navy with a thin mint border. The chosen buddy
+  sits in a strip at the top with its line in a speech bubble; the box below has focus at once.
+  Empty, it shows three example searches. Results come in two short groups, **By name** and,
+  a moment later, **Words inside** (with one line of text), each at most 5 rows: an icon, the
+  name, where it is ("Documents › School"), and **Open** or **Show in folder**. Plain fact lines
+  sit under the rows in DeskAI's usual voice, never in the buddy's. Up/Down, Enter, Ctrl + Enter
+  (show in folder), and Esc work as expected; clicking elsewhere hides it. It is not in the
+  taskbar or Alt + Tab. (The planned see-through window was not built; the whole window is the
+  bar's colour.)
+- **Buddies.** Seven drawings (Sparky, Archie the owl, Pip the robot, Fetch the fox, Inky the
+  octopus, Mochi, Paige the paper ghost), each with five moods: waiting, thinking, found,
+  nothing, happy (after a click). They stand still when Windows' animation effects are off.
+  Screen readers hear the buddy's line (announced politely), never the drawing.
+- **My workspace → Looks → Quick search.** The switch "Press Ctrl + Alt + Space to find a file",
+  a line saying closing keeps DeskAI near the clock, a plain line if another program already uses
+  the shortcut, and **Your search buddy**: seven tiles with a still picture, the name, a
+  "Chosen" pill, and **Choose**.
+- **Welcome.** A page before the last: "Find any file, from anywhere", with Sparky.
+- **Icon near the clock.** Its menu is Open DeskAI, **Find a file** (while quick search is on),
+  Pause checking (only while checking in the background), and Quit DeskAI.
+- **No tip on Home or Search.** One was built and removed at the owner's request: it was not
+  needed, and on Home it covered the welcome panel.
+
 ## Implemented Visual System
 
 The shared vocabulary lives in `src/DeskAI.App/Themes/DeskAITheme.xaml`, merged from `App.xaml` after `XamlControlsResources` so DeskAI's palette wins. No page invents its own colours.

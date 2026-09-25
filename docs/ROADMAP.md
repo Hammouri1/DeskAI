@@ -576,6 +576,21 @@ is released and checked by the owner before the next.
 - Step 4 — **Tag names** (ADR 0045): built on the branch; each folder in a group gets the group's name in front, as a same-place folder move under the same yes, with Put back.
 - Step 5 — color-icon probe, then **Color groups**. Dropped by the owner after the probe's first run (ADR 0046).
 
+## Quick Search — 2026-09-25
+
+The owner's pick from the ideas for all of DeskAI: find a file from anywhere. Design:
+`docs/superpowers/specs/2026-09-25-quick-search-design.md`; plan:
+`docs/superpowers/plans/2026-09-25-quick-search.md`; ADR 0047.
+
+- ✅ 2026-09-25: **Quick search** built on branch `quick-search` (15 tasks). Ctrl + Alt + Space
+  shows a small bar with a search buddy (seven to choose from); names first, then words inside
+  only where Search allows it; Enter opens familiar kinds and shows anything else in its folder,
+  after checking the live file. No AI, nothing sent, nothing remembered. A switch and the buddy
+  choice on My workspace; **Find a file** near the clock; a welcome page. The Home and Search tip
+  was built and then removed at the owner's request.
+- Kept for later (owner, 2026-09-25): the buddy inside DeskAI's own window; AI in the quick
+  search bar; the Desktop Studio cards for Downloads.
+
 ## Explicitly Deferred Beyond V1 Unless Reprioritized
 
 Cross-platform clients, team/cloud sync, hosted accounts, model training on user data, broad Windows control, widgets, rich desktop-shell replacement, marketplace-scale plugins, and automatic permanent deletion.

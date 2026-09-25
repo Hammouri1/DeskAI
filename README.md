@@ -65,6 +65,15 @@ pages and show the matching page. Save searches, pin them to Home with live coun
 exact and possible duplicates—comparing file contents only when you ask and never deleting what
 it finds. AI picture/scene search is disabled in this release.
 
+**Quick search.** Press **Ctrl + Alt + Space** in any app and a small search bar appears with a
+friendly search buddy (seven to choose from). Type a name, a kind like "pdf", or a time like
+"last week"; a moment later it also finds words inside files, but only in folders where you
+allowed that on Search. Enter opens familiar files, such as documents, pictures, music, and
+videos, in their usual app; anything else, programs included, is only shown in its folder. It
+uses no AI, sends nothing, and remembers nothing you type. While it is on, closing the DeskAI
+window keeps DeskAI near the clock so the shortcut still works; quit from the icon there, or turn
+quick search off on My workspace.
+
 **Understanding.** See what is using space, what has gone stale, and how organized a folder is.
 
 **Automating.** Write rules in plain language, keep a history of every automatic check, and
@@ -115,6 +124,9 @@ These are properties of the code, each covered by tests:
 - **Nothing is ever permanently deleted.** There is no file-deletion call anywhere in the source.
 - **Nothing is silently overwritten.** Moves refuse to overwrite; collisions must be resolved.
 - **Nothing runs by itself** outside a standing permission you gave for one specific folder.
+- **Quick search opens only what you pick.** It checks the file again the moment you press
+  Enter, never opens a program, and never follows a link out of a connected folder
+  ([ADR 0047](docs/decisions/0047-quick-search-opens-files.md)).
 - **DeskAI never adds itself to Windows startup** and never checks online for updates.
 - **Only four folders can be connected** — Desktop, Downloads, Documents, Pictures, or folders
   inside them — checked when connecting and again before tidying.
@@ -147,7 +159,7 @@ These are properties of the code, each covered by tests:
 - MVVM presentation, dependency injection at the composition root, async and cancellable I/O
 - SQLite (schema version 16) for settings, rules, saved searches, plans, the metadata index, the Desktop groups board, and
   the operation journal
-- xUnit — more than 1,400 tests across five projects, including page tests that use each feature the way a
+- xUnit — more than 1,800 tests across five projects, including page tests that use each feature the way a
   person does
 - No Electron, no Node.js, no Python, no hosted backend
 

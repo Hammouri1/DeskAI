@@ -29,7 +29,8 @@ happens, and every move is written down so it can be undone.
   **Put each group in its own folder** and **Clear old stuff** move the things you tick,
   **Add the group's name to each folder's name** renames the folders you tick, and **Put back**
   returns your latest change.
-- **My workspace** — starter packs, pinned searches, folder templates, DeskAI's look, and
+- **My workspace** — starter packs, pinned searches, folder templates, DeskAI's look, quick
+  search and your search buddy, and
   your wallpaper.
 - **Privacy and AI** — what AI (if any) DeskAI uses and what it may see, your backup, and
   Start fresh.
@@ -40,7 +41,7 @@ of the menu always says which folders DeskAI can see.
 ## The welcome
 
 The first time DeskAI opens, a short welcome appears: what DeskAI is, what it will never do, and a
-button for each of your folders. Press **Next** to read on, **Back** to go back, or **Skip** to
+button for each of your folders. One page shows the quick search shortcut. Press **Next** to read on, **Back** to go back, or **Skip** to
 close it. It does not come back by itself. A folder button asks the same "Connect your …?"
 question Home asks, and connects only if you say yes. To see it again, open **Privacy and AI** and
 press **Show the welcome again**.
@@ -115,6 +116,36 @@ back. Choosing a different AI service asks again. Only the question is sent. The
 AI says what kind of question it is; DeskAI then looks in what it remembers and answers itself,
 with one button to open Search or Organize or to connect a folder. It never sends anything about
 your files and never moves anything.
+
+## Quick search
+
+Press **Ctrl + Alt + Space** in any app. A small search bar appears near the top of the screen,
+with your search buddy sitting on it.
+
+- **Type what you're looking for**: a name, a kind like "pdf", or a time like "last week". Files
+  with that name show under **By name** straight away. A moment later, words inside files show
+  under **Words inside**, but only in folders where you allowed reading inside on the Search
+  page. Quick search never gives that permission itself.
+- **Up** and **Down** choose a file. **Enter** opens familiar files (documents, pictures, music,
+  videos, zip files) in their usual app. Anything else, including programs, is only shown in its
+  folder. **Ctrl + Enter** always shows the file in its folder.
+- **Esc**, clicking somewhere else, or pressing the shortcut again hides the bar. Nothing you
+  typed or found is remembered.
+- **See more in DeskAI** opens Search with the same words, where you can see everything.
+- If a file moved or was renamed since DeskAI last looked, the bar says so and opens nothing.
+  Press **Refresh** on Search so DeskAI catches up.
+
+**Your search buddy.** On **My workspace**, choose one of seven: Sparky, Archie the owl, Pip the
+robot, Fetch the fox, Inky the octopus, Mochi, or Paige the paper ghost. Each has its own way of
+talking and moving; click it in the bar for a happy moment. If Windows' **Animation effects** are
+off, the buddy stands still.
+
+**Closing and quitting.** While quick search is on, closing the DeskAI window keeps DeskAI near
+the clock, so the shortcut still works. Right-click the icon there for **Find a file** or **Quit
+DeskAI**. To stop this, turn the switch off on My workspace; then closing the window quits
+DeskAI. If another program already uses Ctrl + Alt + Space, My workspace says so.
+
+Quick search uses no AI and sends nothing anywhere.
 
 ## Desktop Studio
 

@@ -305,6 +305,36 @@ with `IsFolders`, and `TidyRunService.UndoAsync` words a folder-only undo in fol
 Organize shows "DeskAI stopped while making folders: 1 of 2 folders made." with **Remove that
 folder** / **Keep it**.
 
+### Quick search (2026-09-25, ADR 0047)
+
+`DeskAI.Core.QuickSearch` is pure: `FileOpenRule` (the fixed list of kinds Enter may open, by the
+last extension), `SearchBuddy`/`BuddyMood` and `SearchBuddyLines` (each buddy's short lines),
+`QuickSearchSettings` and `QuickSearchSettingsService` (on/off and the buddy, two keys in
+`app_settings`; no schema change), `QuickSearchService` (wraps the existing `FileSearchService`
+and `ContentSearchService`: at most 5 by name, then at most 5 by words inside, never listing a
+file twice), `QuickSearchWords` (the icon's tooltip), and the `IFileLauncher` contract.
+
+Infrastructure's `WindowsFileLauncher` implements `IFileLauncher` (it takes the folder's ID and
+looks the folder up at the moment of opening) and re-checks the live file before handing one full
+path to `IShellStarter`. The shared registration holds `NoShellStarter`, which starts nothing;
+the app replaces it with `WindowsShellStarter`.
+
+Presentation holds `QuickSearchViewModel` (the bar: each keystroke cancels the last look, waits,
+looks up names, waits a little more, looks inside; the only holder of `IFileLauncher`),
+`QuickSearchTiming` (the waits, short in tests), `QuickSearchCardViewModel` (My workspace),
+`IQuickSearchHotKey` with `NoQuickSearchHotKey`, and `QuickSearchSwitch`, the one singleton that
+turns the stored choice, the shortcut, and the icon on or off together.
+`BackgroundPresenceController` now has two reasons to keep DeskAI near the clock, checking in
+the background and quick search, and passes the icon a `PresenceMenu` (Pause checking only while
+checking; Find a file only while quick search is on). Quick search keeps DeskAI running only
+while the icon is really showing.
+
+The app adds `GlobalHotKey` (`RegisterHotKey` on its own hidden message-only window, with
+`MOD_NOREPEAT`; no keyboard hook), `QuickSearchWindow` (the bar, hidden between uses and closed
+with the main window), and `Views/Buddies` (`BuddyControl` plus one XAML drawing per buddy, with
+"Moods" and "Motion" visual-state groups and a "Still" state used when Windows' animation effects
+are off).
+
 ## Initial Domain Model
 
 Names may evolve, but concepts should remain explicit:

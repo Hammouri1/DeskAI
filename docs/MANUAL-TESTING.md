@@ -1232,3 +1232,32 @@ it, and DeskAI allowed to move things there.
    under Other tidy-ups." Put each group in its own folder again and **Move**, then press **Show
    what would move** on Clear old stuff: when nothing loose is old, it says it doesn't look inside
    your group folders and works best before putting groups in folders. Nothing moves.
+
+# 2026-09-25 Quick search
+
+Use the isolated `DeskAiUiPreview=true` build, which starts with generated temporary data. The
+welcome now has four pages (the third is **Find any file, from anywhere**, with Sparky).
+
+1. In the preview, connect the generated **Downloads** from Home. Click into another app, then
+   press **Ctrl + Alt + Space**: the bar appears near the top of that screen with Sparky and "Hi!
+   What are we looking for?", and three examples. (If nothing appears, open **My workspace →
+   Looks → Quick search**: a line there says if another program already uses the shortcut.)
+2. Click **big videos**: the box fills and searches. Clear it and type `lesson`: **Lesson
+   handout.pdf** shows under **By name** with **Open**. Press **Enter**: it opens in your PDF app
+   and the bar hides.
+3. Type `zzqx`: "Nothing matched in your connected folders." and Sparky looks sorry. Press
+   **Esc**: the bar hides. Show it again: the box is empty (nothing was remembered).
+4. On **Search**, allow reading inside for the generated Downloads. Show the bar and type
+   `nebula`: after a moment the PDF shows under **Words inside** with a short line of its text.
+   **Ctrl + Enter** shows it in File Explorer instead of opening it.
+5. With the bar showing, click another window: it hides. Click Sparky in the bar: a happy moment.
+6. On **My workspace → Looks**, choose each of the seven buddies in turn and show the bar: each
+   has its own look and words. Turn Windows' **Settings → Accessibility → Visual effects →
+   Animation effects** off: the buddies stand still. Turn it back on.
+7. The preview has no icon near the clock, so check closing in your everyday DeskAI (this step
+   opens or moves no file). With quick search on, close the window: the icon stays near the
+   clock. Right-click it: **Find a file** shows the bar; **Quit DeskAI** ends DeskAI.
+8. Start it again, turn **Press Ctrl + Alt + Space to find a file** off on My workspace, and
+   close the window: DeskAI quits (unless checking in the background is on), and the shortcut
+   does nothing. Turn it back on.
+9. Home and Search show no quick search tip.

@@ -1,55 +1,46 @@
 # DeskAI — Coding Handoff
 
-## Start here (updated 2026-09-25, after 1.2.0 and the quick search design)
+## Start here (updated 2026-09-25, quick search built)
 
-**1.2.0 is released** (https://github.com/Hammouri1/DeskAI/releases/tag/v1.2.0): `main` holds
-Desktop Studio, the first-run welcome, and the wider Search; both GitHub workflows passed. Details
-under "Released as 1.2.0" below.
+**Quick search is built, on branch `quick-search`** (from `main` at `e61e6e0`; not pushed, not
+merged, not released). All 15 plan tasks are done (`docs/superpowers/plans/2026-09-25-quick-search.md`;
+spec `docs/superpowers/specs/2026-09-25-quick-search-design.md`; ADR 0047; review
+`docs/security/2026-09-25-quick-search-review.md`). Ctrl + Alt + Space shows a small bar with a
+search buddy (Sparky, Archie, Pip, Fetch, Inky, Mochi, Paige); names first, then words inside
+only where Search allows it; Enter opens familiar kinds after checking the live file, anything
+else is only shown in its folder; no AI, nothing sent or remembered. My workspace has the switch
+and the buddy choice; the icon near the clock has **Find a file**; the welcome has a page with
+Sparky. While quick search is on, closing the window keeps DeskAI near the clock.
 
-**Next task: quick search with a search buddy.** The owner chose it on 2026-09-25 and answered
-every design question. **Everything agreed is in
-`docs/superpowers/specs/2026-09-25-quick-search-design.md`** (read it fully; its "Decisions the
-owner made" list must not be re-asked), with the mockups beside it in
-`docs/superpowers/specs/2026-09-25-quick-search-mockups/` (`characters.html` = the seven buddies'
-art reference; `layouts.html`, layout C chosen). In short: Ctrl + Alt + Space anywhere shows a slim
-bar near the top of the screen with an animated buddy perched on it (seven buddies, Sparky by
-default, each with its own voice, no sounds); typing searches connected folders by name, kind,
-date, and size (no AI, nothing saved); Enter opens allow-listed file types in their usual app and
-everything else only gets Show in folder; closing the window now keeps DeskAI near the clock while
-quick search is on; a new welcome page and a tip on Home and Search. It needs ADR 0047 and a
-security review first (DeskAI's first "open a file" action; amends ADR 0025).
-**State of that task (2026-09-25):** the owner reviewed and approved the spec with one change:
-**the bar also reads inside files** (only where Search's "Read inside files" permission was given,
-same limits, never the scanned-PDF reader), starting by itself after a short pause in typing. They
-confirmed no AI in the bar and on by default. All of it is in the spec's decisions 16–19 and its
-"Rulings made while planning". **The implementation plan is written:
-`docs/superpowers/plans/2026-09-25-quick-search.md`** (15 tasks: ADR 0047 and review → Core → the
-file launcher → the bar's behaviour → switch, icon near the clock, closing → tip and welcome → the
-window with Sparky → six buddies one by one → docs and review). Next: the owner reviews the plan
-and picks how to run it (one by one here, or a fresh helper per task).
-**Building (owner's choice 2026-09-25: one by one here, with one fresh review at the end).** On
-branch `quick-search` (from `main` at `e61e6e0`), plan Tasks 1–3 are done and committed: ADR 0047
-and its security review; the open rule, the buddies' lines, and the three remembered choices
-(Start fresh forgets them); `QuickSearchService` (by name, then inside). Release build 0 warnings,
-all 1,777 tests passed, formatting passed. Then (owner's request, same day) Tasks 4–8: the file
-launcher (re-checks the live file; only the bar holds it), the bar's behaviour, the switch and the
-icon near the clock (Find a file; Pause only while checking), the tip on Home and Search and the
-welcome's page, and the bar window with Sparky, the shortcut (`RegisterHotKey`, no hook), and the
-Quick search card. Release build 0 warnings, 1,853 tests (1,847 passed, 6 skipped: the buddies not
-drawn yet), formatting passed. The window uses the fallback shape (no see-through probe). Checked in
-the UI preview with a throwaway Ctrl + Alt + F12 build: greeting, examples, typing, Esc.
-**Open decision for the owner:** on the owner's PC Windows refuses Ctrl + Alt + Space because
-another running program already uses it (error 1409; the Claude desktop app is the likely owner).
-DeskAI says so on the card; the owner decides whether to free it there or pick another shortcut.
-**Next is Task 9** (Archie), then Tasks 10–14 (the other buddies) and Task 15 (docs, review,
-handoff). Progress ledger with the rulings made:
-`.superpowers/sdd/2026-09-25-quick-search/progress.md` (git-ignored).
-The owner said to keep asking questions whenever something is unclear ("always better").
+**Verified 2026-09-25:** Release build 0 warnings, all 1,859 tests passed, formatting passed. In
+the UI preview (throwaway builds on Ctrl + Alt + F12, reverted): the bar opens, types, hides on
+Esc, and all seven buddies draw like their mockups. **The owner tried quick search and said "it
+works well."** Launchable exe: `src\DeskAI.App\bin\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`.
+Manual check still to do by the owner: `docs/MANUAL-TESTING.md` "2026-09-25 Quick search".
+
+**Decisions made while building (all recorded in the spec's "Rulings made while building"):**
+- The window is the fallback shape (no see-through window probe was run).
+- **The Home and Search tip was removed** at the owner's request after trying it ("it is not
+  needed"; on Home it sat inside the welcome panel and covered it). A test keeps it out.
+  `quicksearch.tip.dismissed` is no longer written; Start fresh still forgets it.
+- On the owner's PC Windows first refused Ctrl + Alt + Space (another program had it, likely the
+  Claude desktop app); the owner has since used it and it works.
+
+**Review:** the planned fresh reviewer stopped early (account usage limit), so the whole-change
+review was done in this session instead: no logging of phrases or names (only Windows error
+codes), every buddy mood and move names a real part (now a test), the bar closes with the main
+window, and the launcher checks were re-read. **Deferred small points:** a file swapped for a link
+in the instant between the launcher's check and Windows opening it is not caught (the same
+window every check-then-act has; ADR 0047 accepts it for opening only familiar kinds); the Found,
+Thinking, and Happy poses were checked by test, not yet by eye; a fresh independent review can
+still be run before release if the owner wants one.
+
+**Next step: ask the owner** whether to push `quick-search` and release it as 1.3.0, or check it
+by hand first (the manual check above). Do not push, tag, or release without asking.
 
 **Kept for later (owner, 2026-09-25):** Desktop Studio cards for Downloads; the buddy inside
 DeskAI's own window; AI in the quick search bar. Ideas offered but not picked are listed in the
-spec's decision 1.
-
+spec's decision 1. The owner said to keep asking questions whenever something is unclear.
 
 ## Earlier state (2026-09-25, after the first-run welcome)
 
@@ -650,12 +641,10 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 ## Copy-paste starter prompt
 
 > Continue DeskAI in the repository checkout. Read `AGENTS.md`, `docs/HANDOFF.md` ("Start
-> here" first), and especially `docs/SECURITY.md`; inspect Git status on `main` (1.2.0 is
-> released: Desktop Studio, the first-run welcome, wider Search). The next task is quick search
-> with a search buddy: read `docs/superpowers/specs/2026-09-25-quick-search-design.md` and its
-> mockups folder fully, do not re-ask its decisions, and ask me to review the spec if I have not
-> said I approved it; then write the implementation plan and ask me how to run it. Ask me
-> questions whenever something is unclear.
+> here" first), and especially `docs/SECURITY.md`; inspect Git status. Quick search is built on
+> branch `quick-search` (not pushed; `main` is at `e61e6e0`: 1.2.0 plus the plan). Ask me whether
+> to push it and release 1.3.0, or check it by hand first with `docs/MANUAL-TESTING.md`
+> "2026-09-25 Quick search". Ask me questions whenever something is unclear.
 > Do not open or scan my personal folders or use my API key. Test with generated
 > files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
 
