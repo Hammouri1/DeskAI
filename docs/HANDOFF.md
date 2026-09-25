@@ -1,8 +1,69 @@
 # DeskAI — Coding Handoff
 
-## Start here (updated 2026-09-25, quick search polish designed)
+## Start here (updated 2026-09-25, quick search polish built)
 
-**Current task: quick search polish, designed and approved in chat, spec written, plan NOT yet
+**Quick search polish is built on branch `quick-search`** (last commit: the one that adds this
+section; not pushed, not merged, not released). Plan `docs/superpowers/plans/2026-09-25-quick-search-polish.md`
+(6 tasks, built "one by one" by the agent with one fresh review at the end, the owner's choice);
+spec `docs/superpowers/specs/2026-09-25-quick-search-polish-design.md` (approved by the owner
+2026-09-25, with its two rulings: a refused shortcut does not fall back to the old one; the
+motion line "Turn this off to keep your buddy and the search bar still."); ADR 0047 "Update
+2026-09-25"; the security review's "Polish" section.
+
+**What it does now:**
+- **Shortcut:** a **Shortcut** list on My workspace → Looks → Quick search: **Ctrl + Alt + D**
+  (default for everyone), Ctrl + Alt + Space, Ctrl + Shift + Space. Stored as
+  `quicksearch.shortcut`. The switch header, the problem line, the icon's tooltip, the welcome
+  page all name the choice; the help names Ctrl + Alt + D as the default. Refused: "Another
+  program already uses {shortcut}. Pick another shortcut above." and nothing listens.
+- **"Let my buddy move"** (on by default, `quicksearch.motion`) replaces Windows' Animation effects
+  for every buddy, the bar's opening, and its turning edge (`BuddyMotion` singleton).
+- **Buddy chooser B:** a stage with the chosen buddy large on its own background, its name and
+  hello line (announced to screen readers), and seven round faces (a radio group; two rows below a
+  1,200 px window, one row above).
+- **Bar C, see-through:** the probe worked (it needed `DwmExtendFrameIntoClientArea` and a
+  `WM_NCCALCSIZE` window subclass to remove a 3 px frame; details in the spec's rulings). Solid
+  card (owner-found: at 95% text behind showed through), turning mint → pink edge, soft glow,
+  buddy perched on top, search icon, Esc hint, mint underline, kind tiles (DOC, PDF, IMG, VID,
+  FILE), "Open ↵" on the selected row, opening animation. A click on the see-through part hides it.
+
+**Verified 2026-09-25:** Release build 0 warnings, **all 1,900 tests passed**, formatting passed.
+In the UI preview (generated folders only), checked by the agent through Windows UI Automation
+and captures of the preview's own window: the welcome names Ctrl + Alt + D; the stage and faces
+match the mockup; choosing Paige swaps the stage (her name fits one line); the stage buddy moves
+and stops at once when the switch is turned off; the bar is see-through with a glow and no frame;
+`lesson` finds the generated PDF with its red tile; motion off shows the bar at once and still;
+Esc, a click on the edge, and a click elsewhere hide it; at 683 px wide all seven faces show in
+two rows. **The owner checked the see-through probe on their own screen** ("it's good"; both
+clicks hide it) and found the see-through card, now solid. Launchable exe:
+`src\DeskAI.App\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`.
+
+**Not yet checked by hand:** the arrow keys on the faces; Narrator reading the new buddy's name
+and line; the opening pop-in after the flash fix (checked by test only); high contrast and a 150%
+display on the see-through bar; a shortcut refused by another program on a real PC. The manual
+check is `docs/MANUAL-TESTING.md` "2026-09-25 Quick search polish".
+
+**Whole-change review** (fresh reviewer): no critical findings. Fixed, each with a test that
+failed first: a half-size buddy flashed before the pop-in on every opening; the faces were cut
+off in a narrow window; the help said "Ctrl + Alt + D opens it" even after another was picked;
+the stage never announced the new buddy; `docs/SECURITY.md` named only the old shortcut.
+**Rulings the owner may overrule** (all in the spec's rulings or the review notes): the help
+text; the motion switch under the faces; arrow keys choose as they move (radio group); in two
+rows the faces fill columns first (Sparky, Pip, Inky, Paige / Archie, Fetch, Mochi); the icon's
+tooltip still names a refused shortcut; Ctrl + Alt + D is AltGr + D on some keyboard layouts (the
+owner's chosen default; two other shortcuts are offered); a click on the see-through glow hides
+the bar but does not reach the app below.
+
+**Next step: ask the owner** whether to check by hand first (the manual check above), then
+whether to push `quick-search` and release it as 1.3.0 (version, README, install guide, release
+notes "Unreleased" → 1.3.0, tag). Do not push, tag, or release without asking.
+
+**Kept for later (owner, 2026-09-25):** Desktop Studio cards for Downloads; the buddy inside
+DeskAI's own window; AI in the quick search bar.
+
+## Earlier state (2026-09-25, quick search polish designed)
+
+**(Superseded by "Start here" above: the polish is now built.) Quick search polish, designed and approved in chat, spec written, plan NOT yet
 written.** Spec: `docs/superpowers/specs/2026-09-25-quick-search-polish-design.md` (commit
 `6332945` on `quick-search`; mockups in `…-quick-search-polish-mockups/`). The owner tried quick
 search and reported: no animation (cause: Windows' Animation effects is off on their PC, and
@@ -662,11 +723,10 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 ## Copy-paste starter prompt
 
 > Continue DeskAI in the repository checkout. Read `AGENTS.md`, `docs/HANDOFF.md` ("Start
-> here" first), and especially `docs/SECURITY.md`; inspect Git status. Quick search is built on
-> branch `quick-search` (not pushed; `main` is at `e61e6e0`). Its polish is designed in
-> `docs/superpowers/specs/2026-09-25-quick-search-polish-design.md`: ask me if the spec is
-> approved, then write the plan and build it step by step. Do not push or release 1.3.0 until
-> the polish is done and I say so. Ask me questions whenever something is unclear.
+> here" first), and especially `docs/SECURITY.md`; inspect Git status. Quick search and its
+> polish are built on branch `quick-search` (not pushed; `main` is at `e61e6e0`). Ask me whether
+> I have checked it by hand (`docs/MANUAL-TESTING.md` "2026-09-25 Quick search polish"), then
+> whether to push it and release 1.3.0. Ask me questions whenever something is unclear.
 > Do not open or scan my personal folders or use my API key. Test with generated
 > files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
 
