@@ -75,7 +75,7 @@ public sealed class QuickSearchSettingsPageTests
 
         await card.SetOnAsync(true);
 
-        Assert.Equal("Another program already uses Ctrl + Alt + Space, so quick search can't listen for it.", card.ShortcutProblem);
+        Assert.Equal("Another program already uses Ctrl + Alt + D. Pick another shortcut above.", card.ShortcutProblem);
         Assert.True(card.HasShortcutProblem);
     }
 
@@ -87,7 +87,7 @@ public sealed class QuickSearchSettingsPageTests
         var presence = app.Get<BackgroundPresenceController>();
 
         Assert.True(app.Presence.IsShowing);
-        Assert.Equal(QuickSearchWords.Tooltip, app.Presence.Tooltips[^1]);
+        Assert.Equal(QuickSearchWords.Tooltip(QuickSearchShortcut.CtrlAltD), app.Presence.Tooltips[^1]);
         Assert.Equal(new PresenceMenu(OffersPause: false, IsPaused: false, OffersFind: true), app.Presence.Menus[^1]);
         Assert.True(presence.KeepsRunningWhenClosed);
         Assert.True(presence.QuickSearchKeepsItRunning);
@@ -125,7 +125,7 @@ public sealed class QuickSearchSettingsPageTests
 
         presence.Refresh(checking);
 
-        Assert.Equal(QuickSearchWords.WithChecking(BackgroundCheckingChoice.Tooltip(checking, null)), app.Presence.Tooltips[^1]);
+        Assert.Equal(QuickSearchWords.WithChecking(BackgroundCheckingChoice.Tooltip(checking, null), QuickSearchShortcut.CtrlAltD), app.Presence.Tooltips[^1]);
         Assert.True(app.Presence.Menus[^1].OffersPause);
         Assert.True(app.Presence.Menus[^1].OffersFind);
         Assert.False(presence.QuickSearchKeepsItRunning);
@@ -143,14 +143,17 @@ public sealed class QuickSearchSettingsPageTests
         var paused = AutomaticCheckSettings.Default with { Mode = AutomaticCheckMode.InBackground, IsPaused = true };
         var running = AutomaticCheckSettings.Default with { Mode = AutomaticCheckMode.InBackground };
 
-        foreach (var tooltip in new[]
+        foreach (var shortcut in QuickSearchShortcuts.All)
         {
-            QuickSearchWords.Tooltip,
-            QuickSearchWords.WithChecking(BackgroundCheckingChoice.Tooltip(paused, 999)),
-            QuickSearchWords.WithChecking(BackgroundCheckingChoice.Tooltip(running, 999)),
-        })
-        {
-            Assert.True(tooltip.Length < 128, tooltip);
+            foreach (var tooltip in new[]
+            {
+                QuickSearchWords.Tooltip(shortcut),
+                QuickSearchWords.WithChecking(BackgroundCheckingChoice.Tooltip(paused, 999), shortcut),
+                QuickSearchWords.WithChecking(BackgroundCheckingChoice.Tooltip(running, 999), shortcut),
+            })
+            {
+                Assert.True(tooltip.Length < 128, tooltip);
+            }
         }
     }
 
@@ -172,14 +175,120 @@ public sealed class QuickSearchSettingsPageTests
         await using var app = await TestApp.StartAsync();
         await app.Get<QuickSearchSwitch>().SetOnAsync(false);
         await app.Get<QuickSearchSettingsService>().SetBuddyAsync(SearchBuddy.Inky, TestContext.Current.CancellationToken);
+        await (await OpenCardAsync(app)).SetShortcutAsync(QuickSearchShortcut.CtrlShiftSpace);
 
         await app.Get<SettingsViewModel>().StartFreshAsync();
 
         Assert.True(app.HotKey.IsListening);
+        Assert.Equal(QuickSearchShortcut.CtrlAltD, app.HotKey.ListeningFor);
         Assert.True(app.Presence.IsShowing);
         var card = await OpenCardAsync(app);
         Assert.True(card.IsOn);
+        Assert.Equal(QuickSearchShortcut.CtrlAltD, card.Shortcut);
         Assert.Equal("Sparky", Assert.Single(card.Buddies, tile => tile.IsChosen).Name);
+    }
+
+    [Fact]
+    public async Task A_fresh_DeskAI_listens_for_Ctrl_Alt_D_and_offers_three_shortcuts()
+    {
+        await using var app = await TestApp.StartAsync();
+        await app.Get<QuickSearchSwitch>().ApplyStoredAsync();
+        var card = await OpenCardAsync(app);
+
+        Assert.Equal(QuickSearchShortcut.CtrlAltD, app.HotKey.ListeningFor);
+        Assert.Equal(["Ctrl + Alt + D", "Ctrl + Alt + Space", "Ctrl + Shift + Space"], QuickSearchCardViewModel.ShortcutChoices);
+        Assert.Equal(0, card.ShortcutIndex);
+        Assert.Equal("Press Ctrl + Alt + D to find a file", card.SwitchHeader);
+        Assert.Equal("DeskAI — press Ctrl + Alt + D to find a file", app.Presence.Tooltips[^1]);
+    }
+
+    [Fact]
+    public async Task Choosing_a_shortcut_listens_for_it_names_it_and_is_kept()
+    {
+        await using var app = await TestApp.StartAsync();
+        await app.Get<QuickSearchSwitch>().ApplyStoredAsync();
+        var card = await OpenCardAsync(app);
+
+        await card.SetShortcutAsync(QuickSearchShortcut.CtrlShiftSpace);
+
+        Assert.Equal(QuickSearchShortcut.CtrlShiftSpace, app.HotKey.ListeningFor);
+        Assert.Equal(2, card.ShortcutIndex);
+        Assert.Equal("Press Ctrl + Shift + Space to find a file", card.SwitchHeader);
+        Assert.Equal("DeskAI — press Ctrl + Shift + Space to find a file", app.Presence.Tooltips[^1]);
+        Assert.False(card.HasShortcutProblem);
+
+        await using var reopened = await app.ReopenAsync();
+        await reopened.Get<QuickSearchSwitch>().ApplyStoredAsync();
+        Assert.Equal(QuickSearchShortcut.CtrlShiftSpace, reopened.HotKey.ListeningFor);
+        Assert.Equal(QuickSearchShortcut.CtrlShiftSpace, (await OpenCardAsync(reopened)).Shortcut);
+    }
+
+    [Fact]
+    public async Task A_shortcut_another_program_uses_is_named_and_nothing_listens_until_another_is_picked()
+    {
+        await using var app = await TestApp.StartAsync();
+        await app.Get<QuickSearchSwitch>().ApplyStoredAsync();
+        app.HotKey.TakenByOthers.Add(QuickSearchShortcut.CtrlAltSpace);
+        var card = await OpenCardAsync(app);
+
+        await card.SetShortcutAsync(QuickSearchShortcut.CtrlAltSpace);
+
+        Assert.Equal("Another program already uses Ctrl + Alt + Space. Pick another shortcut above.", card.ShortcutProblem);
+        Assert.False(app.HotKey.IsListening);
+
+        await card.SetShortcutAsync(QuickSearchShortcut.CtrlShiftSpace);
+
+        Assert.False(card.HasShortcutProblem);
+        Assert.Equal(QuickSearchShortcut.CtrlShiftSpace, app.HotKey.ListeningFor);
+    }
+
+    [Fact]
+    public async Task A_refused_shortcut_is_asked_for_again_when_the_switch_is_turned_back_on()
+    {
+        await using var app = await TestApp.StartAsync();
+        await app.Get<QuickSearchSwitch>().ApplyStoredAsync();
+        app.HotKey.TakenByOthers.Add(QuickSearchShortcut.CtrlAltSpace);
+        var card = await OpenCardAsync(app);
+        await card.SetShortcutAsync(QuickSearchShortcut.CtrlAltSpace);
+
+        await card.SetOnAsync(false);
+        Assert.False(card.HasShortcutProblem);
+
+        await card.SetOnAsync(true);
+        Assert.Equal("Another program already uses Ctrl + Alt + Space. Pick another shortcut above.", card.ShortcutProblem);
+
+        app.HotKey.TakenByOthers.Clear();
+        await card.SetOnAsync(false);
+        await card.SetOnAsync(true);
+        Assert.Equal(QuickSearchShortcut.CtrlAltSpace, app.HotKey.ListeningFor);
+    }
+
+    [Fact]
+    public async Task Choosing_a_shortcut_while_off_only_remembers_it()
+    {
+        await using var app = await TestApp.StartAsync();
+        var card = await OpenCardAsync(app);
+        await card.SetOnAsync(false);
+
+        await card.SetShortcutAsync(QuickSearchShortcut.CtrlAltSpace);
+        Assert.False(app.HotKey.IsListening);
+        Assert.False(app.Presence.IsShowing);
+
+        await card.SetOnAsync(true);
+        Assert.Equal(QuickSearchShortcut.CtrlAltSpace, app.HotKey.ListeningFor);
+    }
+
+    [Fact]
+    public async Task Picking_the_shortcut_already_in_use_changes_nothing()
+    {
+        await using var app = await TestApp.StartAsync();
+        await app.Get<QuickSearchSwitch>().ApplyStoredAsync();
+        var card = await OpenCardAsync(app);
+
+        await card.SetShortcutAsync(QuickSearchShortcut.CtrlAltD);
+
+        Assert.Equal(QuickSearchShortcut.CtrlAltD, app.HotKey.ListeningFor);
+        Assert.False(card.HasShortcutProblem);
     }
 
     [Fact]

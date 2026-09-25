@@ -119,7 +119,7 @@ your files and never moves anything.
 
 ## Quick search
 
-Press **Ctrl + Alt + Space** in any app. A small search bar appears near the top of the screen,
+Press **Ctrl + Alt + D** in any app. A small search bar appears near the top of the screen,
 with your search buddy sitting on it.
 
 - **Type what you're looking for**: a name, a kind like "pdf", or a time like "last week". Files
@@ -143,7 +143,11 @@ off, the buddy stands still.
 **Closing and quitting.** While quick search is on, closing the DeskAI window keeps DeskAI near
 the clock, so the shortcut still works. Right-click the icon there for **Find a file** or **Quit
 DeskAI**. To stop this, turn the switch off on My workspace; then closing the window quits
-DeskAI. If another program already uses Ctrl + Alt + Space, My workspace says so.
+DeskAI.
+
+**Picking another shortcut.** On **My workspace → Quick search**, the **Shortcut** list offers
+Ctrl + Alt + D, Ctrl + Alt + Space, and Ctrl + Shift + Space. If another program already uses the
+one you picked, DeskAI says so; pick another.
 
 Quick search uses no AI and sends nothing anywhere.
 

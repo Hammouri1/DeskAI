@@ -65,14 +65,14 @@ pages and show the matching page. Save searches, pin them to Home with live coun
 exact and possible duplicates—comparing file contents only when you ask and never deleting what
 it finds. AI picture/scene search is disabled in this release.
 
-**Quick search.** Press **Ctrl + Alt + Space** in any app and a small search bar appears with a
-friendly search buddy (seven to choose from). Type a name, a kind like "pdf", or a time like
-"last week"; a moment later it also finds words inside files, but only in folders where you
-allowed that on Search. Enter opens familiar files, such as documents, pictures, music, and
-videos, in their usual app; anything else, programs included, is only shown in its folder. It
-uses no AI, sends nothing, and remembers nothing you type. While it is on, closing the DeskAI
-window keeps DeskAI near the clock so the shortcut still works; quit from the icon there, or turn
-quick search off on My workspace.
+**Quick search.** Press **Ctrl + Alt + D** (or another shortcut you pick) in any app and a small
+search bar appears with a friendly search buddy (seven to choose from). Type a name, a kind like
+"pdf", or a time like "last week"; a moment later it also finds words inside files, but only in
+folders where you allowed that on Search. Enter opens familiar files, such as documents,
+pictures, music, and videos, in their usual app; anything else, programs included, is only
+shown in its folder. It uses no AI, sends nothing, and remembers nothing you type. While it is
+on, closing the DeskAI window keeps DeskAI near the clock so the shortcut still works; quit from
+the icon there, or turn quick search off on My workspace.
 
 **Understanding.** See what is using space, what has gone stale, and how organized a folder is.
 

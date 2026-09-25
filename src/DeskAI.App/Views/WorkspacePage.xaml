@@ -91,14 +91,20 @@
                         <controls:HelpButton Topic="workspace.quicksearch" />
                     </StackPanel>
                     <ToggleSwitch x:Name="QuickSearchSwitch"
-                                  Header="Press Ctrl + Alt + Space to find a file"
+                                  Header="{x:Bind ViewModel.QuickSearch.SwitchHeader, Mode=OneWay}"
                                   IsOn="{x:Bind ViewModel.QuickSearch.IsOn, Mode=OneWay}"
                                   Toggled="OnQuickSearchToggled" />
-                    <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="620" HorizontalAlignment="Left" TextWrapping="Wrap"
-                               Text="{x:Bind viewmodels:QuickSearchCardViewModel.WorksWhen}" />
+                    <ComboBox x:Name="ShortcutChoice"
+                              Header="Shortcut"
+                              MinWidth="220"
+                              ItemsSource="{x:Bind viewmodels:QuickSearchCardViewModel.ShortcutChoices}"
+                              SelectedIndex="{x:Bind ViewModel.QuickSearch.ShortcutIndex, Mode=OneWay}"
+                              SelectionChanged="OnShortcutChosen" />
                     <TextBlock Foreground="{ThemeResource DeskCautionBrush}" MaxWidth="620" HorizontalAlignment="Left" TextWrapping="Wrap"
                                Visibility="{x:Bind ViewModel.QuickSearch.HasShortcutProblem, Mode=OneWay}"
                                Text="{x:Bind ViewModel.QuickSearch.ShortcutProblem, Mode=OneWay}" />
+                    <TextBlock Style="{StaticResource CaptionStyle}" MaxWidth="620" HorizontalAlignment="Left" TextWrapping="Wrap"
+                               Text="{x:Bind viewmodels:QuickSearchCardViewModel.WorksWhen}" />
                     <TextBlock Style="{StaticResource GroupLabelStyle}" Text="Your search buddy" />
                     <ItemsControl ItemsSource="{x:Bind ViewModel.QuickSearch.Buddies}"
                                   AutomationProperties.Name="Search buddies">

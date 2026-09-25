@@ -4,6 +4,7 @@ using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.App.Views;
 using DeskAI.Core.Abstractions;
+using DeskAI.Core.QuickSearch;
 using DeskAI.Core.Rules;
 using DeskAI.Infrastructure.Launching;
 using DeskAI.Infrastructure.Logging;
@@ -131,7 +132,7 @@ public partial class App : Application
 
                 services.AddSingleton<IShellStarter, WindowsShellStarter>();
 
-                // The real Ctrl + Alt + Space (ADR 0047) replaces the one that never listens. In the
+                // The real quick search shortcut (ADR 0047) replaces the one that never listens. In the
                 // UI preview too, so the owner can try the real shortcut on generated folders.
                 foreach (var existing in services
                     .Where(descriptor => descriptor.ServiceType == typeof(IQuickSearchHotKey))
@@ -251,7 +252,7 @@ public partial class App : Application
     }
 
     /// <summary>
-    /// Starts listening for Ctrl + Alt + Space when quick search is on, and joins the shortcut and
+    /// Starts listening for the chosen shortcut when quick search is on, and joins the shortcut and
     /// the icon's "Find a file" to the bar (ADR 0047).
     /// </summary>
     /// <remarks>
@@ -278,7 +279,7 @@ public partial class App : Application
         });
         window.Closed += (_, _) =>
         {
-            hotKey.Listen(false);
+            hotKey.Listen(false, QuickSearchShortcuts.Default);
             bar.Close();
         };
         await _host.Services.GetRequiredService<QuickSearchSwitch>().ApplyStoredAsync();
@@ -332,7 +333,7 @@ public partial class App : Application
         try
         {
             window.AllowTheRealClose();
-            _host.Services.GetRequiredService<IQuickSearchHotKey>().Listen(false);
+            _host.Services.GetRequiredService<IQuickSearchHotKey>().Listen(false, QuickSearchShortcuts.Default);
             presence.Hide();
             await _host.StopAsync();
         }

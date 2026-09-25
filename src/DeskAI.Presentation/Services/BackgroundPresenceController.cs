@@ -28,6 +28,7 @@ public sealed class BackgroundPresenceController : IDisposable
     private readonly AutomaticCheckCoordinator _checks;
     private AutomaticCheckSettings _checking = AutomaticCheckSettings.Default;
     private bool _quickSearchOn;
+    private QuickSearchShortcut _shortcut = QuickSearchShortcuts.Default;
     private bool _disposed;
 
     public BackgroundPresenceController(
@@ -99,10 +100,11 @@ public sealed class BackgroundPresenceController : IDisposable
         Apply();
     }
 
-    /// <summary>Quick search was switched on or off (ADR 0047). It too keeps DeskAI near the clock.</summary>
-    public void SetQuickSearch(bool isOn)
+    /// <summary>Quick search was switched on or off, or its shortcut changed (ADR 0047). It too keeps DeskAI near the clock.</summary>
+    public void SetQuickSearch(bool isOn, QuickSearchShortcut shortcut)
     {
         _quickSearchOn = isOn;
+        _shortcut = shortcut;
         Apply();
     }
 
@@ -128,10 +130,10 @@ public sealed class BackgroundPresenceController : IDisposable
 
         var tooltip = checking
             ? BackgroundCheckingChoice.Tooltip(_checking, _checks.Latest?.ProposalCount)
-            : QuickSearchWords.Tooltip;
+            : QuickSearchWords.Tooltip(_shortcut);
         if (checking && quick)
         {
-            tooltip = QuickSearchWords.WithChecking(tooltip);
+            tooltip = QuickSearchWords.WithChecking(tooltip, _shortcut);
         }
 
         var menu = new PresenceMenu(OffersPause: checking, IsPaused: checking && _checking.IsPaused, OffersFind: quick);

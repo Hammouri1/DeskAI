@@ -1,6 +1,7 @@
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.App.Views.Buddies;
+using DeskAI.Core.QuickSearch;
 using DeskAI.Core.Roots;
 using DeskAI.Core.Templates;
 using DeskAI.Core.Workspace;
@@ -160,6 +161,15 @@ public sealed partial class WorkspacePage : Page
         if (sender is ToggleSwitch toggle && toggle.IsOn != ViewModel.QuickSearch.IsOn)
         {
             await ViewModel.QuickSearch.SetOnAsync(toggle.IsOn);
+        }
+    }
+
+    /// <summary>Only a choice the person made reaches the switch, never the page setting its own value.</summary>
+    private async void OnShortcutChosen(object sender, SelectionChangedEventArgs e)
+    {
+        if (sender is ComboBox { SelectedIndex: >= 0 } box && box.SelectedIndex != ViewModel.QuickSearch.ShortcutIndex)
+        {
+            await ViewModel.QuickSearch.SetShortcutAsync((QuickSearchShortcut)box.SelectedIndex);
         }
     }
 

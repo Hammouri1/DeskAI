@@ -15,7 +15,7 @@ using Windows.System;
 namespace DeskAI.App.Views;
 
 /// <summary>
-/// The quick search bar's window (ADR 0047): shown by Ctrl + Alt + Space or "Find a file" near
+/// The quick search bar's window (ADR 0047): shown by the chosen shortcut or "Find a file" near
 /// the clock, near the top of the screen with the pointer, and hidden by Esc, a click elsewhere,
 /// or opening a file.
 /// </summary>

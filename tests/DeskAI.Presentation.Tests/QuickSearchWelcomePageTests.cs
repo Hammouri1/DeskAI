@@ -1,4 +1,5 @@
 using DeskAI.App.ViewModels;
+using DeskAI.Core.QuickSearch;
 
 namespace DeskAI.Presentation.Tests;
 
@@ -20,7 +21,7 @@ public sealed class QuickSearchWelcomePageTests
         welcome.Next();
 
         Assert.Equal("Find any file, from anywhere", welcome.Current.Title);
-        Assert.Equal("Press Ctrl + Alt + Space in any app. Type what you're looking for, and press Enter to open it.", welcome.Current.Body);
+        Assert.Equal("Press Ctrl + Alt + D in any app. Type what you're looking for, and press Enter to open it.", welcome.Current.Body);
         Assert.True(welcome.Current.ShowsBuddy);
         Assert.Empty(welcome.Current.Promises);
         Assert.False(welcome.IsLastPage);
@@ -29,5 +30,19 @@ public sealed class QuickSearchWelcomePageTests
         welcome.Next();
         Assert.Equal("Let's start", welcome.Current.Title);
         Assert.False(welcome.Current.ShowsBuddy);
+    }
+
+    [Fact]
+    public async Task The_welcome_names_the_chosen_shortcut()
+    {
+        await using var app = await TestApp.StartAsync();
+        await app.Get<QuickSearchSettingsService>().SetShortcutAsync(QuickSearchShortcut.CtrlShiftSpace, TestContext.Current.CancellationToken);
+        var welcome = app.Get<WelcomeViewModel>();
+        await welcome.OpenAsync();
+
+        welcome.Next();
+        welcome.Next();
+
+        Assert.Equal("Press Ctrl + Shift + Space in any app. Type what you're looking for, and press Enter to open it.", welcome.Current.Body);
     }
 }

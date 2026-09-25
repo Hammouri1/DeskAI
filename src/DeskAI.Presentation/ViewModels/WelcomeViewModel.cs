@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using DeskAI.Core.Abstractions;
+using DeskAI.Core.QuickSearch;
 using DeskAI.Core.Roots;
 
 namespace DeskAI.App.ViewModels;
@@ -16,18 +17,23 @@ public sealed record WelcomePage(string Title, string Body, IReadOnlyList<string
 /// <remarks>
 /// It cannot connect anything by itself. Choosing a folder only records it; the window then asks
 /// Home's "Connect your …?" question, and only that question's yes calls
-/// <see cref="ConnectChosenAsync"/>, which is Home's own connect. It holds no settings store:
-/// opening it again from Privacy and AI never changes whether DeskAI remembers greeting.
+/// <see cref="ConnectChosenAsync"/>, which is Home's own connect. It holds no settings store it
+/// writes to: opening it again from Privacy and AI never changes whether DeskAI remembers greeting.
 /// </remarks>
-public sealed class WelcomeViewModel(PersonalFoldersViewModel folders, IAiSettingsRepository aiSettings) : ObservableObject
+public sealed class WelcomeViewModel(PersonalFoldersViewModel folders, IAiSettingsRepository aiSettings, QuickSearchSettingsService quickSearch) : ObservableObject
 {
     public const string AiOffLine = "AI is off. You can turn it on later in Privacy and AI.";
 
     private readonly IAiSettingsRepository _aiSettings = aiSettings;
+    private readonly QuickSearchSettingsService _quickSearch = quickSearch;
+    private IReadOnlyList<WelcomePage> _pages = PagesFor(QuickSearchShortcuts.Default);
     private int _pageIndex;
     private string _aiLine = AiOffLine;
 
-    public static IReadOnlyList<WelcomePage> Pages { get; } =
+    /// <summary>The four pages; the third names the shortcut the person picked.</summary>
+    public IReadOnlyList<WelcomePage> Pages => _pages;
+
+    public static IReadOnlyList<WelcomePage> PagesFor(QuickSearchShortcut shortcut) =>
     [
         new("Welcome to DeskAI", "Find your files and keep them tidy.", []),
         new("You stay in charge", string.Empty,
@@ -38,7 +44,7 @@ public sealed class WelcomeViewModel(PersonalFoldersViewModel folders, IAiSettin
             "You can put things back.",
         ]),
         new("Find any file, from anywhere",
-            "Press Ctrl + Alt + Space in any app. Type what you're looking for, and press Enter to open it.", [], ShowsBuddy: true),
+            $"Press {QuickSearchShortcuts.Text(shortcut)} in any app. Type what you're looking for, and press Enter to open it.", [], ShowsBuddy: true),
         new("Let's start", "Connect a folder to begin. DeskAI asks once more before connecting.", []),
     ];
 
@@ -90,7 +96,10 @@ public sealed class WelcomeViewModel(PersonalFoldersViewModel folders, IAiSettin
     /// <summary>Starts on page one with nothing chosen, and reads the folder rows and the AI choice afresh.</summary>
     public async Task OpenAsync()
     {
+        // LoadAsync never throws: a store that cannot be read gives the default shortcut.
+        _pages = PagesFor((await _quickSearch.LoadAsync().ConfigureAwait(true)).Shortcut);
         PageIndex = 0;
+        OnPropertyChanged(nameof(Current));
         ChosenFolder = null;
         await Folders.ReloadAsync().ConfigureAwait(true);
         try

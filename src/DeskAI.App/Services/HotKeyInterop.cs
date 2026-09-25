@@ -9,10 +9,6 @@ namespace DeskAI.App.Services;
 internal static class HotKeyInterop
 {
     internal const uint WM_HOTKEY = 0x0312;
-    internal const uint MOD_ALT = 0x0001;
-    internal const uint MOD_CONTROL = 0x0002;
-    internal const uint MOD_NOREPEAT = 0x4000;
-    internal const uint VK_SPACE = 0x20;
     internal const int ERROR_HOTKEY_ALREADY_REGISTERED = 1409;
 
     /// <summary>The parent that makes a window message-only: never shown, never in any list.</summary>

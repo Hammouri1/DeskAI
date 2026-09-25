@@ -334,7 +334,7 @@ a template does change a folder; the narrower promise is the one that is still t
 
 Spec: `docs/superpowers/specs/2026-09-25-quick-search-design.md`.
 
-- **The bar.** Ctrl + Alt + Space shows it on the screen with the pointer, centred, about 12% down
+- **The bar.** The shortcut picked on My workspace (Ctrl + Alt + D to start) shows it on the screen with the pointer, centred, about 12% down
   from the top: about 640 px wide, translucent navy with a thin mint border. The chosen buddy
   sits in a strip at the top with its line in a speech bubble; the box below has focus at once.
   Empty, it shows three example searches. Results come in two short groups, **By name** and,
@@ -348,11 +348,14 @@ Spec: `docs/superpowers/specs/2026-09-25-quick-search-design.md`.
   octopus, Mochi, Paige the paper ghost), each with five moods: waiting, thinking, found,
   nothing, happy (after a click). They stand still when Windows' animation effects are off.
   Screen readers hear the buddy's line (announced politely), never the drawing.
-- **My workspace → Looks → Quick search.** The switch "Press Ctrl + Alt + Space to find a file",
-  a line saying closing keeps DeskAI near the clock, a plain line if another program already uses
-  the shortcut, and **Your search buddy**: seven tiles with a still picture, the name, a
-  "Chosen" pill, and **Choose**.
-- **Welcome.** A page before the last: "Find any file, from anywhere", with Sparky.
+- **My workspace → Looks → Quick search.** The switch "Press {shortcut} to find a file"; under it a
+  **Shortcut** drop-down with Ctrl + Alt + D (the default), Ctrl + Alt + Space, and Ctrl + Shift +
+  Space, which DeskAI listens for at once; if another program uses the one picked: "Another program
+  already uses {shortcut}. Pick another shortcut above." (nothing listens until another is picked);
+  a line saying closing keeps DeskAI near the clock, and **Your search buddy**: seven tiles with a
+  still picture, the name, a "Chosen" pill, and **Choose**.
+- **Welcome.** A page before the last: "Find any file, from anywhere", with Sparky and the shortcut
+  the person picked.
 - **Icon near the clock.** Its menu is Open DeskAI, **Find a file** (while quick search is on),
   Pause checking (only while checking in the background), and Quit DeskAI.
 - **No tip on Home or Search.** One was built and removed at the owner's request: it was not

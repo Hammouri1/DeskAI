@@ -13,13 +13,13 @@ public sealed class QuickSearchLayoutTests
         ["SparkyBuddy.xaml", "ArchieBuddy.xaml", "PipBuddy.xaml", "FetchBuddy.xaml", "InkyBuddy.xaml", "MochiBuddy.xaml", "PaigeBuddy.xaml"];
 
     [Fact]
-    public void The_shortcut_is_Ctrl_Alt_Space_without_repeat_and_without_a_keyboard_hook()
+    public void The_shortcut_comes_from_the_fixed_list_one_at_a_time_without_a_keyboard_hook()
     {
         var hotKey = Read("src", "DeskAI.App", "Services", "GlobalHotKey.cs") + Read("src", "DeskAI.App", "Services", "HotKeyInterop.cs");
 
         Assert.Contains("RegisterHotKey", hotKey, StringComparison.Ordinal);
-        Assert.Contains("MOD_CONTROL | HotKeyInterop.MOD_ALT | HotKeyInterop.MOD_NOREPEAT", hotKey, StringComparison.Ordinal);
-        Assert.Contains("VK_SPACE", hotKey, StringComparison.Ordinal);
+        Assert.Contains("QuickSearchHotKeys.For(shortcut)", hotKey, StringComparison.Ordinal);
+        Assert.Contains("UnregisterHotKey(_window, HotKeyId)", hotKey, StringComparison.Ordinal);
         Assert.DoesNotContain("SetWindowsHookEx", hotKey, StringComparison.Ordinal);
         Assert.DoesNotContain("WH_KEYBOARD", hotKey, StringComparison.Ordinal);
         Assert.DoesNotContain("GetAsyncKeyState", hotKey, StringComparison.Ordinal);
@@ -145,14 +145,15 @@ public sealed class QuickSearchLayoutTests
 
         Assert.Contains("window.Closed +=", app, StringComparison.Ordinal);
         Assert.Contains("bar.Close();", app, StringComparison.Ordinal);
-        Assert.Contains("Listen(false)", app, StringComparison.Ordinal);
+        Assert.Contains("Listen(false, ", app, StringComparison.Ordinal);
     }
 
     [Fact]
     public void The_Quick_search_card_and_the_welcome_picture_are_placed()
     {
         var workspace = Read("src", "DeskAI.App", "Views", "WorkspacePage.xaml");
-        Assert.Contains("Header=\"Press Ctrl + Alt + Space to find a file\"", workspace, StringComparison.Ordinal);
+        Assert.Contains("Header=\"{x:Bind ViewModel.QuickSearch.SwitchHeader, Mode=OneWay}\"", workspace, StringComparison.Ordinal);
+        Assert.Contains("Header=\"Shortcut\"", workspace, StringComparison.Ordinal);
         Assert.Contains("Text=\"Your search buddy\"", workspace, StringComparison.Ordinal);
         Assert.Contains("Topic=\"workspace.quicksearch\"", workspace, StringComparison.Ordinal);
         Assert.Contains("welcome.Current.ShowsBuddy", Read("src", "DeskAI.App", "Views", "WelcomeDialog.cs"), StringComparison.Ordinal);
@@ -170,6 +171,7 @@ public sealed class QuickSearchLayoutTests
             var xaml = Read("src", "DeskAI.App", "Views", page);
             Assert.DoesNotContain("QuickSearchTip", xaml, StringComparison.Ordinal);
             Assert.DoesNotContain("Ctrl + Alt + Space", xaml, StringComparison.Ordinal);
+            Assert.DoesNotContain("Ctrl + Alt + D", xaml, StringComparison.Ordinal);
         }
     }
 

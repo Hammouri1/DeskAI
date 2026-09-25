@@ -4,6 +4,7 @@ using DeskAI.AI.Transport;
 using DeskAI.App.Services;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Execution;
+using DeskAI.Core.QuickSearch;
 
 namespace DeskAI.Presentation.Tests;
 
@@ -296,24 +297,36 @@ internal sealed class RecordingPresence : IBackgroundPresence
 /// <summary>The shortcut, as a test can see it. Never registers anything with Windows.</summary>
 internal sealed class RecordingHotKey : IQuickSearchHotKey
 {
-    public bool IsListening { get; private set; }
+    public bool IsListening => ListeningFor is not null;
 
-    /// <summary>The next Listen(true) answers as if another program had the shortcut.</summary>
+    /// <summary>The shortcut being listened for, or null when nothing listens.</summary>
+    public QuickSearchShortcut? ListeningFor { get; private set; }
+
+    /// <summary>The next Listen(true, …) answers as if another program had the shortcut.</summary>
     public bool RefuseNext { get; set; }
+
+    /// <summary>Shortcuts that always answer as if another program had them.</summary>
+    public HashSet<QuickSearchShortcut> TakenByOthers { get; } = [];
 
     public HotKeyState State { get; private set; } = HotKeyState.Off;
 
-    public HotKeyState Listen(bool isOn)
+    public HotKeyState Listen(bool isOn, QuickSearchShortcut shortcut)
     {
-        if (isOn && RefuseNext)
+        // Like GlobalHotKey: whatever was held is given back first.
+        ListeningFor = null;
+        if (!isOn)
+        {
+            return State = HotKeyState.Off;
+        }
+
+        if (RefuseNext || TakenByOthers.Contains(shortcut))
         {
             RefuseNext = false;
-            IsListening = false;
             return State = HotKeyState.TakenByAnotherProgram;
         }
 
-        IsListening = isOn;
-        return State = isOn ? HotKeyState.Listening : HotKeyState.Off;
+        ListeningFor = shortcut;
+        return State = HotKeyState.Listening;
     }
 
     public event EventHandler? Pressed;

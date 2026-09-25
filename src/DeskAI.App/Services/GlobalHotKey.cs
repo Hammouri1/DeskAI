@@ -1,15 +1,16 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using DeskAI.Core.QuickSearch;
 using Microsoft.Extensions.Logging;
 
 namespace DeskAI.App.Services;
 
 /// <summary>
-/// Ctrl + Alt + Space, anywhere in Windows, for quick search (ADR 0047).
+/// The quick search shortcut the person picked, anywhere in Windows (ADR 0047).
 /// </summary>
 /// <remarks>
 /// <para>
-/// <c>RegisterHotKey</c> asks Windows to tell DeskAI about this one combination and nothing else.
+/// <c>RegisterHotKey</c> asks Windows to tell DeskAI about one combination from the fixed list and nothing else.
 /// It is not a keyboard hook: DeskAI never sees any other key anyone presses. With
 /// <c>MOD_NOREPEAT</c>, holding the keys down reports once.
 /// </para>
@@ -35,6 +36,7 @@ public sealed partial class GlobalHotKey(ILogger<GlobalHotKey> logger) : IQuickS
     private readonly ILogger<GlobalHotKey> _logger = logger;
     private nint _window;
     private bool _registered;
+    private QuickSearchShortcut _registeredShortcut;
     private bool _disposed;
 
     public HotKeyState State { get; private set; } = HotKeyState.Off;
@@ -44,16 +46,17 @@ public sealed partial class GlobalHotKey(ILogger<GlobalHotKey> logger) : IQuickS
     /// <summary>Creates the hidden window that receives the press. Safe to call more than once.</summary>
     internal bool EnsureMessageWindow() => !_disposed && EnsureWindow();
 
-    public HotKeyState Listen(bool isOn)
+    public HotKeyState Listen(bool isOn, QuickSearchShortcut shortcut)
     {
+        if (_registered && (!isOn || _registeredShortcut != shortcut))
+        {
+            // Never two at once: the old combination is given back before a new one is asked for.
+            HotKeyInterop.UnregisterHotKey(_window, HotKeyId);
+            _registered = false;
+        }
+
         if (!isOn)
         {
-            if (_registered)
-            {
-                HotKeyInterop.UnregisterHotKey(_window, HotKeyId);
-                _registered = false;
-            }
-
             return State = HotKeyState.Off;
         }
 
@@ -67,10 +70,11 @@ public sealed partial class GlobalHotKey(ILogger<GlobalHotKey> logger) : IQuickS
             return State = HotKeyState.Unavailable;
         }
 
-        if (HotKeyInterop.RegisterHotKey(_window, HotKeyId,
-                HotKeyInterop.MOD_CONTROL | HotKeyInterop.MOD_ALT | HotKeyInterop.MOD_NOREPEAT, HotKeyInterop.VK_SPACE))
+        var (modifiers, key) = QuickSearchHotKeys.For(shortcut);
+        if (HotKeyInterop.RegisterHotKey(_window, HotKeyId, modifiers, key))
         {
             _registered = true;
+            _registeredShortcut = shortcut;
             return State = HotKeyState.Listening;
         }
 

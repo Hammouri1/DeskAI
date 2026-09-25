@@ -19,7 +19,7 @@ public sealed class BuddyTileViewModel(SearchBuddy buddy) : ObservableObject
     public bool IsChosen { get => _isChosen; set => SetProperty(ref _isChosen, value); }
 }
 
-/// <summary>The Quick search card on My workspace: the switch, the seven buddies, and a shortcut problem.</summary>
+/// <summary>The Quick search card on My workspace: the switch, the shortcut, the seven buddies, and a shortcut problem.</summary>
 public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings, QuickSearchSwitch quickSwitch, IQuickSearchHotKey hotKey) : ObservableObject
 {
     public const string WorksWhenLine =
@@ -30,9 +30,31 @@ public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings
     private readonly IQuickSearchHotKey _hotKey = hotKey;
     private bool _isOn = true;
     private string _shortcutProblem = string.Empty;
+    private QuickSearchShortcut _shortcut = QuickSearchShortcuts.Default;
 
     /// <summary>The same line, for the page to bind to.</summary>
     public static string WorksWhen => WorksWhenLine;
+
+    /// <summary>The drop-down's choices, in the list's order.</summary>
+    public static IReadOnlyList<string> ShortcutChoices { get; } = [.. QuickSearchShortcuts.All.Select(QuickSearchShortcuts.Text)];
+
+    public QuickSearchShortcut Shortcut
+    {
+        get => _shortcut;
+        private set
+        {
+            if (SetProperty(ref _shortcut, value))
+            {
+                OnPropertyChanged(nameof(ShortcutIndex));
+                OnPropertyChanged(nameof(SwitchHeader));
+            }
+        }
+    }
+
+    /// <summary>The drop-down's selected row: the enum's values are 0, 1, 2 in the list's order.</summary>
+    public int ShortcutIndex => (int)_shortcut;
+
+    public string SwitchHeader => $"Press {QuickSearchShortcuts.Text(_shortcut)} to find a file";
 
     public IReadOnlyList<BuddyTileViewModel> Buddies { get; } =
         Enum.GetValues<SearchBuddy>().Select(buddy => new BuddyTileViewModel(buddy)).ToArray();
@@ -57,6 +79,7 @@ public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings
     {
         var stored = await _settings.LoadAsync().ConfigureAwait(true);
         IsOn = stored.IsOn;
+        Shortcut = stored.Shortcut;
         Choose(stored.Buddy);
         Report(_hotKey.State);
     }
@@ -65,6 +88,12 @@ public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings
     {
         IsOn = on;
         Report(await _switch.SetOnAsync(on).ConfigureAwait(true));
+    }
+
+    public async Task SetShortcutAsync(QuickSearchShortcut shortcut)
+    {
+        Shortcut = shortcut;
+        Report(await _switch.SetShortcutAsync(shortcut).ConfigureAwait(true));
     }
 
     public async Task ChooseBuddyAsync(SearchBuddy buddy)
@@ -82,6 +111,6 @@ public sealed class QuickSearchCardViewModel(QuickSearchSettingsService settings
     }
 
     private void Report(HotKeyState state) => ShortcutProblem = state == HotKeyState.TakenByAnotherProgram
-        ? "Another program already uses Ctrl + Alt + Space, so quick search can't listen for it."
+        ? $"Another program already uses {QuickSearchShortcuts.Text(_shortcut)}. Pick another shortcut above."
         : string.Empty;
 }

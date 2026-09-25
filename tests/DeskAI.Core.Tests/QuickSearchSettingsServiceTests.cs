@@ -25,11 +25,34 @@ public sealed class QuickSearchSettingsServiceTests
 
         await service.SetOnAsync(false, token);
         await service.SetBuddyAsync(SearchBuddy.Inky, token);
+        await service.SetShortcutAsync(QuickSearchShortcut.CtrlShiftSpace, token);
 
-        Assert.Equal(new QuickSearchSettings(false, SearchBuddy.Inky), await service.LoadAsync(token));
-        Assert.Equal(["quicksearch.buddy", "quicksearch.on"], store.Values.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(new QuickSearchSettings(false, SearchBuddy.Inky, QuickSearchShortcut.CtrlShiftSpace), await service.LoadAsync(token));
+        Assert.Equal(["quicksearch.buddy", "quicksearch.on", "quicksearch.shortcut"], store.Values.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal("CtrlShiftSpace", store.Values[QuickSearchSettingsService.ShortcutKey]);
         Assert.Subset(QuickSearchSettingsService.Keys.ToHashSet(StringComparer.Ordinal), store.Values.Keys.ToHashSet(StringComparer.Ordinal));
         Assert.Contains("quicksearch.tip.dismissed", QuickSearchSettingsService.Keys);
+    }
+
+    [Fact]
+    public void Nothing_remembered_means_Ctrl_Alt_D()
+    {
+        Assert.Equal(QuickSearchShortcut.CtrlAltD, QuickSearchSettings.Default.Shortcut);
+        Assert.Equal(QuickSearchShortcut.CtrlAltD, QuickSearchShortcuts.Default);
+        Assert.Equal(["Ctrl + Alt + D", "Ctrl + Alt + Space", "Ctrl + Shift + Space"], QuickSearchShortcuts.All.Select(QuickSearchShortcuts.Text));
+    }
+
+    [Theory]
+    [InlineData("1")]
+    [InlineData("ctrlaltspace")]
+    [InlineData("CtrlAltSpace ")]
+    [InlineData("Win+R")]
+    public async Task A_shortcut_DeskAI_does_not_know_falls_back_to_Ctrl_Alt_D(string stored)
+    {
+        var store = new FakeStore();
+        store.Values[QuickSearchSettingsService.ShortcutKey] = stored;
+
+        Assert.Equal(QuickSearchShortcut.CtrlAltD, (await new QuickSearchSettingsService(store).LoadAsync(TestContext.Current.CancellationToken)).Shortcut);
     }
 
     [Theory]

@@ -64,7 +64,7 @@ public sealed class FreshStartPageTests
         Assert.Equal(AppearanceSettings.Default, await app.Get<IAppearanceSettingsRepository>().LoadAsync(TestContext.Current.CancellationToken));
         Assert.Null(await app.Get<IAppSettingsStore>().ReadAsync(WallpaperService.PreviousKey, TestContext.Current.CancellationToken));
         // Checking in the background stopped; the icon stays only because quick search is on again.
-        Assert.Equal(QuickSearchWords.Tooltip, app.Presence.Tooltips[^1]);
+        Assert.Equal(QuickSearchWords.Tooltip(QuickSearchShortcut.CtrlAltD), app.Presence.Tooltips[^1]);
         Assert.False(app.Presence.Menus[^1].OffersPause);
         Assert.Empty(app.Wallpaper.Sets);
         Assert.Equal(before, Directory.GetFiles(folder, "*", SearchOption.AllDirectories).Order().ToArray());
@@ -111,6 +111,7 @@ public sealed class FreshStartPageTests
         var store = app.Get<IAppSettingsStore>();
         await quick.SetOnAsync(false, TestContext.Current.CancellationToken);
         await quick.SetBuddyAsync(SearchBuddy.Mochi, TestContext.Current.CancellationToken);
+        await quick.SetShortcutAsync(QuickSearchShortcut.CtrlAltSpace, TestContext.Current.CancellationToken);
         // Written by a build that still had the Home and Search tip.
         await store.WriteAsync(QuickSearchSettingsService.RetiredTipKey, "yes", TestContext.Current.CancellationToken);
         var settings = app.Get<SettingsViewModel>();
@@ -120,5 +121,6 @@ public sealed class FreshStartPageTests
 
         Assert.Equal(QuickSearchSettings.Default, await quick.LoadAsync(TestContext.Current.CancellationToken));
         Assert.Null(await store.ReadAsync(QuickSearchSettingsService.RetiredTipKey, TestContext.Current.CancellationToken));
+        Assert.Null(await store.ReadAsync(QuickSearchSettingsService.ShortcutKey, TestContext.Current.CancellationToken));
     }
 }
