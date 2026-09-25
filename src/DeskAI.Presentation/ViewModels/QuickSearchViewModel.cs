@@ -284,6 +284,16 @@ public sealed class QuickSearchViewModel : ObservableObject, IDisposable
         Selected = all[Math.Clamp(index, 0, all.Length - 1)];
     }
 
+    /// <summary>The pointer is over a row: it becomes the one Enter and a click act on.</summary>
+    /// <remarks>A row left over from earlier words (still under the pointer while the list changes) is ignored.</remarks>
+    public void PointAt(QuickSearchRowViewModel row)
+    {
+        if (NameRows.Contains(row) || InsideRows.Contains(row))
+        {
+            Selected = row;
+        }
+    }
+
     /// <returns>True when the bar should hide (the file was opened or shown).</returns>
     public async Task<bool> ActivateAsync(QuickSearchRowViewModel? row, bool showInFolder)
     {

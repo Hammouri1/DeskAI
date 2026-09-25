@@ -236,6 +236,43 @@ public sealed class QuickSearchPageTests
         Assert.False(bar.NameRows[1].IsSelected);
     }
 
+    /// <summary>
+    /// Owner-found 2026-09-26: a row could be chosen only with the keyboard. The pointer over a
+    /// row now selects it, and clicking the row does what Enter does.
+    /// </summary>
+    [Fact]
+    public async Task Pointing_at_a_row_selects_it_and_clicking_it_opens_it()
+    {
+        await using var app = await TestApp.StartAsync();
+        await ConnectAsync(app, "School", "essay 1.pdf", "essay 2.pdf");
+        var bar = await OpenBarAsync(app);
+        await TypeAsync(bar, "essay");
+
+        bar.PointAt(bar.NameRows[1]);
+
+        Assert.Same(bar.NameRows[1], bar.Selected);
+        Assert.True(bar.NameRows[1].IsSelected);
+        Assert.False(bar.NameRows[0].IsSelected);
+        Assert.True(await bar.ActivateAsync(bar.Selected, showInFolder: false));
+        Assert.Equal("essay 2.pdf", Path.GetFileName(Assert.Single(app.Shell.Opened)));
+    }
+
+    [Fact]
+    public async Task Pointing_at_a_row_from_an_earlier_search_changes_nothing()
+    {
+        await using var app = await TestApp.StartAsync();
+        await ConnectAsync(app, "School", "essay.pdf", "notes.pdf");
+        var bar = await OpenBarAsync(app);
+        await TypeAsync(bar, "essay");
+        var old = bar.NameRows[0];
+        await TypeAsync(bar, "notes");
+
+        bar.PointAt(old);
+
+        Assert.Same(bar.NameRows[0], bar.Selected);
+        Assert.False(old.IsSelected);
+    }
+
     [Fact]
     public async Task Each_buddy_speaks_in_its_own_voice()
     {

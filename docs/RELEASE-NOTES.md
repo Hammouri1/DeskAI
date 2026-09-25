@@ -14,6 +14,8 @@
 - A new buddy chooser: your buddy large on its own stage, with round faces to click.
 - A new look for the bar: a solid card with a slowly turning glowing edge, your buddy perched on
   top, and a see-through glow around it.
+- In the bar you can now choose a file with the mouse: point at it, then click it. The example
+  searches are rounded buttons instead of ovals, and buddies stay sharp after they appear.
 
 ## 1.2.0 — 2026-09-25
 

@@ -126,7 +126,8 @@ with your search buddy sitting on it.
   with that name show under **By name** straight away. A moment later, words inside files show
   under **Words inside**, but only in folders where you allowed reading inside on the Search
   page. Quick search never gives that permission itself.
-- **Up** and **Down** choose a file. **Enter** opens familiar files (documents, pictures, music,
+- **Up** and **Down**, or pointing with the mouse, choose a file. Clicking a file does the same
+  as **Enter**. **Enter** opens familiar files (documents, pictures, music,
   videos, zip files) in their usual app. Anything else, including programs, is only shown in its
   folder. **Ctrl + Enter** always shows the file in its folder.
 - **Esc**, clicking somewhere else, or pressing the shortcut again hides the bar. Nothing you

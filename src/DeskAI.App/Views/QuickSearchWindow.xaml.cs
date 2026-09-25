@@ -7,6 +7,7 @@ using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
@@ -142,6 +143,39 @@ public sealed partial class QuickSearchWindow : Window
         if (sender is FrameworkElement { Tag: QuickSearchRowViewModel row })
         {
             await ActivateAsync(row, showInFolder: false);
+        }
+    }
+
+    /// <summary>The pointer over a row selects it, so the highlight follows the mouse as it does the arrows.</summary>
+    private void OnRowPointerEntered(object sender, PointerRoutedEventArgs args)
+    {
+        if (sender is FrameworkElement { Tag: QuickSearchRowViewModel row })
+        {
+            ViewModel.PointAt(row);
+        }
+    }
+
+    /// <summary>A click anywhere on a row does what Enter does; a click on the row's own button is the button's.</summary>
+    private async void OnRowTapped(object sender, TappedRoutedEventArgs args)
+    {
+        for (var part = args.OriginalSource as DependencyObject; part is not null && !ReferenceEquals(part, sender); part = VisualTreeHelper.GetParent(part))
+        {
+            if (part is ButtonBase)
+            {
+                return;
+            }
+        }
+
+        if (sender is FrameworkElement { Tag: QuickSearchRowViewModel row })
+        {
+            args.Handled = true;
+            await ActivateAsync(row, showInFolder: false);
+
+            // When it could not open, the bar stays: typing goes on in the box, not on the row.
+            if (AppWindow.IsVisible)
+            {
+                Box.Focus(FocusState.Programmatic);
+            }
         }
     }
 

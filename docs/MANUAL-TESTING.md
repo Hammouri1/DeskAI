@@ -1287,3 +1287,15 @@ the generated Downloads on Home first.
    Turn it back on.
 7. **Privacy and AI → Start fresh**: afterwards Ctrl + Alt + D opens the bar again and buddies
    move again.
+
+## 2026-09-26 Quick search: mouse, example buttons, sharp buddies
+
+Owner-found after trying the polish. Same preview build and generated Downloads as above.
+
+1. Open the bar: the three example searches are rounded rectangles like **See more in DeskAI**,
+   not ovals.
+2. Look closely at the buddy on the bar and, after clicking a face on **My workspace**, at the
+   stage: the edges are as sharp as with **Let my buddy move** off, not blurry or blocky.
+3. Type `handout`. Move the mouse over **Nested handout.pdf**: its row gets the mint edge and
+   "Open ↵". Click its name (not the button): it opens and the bar hides.
+4. Open the bar again, type `handout`, and click a row's **Open** button: the file opens once.

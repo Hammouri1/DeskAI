@@ -1,30 +1,32 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Animation;
-using Windows.Foundation;
 
 namespace DeskAI.App.Views.Buddies;
 
 /// <summary>
-/// The buddy's entrance: it grows up from below with a little overshoot (about half a second).
-/// Callers skip it when "Let my buddy move" is off.
+/// The buddy's entrance: it rises from below and fades in with a little overshoot (about half a
+/// second). Callers skip it when "Let my buddy move" is off.
 /// </summary>
+/// <remarks>
+/// It never changes the buddy's size. Owner-found 2026-09-26: the old entrance grew the buddy from
+/// half size, and Windows drew it once at that half size and kept stretching the small drawing, so
+/// buddies looked pixelated (letting go of the grow when it ended did not redraw them). Rising and
+/// fading keep the drawing at full size, so it stays sharp.
+/// </remarks>
 internal static class BuddyAnimations
 {
     public static void PopIn(UIElement element, TimeSpan delay)
     {
-        var shape = new CompositeTransform { ScaleX = 0.5, ScaleY = 0.5, TranslateY = 30 };
-        element.RenderTransformOrigin = new Point(0.5, 0.5);
+        var shape = new TranslateTransform { Y = 30 };
         element.RenderTransform = shape;
         var overshoot = new BackEase { Amplitude = 0.4, EasingMode = EasingMode.EaseOut };
         var story = new Storyboard { BeginTime = delay };
-        story.Children.Add(To(shape, "ScaleX", 0.5, 1, overshoot));
-        story.Children.Add(To(shape, "ScaleY", 0.5, 1, overshoot));
-        story.Children.Add(To(shape, "TranslateY", 30, 0, overshoot));
+        story.Children.Add(To(shape, "Y", 30, 0, overshoot));
         story.Children.Add(To(element, "Opacity", 0, 1, null));
 
         // Hidden until the storyboard starts: a delayed storyboard does nothing until its begin
-        // time, and the half-size shape above would otherwise show for that moment.
+        // time, and the lowered buddy above would otherwise show for that moment.
         element.Opacity = 0;
         story.Begin();
     }

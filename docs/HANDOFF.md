@@ -54,6 +54,19 @@ tooltip still names a refused shortcut; Ctrl + Alt + D is AltGr + D on some keyb
 owner's chosen default; two other shortcuts are offered); a click on the see-through glow hides
 the bar but does not reach the app below.
 
+**Owner's first try of the polish (2026-09-26):** "the ui is pretty good i liked it". Three
+problems, fixed on `quick-search` with tests that failed first (manual check "2026-09-26 Quick
+search: mouse, example buttons, sharp buddies"): (1) the example buttons were ovals (corner
+radius 999; now 8, like the bar's other buttons — a ruling the owner may overrule for a true
+pill); (2) buddies looked pixelated after popping in (the pop-in grew them from half size and
+Windows kept that half-size drawing; letting go at the end did not redraw them, checked in the
+preview), so the entrance now rises and fades without growing; (3) rows could not be chosen with
+the mouse: the pointer now selects a row and a click does what Enter does. Build 0 warnings, all
+1,905 tests passed, formatting passed; checked in the UI preview by capture and real mouse
+movement. **Seen but not fixed (ask the owner):** the owner's screenshot lists `desktop.ini` (a
+hidden Windows file) as a result; with two screens, the bar's first opening can be sized for the
+other screen's scale and look too wide until typing refits it.
+
 **Next step: ask the owner** whether to check by hand first (the manual check above), then
 whether to push `quick-search` and release it as 1.3.0 (version, README, install guide, release
 notes "Unreleased" → 1.3.0, tag). Do not push, tag, or release without asking.

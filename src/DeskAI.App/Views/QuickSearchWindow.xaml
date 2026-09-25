@@ -36,8 +36,9 @@
                     Duration="0:0:6" />
             </Storyboard>
 
+            <!-- The whole row answers the pointer: over it selects the row, a click does what Enter does. -->
             <DataTemplate x:Key="QuickRowTemplate" x:DataType="viewmodels:QuickSearchRowViewModel">
-                <Grid Padding="10,7" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" CornerRadius="10">
+                <Grid Padding="10,7" Background="Transparent" PointerEntered="OnRowPointerEntered" Tapped="OnRowTapped" ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10" CornerRadius="10" Tag="{x:Bind}">
                     <!-- The selected row: a mint edge and tint, and what Enter will do. -->
                     <Border
                         Grid.ColumnSpan="3"
@@ -147,7 +148,7 @@
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:DataType="x:String">
-                                <Button Padding="12,4" Click="OnExampleClicked" Content="{x:Bind}" CornerRadius="999" Tag="{x:Bind}" />
+                                <Button Padding="12,4" Click="OnExampleClicked" Content="{x:Bind}" CornerRadius="8" Tag="{x:Bind}" />
                             </DataTemplate>
                         </ItemsControl.ItemTemplate>
                     </ItemsControl>

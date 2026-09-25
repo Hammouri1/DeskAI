@@ -188,6 +188,52 @@ public sealed class QuickSearchLayoutTests
     }
 
     /// <summary>
+    /// Owner-found 2026-09-26: buddies looked pixelated after popping in. The pop-in grew them from
+    /// half size, and Windows drew them once at that size and kept stretching the small drawing
+    /// (letting go of the grow at the end did not redraw them; checked in the UI preview). The
+    /// entrance now only rises and fades, so the buddy is always drawn at full size.
+    /// </summary>
+    [Fact]
+    public void The_buddys_entrance_never_changes_its_size()
+    {
+        var code = Read("src", "DeskAI.App", "Views", "Buddies", "BuddyAnimations.cs");
+        var entrance = code[code.IndexOf("public static void PopIn", StringComparison.Ordinal)..code.IndexOf("internal static DoubleAnimation To", StringComparison.Ordinal)];
+
+        Assert.Contains("new TranslateTransform { Y = 30 }", entrance, StringComparison.Ordinal);
+        Assert.DoesNotContain("Scale", entrance, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Owner-found 2026-09-26: the example buttons under the box were ovals. A corner radius of 999
+    /// on a 30 px button is squashed into an oval by Windows; they are now rounded like the bar's
+    /// other buttons.
+    /// </summary>
+    [Fact]
+    public void The_example_buttons_are_rounded_like_the_other_buttons()
+    {
+        var xaml = Read("src", "DeskAI.App", "Views", "QuickSearchWindow.xaml");
+
+        Assert.DoesNotContain("CornerRadius=\"999\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("Click=\"OnExampleClicked\" Content=\"{x:Bind}\" CornerRadius=\"8\"", xaml, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Owner-found 2026-09-26: rows could be chosen only with the keyboard. The whole row takes the
+    /// pointer: over it selects the row, a click does what Enter does. A click on the row's own
+    /// button is left to the button, so a file is never opened twice.
+    /// </summary>
+    [Fact]
+    public void A_whole_row_answers_the_pointer_and_its_button_is_not_counted_twice()
+    {
+        var xaml = Read("src", "DeskAI.App", "Views", "QuickSearchWindow.xaml");
+        var code = Read("src", "DeskAI.App", "Views", "QuickSearchWindow.xaml.cs");
+
+        Assert.Contains("Background=\"Transparent\" PointerEntered=\"OnRowPointerEntered\" Tapped=\"OnRowTapped\"", xaml, StringComparison.Ordinal);
+        Assert.Contains("ViewModel.PointAt(row)", code, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"OnRowTapped[\s\S]*is ButtonBase[\s\S]*ActivateAsync\(row, showInFolder: false\)", RegexOptions.None, TimeSpan.FromSeconds(1)), code);
+    }
+
+    /// <summary>
     /// Review finding 2026-09-25: seven faces in one row beside the stage need about 450 px; with
     /// DeskAI snapped to half a small screen the last faces were cut off and could not be clicked.
     /// Narrow windows get two rows of faces; wide ones keep the mockup's single row.

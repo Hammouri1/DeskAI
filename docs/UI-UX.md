@@ -342,16 +342,20 @@ Spec: `docs/superpowers/specs/2026-09-25-quick-search-design.md`.
   slowly (once every 6 s). The chosen buddy perches on the card's top edge, centred, with its line
   in a mint-to-blue bubble to its right. The search box is large, with a search icon on the left,
   an **Esc** key hint on the right, no frame of its own, and a mint underline while typing; it
-  has focus at once. Empty, it shows three example searches as pill buttons. Results come in two
+  has focus at once. Empty, it shows three example searches as buttons rounded like the bar's
+  others (they were ovals until the owner found it, 2026-09-26). Results come in two
   short groups, **By name** and, a moment later, **Words inside** (with one line of text), each
   at most 5 rows: a coloured tile for the kind of file (DOC blue, PDF red, IMG orange, VID
   violet, FILE grey), the name, where it is ("Documents › School"), and **Open** or **Show in
   folder**; the selected row has a mint left edge and tint and shows "Open ↵" or "Show in
   folder ↵". Plain fact lines sit under the rows in DeskAI's usual voice, never in the buddy's.
   Opening, while **Let my buddy move** is on: the card fades and drops in, the buddy pops up a
-  moment later, and rows slide in one after another; with it off, the bar appears at once and
-  nothing moves, the edge included. Up/Down, Enter, Ctrl + Enter (show in folder), and Esc work
-  as expected; clicking elsewhere, or on the see-through part around the card, hides it. It is
+  moment later (rising and fading in, never growing: a buddy grown from half size stayed
+  pixelated, owner-found 2026-09-26), and rows slide in one after another; with it off, the bar
+  appears at once and nothing moves, the edge included. Up/Down, Enter, Ctrl + Enter (show in
+  folder), and Esc work as expected. The mouse works too (owner-found 2026-09-26): the pointer
+  over a row selects it, and a click anywhere on the row does what Enter does (a click on the
+  row's own button is left to the button); clicking elsewhere, or on the see-through part around the card, hides it. It is
   not in the taskbar or Alt + Tab.
 - **Buddies.** Seven drawings (Sparky, Archie the owl, Pip the robot, Fetch the fox, Inky the
   octopus, Mochi, Paige the paper ghost), each with five moods: waiting, thinking, found,
