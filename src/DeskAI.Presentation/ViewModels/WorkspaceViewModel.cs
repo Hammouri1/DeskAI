@@ -204,8 +204,10 @@ public sealed class WorkspaceViewModel : ObservableObject
         WallpaperService wallpaper,
         PersonalFoldersViewModel personalFolders,
         SearchRequest request,
-        IClock clock)
+        IClock clock,
+        QuickSearchCardViewModel quickSearch)
     {
+        QuickSearch = quickSearch;
         _packs = packs;
         _pins = pins;
         _templates = templates;
@@ -232,6 +234,9 @@ public sealed class WorkspaceViewModel : ObservableObject
         UnpinCommand = new AsyncRelayCommand<Guid>(UnpinAsync, _ => !IsBusy);
         UndoTemplateCommand = new AsyncRelayCommand(UndoTemplateAsync, () => CanUndoTemplate && !IsBusy);
     }
+
+    /// <summary>The Quick search card (ADR 0047).</summary>
+    public QuickSearchCardViewModel QuickSearch { get; }
 
     public IReadOnlyList<StarterPackCardViewModel> Packs { get; }
 
@@ -421,6 +426,7 @@ public sealed class WorkspaceViewModel : ObservableObject
         await LoadAppearanceAsync().ConfigureAwait(true);
         await LoadWallpaperRestoreAsync().ConfigureAwait(true);
         await Folders.ReloadAsync().ConfigureAwait(true);
+        await QuickSearch.InitializeAsync().ConfigureAwait(true);
     }
 
     /// <summary>

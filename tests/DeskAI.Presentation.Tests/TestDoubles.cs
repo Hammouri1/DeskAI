@@ -243,21 +243,34 @@ internal sealed class RecordingPresence : IBackgroundPresence
     /// <summary>Whether its menu showed checking as paused, alongside each tooltip.</summary>
     public List<bool> PausedStates { get; } = [];
 
+    /// <summary>What its menu offered, alongside each tooltip.</summary>
+    public List<PresenceMenu> Menus { get; } = [];
+
+    /// <summary>When true, acts as Windows refusing the icon: Show records nothing and it stays hidden.</summary>
+    public bool RefuseToShow { get; set; }
+
     public bool IsShowing { get; private set; }
 
-    public void Show(string tooltip, bool isPaused)
+    public void Show(string tooltip, PresenceMenu menu)
     {
+        if (RefuseToShow)
+        {
+            return;
+        }
+
         IsShowing = true;
         Tooltips.Add(tooltip);
-        PausedStates.Add(isPaused);
+        PausedStates.Add(menu.IsPaused);
+        Menus.Add(menu);
     }
 
-    public void Update(string tooltip, bool isPaused)
+    public void Update(string tooltip, PresenceMenu menu)
     {
         if (IsShowing)
         {
             Tooltips.Add(tooltip);
-            PausedStates.Add(isPaused);
+            PausedStates.Add(menu.IsPaused);
+            Menus.Add(menu);
         }
     }
 
@@ -269,9 +282,41 @@ internal sealed class RecordingPresence : IBackgroundPresence
 
     public event EventHandler? QuitRequested;
 
+    public event EventHandler? FindRequested;
+
     public void RaiseOpen() => OpenRequested?.Invoke(this, EventArgs.Empty);
 
     public void RaisePauseToggle() => PauseToggleRequested?.Invoke(this, EventArgs.Empty);
 
     public void RaiseQuit() => QuitRequested?.Invoke(this, EventArgs.Empty);
+
+    public void RaiseFind() => FindRequested?.Invoke(this, EventArgs.Empty);
+}
+
+/// <summary>The shortcut, as a test can see it. Never registers anything with Windows.</summary>
+internal sealed class RecordingHotKey : IQuickSearchHotKey
+{
+    public bool IsListening { get; private set; }
+
+    /// <summary>The next Listen(true) answers as if another program had the shortcut.</summary>
+    public bool RefuseNext { get; set; }
+
+    public HotKeyState State { get; private set; } = HotKeyState.Off;
+
+    public HotKeyState Listen(bool isOn)
+    {
+        if (isOn && RefuseNext)
+        {
+            RefuseNext = false;
+            IsListening = false;
+            return State = HotKeyState.TakenByAnotherProgram;
+        }
+
+        IsListening = isOn;
+        return State = isOn ? HotKeyState.Listening : HotKeyState.Off;
+    }
+
+    public event EventHandler? Pressed;
+
+    public void Press() => Pressed?.Invoke(this, EventArgs.Empty);
 }

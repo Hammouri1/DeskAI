@@ -1,4 +1,5 @@
 using DeskAI.Core.Abstractions;
+using DeskAI.Core.QuickSearch;
 using DeskAI.Core.Rules;
 
 namespace DeskAI.App.Services;
@@ -25,6 +26,8 @@ public sealed class BackgroundPresenceController : IDisposable
     private readonly IBackgroundPresence _presence;
     private readonly IAutomaticCheckSettingsRepository _settings;
     private readonly AutomaticCheckCoordinator _checks;
+    private AutomaticCheckSettings _checking = AutomaticCheckSettings.Default;
+    private bool _quickSearchOn;
     private bool _disposed;
 
     public BackgroundPresenceController(
@@ -36,8 +39,12 @@ public sealed class BackgroundPresenceController : IDisposable
         _settings = settings;
         _checks = checks;
         _presence.PauseToggleRequested += OnPauseToggleRequested;
+        _presence.FindRequested += OnFindRequested;
         _checks.Checked += OnChecked;
     }
+
+    /// <summary>Someone chose "Find a file" on the icon: the window shows the quick search bar.</summary>
+    public event EventHandler? FindRequested;
 
     /// <summary>Raised when something changed the settings from outside a page.</summary>
     /// <remarks>
@@ -50,7 +57,8 @@ public sealed class BackgroundPresenceController : IDisposable
     public bool IsShowing => _presence.IsShowing;
 
     /// <summary>
-    /// Whether the stored mode says DeskAI should keep checking after its window is closed.
+    /// Whether DeskAI should keep running near the clock after its window is closed: because it
+    /// checks in the background, or because quick search is on and the icon is really showing.
     /// </summary>
     /// <remarks>
     /// Exists so a window's close handler can decide what closing means the instant it happens.
@@ -62,6 +70,11 @@ public sealed class BackgroundPresenceController : IDisposable
     /// window a page it isn't showing just changed the mode.
     /// </remarks>
     public bool KeepsRunningWhenClosed { get; private set; }
+
+    /// <summary>Whether quick search is what keeps DeskAI near the clock right now (no checking in the background).</summary>
+    public bool QuickSearchKeepsItRunning => KeepsRunningWhenClosed && _checking.Mode != AutomaticCheckMode.InBackground;
+
+    private void OnFindRequested(object? sender, EventArgs args) => FindRequested?.Invoke(this, EventArgs.Empty);
 
     /// <summary>
     /// Whether this DeskAI has a notification area to put an icon in at all.
@@ -82,23 +95,56 @@ public sealed class BackgroundPresenceController : IDisposable
     /// </remarks>
     public void Refresh(AutomaticCheckSettings settings)
     {
-        KeepsRunningWhenClosed = settings.Mode == AutomaticCheckMode.InBackground;
+        _checking = settings;
+        Apply();
+    }
 
-        if (settings.Mode != AutomaticCheckMode.InBackground)
+    /// <summary>Quick search was switched on or off (ADR 0047). It too keeps DeskAI near the clock.</summary>
+    public void SetQuickSearch(bool isOn)
+    {
+        _quickSearchOn = isOn;
+        Apply();
+    }
+
+    /// <summary>
+    /// Makes the icon and "what closing means" match both reasons to stay: checking in the
+    /// background, and quick search.
+    /// </summary>
+    /// <remarks>
+    /// Quick search keeps DeskAI running only while the icon is actually showing. A DeskAI with no
+    /// window and no icon could be stopped only by signing out, so when the icon cannot show,
+    /// closing stays a real close.
+    /// </remarks>
+    private void Apply()
+    {
+        var checking = _checking.Mode == AutomaticCheckMode.InBackground;
+        var quick = _quickSearchOn && CanShowAnIcon;
+        if (!checking && !quick)
         {
+            KeepsRunningWhenClosed = false;
             _presence.Hide();
             return;
         }
 
-        var tooltip = BackgroundCheckingChoice.Tooltip(settings, _checks.Latest?.ProposalCount);
+        var tooltip = checking
+            ? BackgroundCheckingChoice.Tooltip(_checking, _checks.Latest?.ProposalCount)
+            : QuickSearchWords.Tooltip;
+        if (checking && quick)
+        {
+            tooltip = QuickSearchWords.WithChecking(tooltip);
+        }
+
+        var menu = new PresenceMenu(OffersPause: checking, IsPaused: checking && _checking.IsPaused, OffersFind: quick);
         if (_presence.IsShowing)
         {
-            _presence.Update(tooltip, settings.IsPaused);
+            _presence.Update(tooltip, menu);
         }
         else
         {
-            _presence.Show(tooltip, settings.IsPaused);
+            _presence.Show(tooltip, menu);
         }
+
+        KeepsRunningWhenClosed = checking || (quick && _presence.IsShowing);
     }
 
     /// <summary>
@@ -164,6 +210,7 @@ public sealed class BackgroundPresenceController : IDisposable
 
         _disposed = true;
         _presence.PauseToggleRequested -= OnPauseToggleRequested;
+        _presence.FindRequested -= OnFindRequested;
         _checks.Checked -= OnChecked;
     }
 }

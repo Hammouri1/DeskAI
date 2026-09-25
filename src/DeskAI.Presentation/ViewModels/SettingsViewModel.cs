@@ -19,6 +19,7 @@ public sealed class SettingsViewModel(
     IUserFileStore files,
     BackgroundPresenceController presence,
     IAiConnectionCheck connectionCheck,
+    QuickSearchSwitch quickSearch,
     IClock clock) : ObservableObject
 {
     private AiSettings _loaded = AiSettings.Default;
@@ -148,6 +149,8 @@ public sealed class SettingsViewModel(
         {
             var outcome = await freshStart.StartFreshAsync();
             presence.Refresh(AutomaticCheckSettings.Default);
+            // Quick search is on again after Start fresh (its default), so the shortcut listens again.
+            await quickSearch.ApplyStoredAsync();
             await InitializeAsync();
             FreshStartStatus =
                 $"Done. DeskAI forgot {Count(outcome.FoldersForgotten, "folder")}, {Count(outcome.RulesRemoved, "rule")}, "

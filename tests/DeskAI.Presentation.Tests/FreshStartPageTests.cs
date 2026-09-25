@@ -63,7 +63,9 @@ public sealed class FreshStartPageTests
         Assert.Equal(AutomaticCheckSettings.Default, await app.Get<IAutomaticCheckSettingsRepository>().LoadAsync(TestContext.Current.CancellationToken));
         Assert.Equal(AppearanceSettings.Default, await app.Get<IAppearanceSettingsRepository>().LoadAsync(TestContext.Current.CancellationToken));
         Assert.Null(await app.Get<IAppSettingsStore>().ReadAsync(WallpaperService.PreviousKey, TestContext.Current.CancellationToken));
-        Assert.False(app.Presence.IsShowing);
+        // Checking in the background stopped; the icon stays only because quick search is on again.
+        Assert.Equal(QuickSearchWords.Tooltip, app.Presence.Tooltips[^1]);
+        Assert.False(app.Presence.Menus[^1].OffersPause);
         Assert.Empty(app.Wallpaper.Sets);
         Assert.Equal(before, Directory.GetFiles(folder, "*", SearchOption.AllDirectories).Order().ToArray());
         Assert.Null(await app.Get<IAuthorizedRootRepository>().FindAsync(rootId, TestContext.Current.CancellationToken));

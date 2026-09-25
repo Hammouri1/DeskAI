@@ -10,11 +10,11 @@ public sealed class NoBackgroundPresence : IBackgroundPresence
 {
     public bool IsShowing => false;
 
-    public void Show(string tooltip, bool isPaused)
+    public void Show(string tooltip, PresenceMenu menu)
     {
     }
 
-    public void Update(string tooltip, bool isPaused)
+    public void Update(string tooltip, PresenceMenu menu)
     {
     }
 
@@ -28,5 +28,7 @@ public sealed class NoBackgroundPresence : IBackgroundPresence
     public event EventHandler? PauseToggleRequested;
 
     public event EventHandler? QuitRequested;
+
+    public event EventHandler? FindRequested;
 #pragma warning restore CS0067
 }

@@ -153,7 +153,7 @@ public static class BackgroundCheckingChoice
         var opening = mode == AutomaticCheckMode.InBackground
             ? "Checking carries on after you close the window, until you quit DeskAI from the icon "
                 + "near the clock, sign out, or restart."
-            : "Checking happens only while DeskAI is open. Closing it stops everything.";
+            : "Checking happens only while DeskAI is open. Closing it stops checking.";
 
         var moving = awayFolders == 0
             ? "and it does not move anything."

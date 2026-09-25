@@ -29,10 +29,11 @@ public interface IBackgroundPresence
     bool IsShowing { get; }
 
     /// <summary>Shows the icon. Does nothing when it is already showing.</summary>
-    void Show(string tooltip, bool isPaused);
+    void Show(string tooltip, PresenceMenu menu);
 
     /// <summary>
-    /// Changes what the icon says on hover, and whether its menu shows checking as paused.
+    /// Changes what the icon says on hover, whether its menu offers Pause checking and Find a
+    /// file, and whether it shows checking as paused.
     /// Does nothing when not showing.
     /// </summary>
     /// <remarks>
@@ -40,7 +41,7 @@ public interface IBackgroundPresence
     /// 15 minutes while its menu shows a tick beside "Pause checking" is the failure this
     /// whole feature is careful about, and separate calls are how that happens.
     /// </remarks>
-    void Update(string tooltip, bool isPaused);
+    void Update(string tooltip, PresenceMenu menu);
 
     /// <summary>Takes the icon away. Does nothing when it is not showing.</summary>
     void Hide();
@@ -53,4 +54,13 @@ public interface IBackgroundPresence
 
     /// <summary>Someone asked DeskAI to stop altogether.</summary>
     event EventHandler? QuitRequested;
+
+    /// <summary>Someone asked for the quick search bar (ADR 0047).</summary>
+    event EventHandler? FindRequested;
 }
+
+/// <summary>What the icon's menu offers. Travels with the tooltip so the two never disagree.</summary>
+/// <param name="OffersPause">Whether "Pause checking" is in the menu (only while checking in the background).</param>
+/// <param name="IsPaused">Whether that item shows checking as paused.</param>
+/// <param name="OffersFind">Whether "Find a file" is in the menu (only while quick search is on, ADR 0047).</param>
+public sealed record PresenceMenu(bool OffersPause, bool IsPaused, bool OffersFind);

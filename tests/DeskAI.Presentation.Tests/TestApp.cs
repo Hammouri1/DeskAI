@@ -57,6 +57,9 @@ internal sealed class TestApp : IAsyncDisposable
 
     public RecordingPresence Presence => (RecordingPresence)_services.GetRequiredService<IBackgroundPresence>();
 
+    /// <summary>The quick search shortcut, recorded: no real shortcut is ever registered in a test.</summary>
+    public RecordingHotKey HotKey => (RecordingHotKey)_services.GetRequiredService<IQuickSearchHotKey>();
+
     public RecordingAppearanceApplier Painter => (RecordingAppearanceApplier)_services.GetRequiredService<IAppearanceApplier>();
 
     /// <summary>Stands in for Windows' "open" and "show in folder": records, starts nothing.</summary>
@@ -132,6 +135,7 @@ internal sealed class TestApp : IAsyncDisposable
         Replace<IBackgroundPresence>(services, new RecordingPresence());
         Replace<IAppearanceApplier>(services, new RecordingAppearanceApplier());
         Replace<IShellStarter>(services, new RecordingShellStarter());
+        Replace<IQuickSearchHotKey>(services, new RecordingHotKey());
         Replace(services, new QuickSearchTiming(TimeSpan.FromMilliseconds(1), TimeSpan.FromMilliseconds(2), TimeSpan.FromMilliseconds(20)));
         Replace<IPdfOcrReader>(services, new RecordingPdfOcrReader());
         Replace<IClock>(services, new MovableClock());

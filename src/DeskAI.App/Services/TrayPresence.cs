@@ -42,6 +42,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
     private const uint CommandOpen = 1;
     private const uint CommandPause = 2;
     private const uint CommandQuit = 3;
+    private const uint CommandFind = 4;
     private const nint IdiApplication = 32512;
 
     /// <summary>
@@ -63,7 +64,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
     private nint _icon;
     private bool _ownsIcon;
     private string _tooltip = string.Empty;
-    private bool _isPaused;
+    private PresenceMenu _menu = new(OffersPause: false, IsPaused: false, OffersFind: false);
     private bool _isShowing;
     private bool _menuShowing;
     private bool _disposed;
@@ -86,6 +87,8 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
     public event EventHandler? PauseToggleRequested;
 
     public event EventHandler? QuitRequested;
+
+    public event EventHandler? FindRequested;
 
     public bool IsShowing => _isShowing;
 
@@ -115,7 +118,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
     /// </remarks>
     internal bool EnsureMessageWindow() => !_disposed && EnsureWindow();
 
-    public void Show(string tooltip, bool isPaused)
+    public void Show(string tooltip, PresenceMenu menu)
     {
         if (_disposed || _isShowing)
         {
@@ -123,7 +126,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
         }
 
         _tooltip = tooltip;
-        _isPaused = isPaused;
+        _menu = menu;
 
         if (!EnsureWindow())
         {
@@ -140,7 +143,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
         _isShowing = true;
     }
 
-    public void Update(string tooltip, bool isPaused)
+    public void Update(string tooltip, PresenceMenu menu)
     {
         if (_disposed || !_isShowing)
         {
@@ -148,9 +151,9 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
         }
 
         // Stored before the call so a later re-add repeats the newest pair. The tooltip and the
-        // pause tick must never be able to disagree.
+        // menu must never be able to disagree.
         _tooltip = tooltip;
-        _isPaused = isPaused;
+        _menu = menu;
 
         var data = BuildIconData();
         if (!TrayInterop.Shell_NotifyIconW(TrayInterop.NIM_MODIFY, ref data))
@@ -439,7 +442,7 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
         }
     }
 
-    /// <summary>Open, pause, quit. Nothing in here begins work; see ADR 0025.</summary>
+    /// <summary>Open, find a file, pause, quit. Nothing in here begins work; see ADR 0025 and ADR 0047.</summary>
     private void ShowMenu()
     {
         // TrackPopupMenuEx runs a nested message loop, so messages that arrive while the menu is up
@@ -464,11 +467,22 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
         try
         {
             TrayInterop.AppendMenuW(menu, TrayInterop.MF_STRING, CommandOpen, "Open DeskAI");
-            TrayInterop.AppendMenuW(
-                menu,
-                TrayInterop.MF_STRING | (_isPaused ? TrayInterop.MF_CHECKED : 0),
-                CommandPause,
-                "Pause checking");
+            if (_menu.OffersFind)
+            {
+                // Shows the quick search bar (ADR 0047). The bar itself starts nothing until
+                // someone types and presses Enter.
+                TrayInterop.AppendMenuW(menu, TrayInterop.MF_STRING, CommandFind, "Find a file");
+            }
+
+            if (_menu.OffersPause)
+            {
+                TrayInterop.AppendMenuW(
+                    menu,
+                    TrayInterop.MF_STRING | (_menu.IsPaused ? TrayInterop.MF_CHECKED : 0),
+                    CommandPause,
+                    "Pause checking");
+            }
+
             TrayInterop.AppendMenuW(menu, TrayInterop.MF_STRING, CommandQuit, "Quit DeskAI");
 
             // Bold, and what a left-click does, so the obvious action is the same either way.
@@ -501,6 +515,9 @@ public sealed partial class TrayPresence : IBackgroundPresence, IDisposable
                     break;
                 case (int)CommandQuit:
                     QuitRequested?.Invoke(this, EventArgs.Empty);
+                    break;
+                case (int)CommandFind:
+                    FindRequested?.Invoke(this, EventArgs.Empty);
                     break;
                 default:
                     break;

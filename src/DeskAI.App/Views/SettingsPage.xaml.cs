@@ -101,7 +101,7 @@ public sealed partial class SettingsPage : Page
                 MaxWidth = 480,
                 Text = "DeskAI will forget every connected folder and its permissions, every rule and saved search, "
                     + "your AI choice and every saved key, its check history, and the wallpaper it remembered. "
-                    + "It will stop keeping running after the window is closed.\n\n"
+                    + "Checking will stop when the window is closed.\n\n"
                     + "Your files are not touched: anything DeskAI tidied stays where it is, and your wallpaper stays as it is now. "
                     + "This cannot be undone.",
             },

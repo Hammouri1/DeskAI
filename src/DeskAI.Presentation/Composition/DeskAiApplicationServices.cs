@@ -142,6 +142,10 @@ public static class DeskAiApplicationServices
         // Paints DeskAI's own window in the chosen look. The Windows one is registered by the app.
         services.AddSingleton<IAppearanceApplier, NoAppearanceApplier>();
         services.AddSingleton<BackgroundPresenceController>();
+        // The quick search shortcut. None here; the Windows one is registered by the app.
+        services.AddSingleton<IQuickSearchHotKey, NoQuickSearchHotKey>();
+        services.AddSingleton<QuickSearchSwitch>();
+        services.AddTransient<QuickSearchCardViewModel>();
         services.AddTransient<ShellViewModel>();
         services.AddTransient<TidyViewModel>();
         services.AddTransient<SettingsViewModel>();
