@@ -156,6 +156,9 @@ public static class DeskAiApplicationServices
         services.AddTransient<WelcomeViewModel>();
         services.AddTransient<AskDeskAiViewModel>();
         services.AddTransient<DesktopStudioViewModel>();
+        services.AddSingleton(QuickSearchTiming.Default);
+        // The quick search bar (ADR 0047): the one holder of the file launcher. One bar per DeskAI.
+        services.AddSingleton<QuickSearchViewModel>();
         return services;
     }
 }

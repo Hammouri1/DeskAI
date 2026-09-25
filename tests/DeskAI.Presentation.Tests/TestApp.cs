@@ -1,6 +1,7 @@
 using DeskAI.AI.Transport;
 using DeskAI.App.Composition;
 using DeskAI.App.Services;
+using DeskAI.App.ViewModels;
 using DeskAI.Core.Abstractions;
 using DeskAI.Core.Content;
 using DeskAI.Core.Files;
@@ -131,6 +132,7 @@ internal sealed class TestApp : IAsyncDisposable
         Replace<IBackgroundPresence>(services, new RecordingPresence());
         Replace<IAppearanceApplier>(services, new RecordingAppearanceApplier());
         Replace<IShellStarter>(services, new RecordingShellStarter());
+        Replace(services, new QuickSearchTiming(TimeSpan.FromMilliseconds(1), TimeSpan.FromMilliseconds(2), TimeSpan.FromMilliseconds(20)));
         Replace<IPdfOcrReader>(services, new RecordingPdfOcrReader());
         Replace<IClock>(services, new MovableClock());
         if (searchBounds is not null)
