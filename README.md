@@ -29,17 +29,17 @@ Connected folder → scan → classify → propose plan → safety validation
                   → preview → your approval → execute → journal → undo
 ```
 
-**Status:** version 1.1.2. More than 1,400 automated tests pass and the x64 Release build has
+**Status:** version 1.2.0. More than 1,600 automated tests pass and the x64 Release build has
 zero warnings. The download is not code-signed — see [Honest limits](#honest-limits).
 
 ## Download for Windows
 
 No programming tools, account, or .NET installation are needed.
 
-### [Download DeskAI 1.1.2 for Windows](https://github.com/Hammouri1/DeskAI/releases/download/v1.1.2/DeskAI-1.1.2-win-x64.zip)
+### [Download DeskAI 1.2.0 for Windows](https://github.com/Hammouri1/DeskAI/releases/download/v1.2.0/DeskAI-1.2.0-win-x64.zip)
 
 1. Open the downloaded zip and choose **Extract all**. Do not run DeskAI from inside the zip.
-2. Open the new `DeskAI-1.1.2-win-x64` folder.
+2. Open the new `DeskAI-1.2.0-win-x64` folder.
 3. Double-click **DeskAI.App.exe**, the file with the mint DeskAI logo.
 4. If Windows says **Windows protected your PC**, choose **More info**, then **Run anyway**.
 5. On Home, find **Your folders** and press **Connect** beside Desktop, Downloads, Documents,
@@ -75,8 +75,11 @@ rule-matched files per run, stopping on anything unexpected, always undoable.
 **Desktop Studio.** Connect your Desktop and press **Find groups**: DeskAI sorts the folders
 and files sitting on it into up to 8 groups, such as "Coding" or "School", that you can rename,
 merge, and rearrange. With AI, you first see the exact list of names and kinds of files the AI
-would get; without AI, DeskAI makes a simpler guess from the kinds of files. Nothing on your PC
-changes. Arranging the Desktop by those groups comes in later steps.
+would get; without AI, DeskAI makes a simpler guess from the kinds of files. Finding groups
+changes nothing on your PC. Then, only after you tick and press Move and give a separate yes for
+the Desktop, DeskAI can put each group in its own folder, add the group's name to each folder's
+name, or gather things unchanged for 6 months into one Old stuff folder. **Put back** undoes
+your latest change, even after you reopen DeskAI. Nothing is ever deleted.
 
 **Making it yours.** Folder templates, starter packs, themes, dark mode, wallpaper, and a backup
 and restore of your rules and saved searches.

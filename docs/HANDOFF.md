@@ -31,8 +31,20 @@ given (2026-09-25): a wallpaper made from the groups, a before-and-after picture
 group folders, one button for a full tidy, "keep it tidy later", the same cards for Downloads, and
 the review's small points. **The owner chose "the same cards for Downloads" but not now: keep it
 for later** (it would need its own separate permission, like the Desktop's). The owner then asked
-for more interesting features for the whole of DeskAI; their choice among those is the next task.
-Pushing both branches is still to be asked; do not push before.
+for more interesting features for the whole of DeskAI and chose **quick search from anywhere**
+(a shortcut such as Win+Shift+Space opens a small search box over any window; it reads only what
+Search already knows and changes nothing). That is the next task: design and plan it first.
+Other ideas offered and not picked: storage map, "your week in DeskAI" timeline, better names for
+messy files, near-copy pictures to the Recycle Bin, clearing old installers and zips, screenshot
+sorter, a Ctrl+K command box.
+
+**Released as 1.2.0 (owner's request, 2026-09-25).** `first-run-welcome` (which holds all of
+`desktop-studio-find-groups`) was fast-forwarded into `main`, the version set to 1.2.0 (README,
+install guide, release notes, `Directory.Build.props`), and `main` plus the tag `v1.2.0` pushed;
+the tag's workflow builds the zip, checksum, and SBOM. Before pushing: Release build 0 warnings,
+all 1,699 tests passed, formatting passed, locked restore passed, a local self-contained publish had
+every file the workflow checks, and no vulnerable packages. All commits use the GitHub no-reply
+address. The published app was not opened locally.
 
 **Desktop Studio state (unchanged since 2026-09-24):** Desktop Studio steps 1 (**Find groups**), 3 (**Clear old stuff**, **Put each group in
 its own folder**), and 4 (**Tag names**) are built on the branch `desktop-studio-find-groups`

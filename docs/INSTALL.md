@@ -16,13 +16,13 @@ or Windows startup, and it never checks the internet for updates.
 
 No programming tools or commands are required.
 
-1. Click **[Download DeskAI 1.1.2 for Windows](https://github.com/Hammouri1/DeskAI/releases/download/v1.1.2/DeskAI-1.1.2-win-x64.zip)**.
+1. Click **[Download DeskAI 1.2.0 for Windows](https://github.com/Hammouri1/DeskAI/releases/download/v1.2.0/DeskAI-1.2.0-win-x64.zip)**.
    If it does not start, open the [latest release](https://github.com/Hammouri1/DeskAI/releases/latest),
-   expand **Assets**, and click `DeskAI-1.1.2-win-x64.zip`.
+   expand **Assets**, and click `DeskAI-1.2.0-win-x64.zip`.
 3. Wait for the download to finish.
 4. Open Downloads, right-click the downloaded zip, and choose **Extract All**.
 5. Leave the suggested destination selected and press **Extract**.
-6. Open the extracted `DeskAI-1.1.2-win-x64` folder.
+6. Open the extracted `DeskAI-1.2.0-win-x64` folder.
 7. Double-click `DeskAI.App.exe`. Look for the mint DeskAI logo.
 
 Keep the other files beside `DeskAI.App.exe`; they are parts of the application. Do not try to

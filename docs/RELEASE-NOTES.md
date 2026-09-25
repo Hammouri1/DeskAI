@@ -1,5 +1,22 @@
 # Release notes
 
+## 1.2.0 — 2026-09-25
+
+- **Desktop Studio**, a new page for your Desktop. **Find groups** sorts the folders and files on
+  it into groups you can rename, merge, and rearrange, with AI (after you see exactly what would
+  be sent) or with DeskAI's own simpler guess. Then **Put each group in its own folder**, **Add
+  the group's name to each folder's name**, and **Clear old stuff** show a list with tick boxes
+  first and change only what you tick, after a separate yes for moving things on the Desktop.
+  **Put back** undoes the latest change, also after reopening. Nothing is deleted.
+- The Desktop Studio cards work together: the groups stay in step after a move or Put back, the
+  other cards' lists are cleared when the Desktop changes, and Clear old stuff explains why it
+  finds nothing once things are in group folders (and suggests using it first).
+- A short **first-run welcome** says what DeskAI will and will not do and offers to connect your
+  folders. **Privacy and AI → Show the welcome again** opens it later.
+- **Search finds more of your files**: it looks 8 folders deep and at up to 20,000 items, a look
+  that stops early no longer makes Search forget files, and Search says when a folder was only
+  partly checked. Opening Search looks again at folders not checked in the last 10 minutes.
+
 ## 1.1.2 — 2026-09-22
 
 - Windows now supplies Desktop, Downloads, Documents, and Pictures through the same official
