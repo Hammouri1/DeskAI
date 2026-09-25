@@ -154,4 +154,23 @@ After trying quick search, the owner reported (with two screenshots, 2026-09-25)
 
 ## Rulings made while building
 
-(Empty until the work starts.)
+- **See-through window probe (2026-09-25): works — the bar is built see-through (section 5).**
+  What it took, in a throwaway UI-preview build:
+  1. The `SeeThroughBackdrop` alone (a transparent system composition brush) left the area
+     around the card **black**. Adding `DwmExtendFrameIntoClientArea` with all margins `-1` made
+     it truly see-through.
+  2. A thin **white frame** stayed around the whole window. It was a 3 px window frame outside
+     the drawn area (window 694 px wide, content 688 px): the presenter keeps the dialog-frame
+     style, and Windows puts it back on every show, so removing the style, turning off Windows'
+     frame drawing, and a borderless colour did not help. Answering Windows' "how big is the
+     inside" message (`WM_NCCALCSIZE`) with "the whole window", through a window subclass, removed
+     it. The probe also used `OverlappedPresenter.Create()` rather than `CreateForDialog()`, no
+     DWM rounding, and no DWM border colour; the built bar keeps what was verified.
+  3. Checked by the agent on generated sample screens: see-through around the card, the glow
+     shows, a click on the see-through edge hides the bar, a click elsewhere hides it.
+  4. **The owner checked it on their screen:** "it's good", and a click next to the box and a
+     click elsewhere both hide it. **Owner-found:** the card itself was slightly see-through
+     (95% opaque), so text behind it (a page title, File Explorer's toolbar) showed faintly in the
+     middle of the box and "some words look weird". Ruling: the card is fully opaque; only the
+     glow around it is see-through.
+  5. Not checked: high contrast and a 150% display (optional in section 4).
