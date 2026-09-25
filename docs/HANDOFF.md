@@ -31,8 +31,18 @@ and picks how to run it (one by one here, or a fresh helper per task).
 branch `quick-search` (from `main` at `e61e6e0`), plan Tasks 1–3 are done and committed: ADR 0047
 and its security review; the open rule, the buddies' lines, and the three remembered choices
 (Start fresh forgets them); `QuickSearchService` (by name, then inside). Release build 0 warnings,
-all 1,777 tests passed, formatting passed. Nothing a person can see yet. The owner asked for only
-Tasks 1–3 while away; **next is Task 4** (the file launcher). Progress ledger with the rulings made:
+all 1,777 tests passed, formatting passed. Then (owner's request, same day) Tasks 4–8: the file
+launcher (re-checks the live file; only the bar holds it), the bar's behaviour, the switch and the
+icon near the clock (Find a file; Pause only while checking), the tip on Home and Search and the
+welcome's page, and the bar window with Sparky, the shortcut (`RegisterHotKey`, no hook), and the
+Quick search card. Release build 0 warnings, 1,853 tests (1,847 passed, 6 skipped: the buddies not
+drawn yet), formatting passed. The window uses the fallback shape (no see-through probe). Checked in
+the UI preview with a throwaway Ctrl + Alt + F12 build: greeting, examples, typing, Esc.
+**Open decision for the owner:** on the owner's PC Windows refuses Ctrl + Alt + Space because
+another running program already uses it (error 1409; the Claude desktop app is the likely owner).
+DeskAI says so on the card; the owner decides whether to free it there or pick another shortcut.
+**Next is Task 9** (Archie), then Tasks 10–14 (the other buddies) and Task 15 (docs, review,
+handoff). Progress ledger with the rulings made:
 `.superpowers/sdd/2026-09-25-quick-search/progress.md` (git-ignored).
 The owner said to keep asking questions whenever something is unclear ("always better").
 
