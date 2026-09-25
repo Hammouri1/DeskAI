@@ -179,7 +179,7 @@ public static class HelpCatalog
             "Pick a look and choose light, dark, or follow Windows. It changes only the DeskAI window, straight away, and is remembered next time.",
             "It never changes your Windows theme, wallpaper, or any file. Green always means DeskAI is allowed to do something."),
         new("workspace.quicksearch", "Quick search",
-            "A small search bar you open from any app. Ctrl + Alt + D opens it; pick another shortcut here.",
+            "A small search bar for any app. Ctrl + Alt + D opens it unless you pick another here.",
             "Type a name, a kind, a time, or words inside a file. Enter opens familiar files in their usual app; anything else is shown in its folder. It looks only in folders you connected.",
             "It never opens programs, never uses AI, never sends anything, and remembers nothing you type."),
         new("workspace.wallpaper", "Wallpaper",

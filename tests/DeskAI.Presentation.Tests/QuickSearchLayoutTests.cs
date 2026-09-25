@@ -175,6 +175,45 @@ public sealed class QuickSearchLayoutTests
         Assert.DoesNotContain("Content=\"Choose\"", workspace, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Review finding 2026-09-25: the pop-in swapped in the half-size shape at once but started
+    /// 0.12 s later, so a half-size buddy flashed over the search box on every opening.
+    /// </summary>
+    [Fact]
+    public void The_buddy_stays_hidden_until_its_pop_in_starts()
+    {
+        var code = Read("src", "DeskAI.App", "Views", "Buddies", "BuddyAnimations.cs");
+
+        Assert.Matches(new Regex(@"element\.Opacity = 0;[\s\S]*story\.Begin\(\);", RegexOptions.None, TimeSpan.FromSeconds(1)), code);
+    }
+
+    /// <summary>
+    /// Review finding 2026-09-25: seven faces in one row beside the stage need about 450 px; with
+    /// DeskAI snapped to half a small screen the last faces were cut off and could not be clicked.
+    /// Narrow windows get two rows of faces; wide ones keep the mockup's single row.
+    /// </summary>
+    [Fact]
+    public void The_faces_wrap_into_two_rows_when_DeskAI_is_narrow()
+    {
+        var page = Read("src", "DeskAI.App", "Views", "WorkspacePage.xaml");
+
+        Assert.Contains("MaxColumns=\"4\"", page, StringComparison.Ordinal);
+        Assert.Contains("<AdaptiveTrigger MinWindowWidth=\"1200\" />", page, StringComparison.Ordinal);
+        Assert.Contains("<Setter Target=\"BuddyFaces.MaxColumns\" Value=\"7\" />", page, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Review finding 2026-09-25: a polite live setting alone is not announced; the stage raises
+    /// the live-region event when the buddy changes, so Narrator reads the new name and line.
+    /// </summary>
+    [Fact]
+    public void A_new_buddy_on_the_stage_is_announced()
+    {
+        var code = Read("src", "DeskAI.App", "Views", "WorkspacePage.xaml.cs");
+
+        Assert.Contains("AutomationEvents.LiveRegionChanged", code, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Only_the_quick_search_bar_notice_is_skipped_when_quick_search_alone_keeps_DeskAI()
     {

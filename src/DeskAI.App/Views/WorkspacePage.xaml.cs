@@ -7,6 +7,7 @@ using DeskAI.Core.Roots;
 using DeskAI.Core.Templates;
 using DeskAI.Core.Workspace;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Automation.Peers;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Shapes;
 
@@ -210,7 +211,24 @@ public sealed partial class WorkspacePage : Page
         if (e.PropertyName == nameof(QuickSearchCardViewModel.Chosen))
         {
             ShowStage(popIn: true);
+            AnnounceChosenBuddy();
         }
+    }
+
+    /// <summary>
+    /// Tells a screen reader the new buddy's name and hello line. A polite live setting alone is
+    /// never announced; the live-region event is what makes Narrator read the changed text.
+    /// </summary>
+    private void AnnounceChosenBuddy()
+    {
+        // After the bindings have caught up, so the text read out is the new buddy's.
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            foreach (var line in new[] { ChosenBuddyName, ChosenBuddyHello })
+            {
+                FrameworkElementAutomationPeer.FromElement(line)?.RaiseAutomationEvent(AutomationEvents.LiveRegionChanged);
+            }
+        });
     }
 
     /// <summary>The chosen buddy, large, on its own background; it pops in when it changes and buddies may move.</summary>

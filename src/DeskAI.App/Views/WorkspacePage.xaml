@@ -55,6 +55,20 @@
         </Style>
     </Page.Resources>
     <Grid>
+        <VisualStateManager.VisualStateGroups>
+            <!-- The buddy faces: two rows in a narrow window (seven in a row beside the stage need about 450 px), one row when wide. -->
+            <VisualStateGroup x:Name="WidthStates">
+                <VisualState x:Name="Narrow" />
+                <VisualState x:Name="Wide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1200" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="BuddyFaces.MaxColumns" Value="7" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+        </VisualStateManager.VisualStateGroups>
         <ScrollViewer>
             <StackPanel Style="{StaticResource PageContentStyle}">
 
@@ -164,8 +178,8 @@
                                             HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Border>
                         <StackPanel Grid.Column="1" Spacing="10" VerticalAlignment="Center">
-                            <StackPanel Spacing="10" AutomationProperties.LiveSetting="Polite">
-                                <TextBlock FontSize="20" FontWeight="Bold" TextWrapping="Wrap"
+                            <StackPanel Spacing="10">
+                                <TextBlock x:Name="ChosenBuddyName" AutomationProperties.LiveSetting="Polite" FontSize="20" FontWeight="Bold" TextWrapping="Wrap"
                                            Foreground="{ThemeResource DeskTextPrimaryBrush}"
                                            Text="{x:Bind ViewModel.QuickSearch.Chosen.Name, Mode=OneWay}" />
                                 <Border HorizontalAlignment="Left" Padding="12,7" CornerRadius="14,14,14,4">
@@ -175,13 +189,13 @@
                                             <GradientStop Offset="1" Color="#6A8CFF" />
                                         </LinearGradientBrush>
                                     </Border.Background>
-                                    <TextBlock FontSize="13" FontWeight="Bold" Foreground="#04121C" TextWrapping="Wrap"
+                                    <TextBlock x:Name="ChosenBuddyHello" AutomationProperties.LiveSetting="Polite" FontSize="13" FontWeight="Bold" Foreground="#04121C" TextWrapping="Wrap"
                                                Text="{x:Bind ViewModel.QuickSearch.Chosen.HelloLine, Mode=OneWay}" />
                                 </Border>
                             </StackPanel>
                             <RadioButtons x:Name="BuddyFaces"
                                           AutomationProperties.Name="Search buddies"
-                                          MaxColumns="7"
+                                          MaxColumns="4"
                                           ItemsSource="{x:Bind ViewModel.QuickSearch.Buddies}"
                                           SelectedIndex="{x:Bind ViewModel.QuickSearch.ChosenIndex, Mode=OneWay}"
                                           SelectionChanged="OnBuddyFaceChosen">

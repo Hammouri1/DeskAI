@@ -22,6 +22,10 @@ internal static class BuddyAnimations
         story.Children.Add(To(shape, "ScaleY", 0.5, 1, overshoot));
         story.Children.Add(To(shape, "TranslateY", 30, 0, overshoot));
         story.Children.Add(To(element, "Opacity", 0, 1, null));
+
+        // Hidden until the storyboard starts: a delayed storyboard does nothing until its begin
+        // time, and the half-size shape above would otherwise show for that moment.
+        element.Opacity = 0;
         story.Begin();
     }
 

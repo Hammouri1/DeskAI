@@ -1,3 +1,4 @@
+using DeskAI.App.Help;
 using DeskAI.App.Services;
 using DeskAI.App.ViewModels;
 using DeskAI.Core.QuickSearch;
@@ -215,6 +216,18 @@ public sealed class QuickSearchSettingsPageTests
         await reopened.Get<QuickSearchSwitch>().ApplyStoredAsync();
         Assert.False(reopened.Get<BuddyMotion>().IsOn);
         Assert.False((await OpenCardAsync(reopened)).LetsBuddyMove);
+    }
+
+    /// <summary>
+    /// Review finding 2026-09-25: the help said "Ctrl + Alt + D opens it", untrue for anyone who
+    /// picked another shortcut. The fixed help text names the default as the default.
+    /// </summary>
+    [Fact]
+    public void The_help_names_Ctrl_Alt_D_only_as_the_default()
+    {
+        var help = HelpCatalog.Find("workspace.quicksearch")!;
+
+        Assert.Contains("Ctrl + Alt + D opens it unless you pick another here", help.WhatItIs, StringComparison.Ordinal);
     }
 
     [Fact]

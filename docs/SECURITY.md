@@ -277,8 +277,12 @@ the usual app for its kind, or shows it in File Explorer, and nothing else:
   every test; only the app registers the Windows one, and only `WindowsFileLauncher` holds it.
   Only the quick search bar holds the launcher, and no AI type does; tests assert both.
   Explorer is started by its full path, never found through PATH.
-- **The shortcut is `RegisterHotKey`**, not a keyboard hook: Windows reports only Ctrl + Alt +
-  Space to DeskAI and nothing else anyone types.
+- **The shortcut is `RegisterHotKey`**, not a keyboard hook: Windows reports only the one shortcut
+  chosen from a fixed list of three (Ctrl + Alt + D by default, Ctrl + Alt + Space, Ctrl + Shift +
+  Space), one at a time, and nothing else anyone types. A stored value outside the list reads as
+  the default, so it can never name another key.
+- **The bar's see-through window only changes drawing.** It still hides on Esc, on losing focus,
+  and on a click on its see-through part; it gains no other Windows ability.
 - **Nothing typed, found, or read is stored or logged.** Reading inside files goes only through
   Search's existing permissions and limits; the bar grants no permission and uses no AI.
 - **Closing stays honest.** Quick search keeps DeskAI near the clock only while the icon there is

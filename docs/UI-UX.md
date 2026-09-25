@@ -367,7 +367,8 @@ Spec: `docs/superpowers/specs/2026-09-25-quick-search-design.md`.
   stage and faces", 2026-09-25): a stage about 240 × 230 with the chosen buddy large on its own
   background (night, study, lab, forest, sea, meadow, dusk) and a mint edge; beside it the buddy's
   name and its hello line in a mint-to-blue bubble; under them seven round faces (60 px, a mint
-  ring on the chosen one). Clicking a face, or moving to it with the arrow keys, chooses it at once;
+  ring on the chosen one; one row when DeskAI is wide, two rows below 1,200 px so none is cut off).
+  Clicking a face, or moving to it with the arrow keys, chooses it at once;
   the new buddy pops in when **Let my buddy move** is on. Screen readers hear a radio group "Search
   buddies", each face as "Choose Archie the owl" with whether it is chosen, and the new name and
   line announced politely; the stage drawing is silent. Under the chooser: the **Let my buddy
