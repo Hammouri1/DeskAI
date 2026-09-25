@@ -59,6 +59,8 @@ public sealed class DesktopMoveService(
     public const string PermissionNeeded = "DeskAI needs your permission before it moves anything on your Desktop.";
     public const string PutBackPermissionNeeded = "Putting things back moves them too, so DeskAI needs your permission to move things on your Desktop again.";
     public const string TidyAnsweredOnOrganize = "This tidy was made on Organize, so answer it there.";
+    public const string NothingOld = "Nothing on your Desktop has been left unchanged for 6 months.";
+    public const string OldStuffInGroupFolders = "Nothing loose on your Desktop has been left unchanged for 6 months. Clear old stuff doesn't look inside your group folders, so it works best before you put each group in its own folder.";
 
     public async Task<bool> CanMoveAsync(Guid rootId, CancellationToken cancellationToken = default) =>
         await DesktopAsync(rootId, cancellationToken).ConfigureAwait(false) is { } root && RootCapabilities.CanMoveFolders(root);
@@ -128,7 +130,9 @@ public sealed class DesktopMoveService(
             ? string.Empty
             : card switch
             {
-                DesktopMoveCard.ClearOldStuff => "Nothing on your Desktop has been left unchanged for 6 months.",
+                DesktopMoveCard.ClearOldStuff => await HasGroupFoldersAsync(rootId, seen, cancellationToken).ConfigureAwait(false)
+                    ? OldStuffInGroupFolders
+                    : NothingOld,
                 DesktopMoveCard.TagNames => "None of the folders in your groups can get a new name right now.",
                 _ => "Nothing in your groups can go into folders right now.",
             };
@@ -399,6 +403,22 @@ public sealed class DesktopMoveService(
         DesktopMoveCard.TagNames => PlanPurpose.TagNames,
         _ => throw new ArgumentOutOfRangeException(nameof(card)),
     };
+
+    /// <summary>
+    /// Whether a group's own folder is on the Desktop, as Folder by group leaves it. Clear old stuff
+    /// looks only at what is loose on the Desktop, so old things inside those folders are not seen
+    /// (end-to-end check 2026-09-25); the empty list then says why instead of just "nothing old".
+    /// </summary>
+    private async Task<bool> HasGroupFoldersAsync(Guid rootId, DesktopInventory seen, CancellationToken cancellationToken)
+    {
+        if (await boards.LoadAsync(rootId, cancellationToken).ConfigureAwait(false) is not { } board)
+        {
+            return false;
+        }
+
+        var folderNames = seen.Things.Where(thing => thing.IsFolder).Select(thing => thing.Name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        return board.Groups.Any(group => folderNames.Contains(group.Name));
+    }
 
     /// <summary>The root, only when it is the connected Desktop. Any other folder is refused.</summary>
     private async Task<AuthorizedRoot?> DesktopAsync(Guid rootId, CancellationToken cancellationToken) =>

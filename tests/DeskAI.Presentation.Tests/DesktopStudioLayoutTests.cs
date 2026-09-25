@@ -55,6 +55,15 @@ public sealed class DesktopStudioLayoutTests
         Assert.Contains("Text=\"{x:Bind Warning}\"", row, StringComparison.Ordinal);
     }
 
+    /// <summary>End-to-end check 2026-09-25: once things are in group folders, Clear old stuff can't see them.</summary>
+    [Fact]
+    public void Putting_groups_in_folders_suggests_clearing_old_stuff_first()
+    {
+        var section = Section(Page(), "Topic=\"studio.folderByGroup\"", "</Border>");
+
+        Assert.Contains("Text=\"Want to clear old stuff too? Do it first, under Other tidy-ups.\"", section, StringComparison.Ordinal);
+    }
+
     private static readonly string[] MovingCardTopics = ["studio.oldStuff", "studio.folderByGroup"];
 
     /// <summary>

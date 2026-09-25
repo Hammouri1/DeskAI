@@ -1228,3 +1228,7 @@ it, and DeskAI allowed to move things there.
 4. Press **Put back** on Put each group in its own folder. Each thing is back on the Desktop and in
    its group on the board, and the group folders DeskAI made are gone from the board and the
    Desktop.
+5. Under **2. Happy with these groups?** read the line "Want to clear old stuff too? Do it first,
+   under Other tidy-ups." Put each group in its own folder again and **Move**, then press **Show
+   what would move** on Clear old stuff: when nothing loose is old, it says it doesn't look inside
+   your group folders and works best before putting groups in folders. Nothing moves.

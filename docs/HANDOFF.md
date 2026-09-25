@@ -25,10 +25,10 @@ also mention an X button that WinUI pop-ups do not have (older text, not changed
 `docs/MANUAL-TESTING.md` "2026-09-24 First-run welcome" (use the UI preview build).
 
 **Next (owner's request, 2026-09-24):** check that Desktop Studio works well end to end, and bring
-the owner suggestions for Desktop Studio additions to choose from. The check is done and its
-problems 1, 2, 3, and 5 are fixed (2026-09-25, below); problem 4 and the list of suggested
-additions are still to come. Pushing both branches is still
-to be asked; do not push before.
+the owner suggestions for Desktop Studio additions to choose from. The check is done and all five
+of its problems are fixed (2026-09-25, below). **Still to come: the list of suggested Desktop Studio
+additions for the owner to choose from.** Pushing both branches is still to be asked; do not push
+before.
 
 **Desktop Studio state (unchanged since 2026-09-24):** Desktop Studio steps 1 (**Find groups**), 3 (**Clear old stuff**, **Put each group in
 its own folder**), and 4 (**Tag names**) are built on the branch `desktop-studio-find-groups`
@@ -96,7 +96,8 @@ stays as the record.
 generated Desktop (not committed): all three cards used one after another, then reopening.** The
 owner chose to fix 1, 2 and 5 first; **those are fixed** (2026-09-25, each with a page test that failed
 first; see "Desktop Studio cards working together" below). 3 was fixed with them, because fixing 1
-made it appear straight after Folder by group. **4 is still open.**
+made it appear straight after Folder by group. 4 is fixed too (2026-09-25, "Clear old stuff after
+Folder by group" below).
 1. After **Put each group in its own folder**, the board is not updated: the next look empties
    every group and puts the new group folders under Not sure, so the person's groups (and any
    renames or merges) are lost.
@@ -121,9 +122,20 @@ a folder, so no empty Old stuff or group folder is left without a Put back. The 
 Move, Put back, or Put them back, reloads the board and clears every other card's list with
 `DesktopStudioViewModel.ListOutOfDate`. Tag names leaves a folder named exactly like its group
 alone ("This is the Coding folder itself, so it keeps its name."). Manual check:
-`docs/MANUAL-TESTING.md` "2026-09-25 Desktop Studio cards working together". Not changed: problem
-4, and a Put them back after a stopped Folder by group still lets the next look sort the board (as
-before).
+`docs/MANUAL-TESTING.md` "2026-09-25 Desktop Studio cards working together". Not changed: a Put
+them back after a stopped Folder by group still lets the next look sort the board (as before).
+
+**Clear old stuff after Folder by group (2026-09-25, fix for 4).** Clear old stuff still looks only
+at what is loose on the Desktop; it was not made to reach inside group folders, because that would
+widen what it moves (a ruling made while building; the owner may overrule). Instead: under **2.
+Happy with these groups?** a small line says "Want to clear old stuff too? Do it first, under Other
+tidy-ups."; when Clear old stuff finds nothing and a group's own folder is on the Desktop,
+`DesktopMoveService.OldStuffInGroupFolders` says it doesn't look inside group folders and works
+best first; its help says "Use it before putting groups in folders." Page tests (each failed
+first): `Clear_old_stuff_after_Folder_by_group_says_why_it_found_nothing` (and it finds the old
+things again after Put back), `Putting_groups_in_folders_suggests_clearing_old_stuff_first`. Release
+build 0 warnings, all 1,699 tests passed, formatting passed. Manual check: step 5 of
+"2026-09-25 Desktop Studio cards working together".
 
 **Open with the owner:**
 - The deferred small points from Tag names' review (listed in the dated section below): the
@@ -575,7 +587,8 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 > `desktop-studio-find-groups` branch (Desktop Studio steps 1, 3, and 4, ADR 0042, ADR 0044, and
 > ADR 0045; step 2 dropped, ADR 0043). Nothing on it is pushed yet. All planned Desktop
 > Studio work is built; Color groups was dropped (ADR 0046). The first-run welcome is built on
-> `first-run-welcome` and verified; next is the Desktop Studio end-to-end check and suggestions. Ask me whether to push Desktop Studio
+> `first-run-welcome` and verified; the Desktop Studio end-to-end check and all five of its fixes
+> are done; next is the list of suggested Desktop Studio additions. Ask me whether to push Desktop Studio
 > or look for another way to make Desktop designs first.
 > Do not open or scan my personal folders or use my API key. Test with generated
 > files, update docs, and commit each task. Ask before pushing, tagging, or releasing.

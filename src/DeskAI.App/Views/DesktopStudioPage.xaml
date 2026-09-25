@@ -207,6 +207,8 @@
                         </StackPanel>
                         <TextBlock Style="{StaticResource BodySecondaryStyle}" TextWrapping="Wrap"
                                    Text="DeskAI can make a folder for each group on your Desktop and put the group's things inside. You see the list first, and Not sure stays where it is." />
+                        <TextBlock Style="{StaticResource CaptionStyle}" TextWrapping="Wrap"
+                                   Text="Want to clear old stuff too? Do it first, under Other tidy-ups." />
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <Button Content="Put each group in its own folder" Tag="FolderByGroup" Click="OnPreviewClick" />

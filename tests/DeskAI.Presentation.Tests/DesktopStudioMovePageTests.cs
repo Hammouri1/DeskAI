@@ -556,6 +556,44 @@ public sealed class DesktopStudioMovePageTests
         Assert.False(studio.OldStuff.CanPutBack);
     }
 
+    /// <summary>Found in the end-to-end check 2026-09-25: after Folder by group the old things sit inside the group folders, and Clear old stuff said only "nothing old".</summary>
+    [Fact]
+    public async Task Clear_old_stuff_after_Folder_by_group_says_why_it_found_nothing()
+    {
+        await using var app = await TestApp.StartAsync();
+        DesktopMoveServiceTests.MakeOldDesktop(app);
+        var studio = await OpenAllowedAsync(app);
+        await studio.GuessAsync();
+        await studio.PreviewAsync(studio.FolderByGroup);
+        await studio.ApplyAsync(studio.FolderByGroup);
+        var before = Snapshot(app);
+
+        await studio.PreviewAsync(studio.OldStuff);
+
+        Assert.False(studio.OldStuff.HasPreview);
+        Assert.Equal(DesktopMoveService.OldStuffInGroupFolders, studio.OldStuff.Message);
+        Assert.Equal(before, Snapshot(app));
+
+        // Put back, then Clear old stuff finds the old things again, as the message promises.
+        await studio.PutBackAsync(studio.FolderByGroup);
+        await studio.PreviewAsync(studio.OldStuff);
+
+        Assert.Equal(["old notes.txt", "Old project"], studio.OldStuff.Items.Select(item => item.Name));
+    }
+
+    [Fact]
+    public async Task Clear_old_stuff_with_nothing_old_and_no_group_folders_says_just_that()
+    {
+        await using var app = await TestApp.StartAsync();
+        MakeGroupDesktop(app);
+        var studio = await OpenAllowedAsync(app);
+        await studio.GuessAsync();
+
+        await studio.PreviewAsync(studio.OldStuff);
+
+        Assert.Equal("Nothing on your Desktop has been left unchanged for 6 months.", studio.OldStuff.Message);
+    }
+
     private static void AssertGroups(DesktopStudioViewModel studio, params (string Name, string[] Items)[] expected)
     {
         Assert.Equal(

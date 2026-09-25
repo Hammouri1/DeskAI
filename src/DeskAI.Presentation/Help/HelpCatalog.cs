@@ -100,7 +100,7 @@ public static class HelpCatalog
             "It never moves, renames, or opens your files, and never changes Windows."),
         new("studio.oldStuff", "Clear old stuff",
             "A card that gathers what you haven't changed in 6 months into one Old stuff folder on your Desktop.",
-            "DeskAI lists each old folder and file with a tick box first. Only what you tick moves, after you press Move. Put back returns your latest change.",
+            "DeskAI lists each old folder and file with a tick box first. Only what you tick moves, after you press Move. Put back returns your latest change. Use it before putting groups in folders.",
             "It never deletes anything and never moves anything off your Desktop. Projects and programs start unticked."),
         new("studio.folderByGroup", "Putting groups in folders",
             "The step after Find groups: a folder on your Desktop for each group, with the group's things inside.",

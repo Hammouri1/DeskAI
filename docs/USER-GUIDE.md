@@ -140,7 +140,8 @@ DeskAI's own program folder is never on the board. Disconnecting the Desktop or 
 forgets the board. Find groups never moves, renames, or opens your files, or changes Windows.
 
 **Clear old stuff** gathers folders and files you haven't changed in 6 months into one **Old
-stuff** folder on your Desktop. Under your groups, **Put each group in its own folder** makes a folder on your Desktop for each
+stuff** folder on your Desktop. It looks only at what is loose on your Desktop, not inside
+folders, so if you want both, clear old stuff before you put your groups in folders. Under your groups, **Put each group in its own folder** makes a folder on your Desktop for each
 group and puts the group's things inside; Not sure stays where it is. Each shows the list first
 (on Clear old stuff, press **Show what would move**), untick anything you want to
 keep where it is, and press **Move**. The first time, DeskAI asks for your permission to move
