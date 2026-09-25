@@ -69,13 +69,9 @@ public sealed class DashboardViewModel(
     DeskAI.Core.Tidy.AwayTidyService away,
     PersonalFoldersViewModel folders,
     AskDeskAiViewModel ask,
-    IClock clock,
-    QuickSearchTipViewModel tip) : ObservableObject, IDisposable
+    IClock clock) : ObservableObject, IDisposable
 {
     private readonly StorageSummaryService _storage = storage;
-
-    /// <summary>The one-line tip about Ctrl + Alt + Space (ADR 0047).</summary>
-    public QuickSearchTipViewModel Tip { get; } = tip;
 
     /// <summary>The "Your folders" card: Desktop, Downloads, Documents, and Pictures, each with one button.</summary>
     public PersonalFoldersViewModel Folders { get; } = folders;
@@ -452,7 +448,6 @@ public sealed class DashboardViewModel(
     public async Task InitializeAsync()
     {
         Greeting = GreetingFor(_clock.UtcNow.ToLocalTime());
-        await Tip.LoadAsync().ConfigureAwait(true);
         await Folders.ReloadAsync().ConfigureAwait(true);
         await Ask.InitializeAsync().ConfigureAwait(true);
 

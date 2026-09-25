@@ -208,10 +208,8 @@ public sealed class SearchViewModel : ObservableObject, IDisposable
         IClock clock,
         SearchRequest request,
         SentenceAiService sentenceAi,
-        QuickSearchTipViewModel tip,
         VisualSearchService? visualSearch = null)
     {
-        Tip = tip;
         _search = search;
         _folders = folders;
         _insideFiles = insideFiles;
@@ -227,8 +225,6 @@ public sealed class SearchViewModel : ObservableObject, IDisposable
         DisconnectFolderCommand = new AsyncRelayCommand<Guid>(DisconnectFolderAsync, _ => !IsFolderBusy);
     }
 
-    /// <summary>The one-line tip about Ctrl + Alt + Space (ADR 0047).</summary>
-    public QuickSearchTipViewModel Tip { get; }
 
     public ObservableCollection<ConnectedFolderViewModel> Folders { get; } = [];
 
@@ -481,7 +477,6 @@ public sealed class SearchViewModel : ObservableObject, IDisposable
     /// </remarks>
     public async Task InitializeAsync()
     {
-        await Tip.LoadAsync().ConfigureAwait(true);
         await ReloadFoldersAsync().ConfigureAwait(true);
         await ReloadSavedSearchesAsync().ConfigureAwait(true);
         try

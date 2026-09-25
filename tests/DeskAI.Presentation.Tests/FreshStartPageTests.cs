@@ -104,18 +104,21 @@ public sealed class FreshStartPageTests
     }
 
     [Fact]
-    public async Task Start_fresh_turns_quick_search_back_on_with_Sparky_and_the_tip()
+    public async Task Start_fresh_turns_quick_search_back_on_with_Sparky_and_forgets_the_old_tip_mark()
     {
         await using var app = await TestApp.StartAsync();
         var quick = app.Get<QuickSearchSettingsService>();
+        var store = app.Get<IAppSettingsStore>();
         await quick.SetOnAsync(false, TestContext.Current.CancellationToken);
         await quick.SetBuddyAsync(SearchBuddy.Mochi, TestContext.Current.CancellationToken);
-        await quick.DismissTipAsync(TestContext.Current.CancellationToken);
+        // Written by a build that still had the Home and Search tip.
+        await store.WriteAsync(QuickSearchSettingsService.RetiredTipKey, "yes", TestContext.Current.CancellationToken);
         var settings = app.Get<SettingsViewModel>();
         await settings.InitializeAsync();
 
         await settings.StartFreshAsync();
 
         Assert.Equal(QuickSearchSettings.Default, await quick.LoadAsync(TestContext.Current.CancellationToken));
+        Assert.Null(await store.ReadAsync(QuickSearchSettingsService.RetiredTipKey, TestContext.Current.CancellationToken));
     }
 }

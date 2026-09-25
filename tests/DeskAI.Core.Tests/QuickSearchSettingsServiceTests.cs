@@ -13,7 +13,7 @@ public sealed class QuickSearchSettingsServiceTests
         var service = new QuickSearchSettingsService(new FakeStore());
 
         Assert.Equal(QuickSearchSettings.Default, await service.LoadAsync(TestContext.Current.CancellationToken));
-        Assert.Equal(new QuickSearchSettings(true, SearchBuddy.Sparky, false), QuickSearchSettings.Default);
+        Assert.Equal(new QuickSearchSettings(true, SearchBuddy.Sparky), QuickSearchSettings.Default);
     }
 
     [Fact]
@@ -25,11 +25,11 @@ public sealed class QuickSearchSettingsServiceTests
 
         await service.SetOnAsync(false, token);
         await service.SetBuddyAsync(SearchBuddy.Inky, token);
-        await service.DismissTipAsync(token);
 
-        Assert.Equal(new QuickSearchSettings(false, SearchBuddy.Inky, true), await service.LoadAsync(token));
-        Assert.Equal(["quicksearch.buddy", "quicksearch.on", "quicksearch.tip.dismissed"], store.Values.Keys.Order(StringComparer.Ordinal));
-        Assert.Equal(store.Values.Keys.Order(StringComparer.Ordinal), QuickSearchSettingsService.Keys.Order(StringComparer.Ordinal));
+        Assert.Equal(new QuickSearchSettings(false, SearchBuddy.Inky), await service.LoadAsync(token));
+        Assert.Equal(["quicksearch.buddy", "quicksearch.on"], store.Values.Keys.Order(StringComparer.Ordinal));
+        Assert.Subset(QuickSearchSettingsService.Keys.ToHashSet(StringComparer.Ordinal), store.Values.Keys.ToHashSet(StringComparer.Ordinal));
+        Assert.Contains("quicksearch.tip.dismissed", QuickSearchSettingsService.Keys);
     }
 
     [Theory]

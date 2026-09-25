@@ -120,12 +120,17 @@ Answered when the owner reviewed this spec (2026-09-25):
   bar's translucent navy over Windows' acrylic, with Sparky in a strip at the top and rounded
   corners asked of Windows 11. Checked in the UI preview: greeting, examples, typing, Esc.
 - The "allow reading inside" line also shows **See more in DeskAI**, as "Honest lines" says.
-- The buddy tiles on My workspace and the tip's small Sparky hold still (the pose only); the bar's
-  and the welcome's Sparky move.
+- The buddy tiles on My workspace hold still (the pose only); the bar's and the welcome's Sparky
+  move.
+- **The Home and Search tip is removed** (owner, after trying it, 2026-09-25: "it is not needed";
+  on Home it also sat inside the welcome panel and covered it). The welcome page is the one place
+  that teaches the shortcut. `quicksearch.tip.dismissed` is no longer written or read; Start fresh
+  still forgets it, for a mark an earlier build wrote. Sections below that describe the tip are
+  superseded by this ruling.
 - **Found on the owner's PC:** Windows refused Ctrl + Alt + Space because another running program
   already uses it (Windows error 1409; the Claude desktop app, which was running, is the likely
   owner). The card says so plainly, as designed, and there is no automatic fallback. The owner
-  decides: free the shortcut in that program, or choose a different shortcut for DeskAI.
+  decides: free the shortcut in that program, or choose a different shortcut for DeskAI. The owner then tried quick search and reported "it works well" (2026-09-25).
 
 ## What the person sees
 
@@ -198,7 +203,7 @@ On **My workspace**, next to **DeskAI's look**, a new card **Quick search**:
 - **Welcome:** a new page, placed before the last page: title "Find any file, from anywhere", the
   Sparky picture, and "Press Ctrl + Alt + Space in any app. Type what you're looking for, and press
   Enter to open it." The page dots and "Page N of M" follow automatically.
-- **Tip on Home and on Search:** a small line with the buddy's face: "Tip: press Ctrl + Alt + Space
+- **Tip on Home and on Search (removed, see "Rulings made while building"):** a small line with the buddy's face: "Tip: press Ctrl + Alt + Space
   anywhere to find a file." with a close button. Closing it on either page hides it on both, for
   good (`quicksearch.tip.dismissed` in `app_settings`). Not shown while quick search is off.
 

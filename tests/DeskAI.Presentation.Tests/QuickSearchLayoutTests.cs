@@ -118,20 +118,28 @@ public sealed class QuickSearchLayoutTests
     }
 
     [Fact]
-    public void The_Quick_search_card_the_tip_and_the_welcome_picture_are_placed()
+    public void The_Quick_search_card_and_the_welcome_picture_are_placed()
     {
         var workspace = Read("src", "DeskAI.App", "Views", "WorkspacePage.xaml");
         Assert.Contains("Header=\"Press Ctrl + Alt + Space to find a file\"", workspace, StringComparison.Ordinal);
         Assert.Contains("Text=\"Your search buddy\"", workspace, StringComparison.Ordinal);
         Assert.Contains("Topic=\"workspace.quicksearch\"", workspace, StringComparison.Ordinal);
+        Assert.Contains("welcome.Current.ShowsBuddy", Read("src", "DeskAI.App", "Views", "WelcomeDialog.cs"), StringComparison.Ordinal);
+    }
 
+    /// <summary>
+    /// Owner-found 2026-09-25: the tip sat inside Home's welcome panel and covered it. The owner
+    /// said it was not needed, so Home and Search carry no quick search tip at all.
+    /// </summary>
+    [Fact]
+    public void Home_and_Search_carry_no_quick_search_tip()
+    {
         foreach (var page in new[] { "DashboardPage.xaml", "SearchPage.xaml" })
         {
-            Assert.Contains("<controls:QuickSearchTipBar Tip=\"{x:Bind ViewModel.Tip}\" />", Read("src", "DeskAI.App", "Views", page), StringComparison.Ordinal);
+            var xaml = Read("src", "DeskAI.App", "Views", page);
+            Assert.DoesNotContain("QuickSearchTip", xaml, StringComparison.Ordinal);
+            Assert.DoesNotContain("Ctrl + Alt + Space", xaml, StringComparison.Ordinal);
         }
-
-        Assert.Contains("AutomationProperties.SetName(close, \"Close the tip\")", Read("src", "DeskAI.App", "Controls", "QuickSearchTipBar.cs"), StringComparison.Ordinal);
-        Assert.Contains("welcome.Current.ShowsBuddy", Read("src", "DeskAI.App", "Views", "WelcomeDialog.cs"), StringComparison.Ordinal);
     }
 
     public static TheoryData<string> Buddies() => new(BuddyFiles);

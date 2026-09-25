@@ -18,9 +18,6 @@
                            Text="Find files by name or details. With your permission, search words inside notes, Word, and Excel files too. Searching never changes a file." />
             </StackPanel></Border>
 
-            <!-- One line about quick search (ADR 0047); closing it here closes it on Home too. -->
-            <controls:QuickSearchTipBar Tip="{x:Bind ViewModel.Tip}" />
-
             <Border Style="{StaticResource CardStyle}">
                 <StackPanel Spacing="16">
                     <StackPanel Orientation="Horizontal" Spacing="12">
