@@ -7,6 +7,7 @@ internal static class BuddyFactory
 {
     public static BuddyControl Create(SearchBuddy buddy) => buddy switch
     {
+        SearchBuddy.Archie => new ArchieBuddy(),
         _ => new SparkyBuddy(),
     };
 }
