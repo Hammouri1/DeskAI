@@ -1,18 +1,24 @@
 # DeskAI — Coding Handoff
 
-## Start here (updated 2026-09-26, whole-app redesign asked; quick search pushed, not released)
+## Start here (updated 2026-09-26, 1.3.0 released; whole-app redesign asked)
 
-**State.** Branch `quick-search` holds quick search, its polish, and the 2026-09-26 fixes (two
-screens, `desktop.ini`); last commit: the one that adds this section. **Pushed to GitHub as the
-branch `quick-search` on 2026-09-26 at the owner's request** ("push the new version to github").
-Not merged into `main`, no tag, **not released**: the owner said "still don't release". GitHub's
-`main` is still `2492af8` (1.2.0); local `main` is `e61e6e0` (2 planning commits ahead of it,
-also contained in `quick-search`). The owner tried the two fixes: "it works now". Launchable exe:
+**State. DeskAI 1.3.0 is released** (2026-09-26, at the owner's request: "no bro release it and
+edit the readme file also"). It is quick search, its polish, and the 2026-09-26 fixes (two
+screens, `desktop.ini`); the owner tried the fixes: "it works now". `quick-search` was
+fast-forwarded into `main`; `main` and tag `v1.3.0` are the commit that adds this section,
+pushed to GitHub, where the Release workflow builds the zip. The release commit set the version
+to 1.3.0 in `Directory.Build.props`, moved the release notes' "Unreleased" to "1.3.0 —
+2026-09-26", pointed README and `docs/INSTALL.md` at the 1.3.0 download, and refreshed the
+README (quick search in full, hidden files left out, pinned searches on My workspace, a
+four-page welcome, schema 17, more than 1,900 tests in seven projects, 47 decision records, the
+PDF reader and probe tools in the repository shape; "Building it" renamed "Working on the code").
+Verified before tagging: Release build 0 warnings, all 1,908 tests passed, formatting passed,
+the app reports 1.3.0. Launchable exe:
 `src\DeskAI.App\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`.
 
 **Next step (the owner asked for exactly this): ask the owner again the redesign question
 below**, in plain words, before doing anything else on the redesign. Do not start designing or
-building until they answer. Releasing 1.3.0 waits until the owner says so.
+building until they answer. Work on it on a new branch from `main`.
 
 ### The owner's request (2026-09-26, their words)
 
@@ -839,11 +845,11 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 ## Copy-paste starter prompt
 
 > Continue DeskAI in the repository checkout. Read `AGENTS.md`, `docs/HANDOFF.md` ("Start
-> here" first), and especially `docs/SECURITY.md`; inspect Git status. Quick search is built on
-> branch `quick-search`, pushed to GitHub as that branch, not merged, not released. I asked for
+> here" first), and especially `docs/SECURITY.md`; inspect Git status. DeskAI 1.3.0 (quick
+> search) is released from `main`, tag `v1.3.0`. I asked for
 > a redesign and rearrangement of the whole app's UI: first ask me again the question in "Start
 > here" → "The question to ask again" (A, B, or C), then continue the design with me one
-> question at a time. Do not release 1.3.0 until I say so. Ask me questions whenever something
+> question at a time, on a new branch from `main`. Ask me questions whenever something
 > is unclear.
 > Do not open or scan my personal folders or use my API key. Test with generated
 > files, update docs, and commit each task. Ask before pushing, tagging, or releasing.

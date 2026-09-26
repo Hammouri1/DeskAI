@@ -1,6 +1,6 @@
 # Release notes
 
-## Unreleased
+## 1.3.0 — 2026-09-26
 
 - **Quick search** (new): press **Ctrl + Alt + D** in any app and a small search bar appears with
   a friendly search buddy. It finds files in your connected folders by name, and by words inside

@@ -29,17 +29,17 @@ Connected folder → scan → classify → propose plan → safety validation
                   → preview → your approval → execute → journal → undo
 ```
 
-**Status:** version 1.2.0. More than 1,600 automated tests pass and the x64 Release build has
+**Status:** version 1.3.0. More than 1,900 automated tests pass and the x64 Release build has
 zero warnings. The download is not code-signed — see [Honest limits](#honest-limits).
 
 ## Download for Windows
 
 No programming tools, account, or .NET installation are needed.
 
-### [Download DeskAI 1.2.0 for Windows](https://github.com/Hammouri1/DeskAI/releases/download/v1.2.0/DeskAI-1.2.0-win-x64.zip)
+### [Download DeskAI 1.3.0 for Windows](https://github.com/Hammouri1/DeskAI/releases/download/v1.3.0/DeskAI-1.3.0-win-x64.zip)
 
 1. Open the downloaded zip and choose **Extract all**. Do not run DeskAI from inside the zip.
-2. Open the new `DeskAI-1.2.0-win-x64` folder.
+2. Open the new `DeskAI-1.3.0-win-x64` folder.
 3. Double-click **DeskAI.App.exe**, the file with the mint DeskAI logo.
 4. If Windows says **Windows protected your PC**, choose **More info**, then **Run anyway**.
 5. On Home, find **Your folders** and press **Connect** beside Desktop, Downloads, Documents,
@@ -61,18 +61,22 @@ DeskAI never guesses about a file it cannot prove.
 **Finding.** Search by name, type, size, or date. With separate, visible permissions, search
 words inside notes, modern Word (`.docx`), Excel (`.xlsx`), PDF, and PowerPoint (`.pptx`) files
 locally. A separately confirmed on-device OCR pass can search approximate words on scanned PDF
-pages and show the matching page. Save searches, pin them to Home with live counts, and find
-exact and possible duplicates—comparing file contents only when you ask and never deleting what
-it finds. AI picture/scene search is disabled in this release.
+pages and show the matching page. Save searches, pin them to My workspace with live counts, and
+find exact and possible duplicates—comparing file contents only when you ask and never deleting
+what it finds. Hidden Windows files such as `desktop.ini`, and what is inside hidden folders, are
+left out, just as File Explorer hides them. AI picture/scene search is disabled in this release.
 
-**Quick search.** Press **Ctrl + Alt + D** (or another shortcut you pick) in any app and a small
-search bar appears with a friendly search buddy (seven to choose from). Type a name, a kind like
-"pdf", or a time like "last week"; a moment later it also finds words inside files, but only in
-folders where you allowed that on Search. Enter opens familiar files, such as documents,
-pictures, music, and videos, in their usual app; anything else, programs included, is only
-shown in its folder. It uses no AI, sends nothing, and remembers nothing you type. While it is
-on, closing the DeskAI window keeps DeskAI near the clock so the shortcut still works; quit from
-the icon there, or turn quick search off on My workspace.
+**Quick search** (new in 1.3.0). Press **Ctrl + Alt + D** in any app, or Ctrl + Alt + Space or
+Ctrl + Shift + Space if you pick one of those on My workspace, and a search bar drops in with a
+glowing edge and a search buddy perched on top: Sparky, Archie, Pip, Fetch, Inky, Mochi, or
+Paige. Type a name, a kind like "pdf", or a time like "last week"; a moment later it also finds
+words inside files, but only in folders where you allowed that on Search. Choose a result with
+the arrow keys or the mouse. Enter opens familiar files, such as documents, pictures, music, and
+videos, in their usual app; anything else, programs included, is only shown in its folder. It
+uses no AI, sends nothing, and remembers nothing you type. **Let my buddy move** turns the
+animations on or off, whatever Windows' own animation setting says. While quick search is on,
+closing the DeskAI window keeps DeskAI near the clock so the shortcut still works; quit from the
+icon there, or turn quick search off on My workspace.
 
 **Understanding.** See what is using space, what has gone stale, and how organized a folder is.
 
@@ -90,8 +94,8 @@ the Desktop, DeskAI can put each group in its own folder, add the group's name t
 name, or gather things unchanged for 6 months into one Old stuff folder. **Put back** undoes
 your latest change, even after you reopen DeskAI. Nothing is ever deleted.
 
-**Making it yours.** Folder templates, starter packs, themes, dark mode, wallpaper, and a backup
-and restore of your rules and saved searches.
+**Making it yours.** Folder templates, starter packs, themes, dark mode, wallpaper, your quick
+search buddy and shortcut, and a backup and restore of your rules and saved searches.
 
 **Optional AI, four ways.** Ask AI about files rules could not place; have AI plan a folder
 structure; type a sentence like "PDFs from last month" and have it become a deterministic search
@@ -157,9 +161,9 @@ These are properties of the code, each covered by tests:
 
 - C# on .NET 10, WinUI 3 / Windows App SDK, XAML — unpackaged, self-contained, x64
 - MVVM presentation, dependency injection at the composition root, async and cancellable I/O
-- SQLite (schema version 16) for settings, rules, saved searches, plans, the metadata index, the Desktop groups board, and
+- SQLite (schema version 17) for settings, rules, saved searches, plans, the metadata index, the Desktop groups board, and
   the operation journal
-- xUnit — more than 1,800 tests across five projects, including page tests that use each feature the way a
+- xUnit — more than 1,900 tests across seven projects, including page tests that use each feature the way a
   person does
 - No Electron, no Node.js, no Python, no hosted backend
 
@@ -173,9 +177,13 @@ src/
   DeskAI.Safety          Policy evaluation and plan validation
   DeskAI.Infrastructure  Filesystem, SQLite, Windows integration, indexing
   DeskAI.AI              Provider adapters and structured AI translation
+  DeskAI.PdfWorker       Reads PDF text in its own process, given the bytes but never a path
 tests/
   DeskAI.Core.Tests  DeskAI.Safety.Tests  DeskAI.Infrastructure.Tests
   DeskAI.AI.Tests    DeskAI.Presentation.Tests
+  DeskAI.IconProbe.Tests  DeskAI.FolderColorProbe.Tests
+tools/
+  IconPositionProbe  FolderColorProbe   Small throwaway experiments, kept with their results
 ```
 
 `Core` references nothing. `AI` references `Core` alone and contains no filesystem API. `App`
@@ -211,9 +219,9 @@ open anything. Tidying is a separate permission you give per folder on the Organ
 even then nothing moves until you press Tidy and approve the preview. Everything it does can be
 undone.
 
-The first time it opens, DeskAI shows a short three-page welcome that says what it will and will
-not do and offers to connect a folder. Skip it any time; you can see it again under **Privacy and
-AI → Show the welcome again**.
+The first time it opens, DeskAI shows a short four-page welcome that says what it will and will
+not do, offers to connect a folder, and introduces quick search. Skip it any time; you can see
+it again under **Privacy and AI → Show the welcome again**.
 
 To remove it completely: open **Privacy and AI**, press **Start fresh**, then delete the folder.
 
@@ -221,7 +229,7 @@ To remove it completely: open **Privacy and AI**, press **Start fresh**, then de
 - How the pages work: [docs/USER-GUIDE.md](docs/USER-GUIDE.md)
 - What changed: [docs/RELEASE-NOTES.md](docs/RELEASE-NOTES.md)
 
-## Building it
+## Working on the code
 
 1. Windows 11 and the .NET SDK named in `global.json`; nothing else is needed.
 2. Read `AGENTS.md` and the documents it names; `docs/HANDOFF.md` says where things stand.
@@ -248,7 +256,7 @@ generated temporary data only.
 ## Design decisions
 
 Every significant decision is written down with its reasoning, including the ones that were
-rejected: 40 records in [docs/decisions](docs/decisions), and a security review for each
+rejected: 47 records in [docs/decisions](docs/decisions), and a security review for each
 capability that touches a file or a Windows setting in [docs/security](docs/security).
 
 ## Contributing and security
