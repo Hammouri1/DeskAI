@@ -37,6 +37,25 @@ public sealed class QuickSearchLayoutTests
     }
 
     [Fact]
+    public void The_bar_is_sized_for_the_scale_of_the_screen_it_opens_on_and_refits_when_that_scale_changes()
+    {
+        // Owner-found (2026-09-26, two screens at 100% and 125%): the first opening on the other
+        // screen was sized with the scale of the screen the bar last stood on, so it was cut off
+        // on the 125% screen and too wide on the 100% one until typing refitted it.
+        var window = Read("src", "DeskAI.App", "Views", "QuickSearchWindow.xaml.cs");
+        var scale = window[window.IndexOf("private double Scale()", StringComparison.Ordinal)..];
+        scale = scale[..scale.IndexOf("private void OnXamlRootChanged", StringComparison.Ordinal)];
+
+        Assert.Contains("GetDpiForMonitor", scale, StringComparison.Ordinal);
+        Assert.Contains("MonitorFromPoint", scale, StringComparison.Ordinal);
+        Assert.DoesNotContain("RasterizationScale", scale, StringComparison.Ordinal);
+        Assert.DoesNotContain("GetDpiForWindow", scale, StringComparison.Ordinal);
+        Assert.Contains("AppWindow.MoveAndResize(", window, StringComparison.Ordinal);
+        Assert.DoesNotContain("AppWindow.ResizeClient(", window, StringComparison.Ordinal);
+        Assert.Matches(new Regex(@"XamlRoot\.Changed \+=", RegexOptions.None, TimeSpan.FromSeconds(1)), window);
+    }
+
+    [Fact]
     public void The_buddys_line_is_announced_politely_and_the_buddy_itself_is_decorative()
     {
         var xaml = Read("src", "DeskAI.App", "Views", "QuickSearchWindow.xaml");

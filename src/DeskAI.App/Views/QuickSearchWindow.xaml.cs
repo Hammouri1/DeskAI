@@ -41,6 +41,8 @@ public sealed partial class QuickSearchWindow : Window
     private const int DwmBorderColor = 34;
     private const uint DwmColorNone = 0xFFFFFFFE;
     private const uint WmNcCalcSize = 0x0083;
+    private const uint MonitorDefaultToNearest = 2;
+    private const int MonitorEffectiveDpi = 0;
 
     /// <summary>The see-through room around the card for the glow, on each side, in view pixels.</summary>
     private const double GlowMargin = 24;
@@ -50,6 +52,12 @@ public sealed partial class QuickSearchWindow : Window
 
     /// <summary>Held so the window procedure Windows calls is never collected.</summary>
     private readonly SubclassProcedure _frameless = OnFrameMessage;
+
+    /// <summary>The work area of the screen the bar last opened on.</summary>
+    private RectInt32 _area = DisplayArea.Primary.WorkArea;
+
+    /// <summary>The scale the bar was last drawn at, so only a change of screen scale refits it.</summary>
+    private double _drawnScale;
 
     public QuickSearchWindow(QuickSearchViewModel viewModel, BuddyMotion motion)
     {
@@ -67,6 +75,11 @@ public sealed partial class QuickSearchWindow : Window
         AppWindow.IsShownInSwitchers = false;
         ClearTheFrame();
         Root.PointerPressed += OnRootPressed;
+        Root.Loaded += (_, _) =>
+        {
+            Root.XamlRoot.Changed -= OnXamlRootChanged;
+            Root.XamlRoot.Changed += OnXamlRootChanged;
+        };
         Activated += OnActivated;
         ViewModel.PropertyChanged += OnViewModelChanged;
         ViewModel.NameRows.CollectionChanged += (_, _) => FitSoon();
@@ -80,11 +93,9 @@ public sealed partial class QuickSearchWindow : Window
     public async void ShowNearPointer()
     {
         await ViewModel.ShowAsync();
-        var area = TrayInterop.GetCursorPos(out var pointer)
+        _area = TrayInterop.GetCursorPos(out var pointer)
             ? DisplayArea.GetFromPoint(new PointInt32(pointer.X, pointer.Y), DisplayAreaFallback.Nearest).WorkArea
             : DisplayArea.Primary.WorkArea;
-        var width = (int)Math.Ceiling((BarWidth + (2 * GlowMargin)) * Scale());
-        AppWindow.Move(new PointInt32(area.X + ((area.Width - width) / 2), area.Y + (int)(area.Height * TopFraction)));
         FitToContent();
         PlayOpening();
         AppWindow.Show(activateWindow: true);
@@ -230,21 +241,43 @@ public sealed partial class QuickSearchWindow : Window
     /// <summary>After the bindings have caught up, so the measured height includes the new lines.</summary>
     private void FitSoon() => DispatcherQueue.TryEnqueue(FitToContent);
 
-    /// <summary>Makes the window exactly as tall as what it shows.</summary>
+    /// <summary>Makes the window exactly as tall as what it shows, top centre on its screen.</summary>
+    /// <remarks>The frame is cleared, so the window's outside is its inside and the whole size is the content's.</remarks>
     private void FitToContent()
     {
         NameHeader.Visibility = ViewModel.NameRows.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
         Root.Measure(new Size(BarWidth + (2 * GlowMargin), double.PositiveInfinity));
         var scale = Scale();
-        AppWindow.ResizeClient(new SizeInt32(
-            (int)Math.Ceiling((BarWidth + (2 * GlowMargin)) * scale),
-            (int)Math.Ceiling(Root.DesiredSize.Height * scale)));
+        var width = (int)Math.Ceiling((BarWidth + (2 * GlowMargin)) * scale);
+        var height = (int)Math.Ceiling(Root.DesiredSize.Height * scale);
+        AppWindow.MoveAndResize(new RectInt32(
+            _area.X + ((_area.Width - width) / 2), _area.Y + (int)(_area.Height * TopFraction), width, height));
     }
 
-    /// <summary>The display's scale: from the drawn content once it exists, from Windows before that.</summary>
-    private double Scale() =>
-        Content?.XamlRoot?.RasterizationScale
-            ?? (GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)) is > 0 and var dpi ? dpi / 96.0 : 1.0);
+    /// <summary>
+    /// The scale of the screen the bar opens on, asked of Windows for that screen.
+    /// </summary>
+    /// <remarks>
+    /// Not the scale the bar is drawn at: that one is still the last screen's until Windows has
+    /// moved the bar over, so with a 100% and a 125% screen the first opening on the other one was
+    /// cut off, or too wide, until typing refitted it (owner-found, 2026-09-26).
+    /// </remarks>
+    private double Scale()
+    {
+        var middle = new TrayInterop.Point { X = _area.X + (_area.Width / 2), Y = _area.Y + (_area.Height / 2) };
+        var screen = MonitorFromPoint(middle, MonitorDefaultToNearest);
+        return GetDpiForMonitor(screen, MonitorEffectiveDpi, out var dpi, out _) == 0 && dpi > 0 ? dpi / 96.0 : 1.0;
+    }
+
+    /// <summary>When the bar is drawn at a new screen's scale, it is measured again at that scale.</summary>
+    private void OnXamlRootChanged(XamlRoot sender, XamlRootChangedEventArgs args)
+    {
+        if (sender.RasterizationScale != _drawnScale)
+        {
+            _drawnScale = sender.RasterizationScale;
+            FitSoon();
+        }
+    }
 
     /// <summary>
     /// Makes the window see-through around the card with no frame from Windows (the probe of
@@ -375,8 +408,11 @@ public sealed partial class QuickSearchWindow : Window
     [DllImport("dwmapi.dll", EntryPoint = "DwmExtendFrameIntoClientArea")]
     private static extern int DwmExtendFrameIntoClientArea(nint window, ref Margins margins);
 
-    [DllImport("user32.dll", EntryPoint = "GetDpiForWindow")]
-    private static extern uint GetDpiForWindow(nint window);
+    [DllImport("user32.dll", EntryPoint = "MonitorFromPoint")]
+    private static extern nint MonitorFromPoint(TrayInterop.Point point, uint flags);
+
+    [DllImport("shcore.dll", EntryPoint = "GetDpiForMonitor")]
+    private static extern int GetDpiForMonitor(nint monitor, int kind, out uint dpiX, out uint dpiY);
 
     [DllImport("dwmapi.dll", EntryPoint = "DwmSetWindowAttribute")]
     private static extern int DwmSetWindowAttribute(nint window, int attribute, ref int value, int size);

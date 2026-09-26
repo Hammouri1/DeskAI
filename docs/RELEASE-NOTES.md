@@ -16,6 +16,10 @@
   top, and a see-through glow around it.
 - In the bar you can now choose a file with the mouse: point at it, then click it. The example
   searches are rounded buttons instead of ovals, and buddies stay sharp after they appear.
+- With two screens at different sizes (for example 100% and 125%), the bar is now the right size
+  the first time it opens on the other screen, instead of cut off or too wide.
+- Hidden Windows files such as `desktop.ini`, and what is inside hidden folders, no longer show
+  up in search results. They disappear after DeskAI next looks through the folder.
 
 ## 1.2.0 — 2026-09-25
 

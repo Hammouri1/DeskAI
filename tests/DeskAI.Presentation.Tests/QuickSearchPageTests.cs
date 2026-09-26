@@ -94,6 +94,28 @@ public sealed class QuickSearchPageTests
     }
 
     [Fact]
+    public async Task Hidden_Windows_files_and_what_is_inside_hidden_folders_are_never_listed()
+    {
+        await using var app = await TestApp.StartAsync();
+        var folder = app.MakeFolder("School", "desktop photo.jpg", "desktop.ini", Path.Combine(".git", "desktop.cfg"));
+        File.SetAttributes(Path.Combine(folder, "desktop.ini"), FileAttributes.Hidden | FileAttributes.System);
+        File.SetAttributes(Path.Combine(folder, ".git"), FileAttributes.Directory | FileAttributes.Hidden);
+        var search = app.Get<SearchViewModel>();
+        await search.InitializeAsync();
+        await search.ConnectFolderAsync(folder);
+        var bar = await OpenBarAsync(app);
+
+        await TypeAsync(bar, "desktop");
+
+        Assert.Equal("desktop photo.jpg", Assert.Single(bar.NameRows).Name);
+
+        search.Phrase = "desktop";
+        await search.SearchCommand.ExecuteAsync(null);
+
+        Assert.Equal("desktop photo.jpg", Assert.Single(search.Results).Name);
+    }
+
+    [Fact]
     public async Task Nothing_matched_says_so_and_the_buddy_is_sorry()
     {
         await using var app = await TestApp.StartAsync();

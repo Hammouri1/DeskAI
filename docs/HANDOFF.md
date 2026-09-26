@@ -63,9 +63,18 @@ Windows kept that half-size drawing; letting go at the end did not redraw them, 
 preview), so the entrance now rises and fades without growing; (3) rows could not be chosen with
 the mouse: the pointer now selects a row and a click does what Enter does. Build 0 warnings, all
 1,905 tests passed, formatting passed; checked in the UI preview by capture and real mouse
-movement. **Seen but not fixed (ask the owner):** the owner's screenshot lists `desktop.ini` (a
-hidden Windows file) as a result; with two screens, the bar's first opening can be sized for the
-other screen's scale and look too wide until typing refits it.
+movement. **Then fixed, 2026-09-26 (owner: "yes fix the desktop.ini and the wide bar too"),**
+each with a test that failed first (manual check "2026-09-26 Quick search: two screens, hidden
+files"): (1) the owner's screens are 100% and 125%; the bar was sized with the scale of the
+screen it last stood on, so its first opening on the 125% screen was cut off (owner's
+screenshot) and on the 100% one too wide. It is now sized with the scale Windows gives the
+screen it opens on (`GetDpiForMonitor`), placed and sized in one step, and refitted when its
+drawn scale changes. Checked in the preview on the owner's two screens: 688 × 248 at 100%,
+860 × 310 at 125%, every trip, nothing cut off. (2) `desktop.ini` in results: the index now leaves
+out hidden and system files and everything inside a hidden or system folder (`.git`), so Search,
+quick search, duplicates, and the space summary all leave them out (a ruling the owner may
+overrule: Home's "Files remembered" and the space summary no longer count them). Old rows go at
+the folder's next complete look. Build 0 warnings, all 1,908 tests passed, formatting passed.
 
 **Next step: ask the owner** whether to check by hand first (the manual check above), then
 whether to push `quick-search` and release it as 1.3.0 (version, README, install guide, release

@@ -1299,3 +1299,15 @@ Owner-found after trying the polish. Same preview build and generated Downloads 
 3. Type `handout`. Move the mouse over **Nested handout.pdf**: its row gets the mint edge and
    "Open ↵". Click its name (not the button): it opens and the bar hides.
 4. Open the bar again, type `handout`, and click a row's **Open** button: the file opens once.
+
+## 2026-09-26 Quick search: two screens, hidden files
+
+Owner-found. Same preview build and generated Downloads as above.
+
+1. With two screens set to different sizes in Windows (for example 100% and 125%): start DeskAI,
+   move the mouse to the other screen, and press **Ctrl + Alt + D**. The bar shows whole the first
+   time: the three example searches are not cut off and the bar is not stretched. Press **Esc**,
+   move to the first screen, and open it again: the same there. Repeat a few times each way.
+2. In your everyday DeskAI, on **Search**, press **Refresh** for a connected folder, then type
+   `desktop` in the bar: `desktop.ini` is no longer listed. Nothing on the disk changed; DeskAI
+   only stopped remembering hidden files.

@@ -37,6 +37,27 @@ public sealed class MetadataIndexServiceTests
     }
 
     [Fact]
+    public async Task RefreshAsync_LeavesOutHiddenAndSystemFilesAndEverythingInsideHiddenFolders()
+    {
+        using var sandbox = new TemporaryDirectory();
+        sandbox.CreateDummyFile("essay.pdf");
+        File.SetAttributes(sandbox.CreateDummyFile("desktop.ini"), FileAttributes.Hidden | FileAttributes.System);
+        File.SetAttributes(sandbox.CreateDummyFile("thumbs.db"), FileAttributes.System);
+        sandbox.CreateDummyFile(@".git\config");
+        sandbox.CreateDummyFile(@".git\objects\pack.idx");
+        File.SetAttributes(System.IO.Path.Combine(sandbox.Path, ".git"), FileAttributes.Directory | FileAttributes.Hidden);
+        var index = new InMemoryFileIndex();
+        var service = CreateService(index, new WindowsPathPolicy());
+        var root = Root(sandbox.Path);
+
+        var result = await service.RefreshAsync(root, Bounds, TestContext.Current.CancellationToken);
+
+        Assert.Equal(1, result.Changes.Added);
+        var stored = await index.ListForRootAsync(root.Id, TestContext.Current.CancellationToken);
+        Assert.Equal("essay.pdf", Assert.Single(stored).RelativePath);
+    }
+
+    [Fact]
     public async Task RefreshAsync_ReportsALookThatStoppedAtTheItemLimit()
     {
         using var sandbox = new TemporaryDirectory();

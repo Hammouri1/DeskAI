@@ -15,6 +15,12 @@ namespace DeskAI.Infrastructure.Indexing;
 /// filesystem, and it reaches the filesystem solely through <see cref="IFileScanner"/>,
 /// which opens no file content. It refuses a protected root before scanning, so a
 /// mistake elsewhere cannot turn indexing into a way to enumerate a blocked location.
+/// <para>
+/// Hidden and system files, and everything inside a hidden or system folder, are not
+/// remembered: File Explorer hides them, so nobody looks for <c>desktop.ini</c> or the insides
+/// of a <c>.git</c> folder, and nothing DeskAI offers may act on them anyway. Search, quick
+/// search, duplicates, and the space summary all read this index, so all leave them out.
+/// </para>
 /// </remarks>
 public sealed class MetadataIndexService(
     IFileScanner scanner,
@@ -44,11 +50,19 @@ public sealed class MetadataIndexService(
         var indexedAtUtc = clock.UtcNow;
         var files = new List<IndexedFile>();
         var issues = new List<ScanIssue>();
+        var hiddenFolders = new List<string>();
 
         await foreach (var scanEvent in scanner.ScanAsync(root, options, cancellationToken).ConfigureAwait(false))
         {
             switch (scanEvent)
             {
+                // The scanner reports a folder before anything inside it.
+                case FolderDiscovered folder when IsHiddenOrSystem(folder.Traits):
+                    hiddenFolders.Add(folder.RelativePath + Path.DirectorySeparatorChar);
+                    break;
+                case FileDiscovered discovered when IsHiddenOrSystem(discovered.File.Traits)
+                    || hiddenFolders.Exists(hidden => discovered.File.RelativePath.StartsWith(hidden, StringComparison.OrdinalIgnoreCase)):
+                    break;
                 case FileDiscovered discovered:
                     // The scanner reports FileKind.Unknown; deterministic classification is a
                     // separate stage so the index records why a file was categorized.
@@ -86,6 +100,8 @@ public sealed class MetadataIndexService(
 
     public Task ForgetAsync(Guid rootId, CancellationToken cancellationToken = default) =>
         index.ClearRootAsync(rootId, cancellationToken);
+
+    private static bool IsHiddenOrSystem(FileTraits traits) => (traits & (FileTraits.Hidden | FileTraits.System)) != 0;
 
     private static string Describe(FileIndexSyncResult changes, int fileCount)
     {
