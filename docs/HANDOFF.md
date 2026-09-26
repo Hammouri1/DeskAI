@@ -1,6 +1,100 @@
 # DeskAI — Coding Handoff
 
-## Start here (updated 2026-09-25, quick search polish built)
+## Start here (updated 2026-09-26, whole-app redesign asked; quick search pushed, not released)
+
+**State.** Branch `quick-search` holds quick search, its polish, and the 2026-09-26 fixes (two
+screens, `desktop.ini`); last commit: the one that adds this section. **Pushed to GitHub as the
+branch `quick-search` on 2026-09-26 at the owner's request** ("push the new version to github").
+Not merged into `main`, no tag, **not released**: the owner said "still don't release". GitHub's
+`main` is still `2492af8` (1.2.0); local `main` is `e61e6e0` (2 planning commits ahead of it,
+also contained in `quick-search`). The owner tried the two fixes: "it works now". Launchable exe:
+`src\DeskAI.App\bin\x64\Release\net10.0-windows10.0.26100.0\win-x64\DeskAI.App.exe`.
+
+**Next step (the owner asked for exactly this): ask the owner again the redesign question
+below**, in plain words, before doing anything else on the redesign. Do not start designing or
+building until they answer. Releasing 1.3.0 waits until the owner says so.
+
+### The owner's request (2026-09-26, their words)
+
+> "i want to ask you if u can refix all the ui of the app and re arrange everything bc i see that
+> there are things are not in there places but i can't decide exactly where i should put them so
+> i need ur help to re design and re arrrange everything and the whole app ui"
+
+Then: "re ask me this question after i clear the chat". They cannot say where things belong, so
+the agent must **propose** the arrangement and let them choose, not ask them to place things.
+
+### How it was started
+
+The agent classified it as a large change (the full path of the brainstorming skill: questions
+one at a time → 2–3 approaches → design in sections → a written spec in
+`docs/superpowers/specs/` the owner approves → a plan → build). Nothing is designed or built yet.
+The agent looked at every page in a throwaway UI-preview build (`-p:DeskAiUiPreview=true`, built
+into a scratch folder, sample Downloads connected; captured with Windows UI Automation by
+selecting each side-menu item and scrolling the page). Findings, as told to the owner:
+
+**The same thing lives in several places**
+- **Connecting folders** is on four pages: Home ("Your folders, your choice": Desktop, Downloads,
+  Documents, Pictures cards), Search ("Folders DeskAI can search" with Refresh, Disconnect, and
+  "Read inside files"), Organize ("Choose inside your folders"), and Desktop Studio ("Connect your
+  Desktop first"). The reading-inside permission living on Search is not guessable.
+- **Finding a file** has three entries: the "Find a file…" box in the top bar, the Search page,
+  and quick search.
+- **Light or dark** is set twice: the Dark mode switch at the bottom of the side menu and "Light
+  or dark" on My workspace → Looks.
+- **Settings are split** between My workspace (look, quick search, shortcut, buddy) and Privacy
+  and AI; "Show the welcome again" sits in the Privacy and AI header.
+- **The file count shows three times** on Home: the greeting ("1.8 KB across 7 files"), the At a
+  glance tiles, and the status box at the bottom of the side menu.
+
+**Pages that are too long or oddly ordered**
+- **Home** stacks nine sections: greeting, folders, Ask, At a glance, score, space, largest
+  files, "New here? A quick guide", "How DeskAI keeps you in control".
+- **Search** shows "Save this search" and "Search scanned PDF words" before anything is searched,
+  and its folder box is taller than the search itself.
+- **Automatic tasks** has a long "Write a rule" form in the middle of the page, with "Checking
+  for you" beside it.
+- **My workspace** mixes tabs Looks (colours, then Quick search settings under them), Shortcuts
+  (pinned searches, starter packs), Folder sets, and Desktop (wallpaper), which overlaps Desktop
+  Studio.
+
+**Small visual faults**
+- Every page shows its name twice: in the top bar and again in a large banner.
+- On Privacy and AI and Desktop Studio the line under the banner title is pushed right instead
+  of lining up under the title.
+
+**Understanding written back to the owner (not yet corrected by them):** everything should have
+one obvious place, each page one clear job, and the app should look good and calm to someone who
+is not technical, without weakening any safety wording or step (preview, approval, Undo, nothing
+moves by itself). Also apply the standing preferences: plain words, a striking look (memory
+"owner wants a striking UI"), pages that read as steps with plain action names.
+
+**Proposed split (the owner has not answered):** the whole app is too big for one design, so
+(1) **the map first**: which pages exist, what each is for, and where every button and setting
+goes; then (2) **the look, page by page**, on the new map. Reason given: redesigning a page's
+look is wasted if its contents later move.
+
+### The question to ask again (exactly these choices)
+
+How big a change do you want?
+- **A. Tidy what's there.** Keep the seven pages and their names, move things to their right
+  place, remove repeats, shorten Home.
+- **B. New map.** Pages may be merged, split, or renamed, for example all folder connecting and
+  permissions on one "Folders" page and all settings on one "Settings" page.
+- **C. New map and a new look together.** B, plus a fresh visual style on every page.
+
+The agent recommended **B now, the new look after it as a separate step.** Note for B: on
+2026-09-16 the owner was offered simpler page names ("Tidy up", "Checks that run for you",
+"Privacy") and chose to keep the current names; a new map may propose renames again, but say so
+plainly and let the owner decide.
+
+After the answer: continue the brainstorming path (the next questions one at a time; offer the
+browser mockup companion as its own message the first time a question is visual, since a map
+and layouts are best shown), then write the spec, get it approved, then the plan.
+
+**Kept for later (owner, 2026-09-25):** Desktop Studio cards for Downloads; the buddy inside
+DeskAI's own window; AI in the quick search bar.
+
+## Earlier state (2026-09-25 and 26, quick search polish built, then fixed)
 
 **Quick search polish is built on branch `quick-search`** (last commit: the one that adds this
 section; not pushed, not merged, not released). Plan `docs/superpowers/plans/2026-09-25-quick-search-polish.md`
@@ -745,10 +839,12 @@ guard tests are separate hardening work; do not add unrelated features to the PD
 ## Copy-paste starter prompt
 
 > Continue DeskAI in the repository checkout. Read `AGENTS.md`, `docs/HANDOFF.md` ("Start
-> here" first), and especially `docs/SECURITY.md`; inspect Git status. Quick search and its
-> polish are built on branch `quick-search` (not pushed; `main` is at `e61e6e0`). Ask me whether
-> I have checked it by hand (`docs/MANUAL-TESTING.md` "2026-09-25 Quick search polish"), then
-> whether to push it and release 1.3.0. Ask me questions whenever something is unclear.
+> here" first), and especially `docs/SECURITY.md`; inspect Git status. Quick search is built on
+> branch `quick-search`, pushed to GitHub as that branch, not merged, not released. I asked for
+> a redesign and rearrangement of the whole app's UI: first ask me again the question in "Start
+> here" → "The question to ask again" (A, B, or C), then continue the design with me one
+> question at a time. Do not release 1.3.0 until I say so. Ask me questions whenever something
+> is unclear.
 > Do not open or scan my personal folders or use my API key. Test with generated
 > files, update docs, and commit each task. Ask before pushing, tagging, or releasing.
 
